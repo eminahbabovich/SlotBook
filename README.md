@@ -10,7 +10,7 @@ Ovo je moj drugi projekat nakon [RoomSplita](https://github.com/eminahbabovich/r
 
 Projekat je na početku. Gotova je infrastruktura, a nijedna korisnička funkcionalnost još ne postoji.
 
-U Fazi 1 je do sada urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Nije urađeno: provjera da `btree_gist` radi na Neon-u i prvi deploy.
+U Fazi 1 je do sada urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Nije urađeno: prvi deploy.
 
 | Faza | Šta | Status |
 |---|---|---|
@@ -28,7 +28,7 @@ U Fazi 1 je do sada urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docke
 | 12 | Deploy i prezentacija | nije počelo |
 | 13 | Završni pregled i dodaci | nije počelo |
 
-Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md).
+Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), a odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md).
 
 Trenutno ima 16 testova i svi prolaze. JaCoCo mjeri 93,1 % linija glavnog koda (27 od 29), ali to je malo koda: nepokrivene su dvije linije `main` metode.
 
@@ -77,7 +77,7 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 ## Struktura
 
-`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.status`, kasnije `booking`, `resource`...), ne po sloju. `frontend/` još ne postoji. `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
+`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.status`, kasnije `booking`, `resource`...), ne po sloju. `frontend/` još ne postoji, a u `docs/` je za sada samo `ODLUKE.md`. `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
 
 ## Live demo i screenshotovi
 
