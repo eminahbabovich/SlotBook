@@ -8,13 +8,13 @@ Ovo je moj drugi projekat nakon [RoomSplita](https://github.com/eminahbabovich/r
 
 ## Status
 
-Projekat je na početku. Gotova je infrastruktura, a nijedna korisnička funkcionalnost još ne postoji.
+Projekat je na početku. Faza 1 (infrastruktura) je gotova, a nijedna korisnička funkcionalnost još ne postoji.
 
-U Fazi 1 je do sada urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Nije urađeno: prvi deploy.
+U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 
 | Faza | Šta | Status |
 |---|---|---|
-| 1 | Temelji i infrastruktura | u izradi |
+| 1 | Temelji i infrastruktura | gotovo |
 | 2 | Auth i organizacije | nije počelo |
 | 3 | Resursi i dostupnost, slobodni termini | nije počelo |
 | 4 | Rezervacije i konkurentnost | nije počelo |
@@ -36,7 +36,7 @@ Trenutno ima 16 testova i svi prolaze. JaCoCo mjeri 93,1 % linija glavnog koda (
 
 Backend je Java 21 sa Spring Bootom 4.1.2 (Hibernate 7.4), PostgreSQL 17 i Flywayom za migracije. API se dokumentira springdoc-om 3.2.0. Testovi koriste JUnit i Testcontainers, pa se vrte na pravom PostgreSQL-u u Dockeru, a ne na H2 ili na mojoj lokalnoj bazi. Pokrivenost mjeri JaCoCo, a CI na svaki push pokreće testove i gitleaks nad cijelom git historijom.
 
-Frontend će biti React s Viteom i još nije počet. Za deploy planiram Render, Neon, Vercel i Cloudflare R2 za slike, ali ništa od toga još nije podešeno.
+Frontend će biti React s Viteom i još nije počet. Backend radi na Renderu, a baza je na Neon-u. Vercel za frontend i Cloudflare R2 za slike su planirani i još nisu podešeni.
 
 ## Pokretanje lokalno
 
@@ -81,6 +81,6 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 ## Live demo i screenshotovi
 
-Live demo još ne postoji, stiže u Fazi 12. Screenshotovi dolaze kad bude frontenda.
+Pravog demoa još nema: adresa i demo računi stižu u Fazi 12, a screenshotovi kad bude frontenda. Kostur backenda je na Renderu, ali free plan ga uspavljuje poslije 15 minuta bez saobraćaja, pa prvi zahtjev traje oko minutu.
 
 Repo je za sada privatan, pa CI značka iznad vjerovatno neće biti vidljiva nikome osim meni.
