@@ -26,3 +26,14 @@ jobs:
 
       - name: Build i testovi
         run: ./mvnw -B verify
+
+      - name: Pokrivenost testovima
+        run: |
+          awk -F, 'NR > 1 { missed += $8; covered += $9 }
+            END { printf "Pokrivenost linija: %.1f%% (%d od %d)\n", 100 * covered / (missed + covered), covered, missed + covered }' \
+            target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: jacoco-izvjestaj
+          path: backend/target/site/jacoco
