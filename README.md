@@ -81,6 +81,8 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 ## Live demo i screenshotovi
 
-Pravog demoa još nema: adresa i demo računi stižu u Fazi 12, a screenshotovi kad bude frontenda. Kostur backenda je na Renderu, ali free plan ga uspavljuje poslije 15 minuta bez saobraćaja, pa prvi zahtjev traje oko minutu.
+Backend radi na https://slotbook-dxvs.onrender.com. Za sada ima samo [`/api/status`](https://slotbook-dxvs.onrender.com/api/status), [`/actuator/health`](https://slotbook-dxvs.onrender.com/actuator/health) i [Swagger UI](https://slotbook-dxvs.onrender.com/swagger-ui/index.html). Korijenska adresa vraća 404, jer na njoj nema ničega.
+
+Pravog demoa još nema: demo računi stižu u Fazi 12, a screenshotovi kad bude frontenda. Free plan na Renderu uspavljuje servis poslije 15 minuta bez saobraćaja, pa prvi zahtjev poslije pauze traje oko minutu.
 
 Repo je za sada privatan, pa CI značka iznad vjerovatno neće biti vidljiva nikome osim meni.
