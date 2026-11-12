@@ -3,6 +3,7 @@ package ba.slotbook.auth;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,18 +25,25 @@ public class AuthService {
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtEncoder jwtEncoder;
+	private final RefreshTokenService refreshTokens;
 	private final Clock clock;
 	private final String hashZaNepostojeciEmail;
 
-	public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder, Clock clock) {
+	public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
+			RefreshTokenService refreshTokens, Clock clock) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtEncoder = jwtEncoder;
+		this.refreshTokens = refreshTokens;
 		this.clock = clock;
 		this.hashZaNepostojeciEmail = passwordEncoder.encode("lozinka-koja-se-nikad-ne-poklapa");
 	}
 
-	public TokenResponse login(String email, String password) {
+	// Access token ide u tijelo odgovora, a refresh token kontroler stavlja u kolačić
+	public record Tokens(TokenResponse access, String refreshToken) {
+	}
+
+	public Tokens login(String email, String password) {
 		User user = users.findByEmail(User.normalizeEmail(email)).orElse(null);
 
 		// BCrypt traje ~100 ms. Kad bismo za nepoznat email odmah vratili grešku, odgovor bi bio
@@ -46,19 +54,29 @@ public class AuthService {
 		if (user == null || !lozinkaTacna) {
 			throw new BadCredentialsException("Pogrešan email ili lozinka");
 		}
-		return new TokenResponse(accessToken(user), "Bearer", ACCESS_TOKEN_TRAJE.toSeconds());
+		return new Tokens(accessToken(user.getId()), refreshTokens.issueNewFamily(user.getId()));
 	}
 
-	private String accessToken(User user) {
+	public Tokens refresh(String refreshToken) {
+		RefreshTokenService.Rotation rotacija = refreshTokens.rotate(refreshToken);
+		return new Tokens(accessToken(rotacija.userId()), rotacija.refreshToken());
+	}
+
+	public void logout(String refreshToken) {
+		refreshTokens.revokeFamily(refreshToken);
+	}
+
+	private TokenResponse accessToken(UUID userId) {
 		Instant sada = clock.instant();
 		JwtClaimsSet claims = JwtClaimsSet.builder()
 				.issuer("slotbook")
-				.subject(user.getId().toString())
+				.subject(userId.toString())
 				.issuedAt(sada)
 				.expiresAt(sada.plus(ACCESS_TOKEN_TRAJE))
 				.build();
 		JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
-		return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+		String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+		return new TokenResponse(token, "Bearer", ACCESS_TOKEN_TRAJE.toSeconds());
 	}
 
 }

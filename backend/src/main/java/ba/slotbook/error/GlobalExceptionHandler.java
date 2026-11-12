@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.user.EmailAlreadyUsedException;
 
 @RestControllerAdvice
@@ -45,6 +46,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.");
 		problem.setTitle("Email je već registrovan");
+		return problem;
+	}
+
+	@ExceptionHandler(InvalidRefreshTokenException.class)
+	ProblemDetail sesijaIstekla(InvalidRefreshTokenException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+				"Sesija je istekla ili je prekinuta. Prijavi se ponovo.");
+		problem.setTitle("Sesija je istekla");
 		return problem;
 	}
 

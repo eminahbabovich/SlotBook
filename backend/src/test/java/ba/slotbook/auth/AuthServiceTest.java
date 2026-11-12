@@ -42,9 +42,10 @@ class AuthServiceTest {
 	private final UserRepository users = mock(UserRepository.class);
 	// Snaga 4 umjesto 10, jer ovdje ne testiramo BCrypt nego tok prijave
 	private final PasswordEncoder passwordEncoder = spy(new BCryptPasswordEncoder(4));
+	private final RefreshTokenService refreshTokens = mock(RefreshTokenService.class);
 	private final AuthService service = new AuthService(users, passwordEncoder,
 			NimbusJwtEncoder.withSecretKey(KLJUC).algorithm(MacAlgorithm.HS256).build(),
-			Clock.fixed(SADA, ZoneOffset.UTC));
+			refreshTokens, Clock.fixed(SADA, ZoneOffset.UTC));
 
 	private User postojeciKorisnik(String email, String lozinka) {
 		User user = new User(email, passwordEncoder.encode(lozinka), "Amra", SADA);
@@ -64,8 +65,12 @@ class AuthServiceTest {
 	void tacnaLozinkaDajeTokenSaIdemKorisnikaKojiTraje15Minuta() {
 		User user = postojeciKorisnik("amra@example.com", "sarajevo2026");
 
-		TokenResponse odgovor = service.login("amra@example.com", "sarajevo2026");
+		when(refreshTokens.issueNewFamily(user.getId())).thenReturn("refresh-iz-servisa");
 
+		AuthService.Tokens tokens = service.login("amra@example.com", "sarajevo2026");
+		TokenResponse odgovor = tokens.access();
+
+		assertThat(tokens.refreshToken()).isEqualTo("refresh-iz-servisa");
 		Jwt token = procitaj(odgovor.accessToken());
 		assertThat(token.getSubject()).isEqualTo(user.getId().toString());
 		assertThat(token.getIssuedAt()).isEqualTo(SADA);
@@ -77,7 +82,7 @@ class AuthServiceTest {
 	void emailSeTraziMalimSlovima() {
 		postojeciKorisnik("amra@example.com", "sarajevo2026");
 
-		assertThat(service.login("  AMRA@example.com", "sarajevo2026").accessToken()).isNotBlank();
+		assertThat(service.login("  AMRA@example.com", "sarajevo2026").access().accessToken()).isNotBlank();
 	}
 
 	@Test

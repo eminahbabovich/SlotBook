@@ -26,7 +26,7 @@ Spring Security baca `AuthenticationException` i `AccessDeniedException`. Bez po
 
 ## Bez sesija i bez CSRF zaštite
 
-API je stateless: server ne pamti sesiju, svaki zahtjev nosi token u `Authorization` zaglavlju. CSRF napad radi tako što browser sam pošalje kolačić uz zahtjev sa tuđe stranice, a zaglavlje ne šalje sam, pa je CSRF zaštita isključena. Ovo vrijedi dok nijedan token nije u kolačiću. Ako refresh token završi u httpOnly kolačiću, `/api/auth/refresh` opet treba zaštitu.
+API je stateless: server ne pamti sesiju, svaki zahtjev nosi token u `Authorization` zaglavlju. CSRF napad radi tako što browser sam pošalje kolačić uz zahtjev sa tuđe stranice, a zaglavlje ne šalje sam, pa je CSRF zaštita isključena. Jedini kolačić je refresh token, a zašto ni za njega ne treba CSRF token, piše kod refresh tokena ispod.
 
 Bez prijave se dobija `401` i za adresu koja ne postoji, a ne `404`. Tako neprijavljen posjetilac ne može isprobavanjem saznati koje adrese API ima.
 
@@ -68,6 +68,24 @@ Prijava vraća JWT koji Spring Securityjev resource server provjerava na svakom 
 
 U tokenu je samo ID korisnika (`sub`), rok i izdavač. Uloge nisu, jer su po organizaciji i mogu se promijeniti dok token još važi. Ako admin nekome oduzme ulogu, to treba važiti odmah, a ne za 15 minuta, pa se uloge čitaju iz baze kod svakog zahtjeva (korak 7).
 
-Token koji je jednom izdat ne može se poništiti dok ne istekne. Zato traje samo 15 minuta, a duže sesije će držati refresh token, koji se može opozvati.
+Token koji je jednom izdat ne može se poništiti dok ne istekne. Zato traje samo 15 minuta, a duže sesije drži refresh token, koji se može opozvati.
 
 Prijava za nepoznat email i za pogrešnu lozinku vraća isti odgovor. Za nepoznat email se svejedno pokrene BCrypt nad lažnim hashom, jer bi inače odgovor bio oko 100 ms brži, pa bi se mjerenjem moglo saznati ko ima nalog.
+
+## Refresh token: httpOnly kolačić, rotacija i detekcija krađe
+
+Refresh token je 32 nasumična bajta i traje 30 dana. Svaki `/api/auth/refresh` ga zamijeni novim, pa novi opet važi 30 dana. Ko je aktivan, ne odjavljuje se.
+
+Klijent ga dobija u kolačiću s `HttpOnly`, `Secure`, `SameSite=Strict` i `Path=/api/auth`. Druga opcija je bila tijelo odgovora, ali tada ga frontend mora čuvati u `localStorage`, odakle ga XSS napad može pročitati, ili samo u memoriji, pa se odjavljuje na svaki refresh stranice. Cijena kolačića je da frontend i backend moraju biti na istom sajtu: Safari ne šalje kolačić s `vercel.app` na `onrender.com`. Zato live demo treba vlastiti domen s poddomenama (Faza 12). Lokalno to rješava Vite proxy.
+
+CSRF token ne koristim ni za `/refresh`. `SameSite=Strict` znači da browser kolačić ne šalje uz zahtjev pokrenut s tuđeg sajta. I da ga pošalje, lažni zahtjev na `/refresh` napadaču ništa ne daje: novi access token dolazi u odgovoru, a odgovor sa tuđeg sajta ne može pročitati zbog CORS-a. Na `/logout` može nekoga odjaviti, što je smetnja, ali ne krađa.
+
+U bazi je samo SHA-256 tokena. Ne BCrypt, jer token od 32 nasumična bajta se ne može pogoditi pa mu sporost ne treba, a hash mora biti uvijek isti da bih token našao u bazi.
+
+Tokeni iz jedne prijave čine porodicu (`family_id`). Kad stigne token koji je već zamijenjen, neko ga je kopirao, i ne znam da li ga šalje lopov ili vlasnik. Zato se poništi cijela porodica i oba se moraju ponovo prijaviti. Druge prijave istog korisnika (drugi uređaj) ostaju.
+
+Dvije stvari sam naučio na testovima. Prva: porodicu poništim pa bacim izuzetak, a izuzetak u `@Transactional` metodi vrati sve unazad, pa i poništavanje. Bez `noRollbackFor` test pokaže da ukradena porodica i dalje radi. Druga: bez `SELECT ... FOR UPDATE` osam istovremenih zahtjeva s istim tokenom svih osam uspije, i iz jednog tokena nastane osam važećih. Sa zaključavanjem uspije tačno jedan.
+
+Posljedica koju moram riješiti na frontendu: ako dva taba ili dva zahtjeva u istom trenutku pošalju isti refresh token, drugi izgleda kao krađa i korisnik se odjavi. Frontend zato mora raditi samo jedan refresh u isto vrijeme (Faza 7). Neki sistemi dozvole par sekundi u kojima stari token još važi. To nisam uradio, jer otvara prozor baš za ono što detekcija treba zaustaviti.
+
+Stari redovi se još ne brišu. Posao koji čisti istekle tokene dolazi s ostalim `@Scheduled` poslovima u Fazi 5.

@@ -37,13 +37,15 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
-				// Token ide u Authorization zaglavlje, ne u kolačić, pa CSRF napad nema šta iskoristiti.
-				// Ako refresh token završi u kolačiću, ovo se mora ponovo razmotriti za /api/auth/refresh.
+				// Access token ide u Authorization zaglavlje, koje browser ne šalje sam. Jedini kolačić je
+				// refresh token (SameSite=Strict, samo /api/auth), a lažni zahtjev na /refresh napadaču ništa
+				// ne daje jer odgovor ne može pročitati. Obrazloženje je u docs/ODLUKE.md.
 				.csrf(csrf -> csrf.disable())
 				.sessionManagement(sesija -> sesija.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(pravila -> pravila
 						.requestMatchers(JAVNE_PUTANJE).permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
+								"/api/auth/refresh", "/api/auth/logout").permitAll()
 						.anyRequest().authenticated())
 				// Čita "Authorization: Bearer ..." i provjerava potpis i rok tokena preko JwtDecoder beana
 				.oauth2ResourceServer(resourceServer -> resourceServer
