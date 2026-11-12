@@ -61,8 +61,16 @@ public class OrganizationMember {
 		this.joinedAt = joinedAt;
 	}
 
+	public User getUser() {
+		return user;
+	}
+
 	public OrganizationRole getRole() {
 		return role;
+	}
+
+	public Instant getJoinedAt() {
+		return joinedAt;
 	}
 
 }

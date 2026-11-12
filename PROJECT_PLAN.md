@@ -145,6 +145,7 @@ Invarijante:
 | GET/DELETE | /api/me, /api/me/export | profil, izvoz podataka, brisanje naloga |
 | POST | /api/organizations | nova organizacija (kreator postaje `ADMIN`) |
 | GET | /api/organizations/{slug} | javni profil organizacije |
+| GET | /api/organizations/{id}/members | članovi s ulogama (`ADMIN`) |
 | POST | /api/organizations/{id}/invites | pozivnica na email s ulogom (`ADMIN`) |
 | POST | /api/invites/{token}/accept | prihvati pozivnicu |
 | POST/GET/PUT/DELETE | /api/organizations/{id}/resources | CRUD resursa (`ADMIN`, `PROVIDER`) |

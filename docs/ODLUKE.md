@@ -101,3 +101,19 @@ Ko napravi organizaciju, postaje njen `ADMIN` u istoj transakciji. Organizacija 
 `GET /api/organizations/{slug}` je otvoren bez prijave, jer klijent treba vidjeti gdje rezerviše prije nego što napravi nalog. Vraća samo ID, naziv, slug i zonu, bez članova.
 
 Zona mora biti IANA naziv (`Europe/Sarajevo`). `ZoneId.of` bi prihvatio i `+01:00`, a fiksni pomak ne zna za ljetno vrijeme, pa bi termini od kraja marta do kraja oktobra bili sat pomjereni. Zato `@RegionTimeZone` provjerava listu `ZoneId.getAvailableZoneIds()`. Provjerio sam da ta lista ne sadrži `+01:00`, ali sadrži `Etc/GMT-1`, koji je i u julu `+01:00`. Takvu zonu validator za sada pušta. Ko je upiše, upisao ju je namjerno, ali to nije ista zaštita kao za `+01:00`.
+
+## Autorizacija po organizaciji: @PreAuthorize i bean koji pita bazu
+
+Filter chain zna samo da li je token ispravan. Da li neko smije vidjeti članove baš ove organizacije ovisi o ID-ju iz putanje i o redu u `organization_members`, pa to odlučuje `@PreAuthorize` na metodi kontrolera:
+
+`@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN')")`
+
+`OrganizationAccess` po primarnom ključu članstva (organizacija, korisnik) provjeri ima li korisnik jednu od traženih uloga. Druga opcija je bio `PermissionEvaluator` (`hasPermission(#id, 'Organization', 'ADMIN')`), jedan evaluator za sve tipove. Bean mi je jasniji: ime metode kaže šta se provjerava, a nema `if` po stringu s nazivom tipa.
+
+Anotacija stoji na kontroleru, uz rutu, a ne na servisu. Tako se kod svakog endpointa vidi ko ga smije zvati, a servis se testira bez security konteksta. Cijena je da servisna metoda pozvana iz drugog mjesta nije zaštićena sama po sebi.
+
+Bez `@EnableMethodSecurity` Spring `@PreAuthorize` tiho ignoriše. Probao sam: aplikacija se normalno pokrene, a admin druge organizacije dobije `200` i tuđe emailove. Zato svaki zaštićeni endpoint ima test kroz HTTP s korisnikom iz tuđe organizacije, a ne samo test beana.
+
+Ko nije član, dobije `403`, isto kao član bez uloge i kao neko ko pita za ID koji ne postoji. `404` za ne-člana bi sakrio da organizacija postoji, ali ID je UUID i ne može se pogoditi, a javni profil je ionako otvoren. `403` je ono što Spring vrati sam kad provjera odbije.
+
+Lista članova učitava korisnike istim upitom (`join fetch`). Izmjerio sam na testu s dva člana: bez toga idu još dva `SELECT`-a na `users`, po jedan za svakog člana. Test ovo ne hvata, jer je rezultat isti, samo sporiji. To je posao za Fazu 9 i traženje N+1 upita. Paginacije na ovoj listi još nema, dolazi s ostalim listama u Fazi 3.

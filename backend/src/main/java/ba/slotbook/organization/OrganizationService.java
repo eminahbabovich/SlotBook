@@ -2,6 +2,7 @@ package ba.slotbook.organization;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -50,6 +51,13 @@ public class OrganizationService {
 		return organizations.findBySlug(slug)
 				.map(OrganizationResponse::from)
 				.orElseThrow(() -> new OrganizationNotFoundException(slug));
+	}
+
+	@Transactional(readOnly = true)
+	public List<MemberResponse> listMembers(UUID organizationId) {
+		return members.findAllWithUser(organizationId).stream()
+				.map(MemberResponse::from)
+				.toList();
 	}
 
 }
