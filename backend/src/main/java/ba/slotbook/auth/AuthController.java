@@ -16,9 +16,16 @@ import jakarta.validation.Valid;
 public class AuthController {
 
 	private final UserService userService;
+	private final AuthService authService;
 
-	public AuthController(UserService userService) {
+	public AuthController(UserService userService, AuthService authService) {
 		this.userService = userService;
+		this.authService = authService;
+	}
+
+	@PostMapping("/login")
+	public TokenResponse login(@Valid @RequestBody LoginRequest request) {
+		return authService.login(request.email(), request.password());
 	}
 
 	@PostMapping("/register")

@@ -12,7 +12,7 @@ Projekat je na početku. Faza 1 (infrastruktura) je gotova, a nijedna korisničk
 
 U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 
-Faza 2 je u izradi. Za sada radi registracija (`POST /api/auth/register`), a prijava, organizacije i uloge dolaze.
+Faza 2 je u izradi. Za sada rade registracija (`POST /api/auth/register`), prijava s JWT access tokenom (`POST /api/auth/login`) i `GET /api/me`. Refresh tokeni, organizacije i uloge dolaze.
 
 | Faza | Šta | Status |
 |---|---|---|
@@ -44,7 +44,11 @@ Frontend će biti React s Viteom i još nije počet. Backend radi na Renderu, a 
 
 Treba ti Java 21 i Docker. Maven ne treba instalirati, projekat dolazi s `mvnw`.
 
-Prvo napravi `.env` i u njemu promijeni lozinku baze. Ako ti je port 5432 već zauzet (meni jeste, drži ga baza iz RoomSplita), promijeni i `POSTGRES_PORT`.
+Prvo napravi `.env` i u njemu promijeni lozinku baze. Ako ti je port 5432 već zauzet (meni jeste, drži ga baza iz RoomSplita), promijeni i `POSTGRES_PORT`. U `JWT_SECRET` ide nasumičan ključ kojim se potpisuju tokeni, najmanje 32 bajta. Bez njega aplikacija ne starta. U PowerShellu se pravi ovako:
+
+```powershell
+$b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
+```
 
 ```powershell
 copy .env.example .env
@@ -75,7 +79,7 @@ cd backend
 .\mvnw.cmd test
 ```
 
-Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada se baza spaja preko varijabli `DB_URL`, `DB_USER` i `DB_PASSWORD`, a port se uzima iz `PORT`.
+Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada se baza spaja preko varijabli `DB_URL`, `DB_USER` i `DB_PASSWORD`, a port se uzima iz `PORT`. `JWT_SECRET` treba i tamo, i mora biti drugi ključ od lokalnog.
 
 ## Struktura
 

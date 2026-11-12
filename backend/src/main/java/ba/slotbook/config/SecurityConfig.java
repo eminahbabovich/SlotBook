@@ -3,13 +3,19 @@ package ba.slotbook.config;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 public class SecurityConfig {
@@ -37,17 +43,26 @@ public class SecurityConfig {
 				.sessionManagement(sesija -> sesija.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(pravila -> pravila
 						.requestMatchers(JAVNE_PUTANJE).permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
 						.anyRequest().authenticated())
-				// Greške iz filtera nastaju prije kontrolera, pa ih ručno šaljemo u GlobalExceptionHandler,
-				// da 401 i 403 imaju isti Problem Details format kao sve ostale greške.
+				// Čita "Authorization: Bearer ..." i provjerava potpis i rok tokena preko JwtDecoder beana
+				.oauth2ResourceServer(resourceServer -> resourceServer
+						.jwt(Customizer.withDefaults())
+						.authenticationEntryPoint(this::nijePrijavljen))
 				.exceptionHandling(greske -> greske
-						.authenticationEntryPoint((zahtjev, odgovor, izuzetak) ->
-								exceptionResolver.resolveException(zahtjev, odgovor, null, izuzetak))
+						.authenticationEntryPoint(this::nijePrijavljen)
 						.accessDeniedHandler((zahtjev, odgovor, izuzetak) ->
 								exceptionResolver.resolveException(zahtjev, odgovor, null, izuzetak)));
 
 		return http.build();
+	}
+
+	// Greške iz filtera nastaju prije kontrolera, pa ih ručno šaljemo u GlobalExceptionHandler,
+	// da 401 ima isti Problem Details format kao sve ostale greške.
+	private void nijePrijavljen(HttpServletRequest zahtjev, HttpServletResponse odgovor,
+			AuthenticationException izuzetak) {
+		odgovor.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+		exceptionResolver.resolveException(zahtjev, odgovor, null, izuzetak);
 	}
 
 	@Bean

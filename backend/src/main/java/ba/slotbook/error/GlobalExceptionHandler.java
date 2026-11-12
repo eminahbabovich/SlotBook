@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -44,6 +45,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.");
 		problem.setTitle("Email je već registrovan");
+		return problem;
+	}
+
+	// Ista poruka za nepoznat email i pogrešnu lozinku, da se ne može saznati ko ima nalog
+	@ExceptionHandler(BadCredentialsException.class)
+	ProblemDetail pogresniPodaciZaPrijavu(BadCredentialsException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+				"Email ili lozinka nisu tačni. Provjeri ih i pokušaj ponovo.");
+		problem.setTitle("Prijava nije uspjela");
 		return problem;
 	}
 

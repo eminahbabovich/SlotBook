@@ -1,6 +1,7 @@
 package ba.slotbook.user;
 
 import java.time.Clock;
+import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +18,10 @@ public class UserService {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.clock = clock;
+	}
+
+	public UserResponse getById(UUID id) {
+		return users.findById(id).map(UserResponse::from).orElseThrow();
 	}
 
 	// Ne pitamo prvo "postoji li email": dva istovremena zahtjeva bi oba dobila "ne postoji".
