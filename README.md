@@ -15,7 +15,7 @@ U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Compos
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |
-| 2 | Auth i organizacije | nije počelo |
+| 2 | Auth i organizacije | u izradi |
 | 3 | Resursi i dostupnost, slobodni termini | nije počelo |
 | 4 | Rezervacije i konkurentnost | nije počelo |
 | 5 | Pozadinski poslovi i email obavijesti | nije počelo |
@@ -81,7 +81,7 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 ## Live demo i screenshotovi
 
-Backend radi na https://slotbook-dxvs.onrender.com. Za sada ima samo [`/api/status`](https://slotbook-dxvs.onrender.com/api/status), [`/actuator/health`](https://slotbook-dxvs.onrender.com/actuator/health) i [Swagger UI](https://slotbook-dxvs.onrender.com/swagger-ui/index.html). Korijenska adresa vraća 404, jer na njoj nema ničega.
+Backend radi na https://slotbook-dxvs.onrender.com. Za sada ima samo [`/api/status`](https://slotbook-dxvs.onrender.com/api/status), [`/actuator/health`](https://slotbook-dxvs.onrender.com/actuator/health) i [Swagger UI](https://slotbook-dxvs.onrender.com/swagger-ui/index.html). Sve ostale adrese traže prijavu i bez nje vraćaju 401, pa i one koje ne postoje.
 
 Pravog demoa još nema: demo računi stižu u Fazi 12, a screenshotovi kad bude frontenda. Free plan na Renderu uspavljuje servis poslije 15 minuta bez saobraćaja, pa prvi zahtjev poslije pauze traje oko minutu.
 

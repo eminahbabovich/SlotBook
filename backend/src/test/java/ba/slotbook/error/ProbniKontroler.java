@@ -1,5 +1,6 @@
 package ba.slotbook.error;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +26,11 @@ public class ProbniKontroler {
 	@GetMapping("/probno/greska")
 	void greska() {
 		throw new IllegalStateException("interna poruka koja ne smije izaci");
+	}
+
+	@GetMapping("/probno/zabranjeno")
+	void zabranjeno() {
+		throw new AccessDeniedException("nije član organizacije");
 	}
 
 }

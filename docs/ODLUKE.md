@@ -22,7 +22,13 @@ Servisi i kontroleri dobiju `Clock` kroz konstruktor. U produkciji je to `Clock.
 
 Svaka greška API-ja vraća `application/problem+json` (RFC 9457), pa frontend ima jedan način čitanja grešaka. Poruke su na bosanskom, standardne (404, 405, pokvaren JSON) se prevode kroz `messages.properties`, a validacija vraća popis polja. Neočekivani izuzeci vraćaju opću poruku, a stvarni uzrok ide samo u log, jer poruka izuzetka može sadržavati SQL ili putanje.
 
-Kad uvedem Spring Security, `Exception.class` handler treba paziti da ne proguta `AccessDeniedException` i `AuthenticationException` kao `500`.
+Spring Security baca `AuthenticationException` i `AccessDeniedException`. Bez posebnih handlera bi ih `Exception.class` handler vratio kao `500`, pa za njih postoje odvojeni handleri koji vraćaju `401` i `403`. Greške koje nastanu u filterima, prije kontrolera (zahtjev bez prijave), `SecurityConfig` prosljeđuje u isti `GlobalExceptionHandler` preko `HandlerExceptionResolver`-a, da format bude jedan.
+
+## Bez sesija i bez CSRF zaštite
+
+API je stateless: server ne pamti sesiju, svaki zahtjev nosi token u `Authorization` zaglavlju. CSRF napad radi tako što browser sam pošalje kolačić uz zahtjev sa tuđe stranice, a zaglavlje ne šalje sam, pa je CSRF zaštita isključena. Ovo vrijedi dok nijedan token nije u kolačiću. Ako refresh token završi u httpOnly kolačiću, `/api/auth/refresh` opet treba zaštitu.
+
+Bez prijave se dobija `401` i za adresu koja ne postoji, a ne `404`. Tako neprijavljen posjetilac ne može isprobavanjem saznati koje adrese API ima.
 
 ## springdoc 3.x, ne 2.x
 

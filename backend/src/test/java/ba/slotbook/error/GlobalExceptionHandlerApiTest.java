@@ -14,10 +14,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import ba.slotbook.TestcontainersConfiguration;
 
+// Ovdje provjeravamo format grešaka, ne prijavu, pa je korisnik prijavljen
+@WithMockUser
 @Import({ TestcontainersConfiguration.class, ProbniKontroler.class })
 @SpringBootTest
 @AutoConfigureMockMvc

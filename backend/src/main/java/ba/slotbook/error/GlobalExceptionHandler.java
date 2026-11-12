@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -33,6 +35,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		problem.setProperty("greske", greske);
 
 		return handleExceptionInternal(ex, problem, headers, status, request);
+	}
+
+	@ExceptionHandler(AuthenticationException.class)
+	ProblemDetail nijePrijavljen(AuthenticationException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+				"Za ovo se treba prijaviti. Prijavi se i pokušaj ponovo.");
+		problem.setTitle("Prijava je potrebna");
+		return problem;
+	}
+
+	// Bez ovoga bi zabrana iz @PreAuthorize završila u handleru ispod kao 500
+	@ExceptionHandler(AccessDeniedException.class)
+	ProblemDetail nemaPristup(AccessDeniedException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+				"Nemaš pristup ovome. Ako misliš da bi trebalo, javi se administratoru organizacije.");
+		problem.setTitle("Pristup nije dozvoljen");
+		return problem;
 	}
 
 	// Poruku izuzetka namjerno ne vraćamo klijentu: može sadržavati SQL, putanje ili imena klasa.
