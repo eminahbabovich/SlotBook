@@ -3,8 +3,11 @@ package ba.slotbook.config;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
@@ -34,6 +37,7 @@ public class SecurityConfig {
 				.sessionManagement(sesija -> sesija.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(pravila -> pravila
 						.requestMatchers(JAVNE_PUTANJE).permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
 						.anyRequest().authenticated())
 				// Greške iz filtera nastaju prije kontrolera, pa ih ručno šaljemo u GlobalExceptionHandler,
 				// da 401 i 403 imaju isti Problem Details format kao sve ostale greške.
@@ -44,6 +48,11 @@ public class SecurityConfig {
 								exceptionResolver.resolveException(zahtjev, odgovor, null, izuzetak)));
 
 		return http.build();
+	}
+
+	@Bean
+	PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
 	}
 
 }

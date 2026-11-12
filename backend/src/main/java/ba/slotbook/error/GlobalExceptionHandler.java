@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import ba.slotbook.user.EmailAlreadyUsedException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -35,6 +37,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		problem.setProperty("greske", greske);
 
 		return handleExceptionInternal(ex, problem, headers, status, request);
+	}
+
+	@ExceptionHandler(EmailAlreadyUsedException.class)
+	ProblemDetail emailZauzet(EmailAlreadyUsedException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.");
+		problem.setTitle("Email je već registrovan");
+		return problem;
 	}
 
 	@ExceptionHandler(AuthenticationException.class)

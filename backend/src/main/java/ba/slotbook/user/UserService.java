@@ -1,0 +1,33 @@
+package ba.slotbook.user;
+
+import java.time.Clock;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserService {
+
+	private final UserRepository users;
+	private final PasswordEncoder passwordEncoder;
+	private final Clock clock;
+
+	public UserService(UserRepository users, PasswordEncoder passwordEncoder, Clock clock) {
+		this.users = users;
+		this.passwordEncoder = passwordEncoder;
+		this.clock = clock;
+	}
+
+	// Ne pitamo prvo "postoji li email": dva istovremena zahtjeva bi oba dobila "ne postoji".
+	// Odluku donosi UNIQUE u bazi, a mi samo prevodimo njenu grešku.
+	public UserResponse register(String email, String password, String displayName) {
+		User user = new User(email, passwordEncoder.encode(password), displayName, clock.instant());
+		try {
+			return UserResponse.from(users.saveAndFlush(user));
+		} catch (DataIntegrityViolationException e) {
+			throw new EmailAlreadyUsedException();
+		}
+	}
+
+}

@@ -12,6 +12,8 @@ Projekat je na početku. Faza 1 (infrastruktura) je gotova, a nijedna korisničk
 
 U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 
+Faza 2 je u izradi. Za sada radi registracija (`POST /api/auth/register`), a prijava, organizacije i uloge dolaze.
+
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |
