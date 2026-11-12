@@ -38,6 +38,8 @@ Većina tutorijala navodi springdoc 2.8, ali to je linija za Spring Boot 3. Za B
 
 Repo je privatan, a GitHub secret scanning se za privatne repoe na besplatnom nalogu ne nudi (na stranici postavki te sekcije jednostavno nema). Zato u CI-ju pokrećem gitleaks nad cijelom git historijom, direktno iz zvanične Docker slike zakucane na verziju, a ne preko tuđe akcije. Ograničenje: Dependabot neće sam javiti novu verziju gitleaksa, pa je podižem ručno.
 
+Gitleaks je prijavio lažni `JWT_SECRET` u `.env.example` (pravilo `generic-api-key`, commit `b1e9f1d`), i CI je od tog commita bio crven, a da to nisam primijetio. Promjena vrijednosti ne bi pomogla, jer stari commit ostaje u historiji. Zato je u `.gitleaksignore` samo taj jedan nalaz (commit, fajl, pravilo, linija), a ne cijeli `.env.example`: prava tajna upisana u taj fajl i dalje obara CI.
+
 ## Neon: direktna adresa baze, ne pooler
 
 Neon daje dvije adrese za istu bazu. Ona s `-pooler` u hostu ide kroz PgBouncer. Neon u dokumentaciji piše da taj pul ne podržava sesijske advisory lockove, a Flyway pri startu zaključava šemu advisory lockom. Zato aplikacija koristi direktnu adresu. Nisam probao pooler da vidim šta se desi, samo sam se oslonio na dokumentaciju. Pul konekcija mi ionako ne treba od Neon-a, jer ga drži Hikari unutar aplikacije.

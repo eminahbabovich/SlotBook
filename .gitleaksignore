@@ -1,0 +1,3 @@
+# JWT_SECRET u .env.example je lažna vrijednost za primjer, ali dovoljno nasumična da je gitleaks prijavi.
+# Ignoriše se samo ovaj nalaz (commit:fajl:pravilo:linija), ne cijeli fajl, da prava tajna u njemu i dalje padne.
+b1e9f1d520c783a93a0fda282a9e83e8676e387a:.env.example:generic-api-key:8
