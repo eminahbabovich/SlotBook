@@ -19,6 +19,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import ba.slotbook.auth.InvalidRefreshTokenException;
+import ba.slotbook.organization.OrganizationNotFoundException;
+import ba.slotbook.organization.SlugAlreadyUsedException;
 import ba.slotbook.user.EmailAlreadyUsedException;
 
 @RestControllerAdvice
@@ -46,6 +48,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.");
 		problem.setTitle("Email je već registrovan");
+		return problem;
+	}
+
+	@ExceptionHandler(SlugAlreadyUsedException.class)
+	ProblemDetail slugZauzet(SlugAlreadyUsedException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ovu adresu već koristi druga organizacija. Izaberi drugu.");
+		problem.setTitle("Adresa je zauzeta");
+		return problem;
+	}
+
+	@ExceptionHandler(OrganizationNotFoundException.class)
+	ProblemDetail organizacijaNePostoji(OrganizationNotFoundException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"Organizacija s ovom adresom ne postoji. Provjeri da li je adresa ispravno napisana.");
+		problem.setTitle("Organizacija ne postoji");
 		return problem;
 	}
 

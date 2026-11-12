@@ -12,7 +12,7 @@ Projekat je na početku. Faza 1 (infrastruktura) je gotova, a nijedna korisničk
 
 U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 
-Faza 2 je u izradi. Za sada rade registracija (`POST /api/auth/register`), prijava s JWT access tokenom (`POST /api/auth/login`), `GET /api/me` i refresh tokeni u httpOnly kolačiću, s rotacijom i detekcijom ponovne upotrebe (`/api/auth/refresh`, `/api/auth/logout`). Organizacije i uloge dolaze.
+Faza 2 je u izradi. Za sada rade registracija (`POST /api/auth/register`), prijava s JWT access tokenom (`POST /api/auth/login`), `GET /api/me` i refresh tokeni u httpOnly kolačiću, s rotacijom i detekcijom ponovne upotrebe (`/api/auth/refresh`, `/api/auth/logout`). Prijavljen korisnik može napraviti organizaciju (`POST /api/organizations`) i tada postaje njen `ADMIN`, a javni profil organizacije se vidi bez prijave (`GET /api/organizations/{slug}`). Provjera uloga na endpointima, pozivnice i test izolacije organizacija dolaze.
 
 | Faza | Šta | Status |
 |---|---|---|
@@ -32,7 +32,7 @@ Faza 2 je u izradi. Za sada rade registracija (`POST /api/auth/register`), prija
 
 Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), a odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md).
 
-Trenutno ima 16 testova i svi prolaze. JaCoCo mjeri 93,1 % linija glavnog koda (27 od 29), ali to je malo koda: nepokrivene su dvije linije `main` metode.
+Trenutno ima 66 testova i svi prolaze. JaCoCo mjeri 97,9 % linija glavnog koda (283 od 289). Nepokrivene su dvije linije `main` metode, jedna u `SecurityConfig` i tri u `RefreshTokenService`.
 
 ## Tehnologije
 

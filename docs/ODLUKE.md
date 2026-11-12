@@ -89,3 +89,15 @@ Dvije stvari sam naučio na testovima. Prva: porodicu poništim pa bacim izuzeta
 Posljedica koju moram riješiti na frontendu: ako dva taba ili dva zahtjeva u istom trenutku pošalju isti refresh token, drugi izgleda kao krađa i korisnik se odjavi. Frontend zato mora raditi samo jedan refresh u isto vrijeme (Faza 7). Neki sistemi dozvole par sekundi u kojima stari token još važi. To nisam uradio, jer otvara prozor baš za ono što detekcija treba zaustaviti.
 
 Stari redovi se još ne brišu. Posao koji čisti istekle tokene dolazi s ostalim `@Scheduled` poslovima u Fazi 5.
+
+## Organizacije i članstvo
+
+Članstvo (`organization_members`) nema svoj ID. Ključ je par (`organization_id`, `user_id`), pa baza sama ne pušta istog korisnika dvaput u istu organizaciju, a isti korisnik i dalje može biti `PROVIDER` u teretani i `CLIENT` u čitaonici. Oba slučaja imaju test. U Javi je to `@EmbeddedId` s recordom, jer Hibernate ključeve poredi preko `equals` i `hashCode`, a record ih daje sam.
+
+Uloga je `VARCHAR` sa `CHECK (role IN ('ADMIN', 'PROVIDER', 'CLIENT'))`, a u entitetu `EnumType.STRING`. Sa `ORDINAL` bi u bazi pisalo 0, 1, 2, i nova uloga ubačena ispred postojećih bi tiho promijenila značenje starih redova.
+
+Ko napravi organizaciju, postaje njen `ADMIN` u istoj transakciji. Organizacija bez admina ne bi imala ko da je uređuje. Zauzet slug radi isto kao zauzet email: odmah se upisuje, a `UNIQUE` odlučuje i vraća se `409`. Format sluga (mala slova bez kvačica, brojevi, crtice između riječi) provjerava i `@Pattern` u zahtjevu i `CHECK` u bazi. Slug se ne može mijenjati (`updatable = false`), jer je dio javne adrese.
+
+`GET /api/organizations/{slug}` je otvoren bez prijave, jer klijent treba vidjeti gdje rezerviše prije nego što napravi nalog. Vraća samo ID, naziv, slug i zonu, bez članova.
+
+Zona mora biti IANA naziv (`Europe/Sarajevo`). `ZoneId.of` bi prihvatio i `+01:00`, a fiksni pomak ne zna za ljetno vrijeme, pa bi termini od kraja marta do kraja oktobra bili sat pomjereni. Zato `@RegionTimeZone` provjerava listu `ZoneId.getAvailableZoneIds()`. Provjerio sam da ta lista ne sadrži `+01:00`, ali sadrži `Etc/GMT-1`, koji je i u julu `+01:00`. Takvu zonu validator za sada pušta. Ko je upiše, upisao ju je namjerno, ali to nije ista zaštita kao za `+01:00`.

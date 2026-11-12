@@ -46,6 +46,8 @@ public class SecurityConfig {
 						.requestMatchers(JAVNE_PUTANJE).permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
 								"/api/auth/refresh", "/api/auth/logout").permitAll()
+						// Javni profil organizacije: klijent treba vidjeti gdje rezerviše prije nego što se prijavi
+						.requestMatchers(HttpMethod.GET, "/api/organizations/*").permitAll()
 						.anyRequest().authenticated())
 				// Čita "Authorization: Bearer ..." i provjerava potpis i rok tokena preko JwtDecoder beana
 				.oauth2ResourceServer(resourceServer -> resourceServer
