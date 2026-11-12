@@ -8,16 +8,16 @@ Ovo je moj drugi projekat nakon [RoomSplita](https://github.com/eminahbabovich/r
 
 ## Status
 
-Projekat je na početku. Faza 1 (infrastruktura) je gotova, a nijedna korisnička funkcionalnost još ne postoji.
+Faze 1 (infrastruktura) i 2 (auth i organizacije) su gotove. Rezervacije termina još nema, one su u fazama 3 i 4.
 
 U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 
-Faza 2 je u izradi. Za sada rade registracija (`POST /api/auth/register`), prijava s JWT access tokenom (`POST /api/auth/login`), `GET /api/me` i refresh tokeni u httpOnly kolačiću, s rotacijom i detekcijom ponovne upotrebe (`/api/auth/refresh`, `/api/auth/logout`). Prijavljen korisnik može napraviti organizaciju (`POST /api/organizations`) i tada postaje njen `ADMIN`, a javni profil organizacije se vidi bez prijave (`GET /api/organizations/{slug}`). Admin vidi članove svoje organizacije s ulogama (`GET /api/organizations/{id}/members`), a klijent iste organizacije i admin neke druge dobiju `403`. Uloge se provjeravaju iz baze kod svakog zahtjeva preko `@PreAuthorize`. Admin može pozvati osobu s ulogom (`POST /api/organizations/{id}/invites`), a ona postaje član kad prihvati pozivnicu prijavljena s istim emailom (`POST /api/invites/accept`). Dok ne dođe slanje emaila u Fazi 5, token pozivnice adminu stiže u odgovoru. Test koji prolazi kroz sve endpointe s tuđim tokenom dolazi.
+U Fazi 2 su urađeni registracija (`POST /api/auth/register`), prijava s JWT access tokenom (`POST /api/auth/login`), `GET /api/me` i refresh tokeni u httpOnly kolačiću, s rotacijom i detekcijom ponovne upotrebe (`/api/auth/refresh`, `/api/auth/logout`). Prijavljen korisnik može napraviti organizaciju (`POST /api/organizations`) i tada postaje njen `ADMIN`, a javni profil organizacije se vidi bez prijave (`GET /api/organizations/{slug}`). Admin vidi članove svoje organizacije s ulogama (`GET /api/organizations/{id}/members`), a klijent iste organizacije i admin neke druge dobiju `403`. Uloge se provjeravaju iz baze kod svakog zahtjeva preko `@PreAuthorize`. Admin može pozvati osobu s ulogom (`POST /api/organizations/{id}/invites`), a ona postaje član kad prihvati pozivnicu prijavljena s istim emailom (`POST /api/invites/accept`). Dok ne dođe slanje emaila u Fazi 5, token pozivnice adminu stiže u odgovoru. Izolaciju organizacija dokazuje test u kojem admin jedne organizacije na svakom endpointu druge dobije `403` i ništa se ne promijeni. Isti test padne ako se pojavi novi endpoint nad organizacijom koji nije u njemu. Nisam provjerio da li Render već vrti ovu verziju.
 
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |
-| 2 | Auth i organizacije | u izradi |
+| 2 | Auth i organizacije | gotovo |
 | 3 | Resursi i dostupnost, slobodni termini | nije počelo |
 | 4 | Rezervacije i konkurentnost | nije počelo |
 | 5 | Pozadinski poslovi i email obavijesti | nije počelo |
@@ -32,7 +32,7 @@ Faza 2 je u izradi. Za sada rade registracija (`POST /api/auth/register`), prija
 
 Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), a odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md).
 
-Trenutno ima 95 testova i svi prolaze. JaCoCo mjeri 98,4 % linija glavnog koda (378 od 384). Nepokrivene su dvije linije `main` metode, dvije u `RandomToken` (grana za slučaj da Java nema SHA-256), jedna u `SecurityConfig` i jedna u `RefreshTokenService`.
+Trenutno ima 98 testova i svi prolaze. JaCoCo mjeri 98,4 % linija glavnog koda (378 od 384). Nepokrivene su dvije linije `main` metode, dvije u `RandomToken` (grana za slučaj da Java nema SHA-256), jedna u `SecurityConfig` i jedna u `RefreshTokenService`.
 
 ## Tehnologije
 

@@ -137,3 +137,11 @@ Pozivnica se označava iskorištenom uslovnim `UPDATE ... SET accepted_at = ... 
 - Verifikacija emaila je tek u Fazi 5. Do tada neko može registrovati tuđi email i, ako dođe do tokena, prihvatiti pozivnicu poslanu na taj email.
 - Ako dva admina u istom trenutku pozovu isti email, oba obrišu staru (koje nema) i oba upisuju. Jedan dobije `500` od indeksa. Pravilo u bazi ostaje tačno, ali odgovor nije lijep. Nisam to testirao.
 - Pozivnica se ne može opozvati, a stari redovi se ne brišu. Opoziv nije u planu Faze 2, a čišćenje dolazi s `@Scheduled` poslovima u Fazi 5.
+
+## Test izolacije organizacija i čuvar ruta
+
+Kriterij Faze 2 kaže da korisnik iz organizacije A ne može dotaknuti podatke organizacije B. `OrganizationIsolationApiTest` to provjerava s adminom druge organizacije, a ne s običnim članom, jer samo on otkriva grešku tipa "ima ulogu ADMIN bilo gdje". Na svakom endpointu dobije `403`, a broj članova i pozivnica u tuđoj organizaciji ostane isti. Isti zahtjevi s tokenom pravog admina moraju proći. Bez toga bi zahtjev s greškom u putanji ili tijelu pao iz pogrešnog razloga i test bi bio zelen. Tijela moraju biti ispravna jer se `@Valid` izvrši prije `@PreAuthorize`, pa bi neispravno tijelo dalo `400` i sakrilo da provjera fali.
+
+Ručna lista endpointa zastari čim se doda novi. Zato test preko `RequestMappingHandlerMapping` pročita sve rute iz aplikacije i padne ako postoji ruta pod `/api/organizations/{...}/` koje nema u listi. Probao sam s privremenim `GET /api/organizations/{id}/stats`: test pada i u poruci imenuje tu rutu. Kad sam pozivnicama zamijenio provjeru s `isAuthenticated()`, prvi test je pao s `expected: 403 but was: 201`.
+
+Čuvar vidi samo putanje gdje je ID organizacije u adresi. Resursi (`/api/resources/{id}`) i rezervacije (`/api/bookings/{id}`) iz faza 3 i 4 pripadaju organizaciji, ali ID organizacije nije u putanji, pa ih čuvar za sada ne bi primijetio. Filter se proširuje kad ti endpointi nastanu, a test kroz sve endpointe je u Fazi 8.
