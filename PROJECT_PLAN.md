@@ -147,7 +147,7 @@ Invarijante:
 | GET | /api/organizations/{slug} | javni profil organizacije |
 | GET | /api/organizations/{id}/members | članovi s ulogama (`ADMIN`) |
 | POST | /api/organizations/{id}/invites | pozivnica na email s ulogom (`ADMIN`) |
-| POST | /api/invites/{token}/accept | prihvati pozivnicu |
+| POST | /api/invites/accept | prihvati pozivnicu (token u tijelu, ne u putanji, da ne ostaje u logovima) |
 | POST/GET/PUT/DELETE | /api/organizations/{id}/resources | CRUD resursa (`ADMIN`, `PROVIDER`) |
 | PUT | /api/resources/{id}/availability | sedmično radno vrijeme |
 | POST | /api/resources/{id}/time-off | izuzetak (godišnji, praznik) |

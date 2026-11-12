@@ -17,4 +17,6 @@ interface OrganizationMemberRepository extends JpaRepository<OrganizationMember,
 			order by m.joinedAt""")
 	List<OrganizationMember> findAllWithUser(UUID organizationId);
 
+	boolean existsByIdOrganizationIdAndUserEmail(UUID organizationId, String email);
+
 }

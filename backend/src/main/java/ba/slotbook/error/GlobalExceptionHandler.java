@@ -19,6 +19,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import ba.slotbook.auth.InvalidRefreshTokenException;
+import ba.slotbook.organization.AlreadyMemberException;
+import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
 import ba.slotbook.user.EmailAlreadyUsedException;
@@ -56,6 +58,30 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Ovu adresu već koristi druga organizacija. Izaberi drugu.");
 		problem.setTitle("Adresa je zauzeta");
+		return problem;
+	}
+
+	@ExceptionHandler(AlreadyMemberException.class)
+	ProblemDetail vecClan(AlreadyMemberException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Osoba s ovim emailom je već član organizacije. Ulogu joj možeš promijeniti među članovima.");
+		problem.setTitle("Već je član");
+		return problem;
+	}
+
+	@ExceptionHandler(InviteNotUsableException.class)
+	ProblemDetail pozivnicaNeVazi(InviteNotUsableException ex) {
+		ProblemDetail problem = switch (ex.getReason()) {
+			case NOT_FOUND -> ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+					"Pozivnica s ovim linkom ne postoji. Možda je admin u međuvremenu poslao novu, provjeri zadnji link.");
+			case OTHER_EMAIL -> ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+					"Pozivnica je poslana na drugi email. Prijavi se nalogom s tim emailom.");
+			case ALREADY_USED -> ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+					"Ova pozivnica je već iskorištena.");
+			case EXPIRED -> ProblemDetail.forStatusAndDetail(HttpStatus.GONE,
+					"Pozivnica je istekla. Zamoli admina organizacije da ti pošalje novu.");
+		};
+		problem.setTitle("Pozivnica ne važi");
 		return problem;
 	}
 

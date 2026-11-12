@@ -1,14 +1,8 @@
 package ba.slotbook.auth;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -25,7 +19,6 @@ public class RefreshTokenService {
 
 	private final RefreshTokenRepository tokens;
 	private final Clock clock;
-	private final SecureRandom random = new SecureRandom();
 
 	public RefreshTokenService(RefreshTokenRepository tokens, Clock clock) {
 		this.tokens = tokens;
@@ -51,7 +44,7 @@ public class RefreshTokenService {
 			throw new InvalidRefreshTokenException();
 		}
 		Instant sada = clock.instant();
-		RefreshToken stari = tokens.findByTokenHash(hash(refreshToken))
+		RefreshToken stari = tokens.findByTokenHash(RandomToken.sha256(refreshToken))
 				.orElseThrow(InvalidRefreshTokenException::new);
 
 		if (stari.isRevoked()) {
@@ -75,31 +68,17 @@ public class RefreshTokenService {
 		if (refreshToken == null) {
 			return;
 		}
-		tokens.findByTokenHash(hash(refreshToken))
+		tokens.findByTokenHash(RandomToken.sha256(refreshToken))
 				.ifPresent(token -> tokens.revokeFamily(token.getFamilyId(), clock.instant()));
 	}
 
 	private Issued issue(UUID userId, UUID familyId) {
-		byte[] bajtovi = new byte[32];
-		random.nextBytes(bajtovi);
-		String refreshToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bajtovi);
+		String refreshToken = RandomToken.generate();
 
 		Instant sada = clock.instant();
 		RefreshToken token = tokens.save(
-				new RefreshToken(userId, familyId, hash(refreshToken), sada, sada.plus(TRAJE)));
+				new RefreshToken(userId, familyId, RandomToken.sha256(refreshToken), sada, sada.plus(TRAJE)));
 		return new Issued(token.getId(), refreshToken);
-	}
-
-	// SHA-256, ne BCrypt: token je 32 nasumična bajta, pa ga sporost ne treba štititi od pogađanja,
-	// a brz i uvijek isti hash nam treba da bismo token našli u bazi
-	static String hash(String refreshToken) {
-		try {
-			byte[] digest = MessageDigest.getInstance("SHA-256")
-					.digest(refreshToken.getBytes(StandardCharsets.UTF_8));
-			return HexFormat.of().formatHex(digest);
-		} catch (NoSuchAlgorithmException e) {
-			throw new IllegalStateException("SHA-256 mora postojati u svakoj Javi", e);
-		}
 	}
 
 }

@@ -126,7 +126,7 @@ class RefreshApiTest {
 	void istekaoRefreshTokenSeOdbija() throws Exception {
 		String token = refreshIz(prijava());
 		jdbc.update("update refresh_tokens set expires_at = now() - interval '1 minute' where token_hash = ?",
-				RefreshTokenService.hash(token));
+				RandomToken.sha256(token));
 
 		refresh(token).andExpect(status().isUnauthorized());
 	}
@@ -151,7 +151,7 @@ class RefreshApiTest {
 				"select count(*) from refresh_tokens where token_hash = ?", Integer.class, token);
 		Integer saHashom = jdbc.queryForObject(
 				"select count(*) from refresh_tokens where token_hash = ?", Integer.class,
-				RefreshTokenService.hash(token));
+				RandomToken.sha256(token));
 
 		assertThat(saTokenom).isZero();
 		assertThat(saHashom).isEqualTo(1);

@@ -117,3 +117,23 @@ Bez `@EnableMethodSecurity` Spring `@PreAuthorize` tiho ignoriše. Probao sam: a
 Ko nije član, dobije `403`, isto kao član bez uloge i kao neko ko pita za ID koji ne postoji. `404` za ne-člana bi sakrio da organizacija postoji, ali ID je UUID i ne može se pogoditi, a javni profil je ionako otvoren. `403` je ono što Spring vrati sam kad provjera odbije.
 
 Lista članova učitava korisnike istim upitom (`join fetch`). Izmjerio sam na testu s dva člana: bez toga idu još dva `SELECT`-a na `users`, po jedan za svakog člana. Test ovo ne hvata, jer je rezultat isti, samo sporiji. To je posao za Fazu 9 i traženje N+1 upita. Paginacije na ovoj listi još nema, dolazi s ostalim listama u Fazi 3.
+
+## Pozivnice u organizaciju
+
+Admin pozove email s ulogom, a osoba postaje član kad pozivnicu prihvati prijavljena, s istim emailom. Token je isti kao kod refresh tokena (32 nasumična bajta, u bazi samo SHA-256), pa sam generisanje i hash izvukao u `RandomToken`. Pozivnica važi 7 dana.
+
+Dok ne dođe slanje emaila (Faza 5), `POST /api/organizations/{id}/invites` vraća token adminu i on ga sam proslijedi. To je u redu jer token sam ništa ne otvara: prihvatiti ga može samo neko ko je prijavljen s emailom iz pozivnice. U Fazi 5 token prestaje da se vraća.
+
+Prihvatanje je `POST /api/invites/accept` s tokenom u tijelu. U skici je token bio u putanji, ali putanja ostaje u logovima servera i Render-a, a tijelo ne.
+
+Nova pozivnica za isti email zamjenjuje staru neprihvaćenu: novi token, nova uloga, novi rok, a stari link više ne radi. Bazu tu čuva parcijalni UNIQUE indeks, jedna otvorena pozivnica po emailu u organizaciji (`WHERE accepted_at IS NULL`), pa prihvaćene ostaju kao historija i ne smetaju. Staru briše JPQL `delete` s `@Modifying`, koji ide u bazu odmah. Prvo sam mislio da je svejedno, ali Hibernate pri flushu radi `INSERT` prije `DELETE`-a. Sa Spring Data `deleteBy...` drugi poziv padne s `duplicate key value violates unique constraint "organization_invites_jedna_otvorena"` i vrati `500`, to sam vidio u logu.
+
+Kad prihvatanje ne prođe, status kaže šta da korisnik uradi: `404` nepoznat token, `403` pozivnica je za drugi email, `409` već iskorištena, `410` istekla (traži novu). To je jedan izuzetak s enumom razloga i jedan `switch` u handleru.
+
+Pozivnica se označava iskorištenom uslovnim `UPDATE ... SET accepted_at = ... WHERE id = ? AND accepted_at IS NULL`, a ne provjerom u Javi. Test s 8 niti i istim tokenom daje tačno jedan uspjeh i sedam `409`. Mislio sam da bi bez uslova ostali dobili `500`, ali nisu: `UPDATE` i bez uslova zaključa red, pa ostali sačekaju i dobiju "već je član". Uslov zato ne čuva od duplog članstva (to čuva PK), nego od ponovne upotrebe: iskorištena pozivnica ostaje iskorištena i kad člana jednom budemo mogli ukloniti.
+
+Šta nije riješeno:
+
+- Verifikacija emaila je tek u Fazi 5. Do tada neko može registrovati tuđi email i, ako dođe do tokena, prihvatiti pozivnicu poslanu na taj email.
+- Ako dva admina u istom trenutku pozovu isti email, oba obrišu staru (koje nema) i oba upisuju. Jedan dobije `500` od indeksa. Pravilo u bazi ostaje tačno, ali odgovor nije lijep. Nisam to testirao.
+- Pozivnica se ne može opozvati, a stari redovi se ne brišu. Opoziv nije u planu Faze 2, a čišćenje dolazi s `@Scheduled` poslovima u Fazi 5.
