@@ -203,3 +203,17 @@ Prva takva ruta je `GET /api/resources/{resourceId}`, a iste će biti radno vrij
 Čuvar ruta u testu izolacije sada hvata i putanje pod `/api/resources/{...}`. Kad sam novu rutu izbacio iz liste testa, čuvar je pao. Test je morao i drugačije puniti putanje: varijable se sada popunjavaju po imenu (`id`, `resourceId`), a ne po redu, jer `/api/resources/{resourceId}` nema organizaciju na prvom mjestu.
 
 `ResourceAccessTest` prolazi sve kombinacije bez HTTP-a: admin, trener svog i tuđeg resursa, trener kojem je uloga promijenjena u klijenta, klijent s aktivnim i deaktiviranim resursom, admin druge organizacije i neprijavljen korisnik.
+
+## Radno vrijeme: lokalno vrijeme, bez preklapanja, i to čuva baza
+
+Radno vrijeme resursa su sedmični intervali (`availability_rules`): dan u sedmici, početak i kraj kao `TIME`, bez datuma i bez zone. Vrijeme je lokalno u zoni organizacije. Da sam ga čuvao u UTC-u, ponedjeljak 08:00 u Sarajevu bi zimi bio 07:00 UTC, a ljeti 06:00 UTC, pa bi se pravilo pomjerilo za sat na prelasku na ljetno vrijeme. U UTC se pretvara tek kad se računaju termini za konkretan datum, što dolazi u koraku 5. Odgovor zato uz pravila vraća i zonu organizacije.
+
+Dan je broj od 1 do 7 po ISO redoslijedu, isto kao `java.time.DayOfWeek` (1 je ponedjeljak). `EnumType.ORDINAL` bi ponedjeljak upisao kao 0, a nedjelju kao 6, i to ne bi odgovaralo `DayOfWeek.getValue()`.
+
+Jedan dan može imati više intervala, npr. 08-12 i 13-16 s pauzom za ručak, ali se ne smiju preklapati. To čuva `EXCLUDE USING gist` constraint, isti mehanizam koji Faza 4 koristi za rezervacije. Postgres nema raspon za `TIME`, pa migracija pravi svoj (`CREATE TYPE timerange AS RANGE (subtype = time)`), po primjeru iz Postgres dokumentacije o range tipovima. Kraj je isključen, pa se 08-12 i 12-16 ne preklapaju. Na Neon-u ovo nisam provjerio. Lokalno i u testovima radi na Postgresu 17, a Neon je isti Postgres 17, ali deploy će to pokazati prvi.
+
+Ista provjera postoji i u servisu, jer bi iz baze greška stigla kao `500` bez imena polja. Kad sam privremeno isključio provjeru u Javi, preklapanje je i dalje bilo odbijeno, ali kao `500`. Odgovor je sada `400` s poljem `rules[1]`. Rad preko ponoći (22:00-02:00) se ne može upisati kao jedan interval, nego kao dva, u dva dana. Isto tako nema intervala do ponoći: Java `LocalTime` ne zna za 24:00, pa je najkasniji kraj 23:59.
+
+`PUT` zamijeni cijelu sedmicu: briše stara pravila i upisuje nova. Brisanje ide JPQL `delete` upitom koji ide u bazu odmah, iz istog razloga kao kod pozivnica u Fazi 2 (Hibernate pri flushu radi INSERT prije DELETE). Dva istovremena `PUT`-a bi se ispreplitala, pa servis prvo zaključa red resursa (`SELECT ... FOR UPDATE`). Test s 8 niti, gdje svaka šalje drugi interval, sa zaključavanjem ostavi tačno 1 interval. Kad sam zaključavanje privremeno izbacio, ostalo je 8, mješavina svih zahtjeva.
+
+Radno vrijeme vide svi koji vide resurs, a mijenjaju ga admin i provider koji ga vodi, iste provjere kao za resurs. Vrijeme se u JSON-u vraća kao `"08:00:00"`, sa sekundama, a prima se i `"08:00"`.

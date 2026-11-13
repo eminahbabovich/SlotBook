@@ -67,7 +67,11 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/resources/{resourceId}/provider", """
 					{"providerId": "{almaId}"}
 					"""),
-			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}", null));
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}", null),
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/availability", null),
+			new Zahtjev(HttpMethod.PUT, "/api/resources/{resourceId}/availability", """
+					{"rules": [{"dayOfWeek": "MONDAY", "start": "08:00", "end": "20:00"}]}
+					"""));
 
 	@Autowired
 	MockMvc mockMvc;
@@ -170,6 +174,7 @@ class OrganizationIsolationApiTest {
 		long clanovaPrije = brojRedova("organization_members");
 		long pozivnicaPrije = brojRedova("organization_invites");
 		long resursaPrije = brojRedova("resources");
+		long pravilaPrije = brojPravila();
 
 		for (Zahtjev zahtjev : ZAHTJEVI) {
 			assertThat(posalji(zahtjev, bojan)).as(zahtjev.ruta()).isEqualTo(403);
@@ -182,6 +187,13 @@ class OrganizationIsolationApiTest {
 				stoCitaonice)).isEqualTo(120);
 		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class,
 				stoCitaonice)).isTrue();
+		assertThat(brojPravila()).isEqualTo(pravilaPrije);
+	}
+
+	// Tabela radnog vremena nema organization_id, pa se broji preko resursa
+	private long brojPravila() {
+		return jdbc.queryForObject("select count(*) from availability_rules where resource_id = ?", Long.class,
+				stoCitaonice);
 	}
 
 	// Bez ovoga bi zahtjev s greškom u putanji ili tijelu dao 403 ili 404 iz pogrešnog razloga

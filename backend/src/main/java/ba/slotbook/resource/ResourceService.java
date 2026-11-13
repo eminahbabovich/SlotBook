@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ba.slotbook.error.InvalidFieldException;
 import ba.slotbook.organization.OrganizationRole;
 import ba.slotbook.organization.OrganizationService;
 import ba.slotbook.paging.PageResponse;
@@ -70,7 +71,8 @@ public class ResourceService {
 				.map(uloga -> uloga == OrganizationRole.ADMIN || uloga == OrganizationRole.PROVIDER)
 				.orElse(false);
 		if (!mozeVoditi) {
-			throw new InvalidProviderException();
+			throw new InvalidFieldException("providerId",
+					"Resurs može voditi samo član organizacije s ulogom PROVIDER ili ADMIN.");
 		}
 		resource.changeProvider(users.getReferenceById(providerId));
 		return ResourceResponse.from(resource);

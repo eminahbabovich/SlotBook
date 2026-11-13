@@ -4,7 +4,7 @@ Opis onoga što postoji sada (Faza 3 u izradi). Rezervacije, obavijesti i fronte
 
 ## Paketi i slojevi
 
-Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice) i `status`.
+Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice) i `status`.
 
 Unutar paketa je uvijek isti red: kontroler prima zahtjev i provjerava pristup, servis drži pravila i transakciju, repozitorij priča s bazom. Kontroler vraća samo DTO (`record`), nikad entitet. Repozitorij organizacija je vidljiv samo u paketu `organization`, pa paket `resource` do organizacije dolazi preko `OrganizationService`.
 
@@ -47,6 +47,7 @@ erDiagram
     organizations ||--o{ organization_members : "ima članove"
     organizations ||--o{ organization_invites : "šalje"
     organization_members ||--o{ resources : "vodi (provider)"
+    resources ||--o{ availability_rules : "radno vrijeme"
 
     users {
         uuid id PK
@@ -96,10 +97,17 @@ erDiagram
         boolean active
         timestamptz created_at
     }
+    availability_rules {
+        uuid id PK
+        uuid resource_id FK
+        int day_of_week "1 ponedjeljak do 7 nedjelja"
+        time start_time "lokalno u zoni organizacije"
+        time end_time "EXCLUDE: bez preklapanja istog dana"
+    }
 ```
 
 Resurs ne pokazuje na `users` direktno, nego na par (organizacija, korisnik) u `organization_members`. Tako provider ne može biti neko izvan organizacije resursa, ni kad je Java kod pogrešan. Sva vremena su `TIMESTAMPTZ`, a ID-jevi UUID. Zašto je tako, piše u [ODLUKE.md](ODLUKE.md).
 
 ## Šta dolazi
 
-U ostatku Faze 3 dolaze `availability_rules` (sedmično radno vrijeme u zoni organizacije), `time_off` i računanje slobodnih termina, koji se ne spremaju u bazu. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom.
+U ostatku Faze 3 dolaze `time_off` (izuzeci kao `TIMESTAMPTZ`) i računanje slobodnih termina iz radnog vremena, koji se ne spremaju u bazu. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom.
