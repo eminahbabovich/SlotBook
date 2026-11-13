@@ -48,6 +48,7 @@ erDiagram
     organizations ||--o{ organization_invites : "šalje"
     organization_members ||--o{ resources : "vodi (provider)"
     resources ||--o{ availability_rules : "radno vrijeme"
+    resources ||--o{ time_off : "izuzeci"
 
     users {
         uuid id PK
@@ -104,10 +105,18 @@ erDiagram
         time start_time "lokalno u zoni organizacije"
         time end_time "EXCLUDE: bez preklapanja istog dana"
     }
+    time_off {
+        uuid id PK
+        uuid resource_id FK
+        timestamptz starts_at "trenutak, ne lokalno vrijeme"
+        timestamptz ends_at "CHECK: poslije početka"
+        varchar reason "samo za admina i providera"
+        timestamptz created_at
+    }
 ```
 
 Resurs ne pokazuje na `users` direktno, nego na par (organizacija, korisnik) u `organization_members`. Tako provider ne može biti neko izvan organizacije resursa, ni kad je Java kod pogrešan. Sva vremena su `TIMESTAMPTZ`, a ID-jevi UUID. Zašto je tako, piše u [ODLUKE.md](ODLUKE.md).
 
 ## Šta dolazi
 
-U ostatku Faze 3 dolaze `time_off` (izuzeci kao `TIMESTAMPTZ`) i računanje slobodnih termina iz radnog vremena, koji se ne spremaju u bazu. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom.
+U ostatku Faze 3 dolazi računanje slobodnih termina iz radnog vremena i izuzetaka. Termini se ne spremaju u bazu, nego se računaju za traženi period. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom.

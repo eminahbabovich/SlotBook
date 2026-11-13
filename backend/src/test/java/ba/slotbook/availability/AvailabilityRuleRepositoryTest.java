@@ -76,6 +76,14 @@ class AvailabilityRuleRepositoryTest {
 				.hasMessageContaining("availability_rules_pocetak_prije_kraja");
 	}
 
+	// Ista provjera za izuzetke: kraj mora biti poslije početka i kad se red upiše mimo Jave
+	@Test
+	void bazaOdbijaIzuzetakKojiZavrsavaPrijePocetka() {
+		assertThatThrownBy(() -> jdbc.update("insert into time_off values (gen_random_uuid(), ?, "
+				+ "'2035-12-27 00:00+01', '2035-12-24 00:00+01', 'Praznici', now())", sala))
+				.hasMessageContaining("time_off_pocetak_prije_kraja");
+	}
+
 	@Test
 	void bazaOdbijaDanVanSedmice() {
 		assertThatThrownBy(() -> pravilo(sala, 8, "08:00", "12:00"))

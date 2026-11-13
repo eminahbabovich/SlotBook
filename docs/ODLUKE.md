@@ -217,3 +217,13 @@ Ista provjera postoji i u servisu, jer bi iz baze greška stigla kao `500` bez i
 `PUT` zamijeni cijelu sedmicu: briše stara pravila i upisuje nova. Brisanje ide JPQL `delete` upitom koji ide u bazu odmah, iz istog razloga kao kod pozivnica u Fazi 2 (Hibernate pri flushu radi INSERT prije DELETE). Dva istovremena `PUT`-a bi se ispreplitala, pa servis prvo zaključa red resursa (`SELECT ... FOR UPDATE`). Test s 8 niti, gdje svaka šalje drugi interval, sa zaključavanjem ostavi tačno 1 interval. Kad sam zaključavanje privremeno izbacio, ostalo je 8, mješavina svih zahtjeva.
 
 Radno vrijeme vide svi koji vide resurs, a mijenjaju ga admin i provider koji ga vodi, iste provjere kao za resurs. Vrijeme se u JSON-u vraća kao `"08:00:00"`, sa sekundama, a prima se i `"08:00"`.
+
+## Izuzeci od radnog vremena: trenuci, ne lokalno vrijeme
+
+Izuzetak (`time_off`) je konkretan period, npr. godišnji od 1. do 15. jula 2035. Zato su početak i kraj `TIMESTAMPTZ` (u Javi `Instant`), a ne lokalno vrijeme kao kod sedmičnog radnog vremena. Pravilo "ponedjeljkom 08-16" važi svake sedmice i mora ostati 08 po lokalnom satu i zimi i ljeti, a izuzetak se desi jednom i ima tačan početak.
+
+API prima `OffsetDateTime`, pa vrijeme mora imati pomak (`2035-07-01T08:00:00+02:00`). Vrijeme bez pomaka se odbija sa `400`, jer se ne zna da li je to 08:00 u Sarajevu ili u UTC-u. Odgovor vraća UTC (`2035-07-01T06:00:00Z`), a u zonu organizacije prevodi frontend. Kraj mora biti poslije početka, i porede se trenuci, ne sat iz teksta: `10:15+02:00` je prije `10:00+01:00`. Kad sam privremeno poredio lokalni sat (`toLocalDateTime`), oba testa za to su pala. Isto pravilo čuva i `CHECK` u bazi.
+
+Izuzeci se smiju preklapati (godišnji i praznik u isto vrijeme), jer to ne kvari ništa: termin je zatvoren ako ga pokriva bilo koji izuzetak.
+
+Listu izuzetaka, kao i dodavanje i brisanje, vide samo admin i provider resursa, ne i klijent. Razlog može biti lična stvar, npr. bolovanje. Klijent će u koraku 5 samo vidjeti da u tom periodu nema slobodnih termina. Lista prikazuje izuzetke koji još traju ili tek dolaze (`ends_at` poslije sada, sat iz `Clock`-a), a prošli se ne prikazuju, ali ostaju u bazi. Brisanje traži par (izuzetak, resurs iz putanje), pa se izuzetak sale ne može obrisati kroz putanju saune, i kad korisnik uređuje oba.

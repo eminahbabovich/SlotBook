@@ -71,7 +71,12 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/availability", null),
 			new Zahtjev(HttpMethod.PUT, "/api/resources/{resourceId}/availability", """
 					{"rules": [{"dayOfWeek": "MONDAY", "start": "08:00", "end": "20:00"}]}
-					"""));
+					"""),
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/time-off", null),
+			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/time-off", """
+					{"startsAt": "2035-08-01T00:00:00+02:00", "endsAt": "2035-08-02T00:00:00+02:00"}
+					"""),
+			new Zahtjev(HttpMethod.DELETE, "/api/resources/{resourceId}/time-off/{timeOffId}", null));
 
 	@Autowired
 	MockMvc mockMvc;
@@ -93,6 +98,7 @@ class OrganizationIsolationApiTest {
 	private String bojan;
 	private UUID citaonica;
 	private UUID stoCitaonice;
+	private UUID odmorStola;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
 	@BeforeEach
@@ -102,6 +108,19 @@ class OrganizationIsolationApiTest {
 		citaonica = organizacija(alma, "citaonica-izolacija");
 		organizacija(bojan, "teretana-izolacija");
 		stoCitaonice = stoCitaonice();
+		odmorStola = odmorStola();
+	}
+
+	// Almin DELETE ga obriše, pa se pravi ponovo prije svakog testa
+	private UUID odmorStola() {
+		var postojeci = jdbc.queryForList("select id from time_off where resource_id = ?", UUID.class, stoCitaonice);
+		if (!postojeci.isEmpty()) {
+			return postojeci.getFirst();
+		}
+		UUID id = UUID.randomUUID();
+		jdbc.update("insert into time_off values (?, ?, '2035-06-01 00:00+02', '2035-06-02 00:00+02', 'Krečenje', now())",
+				id, stoCitaonice);
+		return id;
 	}
 
 	// Trajanje i aktivnost se vraćaju prije svakog testa, da se vidi da tuđi PUT i DELETE nisu ništa promijenili
@@ -154,7 +173,7 @@ class OrganizationIsolationApiTest {
 	private int posalji(Zahtjev zahtjev, String token) throws Exception {
 		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
 		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja())
-				.buildAndExpand(Map.of("id", citaonica, "resourceId", stoCitaonice)).toUri();
+				.buildAndExpand(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola)).toUri();
 		MockHttpServletRequestBuilder builder = request(zahtjev.metoda(), adresa)
 				.header("Authorization", "Bearer " + token);
 		if (zahtjev.tijelo() != null) {
@@ -175,6 +194,7 @@ class OrganizationIsolationApiTest {
 		long pozivnicaPrije = brojRedova("organization_invites");
 		long resursaPrije = brojRedova("resources");
 		long pravilaPrije = brojPravila();
+		long izuzetakaPrije = brojIzuzetaka();
 
 		for (Zahtjev zahtjev : ZAHTJEVI) {
 			assertThat(posalji(zahtjev, bojan)).as(zahtjev.ruta()).isEqualTo(403);
@@ -188,6 +208,11 @@ class OrganizationIsolationApiTest {
 		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class,
 				stoCitaonice)).isTrue();
 		assertThat(brojPravila()).isEqualTo(pravilaPrije);
+		assertThat(brojIzuzetaka()).isEqualTo(izuzetakaPrije);
+	}
+
+	private long brojIzuzetaka() {
+		return jdbc.queryForObject("select count(*) from time_off where resource_id = ?", Long.class, stoCitaonice);
 	}
 
 	// Tabela radnog vremena nema organization_id, pa se broji preko resursa

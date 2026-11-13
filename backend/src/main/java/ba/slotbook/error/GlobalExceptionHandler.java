@@ -19,6 +19,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import ba.slotbook.auth.InvalidRefreshTokenException;
+import ba.slotbook.availability.TimeOffNotFoundException;
 import ba.slotbook.organization.AlreadyMemberException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
@@ -109,6 +110,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 				"Neki podaci nisu ispravni. Ispravi označena polja i pokušaj ponovo.");
 		problem.setTitle("Neispravni podaci");
 		problem.setProperty("greske", List.of(new PoljeGreska(ex.getPolje(), ex.getPoruka())));
+		return problem;
+	}
+
+	@ExceptionHandler(TimeOffNotFoundException.class)
+	ProblemDetail izuzetakNePostoji(TimeOffNotFoundException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"Ovaj izuzetak ne postoji za ovaj resurs. Možda je već obrisan, osvježi listu.");
+		problem.setTitle("Izuzetak ne postoji");
 		return problem;
 	}
 

@@ -1,6 +1,7 @@
 package ba.slotbook.availability;
 
 import static org.hamcrest.Matchers.contains;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -194,6 +195,95 @@ class AvailabilityApiTest {
 				""").andExpect(status().isBadRequest());
 
 		procitaj(selma, sala).andExpect(jsonPath("$.rules[*].dayOfWeek", contains("THURSDAY")));
+	}
+
+	private ResultActions noviIzuzetak(String token, UUID resurs, String tijelo) throws Exception {
+		return mockMvc.perform(post("/api/resources/{resourceId}/time-off", resurs)
+				.header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(tijelo));
+	}
+
+	private ResultActions izuzeci(String token, UUID resurs) throws Exception {
+		return mockMvc.perform(get("/api/resources/{resourceId}/time-off", resurs)
+				.header("Authorization", "Bearer " + token));
+	}
+
+	// Godine 2025 i 2035 su namjerno daleko od danas, jer lista zavisi od stvarnog sata
+	@Test
+	void izuzetakSeCuvaKaoTrenutakAListaPokazujeSamoTrenutneIBuduce() throws Exception {
+		UUID sala = resurs(selma, "Sala za izuzetke");
+
+		noviIzuzetak(selma, sala, """
+				{"startsAt": "2035-07-01T08:00:00+02:00", "endsAt": "2035-07-15T08:00:00+02:00",
+				 "reason": "  Godišnji odmor trenera "}
+				""")
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.startsAt").value("2035-07-01T06:00:00Z"))
+				.andExpect(jsonPath("$.reason").value("Godišnji odmor trenera"));
+		noviIzuzetak(selma, sala, """
+				{"startsAt": "2035-01-01T00:00:00+01:00", "endsAt": "2035-01-02T00:00:00+01:00", "reason": "Nova godina"}
+				""").andExpect(status().isCreated());
+		noviIzuzetak(selma, sala, """
+				{"startsAt": "2025-03-01T00:00:00+01:00", "endsAt": "2025-03-02T00:00:00+01:00", "reason": "Dan nezavisnosti"}
+				""").andExpect(status().isCreated());
+
+		izuzeci(selma, sala)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[*].reason", contains("Nova godina", "Godišnji odmor trenera")))
+				.andExpect(jsonPath("$.totalElements").value(2));
+	}
+
+	// Razlog može biti lična stvar (bolovanje), pa ga klijent ne vidi ni ne mijenja
+	@Test
+	void klijentNeVidiIzuzetkeITrenerUpravljaSamoSvojim() throws Exception {
+		UUID harisov = resurs(haris, "Trening s Harisom, izuzeci");
+		UUID selmin = resurs(selma, "Sauna, izuzeci");
+		String tijelo = """
+				{"startsAt": "2035-02-01T00:00:00+01:00", "endsAt": "2035-02-08T00:00:00+01:00", "reason": "Bolovanje"}
+				""";
+
+		noviIzuzetak(haris, harisov, tijelo).andExpect(status().isCreated());
+		noviIzuzetak(haris, selmin, tijelo).andExpect(status().isForbidden());
+		izuzeci(nedim, harisov).andExpect(status().isForbidden());
+		noviIzuzetak(nedim, harisov, tijelo).andExpect(status().isForbidden());
+	}
+
+	@Test
+	void vrijemeBezPomakaIKrajPrijePocetkaVracaju400() throws Exception {
+		UUID sala = resurs(selma, "Sala, neispravni izuzeci");
+
+		noviIzuzetak(selma, sala, """
+				{"startsAt": "2035-12-24T00:00:00", "endsAt": "2035-12-27T00:00:00"}
+				""")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.title").value("Neispravan zahtjev"));
+		noviIzuzetak(selma, sala, """
+				{"startsAt": "2035-12-27T00:00:00+01:00", "endsAt": "2035-12-24T00:00:00+01:00"}
+				""")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("endsAt"));
+	}
+
+	// Selma uređuje oba resursa, ali izuzetak sale se ne briše kroz putanju saune
+	@Test
+	void izuzetakSeBriseSamoKrozSvojResurs() throws Exception {
+		UUID sala = resurs(selma, "Sala, brisanje izuzetka");
+		UUID sauna = resurs(selma, "Sauna, brisanje izuzetka");
+		String tijelo = noviIzuzetak(selma, sala, """
+				{"startsAt": "2035-05-01T00:00:00+02:00", "endsAt": "2035-05-03T00:00:00+02:00"}
+				""").andReturn().getResponse().getContentAsString();
+		UUID izuzetak = UUID.fromString(JsonPath.read(tijelo, "$.id"));
+
+		mockMvc.perform(delete("/api/resources/{resourceId}/time-off/{timeOffId}", sauna, izuzetak)
+				.header("Authorization", "Bearer " + selma))
+				.andExpect(status().isNotFound());
+		izuzeci(selma, sala).andExpect(jsonPath("$.totalElements").value(1));
+
+		mockMvc.perform(delete("/api/resources/{resourceId}/time-off/{timeOffId}", sala, izuzetak)
+				.header("Authorization", "Bearer " + selma))
+				.andExpect(status().isNoContent());
+		izuzeci(selma, sala).andExpect(jsonPath("$.totalElements").value(0));
 	}
 
 }
