@@ -43,10 +43,12 @@ class OrganizationIsolationApiTest {
 
 	// Svaki endpoint nad podacima jedne organizacije. Tijelo mora biti ispravno: @Valid se izvrši
 	// prije @PreAuthorize, pa bi neispravno tijelo dalo 400 i sakrilo da autorizacija fali.
+	// Isto važi za obavezne parametre iza ?, pa i oni moraju biti ispravni.
 	private record Zahtjev(HttpMethod metoda, String putanja, String tijelo) {
 
+		// Ruta bez parametara, da se poredi s obrascem iz aplikacije
 		String ruta() {
-			return metoda.name() + " " + putanja;
+			return metoda.name() + " " + putanja.split("\\?")[0];
 		}
 
 	}
@@ -76,7 +78,8 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/time-off", """
 					{"startsAt": "2035-08-01T00:00:00+02:00", "endsAt": "2035-08-02T00:00:00+02:00"}
 					"""),
-			new Zahtjev(HttpMethod.DELETE, "/api/resources/{resourceId}/time-off/{timeOffId}", null));
+			new Zahtjev(HttpMethod.DELETE, "/api/resources/{resourceId}/time-off/{timeOffId}", null),
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/slots?from=2035-08-06&to=2035-08-13", null));
 
 	@Autowired
 	MockMvc mockMvc;

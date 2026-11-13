@@ -239,3 +239,13 @@ Kad sam privremeno uzimao pomak zone za trenutak upita (`getOffset(now)`) umjest
 Termin se nudi samo ako cijeli stane u radno vrijeme (08:00-10:30 sa satnim terminima daje 08 i 09) i ako počinje poslije sada. Izuzetak zatvara termin samo ako se stvarno preklapaju, a kraj je isključen kao kod `tstzrange`. Izuzetak koji završava u 11:00 ne dira termin od 11:00. Kad sam poređenje privremeno promijenio da uključuje krajeve, taj test je pao.
 
 Rezervacije se još ne oduzimaju, jer ih nema do Faze 4, a endpoint koji ovo vraća dolazi u sljedećem koraku.
+
+## Endpoint za slobodne termine: datumi, najviše 31 dan
+
+`GET /api/resources/{resourceId}/slots?from=2035-03-19&to=2035-03-27` prima datume, ne trenutke. Datumi su u zoni organizacije, a `to` se ne uključuje, pa je jedan dan `from=16.11.` i `to=17.11.`. Kalendar ionako traži dane ili sedmice, a sa trenucima bi frontend morao sam računati ponoć u Sarajevu. Period može biti najviše 31 dan, pa nema ni paginacije. Satni termini kroz mjesec dana su par stotina stavki, a i najkraći termin od 5 minuta, 24 sata dnevno, ostaje ispod 9000.
+
+Termine vidi svako ko vidi resurs, i klijent, ista provjera `canView` kao za radno vrijeme. Iz baze se učitavaju samo izuzeci koji dodiruju traženi period, i oni koji su počeli prije njega. Kad sam privremeno uzimao samo izuzetke koji počinju unutar perioda, godišnji koji je počeo dan ranije nije zatvorio termin i test je pao. Deaktiviran resurs admin i provider i dalje vide, ali bez ijednog termina, jer se na njemu ne može rezervisati. Bez te provjere je test za deaktiviran resurs pao.
+
+Nedostajući parametar i datum u pogrešnom obliku (`29.01.2035`) Spring je vraćao kao `400` s porukom na engleskom. Sada `GlobalExceptionHandler` za oba vraća isti oblik kao greška validacije (`greske: [{polje, poruka}]`), na bosanskom. Isti override hvata i UUID u pogrešnom obliku u putanji, ali to nisam posebno testirao.
+
+Test izolacije je za ovu rutu morao slati i ispravne parametre. Obavezni parametri se, kao i tijelo, provjeravaju prije `@PreAuthorize`, pa bi ruta bez njih dala `400` i sakrila da provjera pristupa fali. Kad sam `@PreAuthorize` privremeno izbacio, test je pao na `/slots`.

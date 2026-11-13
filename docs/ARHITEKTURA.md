@@ -117,6 +117,10 @@ erDiagram
 
 Resurs ne pokazuje na `users` direktno, nego na par (organizacija, korisnik) u `organization_members`. Tako provider ne može biti neko izvan organizacije resursa, ni kad je Java kod pogrešan. Sva vremena su `TIMESTAMPTZ`, a ID-jevi UUID. Zašto je tako, piše u [ODLUKE.md](ODLUKE.md).
 
+## Slobodni termini
+
+Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` ide kroz `SlotService`, koji iz baze učita resurs sa zonom organizacije, sedmična pravila i izuzetke koji dodiruju traženi period. Onda sve to preda klasi `SlotCalculator`, koja nema ni Spring ni bazu i samo računa. Trenutno vrijeme dolazi iz `Clock` beana, pa se termini koji su već počeli ne nude.
+
 ## Šta dolazi
 
-U ostatku Faze 3 dolazi računanje slobodnih termina iz radnog vremena i izuzetaka. Termini se ne spremaju u bazu, nego se računaju za traženi period. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom.
+U ostatku Faze 3 dolazi slika resursa kroz `StorageService`. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom, i tada se od slobodnih termina oduzimaju i rezervacije.

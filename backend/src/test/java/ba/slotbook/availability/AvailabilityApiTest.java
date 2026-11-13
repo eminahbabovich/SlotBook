@@ -286,4 +286,84 @@ class AvailabilityApiTest {
 		izuzeci(selma, sala).andExpect(jsonPath("$.totalElements").value(0));
 	}
 
+	private ResultActions termini(String token, UUID resurs, String od, String doo) throws Exception {
+		return mockMvc.perform(get("/api/resources/{resourceId}/slots", resurs)
+				.param("from", od)
+				.param("to", doo)
+				.header("Authorization", "Bearer " + token));
+	}
+
+	// Kroz cijeli lanac: pravilo iz baze, zona iz organizacije, sat na zidu. 25.3.2035. Sarajevo
+	// prelazi na ljetno vrijeme, pa je ponedjeljak 08:00 prvo 07:00 UTC, pa 06:00 UTC.
+	@Test
+	void klijentVidiTermineIstoPoLokalnomSatuIPrijeIPoslijeLjetnogVremena() throws Exception {
+		UUID sala = resurs(selma, "Sala, termini preko DST");
+		postavi(selma, sala, """
+				{"dayOfWeek": "MONDAY", "start": "08:00", "end": "10:00"}
+				""").andExpect(status().isOk());
+
+		termini(nedim, sala, "2035-03-19", "2035-03-27")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.timezone").value("Europe/Sarajevo"))
+				.andExpect(jsonPath("$.slots[*].start", contains("2035-03-19T07:00:00Z", "2035-03-19T08:00:00Z",
+						"2035-03-26T06:00:00Z", "2035-03-26T07:00:00Z")))
+				.andExpect(jsonPath("$.slots[0].end").value("2035-03-19T08:00:00Z"));
+	}
+
+	// Izuzetak počinje dan prije traženog perioda, a i dalje zatvara termin od 08:00. Prošli datumi nemaju termina.
+	@Test
+	void izuzetakKojiPocinjePrijePeriodaZatvaraTermineAProsliDaniSuPrazni() throws Exception {
+		UUID sala = resurs(selma, "Sala, termini i izuzetak");
+		postavi(selma, sala, """
+				{"dayOfWeek": "MONDAY", "start": "08:00", "end": "10:00"}
+				""").andExpect(status().isOk());
+		noviIzuzetak(selma, sala, """
+				{"startsAt": "2035-01-28T12:00:00+01:00", "endsAt": "2035-01-29T09:00:00+01:00"}
+				""").andExpect(status().isCreated());
+
+		termini(nedim, sala, "2035-01-29", "2035-01-30")
+				.andExpect(jsonPath("$.slots[*].start", contains("2035-01-29T08:00:00Z")));
+		termini(nedim, sala, "2025-01-27", "2025-01-28")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.slots").isEmpty());
+	}
+
+	@Test
+	void deaktiviranResursNemaTerminaAKlijentGaNeVidi() throws Exception {
+		UUID sala = resurs(selma, "Sala, deaktivirana s terminima");
+		postavi(selma, sala, """
+				{"dayOfWeek": "MONDAY", "start": "08:00", "end": "10:00"}
+				""").andExpect(status().isOk());
+		mockMvc.perform(delete("/api/organizations/{id}/resources/{resourceId}", teretana, sala)
+				.header("Authorization", "Bearer " + selma))
+				.andExpect(status().isNoContent());
+
+		termini(selma, sala, "2035-01-29", "2035-01-30")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.slots").isEmpty());
+		termini(nedim, sala, "2035-01-29", "2035-01-30").andExpect(status().isForbidden());
+	}
+
+	@Test
+	void neispravanPeriodVraca400SPoljemNaBosanskom() throws Exception {
+		UUID sala = resurs(selma, "Sala, neispravan period");
+
+		termini(nedim, sala, "2035-01-29", "2035-01-29")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("to"));
+		termini(nedim, sala, "2035-01-01", "2035-02-02")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("to"));
+		termini(nedim, sala, "29.01.2035", "2035-01-30")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("from"))
+				.andExpect(jsonPath("$.greske[0].poruka").value("Datum se piše kao godina-mjesec-dan, npr. 2026-11-16."));
+		mockMvc.perform(get("/api/resources/{resourceId}/slots", sala)
+				.param("from", "2035-01-29")
+				.header("Authorization", "Bearer " + nedim))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("to"))
+				.andExpect(jsonPath("$.greske[0].poruka").value("Ovaj parametar je obavezan."));
+	}
+
 }

@@ -67,7 +67,7 @@ public class AvailabilityService {
 
 	private AvailabilityResponse odgovor(Resource resurs, List<AvailabilityRule> pravila) {
 		List<AvailabilityInterval> intervali = pravila.stream()
-				.map(p -> new AvailabilityInterval(p.getDayOfWeek(), p.getStartTime(), p.getEndTime()))
+				.map(AvailabilityRule::interval)
 				.sorted(Comparator.comparing(AvailabilityInterval::dayOfWeek)
 						.thenComparing(AvailabilityInterval::start))
 				.toList();

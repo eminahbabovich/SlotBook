@@ -1,9 +1,11 @@
 package ba.slotbook.error;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -13,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -45,6 +48,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		problem.setProperty("greske", greske);
 
 		return handleExceptionInternal(ex, problem, headers, status, request);
+	}
+
+	// Parametri iz adrese, npr. ?from= kod slobodnih termina. Bez ovoga Spring vraća 400 s porukom na engleskom.
+	@Override
+	protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		return handleExceptionInternal(ex, neispravnoPolje(ex.getParameterName(), "Ovaj parametar je obavezan."),
+				headers, status, request);
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
+			HttpStatusCode status, WebRequest request) {
+		String poruka = ex.getRequiredType() == LocalDate.class
+				? "Datum se piše kao godina-mjesec-dan, npr. 2026-11-16."
+				: "Vrijednost nije u ispravnom obliku.";
+		return handleExceptionInternal(ex, neispravnoPolje(ex.getPropertyName(), poruka), headers, status, request);
 	}
 
 	@ExceptionHandler(EmailAlreadyUsedException.class)
@@ -106,10 +126,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	// Isti oblik kao greška validacije, da frontend grešku prikaže uz polje
 	@ExceptionHandler(InvalidFieldException.class)
 	ProblemDetail neispravnoPolje(InvalidFieldException ex) {
+		return neispravnoPolje(ex.getPolje(), ex.getPoruka());
+	}
+
+	private static ProblemDetail neispravnoPolje(String polje, String poruka) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
 				"Neki podaci nisu ispravni. Ispravi označena polja i pokušaj ponovo.");
 		problem.setTitle("Neispravni podaci");
-		problem.setProperty("greske", List.of(new PoljeGreska(ex.getPolje(), ex.getPoruka())));
+		problem.setProperty("greske", List.of(new PoljeGreska(polje, poruka)));
 		return problem;
 	}
 

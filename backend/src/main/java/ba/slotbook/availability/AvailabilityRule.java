@@ -61,4 +61,8 @@ public class AvailabilityRule {
 		return endTime;
 	}
 
+	AvailabilityInterval interval() {
+		return new AvailabilityInterval(getDayOfWeek(), startTime, endTime);
+	}
+
 }
