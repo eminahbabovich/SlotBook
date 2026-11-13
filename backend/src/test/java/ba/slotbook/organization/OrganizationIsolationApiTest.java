@@ -5,7 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -24,6 +26,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.jayway.jsonpath.JsonPath;
 
@@ -60,7 +63,11 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/resources/{resourceId}", """
 					{"name": "Sto za izolaciju", "slotMinutes": 90}
 					"""),
-			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/resources/{resourceId}", null));
+			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/resources/{resourceId}", null),
+			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/resources/{resourceId}/provider", """
+					{"providerId": "{almaId}"}
+					"""),
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}", null));
 
 	@Autowired
 	MockMvc mockMvc;
@@ -141,10 +148,14 @@ class OrganizationIsolationApiTest {
 	}
 
 	private int posalji(Zahtjev zahtjev, String token) throws Exception {
-		MockHttpServletRequestBuilder builder = request(zahtjev.metoda(), zahtjev.putanja(), citaonica, stoCitaonice)
+		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
+		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja())
+				.buildAndExpand(Map.of("id", citaonica, "resourceId", stoCitaonice)).toUri();
+		MockHttpServletRequestBuilder builder = request(zahtjev.metoda(), adresa)
 				.header("Authorization", "Bearer " + token);
 		if (zahtjev.tijelo() != null) {
-			builder.contentType(MediaType.APPLICATION_JSON).content(zahtjev.tijelo());
+			String almaId = users.findByEmail("alma.izolacija@example.com").orElseThrow().getId().toString();
+			builder.contentType(MediaType.APPLICATION_JSON).content(zahtjev.tijelo().replace("{almaId}", almaId));
 		}
 		return mockMvc.perform(builder).andReturn().getResponse().getStatus();
 	}
@@ -181,12 +192,14 @@ class OrganizationIsolationApiTest {
 		}
 	}
 
-	// Čuvar: novi endpoint pod /api/organizations/{id}/... ne može proći mimo ovog testa
+	// Čuvar: novi endpoint pod /api/organizations/{id}/... ili /api/resources/{id} ne može proći mimo
+	// ovog testa. Resurs pripada organizaciji i kad je nema u putanji.
 	@Test
 	void svakaRutaNadPodacimaOrganizacijeJeUOvomTestu() {
 		Set<String> uAplikaciji = new TreeSet<>();
 		rute.getHandlerMethods().keySet().forEach(info -> info.getPatternValues().stream()
-				.filter(putanja -> putanja.matches("/api/organizations/\\{[^}]+}/.+"))
+				.filter(putanja -> putanja.matches("/api/organizations/\\{[^}]+}/.+")
+						|| putanja.matches("/api/resources/\\{[^}]+}.*"))
 				.forEach(putanja -> {
 					var metode = info.getMethodsCondition().getMethods();
 					// Mapiranje bez metode prima svaku metodu, a skup mu je prazan, pa bi ga forEach preskočio

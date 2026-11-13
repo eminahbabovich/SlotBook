@@ -2,6 +2,7 @@ package ba.slotbook.organization;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -55,10 +56,10 @@ public class OrganizationService {
 		return organizations.getReferenceById(organizationId);
 	}
 
-	// Pozivalac je prošao @PreAuthorize, pa članstvo postoji
+	// Prazno kad korisnik nije član organizacije
 	@Transactional(readOnly = true)
-	public OrganizationRole roleOf(UUID organizationId, UUID userId) {
-		return members.findById(new OrganizationMember.Id(organizationId, userId)).orElseThrow().getRole();
+	public Optional<OrganizationRole> findRole(UUID organizationId, UUID userId) {
+		return members.findById(new OrganizationMember.Id(organizationId, userId)).map(OrganizationMember::getRole);
 	}
 
 	@Transactional(readOnly = true)

@@ -45,12 +45,27 @@ public class ResourceController {
 		return resourceService.update(id, resourceId, request.name(), request.description(), request.slotMinutes());
 	}
 
+	// Ko vodi resurs određuje samo admin, provider ne može resurs prebaciti na drugoga
+	@PutMapping("/api/organizations/{id}/resources/{resourceId}/provider")
+	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN')")
+	public ResourceResponse changeProvider(@PathVariable UUID id, @PathVariable UUID resourceId,
+			@Valid @RequestBody ChangeProviderRequest request) {
+		return resourceService.changeProvider(id, resourceId, request.providerId());
+	}
+
 	// DELETE ne briše red nego deaktivira resurs, vidi ResourceService.deactivate
 	@DeleteMapping("/api/organizations/{id}/resources/{resourceId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@PreAuthorize("@resourceAccess.canManage(#resourceId, authentication)")
 	public void deactivate(@PathVariable UUID id, @PathVariable UUID resourceId) {
 		resourceService.deactivate(id, resourceId);
+	}
+
+	// Organizacije nema u putanji, pa canView do nje dolazi preko resursa
+	@GetMapping("/api/resources/{resourceId}")
+	@PreAuthorize("@resourceAccess.canView(#resourceId, authentication)")
+	public ResourceResponse get(@PathVariable UUID resourceId) {
+		return resourceService.get(resourceId);
 	}
 
 	// Klijent mora vidjeti resurse da bi izabrao šta rezerviše, pa listu vide sve tri uloge.

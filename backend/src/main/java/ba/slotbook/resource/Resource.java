@@ -65,6 +65,10 @@ public class Resource {
 		this.slotMinutes = slotMinutes;
 	}
 
+	void changeProvider(User provider) {
+		this.provider = provider;
+	}
+
 	// Red ostaje jer će na njega pokazivati rezervacije, a klijent ga više ne vidi u listi
 	void deactivate() {
 		this.active = false;

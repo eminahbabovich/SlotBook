@@ -305,6 +305,71 @@ class ResourceApiTest {
 		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class, sauna)).isTrue();
 	}
 
+	private ResultActions noviProvider(String token, UUID resurs, UUID providerId) throws Exception {
+		return mockMvc.perform(put("/api/organizations/{id}/resources/{resourceId}/provider", teretana, resurs)
+				.header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"providerId": "%s"}
+						""".formatted(providerId)));
+	}
+
+	// Poslije promjene Kenan uređuje resurs, iako ga nije napravio
+	@Test
+	void adminPrebacujeResursNaTrenera() throws Exception {
+		UUID sala = noviResurs(emina, teretana, "Sala za pilates");
+
+		noviProvider(emina, sala, id("kenan.resursi@example.com"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.providerId").value(id("kenan.resursi@example.com").toString()));
+
+		izmijeni(kenan, teretana, sala, """
+				{"name": "Pilates s Kenanom", "slotMinutes": 50}
+				""").andExpect(status().isOk());
+	}
+
+	@Test
+	void trenerNeMozePrebacitiSvojResursNaDrugoga() throws Exception {
+		UUID svoj = noviResurs(kenan, teretana, "Trening snage");
+
+		noviProvider(kenan, svoj, id("emina.resursi@example.com")).andExpect(status().isForbidden());
+	}
+
+	// Klijent je član, pa bi ga složeni ključ u bazi pustio. Ne-člana ne bi, ali odgovor bi bio 500.
+	@Test
+	void klijentINeClanNeMoguVoditiResurs() throws Exception {
+		UUID sala = noviResurs(emina, teretana, "Sala za ples");
+		token("amila.resursi@example.com", "Amila");
+
+		noviProvider(emina, sala, id("dzenan.resursi@example.com"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("providerId"));
+		noviProvider(emina, sala, id("amila.resursi@example.com"))
+				.andExpect(status().isBadRequest());
+
+		assertThat(jdbc.queryForObject("select provider_id from resources where id = ?", UUID.class, sala))
+				.isEqualTo(id("emina.resursi@example.com"));
+	}
+
+	private ResultActions detalji(String token, UUID resurs) throws Exception {
+		return mockMvc.perform(get("/api/resources/{resourceId}", resurs).header("Authorization", "Bearer " + token));
+	}
+
+	@Test
+	void klijentVidiResursDokJeAktivanAAdminIPoslije() throws Exception {
+		UUID sala = noviResurs(emina, teretana, "Sala za kickbox");
+
+		detalji(dzenan, sala)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.organizationId").value(teretana.toString()))
+				.andExpect(jsonPath("$.slotMinutes").value(60));
+
+		deaktiviraj(emina, teretana, sala).andExpect(status().isNoContent());
+
+		detalji(dzenan, sala).andExpect(status().isForbidden());
+		detalji(emina, sala).andExpect(jsonPath("$.active").value(false));
+	}
+
 	@Test
 	void trajanjeTerminaDuzeOdOsamSatiVraca400ZaTajPolje() throws Exception {
 		napravi(emina, """

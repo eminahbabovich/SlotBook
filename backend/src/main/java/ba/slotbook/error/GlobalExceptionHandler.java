@@ -23,6 +23,7 @@ import ba.slotbook.organization.AlreadyMemberException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
+import ba.slotbook.resource.InvalidProviderException;
 import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.user.EmailAlreadyUsedException;
 
@@ -99,6 +100,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
 				"Resurs ne postoji u ovoj organizaciji. Osvježi listu resursa i pokušaj ponovo.");
 		problem.setTitle("Resurs ne postoji");
+		return problem;
+	}
+
+	// Isti oblik kao greška validacije, da frontend grešku prikaže uz polje
+	@ExceptionHandler(InvalidProviderException.class)
+	ProblemDetail neispravanProvider(InvalidProviderException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+				"Neki podaci nisu ispravni. Ispravi označena polja i pokušaj ponovo.");
+		problem.setTitle("Neispravni podaci");
+		problem.setProperty("greske", List.of(new PoljeGreska("providerId",
+				"Resurs može voditi samo član organizacije s ulogom PROVIDER ili ADMIN.")));
 		return problem;
 	}
 

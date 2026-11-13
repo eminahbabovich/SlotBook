@@ -191,3 +191,15 @@ Klijent u listi vidi samo aktivne resurse, a admin i provider i deaktivirane, s 
 Ovdje me baza ne čuva kao kod kreiranja. Kad sam privremeno obrisao `@PreAuthorize` s `DELETE`, Bojan iz druge organizacije je dobio `204` i stvarno deaktivirao sto u čitaonici, jer se ne upisuje novi red pa složeni ključ nema šta provjeriti. Ovu rutu čuva samo provjera u Javi, a test izolacije padne kad je nema.
 
 Šta nije urađeno: deaktiviran resurs se još ne može ponovo aktivirati, a u Fazi 4 rezervacija na deaktiviran resurs mora biti odbijena.
+
+## Promjena providera: samo admin, i novi provider mora voditi resurse
+
+`PUT .../resources/{resourceId}/provider` smije samo admin. Provider ne može resurs prebaciti na drugoga, jer bi tako trener mogao nekome "podmetnuti" svoj resurs. Novi provider mora biti član organizacije s ulogom `PROVIDER` ili `ADMIN`. Složeni ključ iz `resources_provider_clan` čuva članstvo, ali klijenta bi pustio, pa uloga se provjerava u servisu. Ne-člana bi baza odbila, ali kao `500`, pa servis i njega uhvati ranije i vrati `400` s poljem `providerId`, u istom obliku kao greška validacije. Privremeno sam pustio svaku ulogu i test s klijentom Dženanom kao providerom je pao.
+
+## Rute bez organizacije u putanji: /api/resources/{resourceId}
+
+Prva takva ruta je `GET /api/resources/{resourceId}`, a iste će biti radno vrijeme, izuzeci i slobodni termini. Organizacija se tu dobija iz resursa: `@resourceAccess.canView` učita resurs, pa za njegovu organizaciju provjeri ulogu. Vidi ga svaki član, a klijent samo aktivan resurs, isto kao u listi. Nepostojeći resurs daje `403`, kao i nepostojeća organizacija.
+
+Čuvar ruta u testu izolacije sada hvata i putanje pod `/api/resources/{...}`. Kad sam novu rutu izbacio iz liste testa, čuvar je pao. Test je morao i drugačije puniti putanje: varijable se sada popunjavaju po imenu (`id`, `resourceId`), a ne po redu, jer `/api/resources/{resourceId}` nema organizaciju na prvom mjestu.
+
+`ResourceAccessTest` prolazi sve kombinacije bez HTTP-a: admin, trener svog i tuđeg resursa, trener kojem je uloga promijenjena u klijenta, klijent s aktivnim i deaktiviranim resursom, admin druge organizacije i neprijavljen korisnik.

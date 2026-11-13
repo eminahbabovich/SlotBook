@@ -40,4 +40,18 @@ public class ResourceAccess {
 				.orElse(false);
 	}
 
+	// Za rute /api/resources/{id}, gdje organizacije nema u putanji. Vidi ga svaki član organizacije
+	// resursa, a klijent samo aktivan, kao u listi.
+	public boolean canView(UUID resourceId, Authentication authentication) {
+		return resources.findById(resourceId)
+				.map(resurs -> {
+					UUID organizacijaId = resurs.getOrganization().getId();
+					return organizationAccess.hasRole(organizacijaId, authentication, OrganizationRole.ADMIN,
+							OrganizationRole.PROVIDER)
+							|| (resurs.isActive() && organizationAccess.hasRole(organizacijaId, authentication,
+									OrganizationRole.CLIENT));
+				})
+				.orElse(false);
+	}
+
 }

@@ -52,6 +52,30 @@ public class ResourceService {
 		return ResourceResponse.from(resource);
 	}
 
+	// Postojanje i pristup je već provjerio @PreAuthorize (ResourceAccess.canView)
+	@Transactional(readOnly = true)
+	public ResourceResponse get(UUID resourceId) {
+		return resources.findById(resourceId)
+				.map(ResourceResponse::from)
+				.orElseThrow(ResourceNotFoundException::new);
+	}
+
+	// Novi provider mora voditi resurse u ovoj organizaciji. Da je član, čuva i baza
+	// (resources_provider_clan), ali uloga CLIENT bi tamo prošla, pa se provjerava ovdje.
+	@Transactional
+	public ResourceResponse changeProvider(UUID organizationId, UUID resourceId, UUID providerId) {
+		Resource resource = resources.findByIdAndOrganizationId(resourceId, organizationId)
+				.orElseThrow(ResourceNotFoundException::new);
+		boolean mozeVoditi = organizationService.findRole(organizationId, providerId)
+				.map(uloga -> uloga == OrganizationRole.ADMIN || uloga == OrganizationRole.PROVIDER)
+				.orElse(false);
+		if (!mozeVoditi) {
+			throw new InvalidProviderException();
+		}
+		resource.changeProvider(users.getReferenceById(providerId));
+		return ResourceResponse.from(resource);
+	}
+
 	// Već deaktiviran resurs ostaje deaktiviran, pa ponovljen DELETE ne pravi grešku
 	@Transactional
 	public void deactivate(UUID organizationId, UUID resourceId) {
@@ -67,7 +91,8 @@ public class ResourceService {
 	@Transactional(readOnly = true)
 	public PageResponse<ResourceResponse> list(UUID organizationId, UUID userId, Pageable pageable) {
 		Pageable poNazivu = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("name", "id"));
-		Page<Resource> stranica = organizationService.roleOf(organizationId, userId) == OrganizationRole.CLIENT
+		// Članstvo postoji, to je provjerio @PreAuthorize
+		Page<Resource> stranica = organizationService.findRole(organizationId, userId).orElseThrow() == OrganizationRole.CLIENT
 				? resources.findByOrganizationIdAndActiveTrue(organizationId, poNazivu)
 				: resources.findByOrganizationId(organizationId, poNazivu);
 		return PageResponse.from(stranica.map(ResourceResponse::from));
