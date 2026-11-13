@@ -59,7 +59,8 @@ class OrganizationIsolationApiTest {
 					"""),
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/resources/{resourceId}", """
 					{"name": "Sto za izolaciju", "slotMinutes": 90}
-					"""));
+					"""),
+			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/resources/{resourceId}", null));
 
 	@Autowired
 	MockMvc mockMvc;
@@ -92,12 +93,12 @@ class OrganizationIsolationApiTest {
 		stoCitaonice = stoCitaonice();
 	}
 
-	// Trajanje se vraća na 120 prije svakog testa, da se vidi da tuđi PUT nije ništa promijenio
+	// Trajanje i aktivnost se vraćaju prije svakog testa, da se vidi da tuđi PUT i DELETE nisu ništa promijenili
 	private UUID stoCitaonice() throws Exception {
 		var postojeci = jdbc.queryForList("select id from resources where organization_id = ? and name = ?",
 				UUID.class, citaonica, "Sto za izolaciju");
 		if (!postojeci.isEmpty()) {
-			jdbc.update("update resources set slot_minutes = 120 where id = ?", postojeci.getFirst());
+			jdbc.update("update resources set slot_minutes = 120, active = true where id = ?", postojeci.getFirst());
 			return postojeci.getFirst();
 		}
 		String tijelo = mockMvc.perform(post("/api/organizations/{id}/resources", citaonica)
@@ -168,6 +169,8 @@ class OrganizationIsolationApiTest {
 		assertThat(brojRedova("resources")).isEqualTo(resursaPrije);
 		assertThat(jdbc.queryForObject("select slot_minutes from resources where id = ?", Integer.class,
 				stoCitaonice)).isEqualTo(120);
+		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class,
+				stoCitaonice)).isTrue();
 	}
 
 	// Bez ovoga bi zahtjev s greškom u putanji ili tijelu dao 403 ili 404 iz pogrešnog razloga

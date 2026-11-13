@@ -38,8 +38,12 @@ class ResourceTest {
 	}
 
 	@Test
-	void noviResursJeAktivan() {
-		assertThat(resurs("Sauna", null).isActive()).isTrue();
+	void noviResursJeAktivanDokSeNeDeaktivira() {
+		Resource sauna = resurs("Sauna", null);
+		assertThat(sauna.isActive()).isTrue();
+
+		sauna.deactivate();
+		assertThat(sauna.isActive()).isFalse();
 	}
 
 }

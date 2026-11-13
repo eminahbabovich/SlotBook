@@ -65,6 +65,11 @@ public class Resource {
 		this.slotMinutes = slotMinutes;
 	}
 
+	// Red ostaje jer će na njega pokazivati rezervacije, a klijent ga više ne vidi u listi
+	void deactivate() {
+		this.active = false;
+	}
+
 	public UUID getId() {
 		return id;
 	}

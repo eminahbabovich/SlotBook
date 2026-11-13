@@ -55,6 +55,12 @@ public class OrganizationService {
 		return organizations.getReferenceById(organizationId);
 	}
 
+	// Pozivalac je prošao @PreAuthorize, pa članstvo postoji
+	@Transactional(readOnly = true)
+	public OrganizationRole roleOf(UUID organizationId, UUID userId) {
+		return members.findById(new OrganizationMember.Id(organizationId, userId)).orElseThrow().getRole();
+	}
+
 	@Transactional(readOnly = true)
 	public OrganizationResponse getBySlug(String slug) {
 		return organizations.findBySlug(slug)

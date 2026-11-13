@@ -2,6 +2,7 @@ package ba.slotbook.resource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -268,6 +269,40 @@ class ResourceApiTest {
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.title").value("Resurs ne postoji"));
 		assertThat(trajanje(stoIzCitaonice)).isEqualTo(60);
+	}
+
+	private ResultActions deaktiviraj(String token, UUID organizacija, UUID resurs) throws Exception {
+		return mockMvc.perform(delete("/api/organizations/{id}/resources/{resourceId}", organizacija, resurs)
+				.header("Authorization", "Bearer " + token));
+	}
+
+	// Dženan je ovdje klijent nove čitaonice, a Emina njen admin
+	@Test
+	void deaktiviranResursKlijentNeVidiAAdminVidiOznacen() throws Exception {
+		UUID citaonica = citaonicaSaTriStola();
+		jdbc.update("insert into organization_members values (?, ?, 'CLIENT', now())", citaonica,
+				id("dzenan.resursi@example.com"));
+		UUID sto2 = jdbc.queryForObject("select id from resources where organization_id = ? and name = 'Sto 2'",
+				UUID.class, citaonica);
+
+		deaktiviraj(emina, citaonica, sto2).andExpect(status().isNoContent());
+		deaktiviraj(emina, citaonica, sto2).andExpect(status().isNoContent());
+
+		lista(citaonica, dzenan, "")
+				.andExpect(jsonPath("$.content[*].name", contains("Sto 1", "Sto 3")))
+				.andExpect(jsonPath("$.totalElements").value(2));
+		lista(citaonica, emina, "")
+				.andExpect(jsonPath("$.content[*].name", contains("Sto 1", "Sto 2", "Sto 3")))
+				.andExpect(jsonPath("$.content[1].active").value(false));
+	}
+
+	@Test
+	void trenerNeMozeDeaktiviratiTudjiResurs() throws Exception {
+		UUID sauna = noviResurs(emina, teretana, "Sauna za deaktivaciju");
+
+		deaktiviraj(kenan, teretana, sauna).andExpect(status().isForbidden());
+
+		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class, sauna)).isTrue();
 	}
 
 	@Test

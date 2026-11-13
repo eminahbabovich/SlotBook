@@ -12,6 +12,8 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 	// Uz Pageable Spring Data pošalje dva upita: jednu stranicu (LIMIT/OFFSET) i COUNT za ukupan broj
 	Page<Resource> findByOrganizationId(UUID organizationId, Pageable pageable);
 
+	Page<Resource> findByOrganizationIdAndActiveTrue(UUID organizationId, Pageable pageable);
+
 	Optional<Resource> findByIdAndOrganizationId(UUID id, UUID organizationId);
 
 }

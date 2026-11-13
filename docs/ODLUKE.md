@@ -181,3 +181,13 @@ Admin mijenja svaki resurs organizacije, a provider samo one koje vodi. To odlu�
 Servis zatim traži resurs po paru (resurs, organizacija iz putanje). Ako se ne poklapaju, vraća `404`, i kad je korisnik admin obje organizacije. Bez toga bi `PUT /api/organizations/teretana/resources/{sto iz čitaonice}` promijenio sto u čitaonici, i test to pokaže kad servis traži samo po ID-ju.
 
 Dva testa sam provjerio privremenom izmjenom koda. Bez uslova "provider baš ovog resursa" trener mijenja i saunu koju vodi admin. Bez para (resurs, organizacija) prolazi izmjena kroz pogrešnu putanju.
+
+## Deaktivacija umjesto brisanja
+
+`DELETE .../resources/{resourceId}` ne briše red, nego postavlja `active = false`. Na resurs će u Fazi 4 pokazivati rezervacije, a obrisan red bi ili pao na stranom ključu ili odnio historiju termina. Drugi `DELETE` nad istim resursom isto vrati `204`, jer je stanje već ono koje je traženo.
+
+Klijent u listi vidi samo aktivne resurse, a admin i provider i deaktivirane, s `active: false`. Ulogu servis čita iz baze (`OrganizationService.roleOf`), što je još jedan upit po listi, pored onog u `@PreAuthorize`.
+
+Ovdje me baza ne čuva kao kod kreiranja. Kad sam privremeno obrisao `@PreAuthorize` s `DELETE`, Bojan iz druge organizacije je dobio `204` i stvarno deaktivirao sto u čitaonici, jer se ne upisuje novi red pa složeni ključ nema šta provjeriti. Ovu rutu čuva samo provjera u Javi, a test izolacije padne kad je nema.
+
+Šta nije urađeno: deaktiviran resurs se još ne može ponovo aktivirati, a u Fazi 4 rezervacija na deaktiviran resurs mora biti odbijena.

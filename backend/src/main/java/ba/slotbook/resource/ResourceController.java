@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,12 +45,21 @@ public class ResourceController {
 		return resourceService.update(id, resourceId, request.name(), request.description(), request.slotMinutes());
 	}
 
+	// DELETE ne briše red nego deaktivira resurs, vidi ResourceService.deactivate
+	@DeleteMapping("/api/organizations/{id}/resources/{resourceId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@PreAuthorize("@resourceAccess.canManage(#resourceId, authentication)")
+	public void deactivate(@PathVariable UUID id, @PathVariable UUID resourceId) {
+		resourceService.deactivate(id, resourceId);
+	}
+
 	// Klijent mora vidjeti resurse da bi izabrao šta rezerviše, pa listu vide sve tri uloge.
 	// Pageable Spring sam napravi iz ?page=0&size=20.
 	@GetMapping("/api/organizations/{id}/resources")
 	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN', 'PROVIDER', 'CLIENT')")
-	public PageResponse<ResourceResponse> list(@PathVariable UUID id, Pageable pageable) {
-		return resourceService.list(id, pageable);
+	public PageResponse<ResourceResponse> list(@PathVariable UUID id, @AuthenticationPrincipal Jwt token,
+			Pageable pageable) {
+		return resourceService.list(id, UUID.fromString(token.getSubject()), pageable);
 	}
 
 }
