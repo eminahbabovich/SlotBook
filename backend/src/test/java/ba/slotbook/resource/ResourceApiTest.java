@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -193,6 +194,80 @@ class ResourceApiTest {
 	@Test
 	void klijentVidiResurseSvojeOrganizacije() throws Exception {
 		lista(teretana, dzenan, "").andExpect(status().isOk());
+	}
+
+	private UUID noviResurs(String token, UUID organizacija, String naziv) throws Exception {
+		String tijelo = mockMvc.perform(post("/api/organizations/{id}/resources", organizacija)
+				.header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"name": "%s", "slotMinutes": 60}
+						""".formatted(naziv)))
+				.andExpect(status().isCreated())
+				.andReturn().getResponse().getContentAsString();
+		return UUID.fromString(JsonPath.read(tijelo, "$.id"));
+	}
+
+	private ResultActions izmijeni(String token, UUID organizacija, UUID resurs, String tijelo) throws Exception {
+		return mockMvc.perform(put("/api/organizations/{id}/resources/{resourceId}", organizacija, resurs)
+				.header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(tijelo));
+	}
+
+	private int trajanje(UUID resurs) {
+		return jdbc.queryForObject("select slot_minutes from resources where id = ?", Integer.class, resurs);
+	}
+
+	@Test
+	void adminMijenjaResursKojiVodiTrener() throws Exception {
+		UUID kenanovTrening = noviResurs(kenan, teretana, "Kružni trening");
+
+		izmijeni(emina, teretana, kenanovTrening, """
+				{"name": "Kružni trening, napredni", "description": "Subotom ujutro", "slotMinutes": 90}
+				""")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.name").value("Kružni trening, napredni"))
+				.andExpect(jsonPath("$.providerId").value(id("kenan.resursi@example.com").toString()));
+		assertThat(trajanje(kenanovTrening)).isEqualTo(90);
+	}
+
+	@Test
+	void trenerMijenjaSvojAliNeTudjiResurs() throws Exception {
+		UUID svoj = noviResurs(kenan, teretana, "Joga s Kenanom");
+		UUID eminin = noviResurs(emina, teretana, "Sauna");
+
+		izmijeni(kenan, teretana, svoj, """
+				{"name": "Joga s Kenanom", "slotMinutes": 75}
+				""").andExpect(status().isOk());
+		izmijeni(kenan, teretana, eminin, """
+				{"name": "Sauna", "slotMinutes": 15}
+				""").andExpect(status().isForbidden());
+
+		assertThat(trajanje(eminin)).isEqualTo(60);
+	}
+
+	@Test
+	void klijentNeMozeMijenjatiResurs() throws Exception {
+		UUID sala = noviResurs(emina, teretana, "Sala za boks");
+
+		izmijeni(dzenan, teretana, sala, """
+				{"name": "Sala za boks", "slotMinutes": 5}
+				""").andExpect(status().isForbidden());
+	}
+
+	// Emina je admin i teretane i čitaonice, pa canManage za stol iz čitaonice prođe.
+	// Putanja ipak kaže teretana, a u teretani tog resursa nema.
+	@Test
+	void resursSeTraziSamoUOrganizacijiIzPutanje() throws Exception {
+		UUID stoIzCitaonice = noviResurs(emina, citaonicaSaTriStola(), "Sto 9");
+
+		izmijeni(emina, teretana, stoIzCitaonice, """
+				{"name": "Sto 9", "slotMinutes": 30}
+				""")
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.title").value("Resurs ne postoji"));
+		assertThat(trajanje(stoIzCitaonice)).isEqualTo(60);
 	}
 
 	@Test

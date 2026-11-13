@@ -53,12 +53,16 @@ public class Resource {
 			Instant createdAt) {
 		this.organization = organization;
 		this.provider = provider;
+		this.active = true;
+		this.createdAt = createdAt;
+		update(name, description, slotMinutes);
+	}
+
+	void update(String name, String description, int slotMinutes) {
 		this.name = name.strip();
 		// Prazan opis iz forme je isto što i bez opisa, da frontend ne mora razlikovati "" i null
 		this.description = description == null || description.isBlank() ? null : description.strip();
 		this.slotMinutes = slotMinutes;
-		this.active = true;
-		this.createdAt = createdAt;
 	}
 
 	public UUID getId() {

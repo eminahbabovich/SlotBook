@@ -39,6 +39,17 @@ public class ResourceService {
 		return ResourceResponse.from(resource);
 	}
 
+	// Traži se po paru (resurs, organizacija iz putanje): resurs druge organizacije je ovdje 404,
+	// i kad ga korisnik smije uređivati tamo. Izmjenu u bazu upiše Hibernate pri commitu (dirty checking).
+	@Transactional
+	public ResourceResponse update(UUID organizationId, UUID resourceId, String name, String description,
+			int slotMinutes) {
+		Resource resource = resources.findByIdAndOrganizationId(resourceId, organizationId)
+				.orElseThrow(ResourceNotFoundException::new);
+		resource.update(name, description, slotMinutes);
+		return ResourceResponse.from(resource);
+	}
+
 	// Redoslijed određuje server, a sort iz zahtjeva se ignoriše: ?sort=provider.passwordHash bi
 	// inače sortirao po hashu tuđe lozinke. id razdvaja resurse istog naziva, da isti resurs ne
 	// završi na dvije stranice ili ni na jednoj.

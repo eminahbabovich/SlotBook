@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,9 +31,17 @@ public class ResourceController {
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN', 'PROVIDER')")
 	public ResourceResponse create(@PathVariable UUID id, @AuthenticationPrincipal Jwt token,
-			@Valid @RequestBody CreateResourceRequest request) {
+			@Valid @RequestBody ResourceRequest request) {
 		return resourceService.create(id, UUID.fromString(token.getSubject()), request.name(),
 				request.description(), request.slotMinutes());
+	}
+
+	// PUT mijenja sva polja koja se uređuju, pa tijelo ima ista pravila kao kod kreiranja
+	@PutMapping("/api/organizations/{id}/resources/{resourceId}")
+	@PreAuthorize("@resourceAccess.canManage(#resourceId, authentication)")
+	public ResourceResponse update(@PathVariable UUID id, @PathVariable UUID resourceId,
+			@Valid @RequestBody ResourceRequest request) {
+		return resourceService.update(id, resourceId, request.name(), request.description(), request.slotMinutes());
 	}
 
 	// Klijent mora vidjeti resurse da bi izabrao šta rezerviše, pa listu vide sve tri uloge.

@@ -1,5 +1,6 @@
 package ba.slotbook.resource;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -10,5 +11,7 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 
 	// Uz Pageable Spring Data pošalje dva upita: jednu stranicu (LIMIT/OFFSET) i COUNT za ukupan broj
 	Page<Resource> findByOrganizationId(UUID organizationId, Pageable pageable);
+
+	Optional<Resource> findByIdAndOrganizationId(UUID id, UUID organizationId);
 
 }

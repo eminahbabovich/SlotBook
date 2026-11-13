@@ -27,6 +27,17 @@ class ResourceTest {
 	}
 
 	@Test
+	void izmjenaCistiPodatkeKaoIKreiranje() {
+		Resource sala = resurs("Sala 2", "Drugi sprat");
+
+		sala.update(" Sala 3 ", "  ", 45);
+
+		assertThat(sala.getName()).isEqualTo("Sala 3");
+		assertThat(sala.getDescription()).isNull();
+		assertThat(sala.getSlotMinutes()).isEqualTo(45);
+	}
+
+	@Test
 	void noviResursJeAktivan() {
 		assertThat(resurs("Sauna", null).isActive()).isTrue();
 	}

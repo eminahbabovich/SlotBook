@@ -56,6 +56,9 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/resources", null),
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/resources", """
 					{"name": "Sto 7 u čitaonici", "slotMinutes": 120}
+					"""),
+			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/resources/{resourceId}", """
+					{"name": "Sto za izolaciju", "slotMinutes": 90}
 					"""));
 
 	@Autowired
@@ -77,6 +80,7 @@ class OrganizationIsolationApiTest {
 	private String alma;
 	private String bojan;
 	private UUID citaonica;
+	private UUID stoCitaonice;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
 	@BeforeEach
@@ -85,6 +89,26 @@ class OrganizationIsolationApiTest {
 		bojan = token("bojan.izolacija@example.com", "Bojan");
 		citaonica = organizacija(alma, "citaonica-izolacija");
 		organizacija(bojan, "teretana-izolacija");
+		stoCitaonice = stoCitaonice();
+	}
+
+	// Trajanje se vraća na 120 prije svakog testa, da se vidi da tuđi PUT nije ništa promijenio
+	private UUID stoCitaonice() throws Exception {
+		var postojeci = jdbc.queryForList("select id from resources where organization_id = ? and name = ?",
+				UUID.class, citaonica, "Sto za izolaciju");
+		if (!postojeci.isEmpty()) {
+			jdbc.update("update resources set slot_minutes = 120 where id = ?", postojeci.getFirst());
+			return postojeci.getFirst();
+		}
+		String tijelo = mockMvc.perform(post("/api/organizations/{id}/resources", citaonica)
+				.header("Authorization", "Bearer " + alma)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"name": "Sto za izolaciju", "slotMinutes": 120}
+						"""))
+				.andExpect(status().isCreated())
+				.andReturn().getResponse().getContentAsString();
+		return UUID.fromString(JsonPath.read(tijelo, "$.id"));
 	}
 
 	private String token(String email, String ime) throws Exception {
@@ -116,7 +140,7 @@ class OrganizationIsolationApiTest {
 	}
 
 	private int posalji(Zahtjev zahtjev, String token) throws Exception {
-		MockHttpServletRequestBuilder builder = request(zahtjev.metoda(), zahtjev.putanja(), citaonica)
+		MockHttpServletRequestBuilder builder = request(zahtjev.metoda(), zahtjev.putanja(), citaonica, stoCitaonice)
 				.header("Authorization", "Bearer " + token);
 		if (zahtjev.tijelo() != null) {
 			builder.contentType(MediaType.APPLICATION_JSON).content(zahtjev.tijelo());
@@ -142,6 +166,8 @@ class OrganizationIsolationApiTest {
 		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
 		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);
 		assertThat(brojRedova("resources")).isEqualTo(resursaPrije);
+		assertThat(jdbc.queryForObject("select slot_minutes from resources where id = ?", Integer.class,
+				stoCitaonice)).isEqualTo(120);
 	}
 
 	// Bez ovoga bi zahtjev s greškom u putanji ili tijelu dao 403 ili 404 iz pogrešnog razloga

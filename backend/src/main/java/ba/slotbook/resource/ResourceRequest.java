@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 // Granice su iste kao CHECK u V6__resources.sql, da korisnik dobije 400 s porukom, a ne 500 iz baze
-public record CreateResourceRequest(
+public record ResourceRequest(
 		@NotBlank(message = "Unesi naziv resursa, npr. Sala za funkcionalni trening.")
 		@Size(max = 100, message = "Naziv može imati najviše 100 znakova.")
 		String name,

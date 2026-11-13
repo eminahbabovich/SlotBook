@@ -173,3 +173,11 @@ Sort iz zahtjeva se ignoriše, a redoslijed određuje servis: resursi po nazivu,
 Stranica ima najviše 100 redova (`spring.data.web.pageable.max-page-size`). Spring Data podrazumijevano pušta 2000, a `?size=5000` sada vrati `size: 100`, ima test.
 
 Za listu članova sam prvo ručno napisao `countQuery`, jer sam mislio da Hibernate odbija `count` s `join fetch`. Kad sam ga obrisao, testovi su prošli. Spring Data sam izvede `COUNT` iz upita, pa ručnog više nema.
+
+## Izmjena resursa: provjera ide preko resursa, ne preko putanje
+
+Admin mijenja svaki resurs organizacije, a provider samo one koje vodi. To odlučuje `@resourceAccess.canManage(#resourceId, authentication)`: učita resurs, iz njega uzme organizaciju i u bazi provjeri ulogu. Organizaciju iz putanje ovdje ne gledam, jer bi admin teretane onda stavio svoju teretanu u putanju i ID tuđeg resursa iza nje.
+
+Servis zatim traži resurs po paru (resurs, organizacija iz putanje). Ako se ne poklapaju, vraća `404`, i kad je korisnik admin obje organizacije. Bez toga bi `PUT /api/organizations/teretana/resources/{sto iz čitaonice}` promijenio sto u čitaonici, i test to pokaže kad servis traži samo po ID-ju.
+
+Dva testa sam provjerio privremenom izmjenom koda. Bez uslova "provider baš ovog resursa" trener mijenja i saunu koju vodi admin. Bez para (resurs, organizacija) prolazi izmjena kroz pogrešnu putanju.

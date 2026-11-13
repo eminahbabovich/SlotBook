@@ -23,6 +23,7 @@ import ba.slotbook.organization.AlreadyMemberException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
+import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.user.EmailAlreadyUsedException;
 
 @RestControllerAdvice
@@ -90,6 +91,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
 				"Organizacija s ovom adresom ne postoji. Provjeri da li je adresa ispravno napisana.");
 		problem.setTitle("Organizacija ne postoji");
+		return problem;
+	}
+
+	@ExceptionHandler(ResourceNotFoundException.class)
+	ProblemDetail resursNePostoji(ResourceNotFoundException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"Resurs ne postoji u ovoj organizaciji. Osvježi listu resursa i pokušaj ponovo.");
+		problem.setTitle("Resurs ne postoji");
 		return problem;
 	}
 
