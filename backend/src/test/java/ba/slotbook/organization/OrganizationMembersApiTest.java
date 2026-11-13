@@ -1,5 +1,6 @@
 package ba.slotbook.organization;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -106,10 +107,19 @@ class OrganizationMembersApiTest {
 	void adminVidiClanoveSUlogamaBezHashaLozinke() throws Exception {
 		clanovi(salaEtf, amar)
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(2))
-				.andExpect(jsonPath("$[*].displayName", containsInAnyOrder("Amar", "Selma")))
-				.andExpect(jsonPath("$[*].role", containsInAnyOrder("ADMIN", "CLIENT")))
+				.andExpect(jsonPath("$.totalElements").value(2))
+				.andExpect(jsonPath("$.content[*].displayName", containsInAnyOrder("Amar", "Selma")))
+				.andExpect(jsonPath("$.content[*].role", containsInAnyOrder("ADMIN", "CLIENT")))
 				.andExpect(content().string(not(containsString("password"))));
+	}
+
+	// Selma ima fiksni joinedAt (12.11.), a Amar je ušao kad je napravio organizaciju, sa stvarnim satom
+	@Test
+	void clanoviIduPoDatumuUlaskaJedanPoStranici() throws Exception {
+		mockMvc.perform(get("/api/organizations/{id}/members?size=1", salaEtf)
+				.header("Authorization", "Bearer " + amar))
+				.andExpect(jsonPath("$.content[*].displayName", contains("Selma")))
+				.andExpect(jsonPath("$.totalPages").value(2));
 	}
 
 	@Test

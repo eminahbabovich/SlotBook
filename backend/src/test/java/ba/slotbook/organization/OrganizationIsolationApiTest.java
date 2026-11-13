@@ -53,6 +53,7 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/invites", """
 					{"email": "upad.izolacija@example.com", "role": "ADMIN"}
 					"""),
+			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/resources", null),
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/resources", """
 					{"name": "Sto 7 u čitaonici", "slotMinutes": 120}
 					"""));

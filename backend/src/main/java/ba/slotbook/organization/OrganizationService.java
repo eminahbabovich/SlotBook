@@ -2,13 +2,16 @@ package ba.slotbook.organization;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ba.slotbook.paging.PageResponse;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
 
@@ -59,11 +62,12 @@ public class OrganizationService {
 				.orElseThrow(() -> new OrganizationNotFoundException(slug));
 	}
 
+	// Kao kod resursa: redoslijed određuje server, a userId razdvaja članove koji su ušli u istoj sekundi
 	@Transactional(readOnly = true)
-	public List<MemberResponse> listMembers(UUID organizationId) {
-		return members.findAllWithUser(organizationId).stream()
-				.map(MemberResponse::from)
-				.toList();
+	public PageResponse<MemberResponse> listMembers(UUID organizationId, Pageable pageable) {
+		Pageable poDolasku = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+				Sort.by("joinedAt", "id.userId"));
+		return PageResponse.from(members.findAllWithUser(organizationId, poDolasku).map(MemberResponse::from));
 	}
 
 }

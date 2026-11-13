@@ -1,10 +1,13 @@
 package ba.slotbook.resource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -134,6 +137,62 @@ class ResourceApiTest {
 				.andExpect(status().isForbidden());
 
 		assertThat(brojResursa()).isEqualTo(prije);
+	}
+
+	// Nova organizacija za svako pokretanje, da broj resursa ne zavisi od drugih testova
+	private UUID citaonicaSaTriStola() throws Exception {
+		String slug = "citaonica-" + UUID.randomUUID().toString().substring(0, 8);
+		String tijelo = mockMvc.perform(post("/api/organizations")
+				.header("Authorization", "Bearer " + emina)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"name": "Čitaonica FIT", "slug": "%s", "timezone": "Europe/Sarajevo"}
+						""".formatted(slug)))
+				.andReturn().getResponse().getContentAsString();
+		UUID citaonica = UUID.fromString(JsonPath.read(tijelo, "$.id"));
+		// Namjerno ne po abecedi, da se vidi da redoslijed dolazi iz upita, a ne iz redoslijeda upisa
+		for (String sto : List.of("Sto 3", "Sto 1", "Sto 2")) {
+			mockMvc.perform(post("/api/organizations/{id}/resources", citaonica)
+					.header("Authorization", "Bearer " + emina)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{"name": "%s", "slotMinutes": 120}
+							""".formatted(sto)))
+					.andExpect(status().isCreated());
+		}
+		return citaonica;
+	}
+
+	private ResultActions lista(UUID organizacija, String token, String upit) throws Exception {
+		return mockMvc.perform(get("/api/organizations/{id}/resources?" + upit, organizacija)
+				.header("Authorization", "Bearer " + token));
+	}
+
+	@Test
+	void listaIdePoNazivuPoStranicamaISortIzZahtjevaSeIgnorise() throws Exception {
+		UUID citaonica = citaonicaSaTriStola();
+
+		lista(citaonica, emina, "page=0&size=2&sort=name,desc")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[*].name", contains("Sto 1", "Sto 2")))
+				.andExpect(jsonPath("$.totalElements").value(3))
+				.andExpect(jsonPath("$.totalPages").value(2));
+
+		lista(citaonica, emina, "page=1&size=2")
+				.andExpect(jsonPath("$.content[*].name", contains("Sto 3")))
+				.andExpect(jsonPath("$.page").value(1));
+	}
+
+	@Test
+	void stranicaNeMozeBitiVecaOdSto() throws Exception {
+		lista(teretana, emina, "size=5000")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.size").value(100));
+	}
+
+	@Test
+	void klijentVidiResurseSvojeOrganizacije() throws Exception {
+		lista(teretana, dzenan, "").andExpect(status().isOk());
 	}
 
 	@Test

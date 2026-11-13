@@ -3,10 +3,14 @@ package ba.slotbook.resource;
 import java.time.Clock;
 import java.util.UUID;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ba.slotbook.organization.OrganizationService;
+import ba.slotbook.paging.PageResponse;
 import ba.slotbook.user.UserRepository;
 
 @Service
@@ -33,6 +37,15 @@ public class ResourceService {
 		Resource resource = resources.save(new Resource(organizationService.getReference(organizationId),
 				users.getReferenceById(providerId), name, description, slotMinutes, clock.instant()));
 		return ResourceResponse.from(resource);
+	}
+
+	// Redoslijed određuje server, a sort iz zahtjeva se ignoriše: ?sort=provider.passwordHash bi
+	// inače sortirao po hashu tuđe lozinke. id razdvaja resurse istog naziva, da isti resurs ne
+	// završi na dvije stranice ili ni na jednoj.
+	@Transactional(readOnly = true)
+	public PageResponse<ResourceResponse> list(UUID organizationId, Pageable pageable) {
+		Pageable poNazivu = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("name", "id"));
+		return PageResponse.from(resources.findByOrganizationId(organizationId, poNazivu).map(ResourceResponse::from));
 	}
 
 }

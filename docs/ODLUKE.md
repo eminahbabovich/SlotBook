@@ -120,7 +120,7 @@ Bez `@EnableMethodSecurity` Spring `@PreAuthorize` tiho ignoriše. Probao sam: a
 
 Ko nije član, dobije `403`, isto kao član bez uloge i kao neko ko pita za ID koji ne postoji. `404` za ne-člana bi sakrio da organizacija postoji, ali ID je UUID i ne može se pogoditi, a javni profil je ionako otvoren. `403` je ono što Spring vrati sam kad provjera odbije.
 
-Lista članova učitava korisnike istim upitom (`join fetch`). Izmjerio sam na testu s dva člana: bez toga idu još dva `SELECT`-a na `users`, po jedan za svakog člana. Test ovo ne hvata, jer je rezultat isti, samo sporiji. To je posao za Fazu 9 i traženje N+1 upita. Paginacije na ovoj listi još nema, dolazi s ostalim listama u Fazi 3.
+Lista članova učitava korisnike istim upitom (`join fetch`). Izmjerio sam na testu s dva člana: bez toga idu još dva `SELECT`-a na `users`, po jedan za svakog člana. Test ovo ne hvata, jer je rezultat isti, samo sporiji. To je posao za Fazu 9 i traženje N+1 upita. Od Faze 3 lista ide po stranicama, vidi paginaciju ispod.
 
 ## Pozivnice u organizaciju
 
@@ -161,3 +161,15 @@ Provider novog resursa je uvijek onaj ko ga pravi, admin ili provider. Da zahtje
 Iz skice modela u tabelu nisu ušle kolone koje ova faza ne koristi: `auto_confirm` i `min_notice_hours` dolaze s rezervacijama u Fazi 4, `capacity` u Fazi 10, cijena u Fazi 11, a `image_key` s uploadom slike. Svaka kolona dolazi s kodom i testom koji je koriste, po cijenu nekoliko `ALTER TABLE` migracija više.
 
 Servis resursa dolazi do organizacije preko `OrganizationService.getReference`, a ne preko `OrganizationRepository`, koji je vidljiv samo u paketu `organization`. Drugi paketi tako ne mogu direktno pisati po organizacijama.
+
+## Paginacija: vlastiti oblik stranice i redoslijed koji bira server
+
+Liste resursa i članova primaju `?page=0&size=20`, a Spring od toga sam napravi `Pageable`. Repozitorij vrati `Page`, za koji Spring Data pošalje dva upita: jednu stranicu i `COUNT` za ukupan broj.
+
+`Page` ne vraćam direktno. U Spring Bootu 4.1.2 `spring.data.web.pageable.serialization-mode` je podrazumijevano `direct` (pogledao sam metapodatke u `spring-boot-data-commons-4.1.2.jar`), a za taj oblik Spring Data ispisuje upozorenje "there is no guarantee about the stability of the resulting JSON structure" (tekst sam našao u klasi `WarningLoggingModifier` u `spring-data-commons-4.1.2.jar`). Isto upozorenje predlaže `VIA_DTO`, gdje Spring Data vraća svoj `PagedModel`. I to bi bilo stabilno. Uzeo sam vlastiti `PageResponse` sa pet polja (`content`, `page`, `size`, `totalElements`, `totalPages`), jer je oblik odgovora tada u mom kodu i ne zavisi od globalne postavke. Lista članova je do sada vraćala običan niz, pa se njen oblik promijenio. Frontenda još nema, pa to nikoga ne lomi.
+
+Sort iz zahtjeva se ignoriše, a redoslijed određuje servis: resursi po nazivu, članovi po datumu ulaska. Probao sam šta se desi kad se sort iz zahtjeva propusti: `?sort=provider.passwordHash` vrati `200` s resursima, znači Spring Data pusti sortiranje i po koloni s hashom tuđe lozinke. Iz redoslijeda se onda može zaključivati o hashu. Sam SQL tada nisam ispisao. Drugo polje u sortu (`id`) je tu jer dva resursa s istim nazivom inače nemaju stalan redoslijed, pa bi isti resurs mogao završiti na dvije stranice ili ni na jednoj.
+
+Stranica ima najviše 100 redova (`spring.data.web.pageable.max-page-size`). Spring Data podrazumijevano pušta 2000, a `?size=5000` sada vrati `size: 100`, ima test.
+
+Za listu članova sam prvo ručno napisao `countQuery`, jer sam mislio da Hibernate odbija `count` s `join fetch`. Kad sam ga obrisao, testovi su prošli. Spring Data sam izvede `COUNT` iz upita, pa ručnog više nema.

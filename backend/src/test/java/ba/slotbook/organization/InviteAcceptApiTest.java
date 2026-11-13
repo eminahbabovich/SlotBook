@@ -111,7 +111,7 @@ class InviteAcceptApiTest {
 				.andExpect(jsonPath("$.role").value("PROVIDER"));
 
 		mockMvc.perform(get("/api/organizations/{id}/members", teretana).header("Authorization", "Bearer " + admin))
-				.andExpect(jsonPath("$[?(@.displayName == 'Irma')].role", hasItem("PROVIDER")));
+				.andExpect(jsonPath("$.content[?(@.displayName == 'Irma')].role", hasItem("PROVIDER")));
 	}
 
 	@Test

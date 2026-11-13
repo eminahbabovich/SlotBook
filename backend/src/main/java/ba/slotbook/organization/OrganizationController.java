@@ -1,8 +1,8 @@
 package ba.slotbook.organization;
 
-import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ba.slotbook.paging.PageResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -43,8 +44,8 @@ public class OrganizationController {
 	// Provjera se izvrši prije metode, s #id iz putanje. Ne-član i član bez uloge dobiju 403.
 	@GetMapping("/{id}/members")
 	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN')")
-	public List<MemberResponse> listMembers(@PathVariable UUID id) {
-		return organizationService.listMembers(id);
+	public PageResponse<MemberResponse> listMembers(@PathVariable UUID id, Pageable pageable) {
+		return organizationService.listMembers(id, pageable);
 	}
 
 }
