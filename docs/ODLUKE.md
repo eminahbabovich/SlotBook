@@ -102,7 +102,9 @@ Ko napravi organizaciju, postaje njen `ADMIN` u istoj transakciji. Organizacija 
 
 `GET /api/organizations/{slug}` je otvoren bez prijave, jer klijent treba vidjeti gdje rezerviše prije nego što napravi nalog. Vraća samo ID, naziv, slug i zonu, bez članova.
 
-Zona mora biti IANA naziv (`Europe/Sarajevo`). `ZoneId.of` bi prihvatio i `+01:00`, a fiksni pomak ne zna za ljetno vrijeme, pa bi termini od kraja marta do kraja oktobra bili sat pomjereni. Zato `@RegionTimeZone` provjerava listu `ZoneId.getAvailableZoneIds()`. Provjerio sam da ta lista ne sadrži `+01:00`, ali sadrži `Etc/GMT-1`, koji je i u julu `+01:00`. Takvu zonu validator za sada pušta. Ko je upiše, upisao ju je namjerno, ali to nije ista zaštita kao za `+01:00`.
+Zona mora biti IANA naziv (`Europe/Sarajevo`). `ZoneId.of` bi prihvatio i `+01:00`, a fiksni pomak ne zna za ljetno vrijeme, pa bi termini od kraja marta do kraja oktobra bili sat pomjereni. Zato `@RegionTimeZone` provjerava listu `ZoneId.getAvailableZoneIds()`. Ta lista ne sadrži `+01:00`, ali sadrži `Etc/GMT-1`, koji je i u julu `+01:00`, pa je prva verzija validatora tu zonu puštala. Sada validator odbija i svaku zonu čija pravila nikad nemaju prelaz (`ZoneRules.isFixedOffset()`). Na Javi 21.0.12 to je 49 od 604 zone: sve `Etc/*`, `UTC`, `GMT` i njihovi sinonimi i sedam `SystemV/*`. Prije toga sam probao `Asia/Tokyo` i `Asia/Kolkata`, koje danas nemaju ljetno vrijeme, i obje prolaze jer su ga nekad imale. Mjesto bez ljetnog vremena tako i dalje može izabrati svoju zonu. Cijena je da organizacija ne može izabrati `UTC`, ali nijedna čitaonica ni teretana ne radi po UTC-u, nego po satu mjesta gdje se nalazi.
+
+Ovo čuva samo Java. `CHECK` u Postgresu ne smije imati podupit, pa ne može pitati `pg_timezone_names` je li zona poznata. Termine ionako računa Java, pa je bitno da zonu poznaje Java.
 
 ## Autorizacija po organizaciji: @PreAuthorize i bean koji pita bazu
 

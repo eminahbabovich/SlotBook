@@ -11,8 +11,9 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
 
-// Samo IANA zone (Europe/Sarajevo). ZoneId.of bi prihvatio i "+01:00", ali fiksni pomak ne zna
-// za ljetno vrijeme, pa bi termini od kraja marta do kraja oktobra bili pomjereni za sat.
+// Samo zone stvarnih mjesta (Europe/Sarajevo). Fiksni pomak ne zna za ljetno vrijeme, pa bi termini
+// od kraja marta do kraja oktobra bili pomjereni za sat. "+01:00" nije na listi IANA zona, ali
+// Etc/GMT-1 i UTC jesu, pa ih odbija tek provjera da pravila zone nikad nemaju prelaz.
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = RegionTimeZone.Validator.class)
@@ -28,7 +29,11 @@ public @interface RegionTimeZone {
 
 		@Override
 		public boolean isValid(String vrijednost, ConstraintValidatorContext context) {
-			return vrijednost == null || ZoneId.getAvailableZoneIds().contains(vrijednost);
+			if (vrijednost == null) {
+				return true;
+			}
+			return ZoneId.getAvailableZoneIds().contains(vrijednost)
+					&& !ZoneId.of(vrijednost).getRules().isFixedOffset();
 		}
 
 	}

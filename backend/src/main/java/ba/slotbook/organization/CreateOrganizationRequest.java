@@ -16,6 +16,6 @@ public record CreateOrganizationRequest(
 		String slug,
 
 		@NotBlank(message = "Izaberi vremensku zonu.")
-		@RegionTimeZone(message = "Zona mora biti naziv poput Europe/Sarajevo, a ne pomak poput +01:00.")
+		@RegionTimeZone(message = "Zona mora biti mjesto poput Europe/Sarajevo, a ne fiksni pomak poput +01:00, Etc/GMT-1 ili UTC.")
 		String timezone) {
 }
