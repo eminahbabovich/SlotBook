@@ -263,3 +263,13 @@ Upload nije u transakciji, jer skladište nije dio transakcije baze. Redoslijed 
 Najveća slika je 2 MB. Provjerava je servis, a postavljena je i u `spring.servlet.multipart`, da Tomcat odbije prevelik zahtjev prije nego što ga cijelog pročita. Granicu servisa pokriva API test. Tomcatovu granicu MockMvc ne primjenjuje, pa za nju postoji samo unit test koji pokazuje da odgovor bude `413` s porukom na bosanskom. Da je Tomcat stvarno odbije, nisam provjerio.
 
 Lokalni folder je `uploads/` (u `.gitignore`), a testovi pišu u `target/test-uploads`. Bez `@PreAuthorize` na uploadu Bojan iz druge organizacije je dobio `200` i stvarno postavio sliku na sto u tuđoj čitaonici. Test izolacije sada šalje i multipart zahtjev s ispravnom slikom i provjerava da se ključ slike nije promijenio.
+
+## S3 skladište: AWS SDK v2, test na S3Mock umjesto MinIO
+
+`S3StorageService` koristi AWS SDK za Javu v2 (`software.amazon.awssdk:s3`, verzija 2.57.5). R2 i ostala S3-kompatibilna skladišta govore isti API, pa poseban klijent ne treba. Uzeo sam verziju od 27.10.2026, a ne 2.59.0 od 12.11., jer je ova druga izašla dan ranije. Klijent je podešen po Cloudflare primjeru za Java SDK: `region("auto")`, bucket u putanji (`pathStyleAccessEnabled`) i `chunkedEncodingEnabled(false)`. Bez ovog zadnjeg, po Cloudflare dokumentaciji, R2 odbija `putObject` sa `403`, jer potpis ne odgovara tijelu koje se šalje u dijelovima. Na samom R2 to nisam provjerio, jer R2 još nije podešen (Faza 12).
+
+Za test sam prvo dodao Testcontainers modul za MinIO, a onda se pokazalo da MinIO više nema javnih Docker slika: `minio/minio` ne postoji na Docker Hubu, a `quay.io` traži prijavu. Test zato radi na `adobe/s3mock:5.2.3`, običnom `GenericContainer`-u, bez dodatnog modula. Test dokazuje da upis, čitanje i brisanje rade preko S3 API-ja. Ne dokazuje da radi i s R2, i ne može pasti zbog `chunkedEncodingEnabled`, jer S3Mock prima i tijelo u dijelovima.
+
+Implementacija se bira preko `slotbook.storage.type`, a `StorageSelectionTest` pokazuje da se bez podešavanja bira disk, a uz `s3` S3. Podaci za S3 (`S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`) nemaju podrazumijevane vrijednosti. S tipom `s3` aplikacija bez njih ne starta, i za to postoji test. Prvi put je taj test prolazio iz pogrešnog razloga: mali Spring kontekst u testu nepoznat `${...}` ostavi kao tekst, pa je padao `URI.create`. Sad test učita isti mehanizam za placeholdere kao aplikacija i provjerava poruku o placeholderu. Kad je tip `local`, S3 podaci se ne čitaju, pa lokalno i u testovima ne trebaju.
+
+Dok R2 ne bude podešen, Render radi s tipom `local`, pa slike nestanu sa svakim deployem ili restartom. Za demo to još nije bitno, jer frontenda nema.

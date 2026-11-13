@@ -124,4 +124,4 @@ Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` 
 
 ## Šta dolazi
 
-Slika resursa ide kroz interface `StorageService`. Za sada postoji samo `LocalStorageService`, koji piše u folder na disku, a S3-kompatibilno skladište dolazi u koraku 7b. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom, i tada se od slobodnih termina oduzimaju i rezervacije.
+Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, Cloudflare R2 na produkciji), a bira se preko `slotbook.storage.type`. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom, i tada se od slobodnih termina oduzimaju i rezervacije.
