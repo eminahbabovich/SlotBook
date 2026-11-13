@@ -46,6 +46,12 @@ public class OrganizationService {
 		return OrganizationResponse.from(organization);
 	}
 
+	// Drugi paketi dobijaju organizaciju preko servisa, a repozitorij ostaje unutar paketa.
+	// Referenca bez SELECT-a: pozivalac je već prošao @PreAuthorize, pa organizacija postoji.
+	public Organization getReference(UUID organizationId) {
+		return organizations.getReferenceById(organizationId);
+	}
+
 	@Transactional(readOnly = true)
 	public OrganizationResponse getBySlug(String slug) {
 		return organizations.findBySlug(slug)

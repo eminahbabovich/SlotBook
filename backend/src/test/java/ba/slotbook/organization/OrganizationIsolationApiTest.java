@@ -52,6 +52,9 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/members", null),
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/invites", """
 					{"email": "upad.izolacija@example.com", "role": "ADMIN"}
+					"""),
+			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/resources", """
+					{"name": "Sto 7 u čitaonici", "slotMinutes": 120}
 					"""));
 
 	@Autowired
@@ -129,6 +132,7 @@ class OrganizationIsolationApiTest {
 	void adminDrugeOrganizacijeDobija403NaSvakomEndpointuINistaSeNeMijenja() throws Exception {
 		long clanovaPrije = brojRedova("organization_members");
 		long pozivnicaPrije = brojRedova("organization_invites");
+		long resursaPrije = brojRedova("resources");
 
 		for (Zahtjev zahtjev : ZAHTJEVI) {
 			assertThat(posalji(zahtjev, bojan)).as(zahtjev.ruta()).isEqualTo(403);
@@ -136,6 +140,7 @@ class OrganizationIsolationApiTest {
 
 		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
 		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);
+		assertThat(brojRedova("resources")).isEqualTo(resursaPrije);
 	}
 
 	// Bez ovoga bi zahtjev s greškom u putanji ili tijelu dao 403 ili 404 iz pogrešnog razloga

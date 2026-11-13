@@ -149,3 +149,15 @@ Kriterij Faze 2 kaže da korisnik iz organizacije A ne može dotaknuti podatke o
 Ručna lista endpointa zastari čim se doda novi. Zato test preko `RequestMappingHandlerMapping` pročita sve rute iz aplikacije i padne ako postoji ruta pod `/api/organizations/{...}/` koje nema u listi. Probao sam s privremenim `GET /api/organizations/{id}/stats`: test pada i u poruci imenuje tu rutu. Kad sam pozivnicama zamijenio provjeru s `isAuthenticated()`, prvi test je pao s `expected: 403 but was: 201`.
 
 Čuvar vidi samo putanje gdje je ID organizacije u adresi. Resursi (`/api/resources/{id}`) i rezervacije (`/api/bookings/{id}`) iz faza 3 i 4 pripadaju organizaciji, ali ID organizacije nije u putanji, pa ih čuvar za sada ne bi primijetio. Filter se proširuje kad ti endpointi nastanu, a test kroz sve endpointe je u Fazi 8.
+
+## Resursi: provider mora biti član iste organizacije, i to čuva baza
+
+Resurs (sala, sto u čitaonici, termin konsultacija) pripada organizaciji i ima providera, osobu koja ga vodi. Prvo sam mislio na običan FK `provider_id REFERENCES users`, ali on pušta i korisnika iz druge organizacije. Zato je ključ složen: `(organization_id, provider_id)` mora postojati kao par u `organization_members`. Probao sam test s običnim FK-om i Lejla, trenerica iz teretane, postane provider stola u čitaonici čija nije članica. Sa složenim ključem baza vrati `resources_provider_clan`.
+
+To se pokazalo i kad sam privremeno obrisao `@PreAuthorize` s kreiranja resursa. Bojan, admin druge organizacije, nije dobio `201`, nego `500`, jer je upis odbila baza. Odgovor nije dobar i test izolacije je pao kako treba, ali ništa nije upisano. Ključ čuva samo članstvo, ne ulogu: `CLIENT` bi prošao bazu, njega zaustavlja samo `@PreAuthorize`.
+
+Provider novog resursa je uvijek onaj ko ga pravi, admin ili provider. Da zahtjev ima `providerId`, trebalo bi još jedno pravilo (provider ne smije dodijeliti resurs drugome, klijent ne smije biti provider). Promjena providera ide uz izmjenu resursa.
+
+Iz skice modela u tabelu nisu ušle kolone koje ova faza ne koristi: `auto_confirm` i `min_notice_hours` dolaze s rezervacijama u Fazi 4, `capacity` u Fazi 10, cijena u Fazi 11, a `image_key` s uploadom slike. Svaka kolona dolazi s kodom i testom koji je koriste, po cijenu nekoliko `ALTER TABLE` migracija više.
+
+Servis resursa dolazi do organizacije preko `OrganizationService.getReference`, a ne preko `OrganizationRepository`, koji je vidljiv samo u paketu `organization`. Drugi paketi tako ne mogu direktno pisati po organizacijama.
