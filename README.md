@@ -32,7 +32,7 @@ U Fazi 3 za sada admin ili provider organizacije može napraviti resurs, npr. sa
 | 12 | Deploy i prezentacija | nije počelo |
 | 13 | Završni pregled i dodaci | nije počelo |
 
-Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), a odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md).
+Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), a slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md).
 
 Trenutno ima 98 testova i svi prolaze. JaCoCo mjeri 98,4 % linija glavnog koda (378 od 384). Nepokrivene su dvije linije `main` metode, dvije u `RandomToken` (grana za slučaj da Java nema SHA-256), jedna u `SecurityConfig` i jedna u `RefreshTokenService`.
 
@@ -85,7 +85,7 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 ## Struktura
 
-`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.status`, kasnije `booking`, `resource`...), ne po sloju. `frontend/` još ne postoji, a u `docs/` je za sada samo `ODLUKE.md`. `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
+`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.status`, kasnije `booking`, `resource`...), ne po sloju. `frontend/` još ne postoji, a u `docs/` su `ODLUKE.md` (odluke i zašto) i `ARHITEKTURA.md` (slojevi, tok zahtjeva i model podataka). `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
 
 ## Live demo i screenshotovi
 

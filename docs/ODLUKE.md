@@ -194,7 +194,7 @@ Ovdje me baza ne čuva kao kod kreiranja. Kad sam privremeno obrisao `@PreAuthor
 
 ## Promjena providera: samo admin, i novi provider mora voditi resurse
 
-`PUT .../resources/{resourceId}/provider` smije samo admin. Provider ne može resurs prebaciti na drugoga, jer bi tako trener mogao nekome "podmetnuti" svoj resurs. Novi provider mora biti član organizacije s ulogom `PROVIDER` ili `ADMIN`. Složeni ključ iz `resources_provider_clan` čuva članstvo, ali klijenta bi pustio, pa uloga se provjerava u servisu. Ne-člana bi baza odbila, ali kao `500`, pa servis i njega uhvati ranije i vrati `400` s poljem `providerId`, u istom obliku kao greška validacije. Privremeno sam pustio svaku ulogu i test s klijentom Dženanom kao providerom je pao.
+`PUT .../resources/{resourceId}/provider` smije samo admin. Provider ne može resurs prebaciti na drugoga, jer bi tako trener mogao nekome "podmetnuti" svoj resurs. Novi provider mora biti član organizacije s ulogom `PROVIDER` ili `ADMIN`. Složeni ključ iz `resources_provider_clan` čuva članstvo, ali klijenta bi pustio, pa se uloga provjerava u servisu. Ne-člana bi baza odbila, ali kao `500`, pa servis i njega uhvati ranije i vrati `400` s poljem `providerId`, u istom obliku kao greška validacije. Privremeno sam pustio svaku ulogu i test s klijentom Dženanom kao providerom je pao.
 
 ## Rute bez organizacije u putanji: /api/resources/{resourceId}
 
