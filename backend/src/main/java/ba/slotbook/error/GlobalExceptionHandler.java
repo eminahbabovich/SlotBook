@@ -19,6 +19,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import ba.slotbook.auth.InvalidRefreshTokenException;
@@ -27,6 +29,7 @@ import ba.slotbook.organization.AlreadyMemberException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
+import ba.slotbook.resource.ImageNotFoundException;
 import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.user.EmailAlreadyUsedException;
 
@@ -65,6 +68,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 				? "Datum se piše kao godina-mjesec-dan, npr. 2026-11-16."
 				: "Vrijednost nije u ispravnom obliku.";
 		return handleExceptionInternal(ex, neispravnoPolje(ex.getPropertyName(), poruka), headers, status, request);
+	}
+
+	// Fajl iz multipart zahtjeva, npr. slika resursa poslana bez polja file
+	@Override
+	protected ResponseEntity<Object> handleMissingServletRequestPart(MissingServletRequestPartException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		return handleExceptionInternal(ex, neispravnoPolje(ex.getRequestPartName(), "Ovaj fajl je obavezan."),
+				headers, status, request);
+	}
+
+	// Ovo baca Tomcat kad zahtjev pređe spring.servlet.multipart granicu, prije nego što dođe do servisa
+	@Override
+	protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONTENT_TOO_LARGE,
+				"Fajl je prevelik. Slika može imati najviše 2 MB.");
+		problem.setTitle("Fajl je prevelik");
+		return handleExceptionInternal(ex, problem, headers, status, request);
+	}
+
+	@ExceptionHandler(ImageNotFoundException.class)
+	ProblemDetail slikaNePostoji(ImageNotFoundException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"Ovaj resurs još nema sliku.");
+		problem.setTitle("Slika ne postoji");
+		return problem;
 	}
 
 	@ExceptionHandler(EmailAlreadyUsedException.class)

@@ -1,6 +1,7 @@
 package ba.slotbook.organization;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,6 +24,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -45,6 +47,9 @@ class OrganizationIsolationApiTest {
 	// prije @PreAuthorize, pa bi neispravno tijelo dalo 400 i sakrilo da autorizacija fali.
 	// Isto važi za obavezne parametre iza ?, pa i oni moraju biti ispravni.
 	private record Zahtjev(HttpMethod metoda, String putanja, String tijelo) {
+
+		// Umjesto JSON tijela ide multipart s ispravnom slikom
+		static final String SLIKA = "<multipart slika>";
 
 		// Ruta bez parametara, da se poredi s obrascem iz aplikacije
 		String ruta() {
@@ -79,7 +84,12 @@ class OrganizationIsolationApiTest {
 					{"startsAt": "2035-08-01T00:00:00+02:00", "endsAt": "2035-08-02T00:00:00+02:00"}
 					"""),
 			new Zahtjev(HttpMethod.DELETE, "/api/resources/{resourceId}/time-off/{timeOffId}", null),
-			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/slots?from=2035-08-06&to=2035-08-13", null));
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/slots?from=2035-08-06&to=2035-08-13", null),
+			// POST prije GET-a, da admin u drugom testu ima šta pročitati
+			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/image", Zahtjev.SLIKA),
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/image", null));
+
+	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 13 };
 
 	@Autowired
 	MockMvc mockMvc;
@@ -177,6 +187,12 @@ class OrganizationIsolationApiTest {
 		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
 		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja())
 				.buildAndExpand(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola)).toUri();
+		if (Zahtjev.SLIKA.equals(zahtjev.tijelo())) {
+			return mockMvc.perform(multipart(zahtjev.metoda(), adresa)
+					.file(new MockMultipartFile("file", "sto.png", "image/png", PNG))
+					.header("Authorization", "Bearer " + token))
+					.andReturn().getResponse().getStatus();
+		}
 		MockHttpServletRequestBuilder builder = request(zahtjev.metoda(), adresa)
 				.header("Authorization", "Bearer " + token);
 		if (zahtjev.tijelo() != null) {
@@ -198,6 +214,7 @@ class OrganizationIsolationApiTest {
 		long resursaPrije = brojRedova("resources");
 		long pravilaPrije = brojPravila();
 		long izuzetakaPrije = brojIzuzetaka();
+		String slikaPrije = kljucSlike();
 
 		for (Zahtjev zahtjev : ZAHTJEVI) {
 			assertThat(posalji(zahtjev, bojan)).as(zahtjev.ruta()).isEqualTo(403);
@@ -212,6 +229,11 @@ class OrganizationIsolationApiTest {
 				stoCitaonice)).isTrue();
 		assertThat(brojPravila()).isEqualTo(pravilaPrije);
 		assertThat(brojIzuzetaka()).isEqualTo(izuzetakaPrije);
+		assertThat(kljucSlike()).isEqualTo(slikaPrije);
+	}
+
+	private String kljucSlike() {
+		return jdbc.queryForObject("select image_key from resources where id = ?", String.class, stoCitaonice);
 	}
 
 	private long brojIzuzetaka() {

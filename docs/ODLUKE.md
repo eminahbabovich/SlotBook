@@ -249,3 +249,17 @@ Termine vidi svako ko vidi resurs, i klijent, ista provjera `canView` kao za rad
 Nedostajući parametar i datum u pogrešnom obliku (`29.01.2035`) Spring je vraćao kao `400` s porukom na engleskom. Sada `GlobalExceptionHandler` za oba vraća isti oblik kao greška validacije (`greske: [{polje, poruka}]`), na bosanskom. Isti override hvata i UUID u pogrešnom obliku u putanji, ali to nisam posebno testirao.
 
 Test izolacije je za ovu rutu morao slati i ispravne parametre. Obavezni parametri se, kao i tijelo, provjeravaju prije `@PreAuthorize`, pa bi ruta bez njih dala `400` i sakrila da provjera pristupa fali. Kad sam `@PreAuthorize` privremeno izbacio, test je pao na `/slots`.
+
+## Slika resursa: kroz backend, tip po bajtovima, prvo fajl pa baza
+
+U bazi je samo ključ slike (`image_key`), a sama slika je u skladištu iza interfacea `StorageService`. Interface ovdje ima smisla jer stvarno postoje dvije implementacije: folder na disku za lokalni rad i testove, i S3-kompatibilno skladište, jer Render nema trajni disk i slike bi nestale sa svakim deployem. Za sada postoji samo lokalna (korak 7a). Implementacija se bira preko `slotbook.storage.type`, a podrazumijevana je `local`.
+
+Slika se čita preko `GET /api/resources/{resourceId}/image`, kroz backend i uz istu provjeru `canView` kao za resurs, a ne kao javni link na skladište. Javni link bi zaobišao izolaciju organizacija. Cijena je što frontend ne može staviti adresu u `<img src>`, jer taj zahtjev ne šalje `Authorization` header, pa će sliku dohvatiti `fetch`-om i prikazati kao blob. Druga opcija su potpisani linkovi koji ističu (presigned URL), ali to je dodatni koncept, a za demo slike od par stotina KB je nepotrebno.
+
+Tip slike se određuje po prvim bajtovima fajla (JPEG, PNG, WebP), a ne po imenu ni `Content-Type` zaglavlju, jer njih šalje klijent. HTML preimenovan u `sala.png` dobija `400`. Kad sam privremeno pustio svaki fajl kao PNG, taj test je pao. Provjerava se samo potpis na početku, slika se ne dekodira, pa fajl s ispravnim potpisom i smećem iza prolazi. Za prikaz to nije opasno, jer se uvijek vraća s tipom slike, nikad kao HTML.
+
+Upload nije u transakciji, jer skladište nije dio transakcije baze. Redoslijed je zato namjeran: prvo se upiše nova slika, pa ključ u bazi, pa se briše stara. Ako pukne upis u bazu, ostane slika koju niko ne koristi, ali nikad resurs koji pokazuje na sliku koje nema. Svaka slika dobija novi ključ s UUID-om, pa se stara i nova nikad ne prepišu. Kad sam brisanje stare privremeno izbacio, u skladištu su ostala dva fajla i test je pao. Dva istovremena uploada na isti resurs mogu ostaviti jednu sliku bez vlasnika. To nisam rješavao, jer je jedina posljedica fajl viška.
+
+Najveća slika je 2 MB. Provjerava je servis, a postavljena je i u `spring.servlet.multipart`, da Tomcat odbije prevelik zahtjev prije nego što ga cijelog pročita. Granicu servisa pokriva API test. Tomcatovu granicu MockMvc ne primjenjuje, pa za nju postoji samo unit test koji pokazuje da odgovor bude `413` s porukom na bosanskom. Da je Tomcat stvarno odbije, nisam provjerio.
+
+Lokalni folder je `uploads/` (u `.gitignore`), a testovi pišu u `target/test-uploads`. Bez `@PreAuthorize` na uploadu Bojan iz druge organizacije je dobio `200` i stvarno postavio sliku na sto u tuđoj čitaonici. Test izolacije sada šalje i multipart zahtjev s ispravnom slikom i provjerava da se ključ slike nije promijenio.

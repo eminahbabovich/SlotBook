@@ -46,6 +46,9 @@ public class Resource {
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
+	@Column(name = "image_key")
+	private String imageKey;
+
 	protected Resource() {
 	}
 
@@ -72,6 +75,14 @@ public class Resource {
 	// Red ostaje jer će na njega pokazivati rezervacije, a klijent ga više ne vidi u listi
 	void deactivate() {
 		this.active = false;
+	}
+
+	void changeImage(String imageKey) {
+		this.imageKey = imageKey;
+	}
+
+	public String getImageKey() {
+		return imageKey;
 	}
 
 	public UUID getId() {

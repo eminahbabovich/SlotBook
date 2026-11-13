@@ -49,3 +49,6 @@ pgdata/
 
 # --- Lokalna uputstva za rad s alatima: ostaju samo na računaru ---
 CLAUDE.md
+
+# --- Slike iz lokalnog skladišta ---
+uploads/

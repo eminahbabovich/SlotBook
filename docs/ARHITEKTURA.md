@@ -4,7 +4,7 @@ Opis onoga što postoji sada (Faza 3 u izradi). Rezervacije, obavijesti i fronte
 
 ## Paketi i slojevi
 
-Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice) i `status`.
+Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike) i `status`.
 
 Unutar paketa je uvijek isti red: kontroler prima zahtjev i provjerava pristup, servis drži pravila i transakciju, repozitorij priča s bazom. Kontroler vraća samo DTO (`record`), nikad entitet. Repozitorij organizacija je vidljiv samo u paketu `organization`, pa paket `resource` do organizacije dolazi preko `OrganizationService`.
 
@@ -97,6 +97,7 @@ erDiagram
         int slot_minutes "5 do 480"
         boolean active
         timestamptz created_at
+        varchar image_key "ključ u skladištu, ne slika"
     }
     availability_rules {
         uuid id PK
@@ -123,4 +124,4 @@ Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` 
 
 ## Šta dolazi
 
-U ostatku Faze 3 dolazi slika resursa kroz `StorageService`. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom, i tada se od slobodnih termina oduzimaju i rezervacije.
+Slika resursa ide kroz interface `StorageService`. Za sada postoji samo `LocalStorageService`, koji piše u folder na disku, a S3-kompatibilno skladište dolazi u koraku 7b. U Fazi 4 dolazi `bookings` s `EXCLUDE` constraintom, i tada se od slobodnih termina oduzimaju i rezervacije.
