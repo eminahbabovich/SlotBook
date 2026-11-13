@@ -227,3 +227,15 @@ API prima `OffsetDateTime`, pa vrijeme mora imati pomak (`2035-07-01T08:00:00+02
 Izuzeci se smiju preklapati (godišnji i praznik u isto vrijeme), jer to ne kvari ništa: termin je zatvoren ako ga pokriva bilo koji izuzetak.
 
 Listu izuzetaka, kao i dodavanje i brisanje, vide samo admin i provider resursa, ne i klijent. Razlog može biti lična stvar, npr. bolovanje. Klijent će u koraku 5 samo vidjeti da u tom periodu nema slobodnih termina. Lista prikazuje izuzetke koji još traju ili tek dolaze (`ends_at` poslije sada, sat iz `Clock`-a), a prošli se ne prikazuju, ali ostaju u bazi. Brisanje traži par (izuzetak, resurs iz putanje), pa se izuzetak sale ne može obrisati kroz putanju saune, i kad korisnik uređuje oba.
+
+## Slobodni termini se računaju, ne čuvaju
+
+Slobodni termini nisu redovi u bazi. Računaju se iz radnog vremena, trajanja termina i izuzetaka za traženi period. Da sam ih unaprijed upisivao u tabelu, svaka promjena radnog vremena bi tražila brisanje i ponovno pravljenje budućih redova, i trebalo bi odlučiti koliko mjeseci unaprijed. Račun je u običnoj klasi `SlotCalculator`, bez Springa i bez baze, pa se sve provjerava unit testom za manje od sekunde.
+
+Za svaki datum se lokalno vrijeme pravila pretvara u trenutak s pomakom koji važi baš tog datuma (`ZonedDateTime.of(datum, 08:00, zona)`). Ponedjeljak 08:00 u Sarajevu je zato 07:00 UTC prije 28.3.2027, a 06:00 UTC poslije, i po satu na zidu je oba puta 08:00. Termini se onda ređaju po stvarnom vremenu (`Instant` plus trajanje), a ne po satu na zidu. U noći 25.10.2026, kad se sat vrati s 03:00 na 02:00, pravilo od 00:00 do 04:00 traje pet stvarnih sati i daje pet satnih termina, a 28.3.2027. daje tri, jer sat od 02:00 do 03:00 ne postoji. Svaki termin uvijek traje tačno onoliko koliko piše na resursu.
+
+Kad sam privremeno uzimao pomak zone za trenutak upita (`getOffset(now)`) umjesto za datum termina, pala su sva četiri DST testa, a zimski test i test sa zonom `Asia/Tokyo` su prošli. Ta greška bi zato prošla nezapaženo sve do prvog prelaska na ljetno vrijeme. Pravilo koje počinje baš u satu koji ne postoji (npr. 02:30 te martovske noći) nisam testirao. Po Javadoc-u za `ZonedDateTime.of` takvo vrijeme se pomjeri naprijed za dužinu rupe, na 03:30.
+
+Termin se nudi samo ako cijeli stane u radno vrijeme (08:00-10:30 sa satnim terminima daje 08 i 09) i ako počinje poslije sada. Izuzetak zatvara termin samo ako se stvarno preklapaju, a kraj je isključen kao kod `tstzrange`. Izuzetak koji završava u 11:00 ne dira termin od 11:00. Kad sam poređenje privremeno promijenio da uključuje krajeve, taj test je pao.
+
+Rezervacije se još ne oduzimaju, jer ih nema do Faze 4, a endpoint koji ovo vraća dolazi u sljedećem koraku.
