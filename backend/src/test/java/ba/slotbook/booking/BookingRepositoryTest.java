@@ -3,6 +3,7 @@ package ba.slotbook.booking;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import ba.slotbook.TestcontainersConfiguration;
+import ba.slotbook.resource.Resource;
+import ba.slotbook.user.User;
+import jakarta.persistence.EntityManager;
 
 // Preklapanje termina čuva baza. Redovi se upisuju SQL-om, mimo Jave, jer to i dokazujemo.
 @Import(TestcontainersConfiguration.class)
@@ -22,6 +26,12 @@ class BookingRepositoryTest {
 
 	@Autowired
 	JdbcTemplate jdbc;
+
+	@Autowired
+	BookingRepository bookings;
+
+	@Autowired
+	EntityManager em;
 
 	private UUID stoBr1;
 	private UUID stoBr2;
@@ -111,6 +121,32 @@ class BookingRepositoryTest {
 		assertThatThrownBy(
 				() -> rezervacija(stoBr1, emina, "2035-11-19 09:00+01", "2035-11-19 10:00+01", "ACTIVE"))
 				.hasMessageContaining("bookings_status");
+	}
+
+	private Booking nova(UUID resurs, UUID klijent, String od, String doo) {
+		return new Booking(em.getReference(Resource.class, resurs), em.getReference(User.class, klijent),
+				Instant.parse(od), Instant.parse(doo), BookingStatus.CONFIRMED, Instant.parse("2035-11-18T12:00:00Z"));
+	}
+
+	@Test
+	void entitetSeUpisujeSaStatusomKaoTekstom() {
+		Booking b = bookings.saveAndFlush(nova(stoBr1, emina, "2035-11-19T08:00:00Z", "2035-11-19T09:00:00Z"));
+
+		assertThat(jdbc.queryForObject("select status from bookings where id = ?", String.class, b.getId()))
+				.isEqualTo("CONFIRMED");
+		assertThat(jdbc.queryForObject("select start_time = '2035-11-19 09:00+01' from bookings where id = ?",
+				Boolean.class, b.getId())).isTrue();
+	}
+
+	// Servis u sljedećem koraku od ovog izuzetka pravi 409, pa mora stići i kad upis ide kroz JPA
+	@Test
+	void preklapanjeKrozRepozitorijDajeDataIntegrityViolation() {
+		bookings.saveAndFlush(nova(stoBr1, emina, "2035-11-19T08:00:00Z", "2035-11-19T09:00:00Z"));
+
+		assertThatThrownBy(
+				() -> bookings.saveAndFlush(nova(stoBr1, dzenan, "2035-11-19T08:30:00Z", "2035-11-19T09:30:00Z")))
+				.isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("bookings_bez_preklapanja");
 	}
 
 }
