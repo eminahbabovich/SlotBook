@@ -26,8 +26,10 @@ class BookingJob {
 	void obradi() {
 		int istekle = bookingService.expireOverdue();
 		int zatvorene = bookingService.completeEnded();
-		if (istekle + zatvorene > 0) {
-			log.info("Isteklo {} nepotvrđenih rezervacija, zatvoreno {} završenih", istekle, zatvorene);
+		int podsjetnici = bookingService.sendReminders();
+		if (istekle + zatvorene + podsjetnici > 0) {
+			log.info("Isteklo {} nepotvrđenih rezervacija, zatvoreno {} završenih, {} podsjetnika", istekle,
+					zatvorene, podsjetnici);
 		}
 	}
 

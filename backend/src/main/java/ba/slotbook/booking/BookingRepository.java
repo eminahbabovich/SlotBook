@@ -49,6 +49,18 @@ interface BookingRepository extends JpaRepository<Booking, UUID> {
 			SELECT id FROM istekle""")
 	List<UUID> expireOnResource(UUID resourceId, Instant sada);
 
+	// Potvrđene koje počinju u sljedećih N sati i nemaju podsjetnik. Ko je rezervisao manje od N sati
+	// unaprijed, ne dobija ga: potvrdu je dobio maloprije, pa bi drugi mail za isti termin bio višak.
+	@Query(nativeQuery = true, value = """
+			SELECT b.* FROM bookings b
+			WHERE b.status = 'CONFIRMED'
+				AND b.start_time > :sada
+				AND b.start_time <= :granica
+				AND b.created_at < b.start_time - make_interval(hours => :sati)
+				AND NOT EXISTS (SELECT 1 FROM notifications n
+					WHERE n.booking_id = b.id AND n.type = 'BOOKING_REMINDER')""")
+	List<Booking> findDueForReminder(Instant sada, Instant granica, int sati);
+
 	@Modifying
 	@Query(nativeQuery = true, value = """
 			WITH zavrsene AS (

@@ -45,11 +45,13 @@ public class BookingService {
 	private final Clock clock;
 	private final Duration rokZaPotvrdu;
 	private final Duration zatvaranjePoslije;
+	private final int satiDoPodsjetnika;
 
 	public BookingService(BookingRepository bookings, BookingEventRepository events, ResourceRepository resources,
 			UserRepository users, SlotService slotService, NotificationService notifications, Clock clock,
 			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu,
-			@Value("${slotbook.booking.complete-after-hours}") int satiDoZatvaranja) {
+			@Value("${slotbook.booking.complete-after-hours}") int satiDoZatvaranja,
+			@Value("${slotbook.booking.reminder-hours}") int satiDoPodsjetnika) {
 		this.bookings = bookings;
 		this.events = events;
 		this.resources = resources;
@@ -59,6 +61,7 @@ public class BookingService {
 		this.clock = clock;
 		this.rokZaPotvrdu = Duration.ofHours(satiZaPotvrdu);
 		this.zatvaranjePoslije = Duration.ofHours(satiDoZatvaranja);
+		this.satiDoPodsjetnika = satiDoPodsjetnika;
 	}
 
 	// Ko smije rezervisati provjerava @PreAuthorize u kontroleru. Klijent šalje samo početak, a kraj
@@ -152,6 +155,18 @@ public class BookingService {
 	public int completeEnded() {
 		Instant sada = clock.instant();
 		return bookings.completeEndedBefore(sada.minus(zatvaranjePoslije), sada);
+	}
+
+	// Za BookingJob. Posao koji kasni (Render spava) i dalje pošalje podsjetnik, samo dok termin nije počeo.
+	@Transactional
+	public int sendReminders() {
+		Instant sada = clock.instant();
+		List<Booking> zaPodsjetnik = bookings.findDueForReminder(sada, sada.plus(Duration.ofHours(satiDoPodsjetnika)),
+				satiDoPodsjetnika);
+		for (Booking rezervacija : zaPodsjetnik) {
+			javi(rezervacija.getClient().getId(), NotificationType.BOOKING_REMINDER, rezervacija);
+		}
+		return zaPodsjetnik.size();
 	}
 
 	// Najkasniji termin prvo, pa budući termini idu prije prošlih. Sort bira server, kao kod resursa,

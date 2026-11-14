@@ -426,3 +426,11 @@ Dva admina koja u istom trenutku pozovu isti email su ranije davala `500`, jer o
 
 Naslov maila je "Pozivnica na SlotBook: Čitaonica PMF", a ne "Pozivnica u Čitaonica PMF", jer se naziv organizacije ne može deklinirati.
 
+## Podsjetnik dan prije termina, najviše jedan po rezervaciji
+
+Podsjetnik ide klijentu 24 sata prije potvrđenog termina (`slotbook.booking.reminder-hours`). Ne pravi se unaprijed s rokom slanja, nego ga `BookingJob` svake minute upiše za potvrđene rezervacije koje počinju u sljedećih 24 sata, a podsjetnik još nemaju. Tako otkazana ili odbijena rezervacija nikad ne dobije podsjetnik, a ne treba ga ni brisati. Ako posao kasni, podsjetnik ode kasnije, ali samo dok termin nije počeo.
+
+Ko rezerviše manje od dan unaprijed, ne dobija podsjetnik, jer je potvrdu dobio maloprije. Inače bi neko ko u 10 rezerviše termin za 14 dobio dva maila u istom minutu.
+
+Najviše jedan podsjetnik po rezervaciji čuva baza, parcijalnim UNIQUE indeksom nad `notifications (booking_id) WHERE type = 'BOOKING_REMINDER'`. Upit posla preskače rezervacije koje podsjetnik već imaju, pa se indeks u normalnom radu ne aktivira. Aktivira se kad dva posla krenu u isto vrijeme, npr. na dvije instance: drugi tada padne na indeksu, cijeli njegov krug se poništi i ponovi minutu kasnije. Test bez provjere u upitu pokazuje da baza odbije drugi podsjetnik (`duplicate key`). Da li uopšte puštati dvije instance, odlučujem s ShedLockom u zadnjem koraku Faze 5.
+

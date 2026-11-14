@@ -364,6 +364,53 @@ class BookingServiceTest {
 		assertThat(obavijesti(otkazalaProfesorica)).endsWith("BOOKING_CANCELLED " + studentica);
 	}
 
+	// Za 23 sata dobija, za 25 još ne, a nepotvrđena ne dobija
+	@Test
+	void podsjetnikIdeStudenticiDanPrijePotvrdjenogTermina() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+		Instant sada = Instant.now();
+		UUID sutra = upisi(sto, "CONFIRMED", sada.plus(23, ChronoUnit.HOURS), sada.plus(24, ChronoUnit.HOURS), null);
+		UUID prekosutra = upisi(sto, "CONFIRMED", sada.plus(25, ChronoUnit.HOURS), sada.plus(26, ChronoUnit.HOURS),
+				null);
+		UUID nepotvrdjena = upisi(sto, "PENDING", sada.plus(22, ChronoUnit.HOURS), sada.plus(23, ChronoUnit.HOURS),
+				sada.plus(21, ChronoUnit.HOURS));
+
+		service.sendReminders();
+
+		assertThat(obavijesti(sutra)).containsExactly("BOOKING_REMINDER " + studentica);
+		assertThat(obavijesti(prekosutra)).isEmpty();
+		assertThat(obavijesti(nepotvrdjena)).isEmpty();
+	}
+
+	@Test
+	void podsjetnikSeSaljeSamoJednomIBazaNePustaDrugi() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+		Instant sada = Instant.now();
+		UUID sutra = upisi(sto, "CONFIRMED", sada.plus(5, ChronoUnit.HOURS), sada.plus(6, ChronoUnit.HOURS), null);
+
+		service.sendReminders();
+		service.sendReminders();
+
+		assertThat(obavijesti(sutra)).containsExactly("BOOKING_REMINDER " + studentica);
+		assertThatThrownBy(() -> jdbc.update("insert into notifications (id, user_id, type, booking_id, status, "
+				+ "next_attempt_at, created_at, subject, body) values (gen_random_uuid(), ?, 'BOOKING_REMINDER', ?, "
+				+ "'PENDING', now(), now(), 'Podsjetnik', 'Termin')", studentica, sutra))
+				.hasMessageContaining("notifications_jedan_podsjetnik");
+	}
+
+	// Rezervisano prije sat vremena za termin za 20 sati: potvrda je stigla maloprije
+	@Test
+	void rezervacijaZaManjeOdDanUnaprijedNeDobijaPodsjetnik() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+		Instant sada = Instant.now();
+		UUID skora = upisi(sto, "CONFIRMED", sada.plus(20, ChronoUnit.HOURS), sada.plus(21, ChronoUnit.HOURS), null);
+		jdbc.update("update bookings set created_at = now() - interval '1 hour' where id = ?", skora);
+
+		service.sendReminders();
+
+		assertThat(obavijesti(skora)).isEmpty();
+	}
+
 	@Test
 	void istekSaznajeStudentica() {
 		UUID konsultacije = resurs("Konsultacije, Baze podataka", 60, false);
