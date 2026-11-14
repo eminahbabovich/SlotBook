@@ -43,7 +43,7 @@ class NotificationSender {
 		Notification obavijest = sljedeca.get();
 		SimpleMailMessage mail = new SimpleMailMessage();
 		mail.setFrom(from);
-		mail.setTo(obavijest.getUser().getEmail());
+		mail.setTo(obavijest.getRecipient());
 		mail.setSubject(obavijest.getSubject());
 		mail.setText(obavijest.getBody());
 		try {

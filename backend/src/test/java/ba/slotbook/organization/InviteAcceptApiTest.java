@@ -1,5 +1,6 @@
 package ba.slotbook.organization;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -7,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import ba.slotbook.TestcontainersConfiguration;
 import ba.slotbook.auth.RandomToken;
+import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
 
 @Import(TestcontainersConfiguration.class)
@@ -80,15 +84,23 @@ class InviteAcceptApiTest {
 	}
 
 	private String pozovi(String email, String uloga) throws Exception {
-		String tijelo = mockMvc.perform(post("/api/organizations/{id}/invites", teretana)
+		mockMvc.perform(post("/api/organizations/{id}/invites", teretana)
 				.header("Authorization", "Bearer " + admin)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 						{"email": "%s", "role": "%s"}
 						""".formatted(email, uloga)))
-				.andExpect(status().isCreated())
-				.andReturn().getResponse().getContentAsString();
-		return JsonPath.read(tijelo, "$.token");
+				.andExpect(status().isCreated());
+		return tokenIzMaila(User.normalizeEmail(email));
+	}
+
+	// Token postoji samo u mailu koji čeka slanje, admin ga ne dobija
+	private String tokenIzMaila(String email) {
+		String tijelo = jdbc.queryForObject("select body from notifications where email = ? and type = "
+				+ "'ORGANIZATION_INVITE' and status = 'PENDING' order by created_at desc limit 1", String.class, email);
+		Matcher link = Pattern.compile("http://localhost:5173/pozivnica#token=([A-Za-z0-9_-]+)").matcher(tijelo);
+		assertThat(link.find()).as("link u mailu: %s", tijelo).isTrue();
+		return link.group(1);
 	}
 
 	private ResultActions prihvati(String accessToken, String tokenPozivnice) throws Exception {

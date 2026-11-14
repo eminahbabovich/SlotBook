@@ -67,6 +67,21 @@ class NotificationServiceTest {
 				.hasMessageContaining("notifications_rezervacija");
 	}
 
+	// Pozivnica ide na adresu, a sve ostalo korisniku. Nikad oboje, nikad nijedno.
+	@Test
+	void bazaTraziTacnoJednogPrimaoca() {
+		UUID nedim = korisnik();
+
+		assertThatThrownBy(() -> jdbc.update("insert into notifications (id, user_id, email, type, status, "
+				+ "next_attempt_at, created_at, subject, body) values (gen_random_uuid(), ?, 'nedim@example.com', "
+				+ "'ORGANIZATION_INVITE', 'PENDING', now(), now(), 'Pozivnica', 'link')", nedim))
+				.hasMessageContaining("notifications_primalac");
+		assertThatThrownBy(() -> jdbc.update("insert into notifications (id, type, status, next_attempt_at, "
+				+ "created_at, subject, body) values (gen_random_uuid(), 'PASSWORD_RESET', 'PENDING', now(), now(), "
+				+ "'Nova lozinka', 'link')"))
+				.hasMessageContaining("notifications_primalac");
+	}
+
 	// Mail za potvrdu emaila nosi token. Poslana obavijest ga ne smije čuvati.
 	@Test
 	void bazaOdbijaPoslanuObavijestSTijelom() {

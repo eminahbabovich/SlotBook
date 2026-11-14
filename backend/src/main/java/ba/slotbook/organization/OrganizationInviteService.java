@@ -5,10 +5,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ba.slotbook.auth.RandomToken;
+import ba.slotbook.notification.EmailContent;
+import ba.slotbook.notification.NotificationService;
+import ba.slotbook.notification.NotificationType;
 import ba.slotbook.organization.InviteNotUsableException.Reason;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
@@ -22,15 +26,20 @@ public class OrganizationInviteService {
 	private final OrganizationMemberRepository members;
 	private final OrganizationRepository organizations;
 	private final UserRepository users;
+	private final NotificationService notifications;
 	private final Clock clock;
+	private final String appUrl;
 
 	public OrganizationInviteService(OrganizationInviteRepository invites, OrganizationMemberRepository members,
-			OrganizationRepository organizations, UserRepository users, Clock clock) {
+			OrganizationRepository organizations, UserRepository users, NotificationService notifications,
+			Clock clock, @Value("${slotbook.app-url}") String appUrl) {
 		this.invites = invites;
 		this.members = members;
 		this.organizations = organizations;
 		this.users = users;
+		this.notifications = notifications;
 		this.clock = clock;
+		this.appUrl = appUrl;
 	}
 
 	// Nova pozivnica za isti email zamjenjuje staru neprihvaćenu: novi token, nova uloga, novi rok
@@ -44,9 +53,25 @@ public class OrganizationInviteService {
 
 		String token = RandomToken.generate();
 		Instant sada = clock.instant();
-		OrganizationInvite invite = invites.save(new OrganizationInvite(organizations.getReferenceById(organizationId),
-				normalizovan, role, RandomToken.sha256(token), sada, sada.plus(TRAJE)));
-		return InviteResponse.from(invite, token);
+		Organization organizacija = organizations.getReferenceById(organizationId);
+		OrganizationInvite invite = invites.save(new OrganizationInvite(organizacija, normalizovan, role,
+				RandomToken.sha256(token), sada, sada.plus(TRAJE)));
+		// Stari mail iz zamijenjene pozivnice ostaje u inboxu, ali njegov token više nije u bazi (404)
+		notifications.enqueueForEmail(normalizovan, NotificationType.ORGANIZATION_INVITE,
+				mailPozivnice(organizacija.getName(), role, appUrl + "/pozivnica#token=" + token));
+		return InviteResponse.from(invite);
+	}
+
+	private static EmailContent mailPozivnice(String organizacija, OrganizationRole role, String link) {
+		String uloga = switch (role) {
+			case ADMIN -> "admin";
+			case PROVIDER -> "provider";
+			case CLIENT -> "klijent";
+		};
+		return new EmailContent("Pozivnica na SlotBook: " + organizacija,
+				"Zdravo,\n\n" + organizacija + " te poziva na SlotBook, s ulogom: " + uloga + ".\n\n"
+						+ "Da prihvatiš pozivnicu, otvori link i prijavi se ili napravi nalog s ovim emailom:\n"
+						+ link + "\n\nPozivnica važi 7 dana. Ako ne znaš o čemu se radi, zanemari ovaj mail.");
 	}
 
 	// Ako upis članstva padne, rollback vrati i accepted_at, pa pozivnica ostaje upotrebljiva

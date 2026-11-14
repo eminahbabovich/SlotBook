@@ -9,11 +9,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import ba.slotbook.TestcontainersConfiguration;
 import ba.slotbook.user.User;
@@ -35,13 +38,21 @@ class InviteAcceptIstovremenoTest {
 	@Autowired
 	UserRepository users;
 
+	@Autowired
+	JdbcTemplate jdbc;
+
 	@Test
 	void istaPozivnicaPoslanaIstovremenoPrihvatiSeTacnoJednom() throws Exception {
 		Instant sada = Instant.parse("2026-11-12T10:00:00Z");
 		Organization sala = organizations.save(new Organization("Sala za sastanke ETF", "sala-istovremeno",
 				"Europe/Sarajevo", sada));
 		User amina = users.save(new User("amina.istovremeno@example.com", "hash", "Amina", sada));
-		String token = service.invite(sala.getId(), amina.getEmail(), OrganizationRole.CLIENT).token();
+		service.invite(sala.getId(), amina.getEmail(), OrganizationRole.CLIENT);
+		Matcher link = Pattern.compile("#token=([A-Za-z0-9_-]+)").matcher(jdbc.queryForObject(
+				"select body from notifications where email = ? and type = 'ORGANIZATION_INVITE'", String.class,
+				amina.getEmail()));
+		assertThat(link.find()).isTrue();
+		String token = link.group(1);
 
 		CountDownLatch start = new CountDownLatch(1);
 		List<Future<String>> rezultati = new ArrayList<>();

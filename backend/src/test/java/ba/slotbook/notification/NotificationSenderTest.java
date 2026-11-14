@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -44,6 +45,20 @@ class NotificationSenderTest {
 		assertThat(obavijest.getAttempts()).isEqualTo(1);
 		assertThat(obavijest.getNextAttemptAt()).isEqualTo(SADA.plusSeconds(60));
 		assertThat(obavijest.getLastError()).isEqualTo("MailSendException: Connection refused");
+	}
+
+	// Pozvana osoba možda još nema nalog, pa mail ide na adresu iz pozivnice
+	@Test
+	void pozivnicaIdeNaAdresuBezNaloga() {
+		Notification pozivnica = new Notification("tarik@example.com", NotificationType.ORGANIZATION_INVITE,
+				new EmailContent("Pozivnica na SlotBook: Teretana Grbavica", "link"), SADA);
+		when(notifications.findNextDue(SADA)).thenReturn(Optional.of(pozivnica));
+
+		sender.sendNext();
+
+		verify(mailSender).send(org.mockito.ArgumentMatchers.<SimpleMailMessage>argThat(
+				mail -> mail.getTo().length == 1 && mail.getTo()[0].equals("tarik@example.com")));
+		assertThat(pozivnica.getStatus()).isEqualTo(NotificationStatus.SENT);
 	}
 
 	@Test

@@ -414,3 +414,13 @@ Access token koji je već izdat i dalje važi do 15 minuta. To nisam rješavao, 
 
 `POST /api/auth/password-reset` vraća `204` i za email bez naloga, da se ne može provjeriti ko je registrovan. Za postojeći nalog server upiše token i obavijest, a za nepoznat email samo pročita bazu. Razlika u vremenu odgovora je vjerovatno nekoliko milisekundi. Nisam je mjerio. Kod prijave sam vrijeme izjednačio, jer je tamo razlika bila BCrypt od 100 ms. Ovdje je razlika mala, a i rate limiting iz Faze 8 ograničava koliko pokušaja neko ima. Isti rate limiting treba i da ovaj endpoint ne postane način da se nekome zatrpa inbox.
 
+## Pozivnice emailom: obavijest bez korisnika, token više ne ide adminu
+
+Pozivnica ide na email koji možda još nema nalog, a obavijest je do sada uvijek imala `user_id`. Mogao sam svakoj obavijesti upisati adresu primaoca, ali onda bi email svakog korisnika stajao u još jednoj tabeli, samo zbog jednog tipa obavijesti. Zato `user_id` može biti prazan i obavijest tada ima kolonu `email`. Baza dozvoljava samo jedno ili drugo, i to po tipu: pozivnica ide na adresu, a sve ostalo korisniku (`notifications_primalac`). Pošiljalac uzme adresu korisnika ili adresu iz obavijesti, ostatak slanja je isti.
+
+`POST /api/organizations/{id}/invites` više ne vraća token. Link `APP_URL/pozivnica#token=...` dobije samo pozvana osoba, a stranica ga šalje na `POST /api/invites/accept` kao i do sada. Time je mnogo manji rizik iz Faze 2, da neko registruje tuđi email i prihvati pozivnicu poslanu na njega: za to sad treba pristup tom inboxu. Prihvatanje i dalje ne traži potvrđen email, jer token iz maila već dokazuje isto.
+
+Kad admin pošalje novu pozivnicu na isti email, stara se briše, pa link iz starog maila vraća `404`. Ako stari mail još nije poslan, ode i on, s linkom koji ne radi. Nisam to sprječavao, jer bi tražilo vezu između obavijesti i pozivnice samo zbog ovog slučaja.
+
+Naslov maila je "Pozivnica na SlotBook: Čitaonica PMF", a ne "Pozivnica u Čitaonica PMF", jer se naziv organizacije ne može deklinirati.
+

@@ -174,7 +174,8 @@ erDiagram
     }
     notifications {
         uuid id PK
-        uuid user_id FK
+        uuid user_id FK "prazno samo za pozivnicu"
+        varchar email "samo za pozivnicu"
         varchar type "BOOKING_CONFIRMED..."
         uuid booking_id FK
         varchar status "PENDING, SENT, FAILED"

@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -107,16 +109,34 @@ class OrganizationInvitesApiTest {
 						""".formatted(email, uloga)));
 	}
 
-	private String procitajToken(ResultActions odgovor) throws Exception {
-		return JsonPath.read(odgovor.andReturn().getResponse().getContentAsString(), "$.token");
+	// Token postoji samo u mailu koji čeka slanje, admin ga ne dobija
+	private String tokenIzMaila(String email) {
+		String tijelo = jdbc.queryForObject("select body from notifications where email = ? and type = "
+				+ "'ORGANIZATION_INVITE' and status = 'PENDING' order by created_at desc limit 1", String.class, email);
+		Matcher link = Pattern.compile("http://localhost:5173/pozivnica#token=([A-Za-z0-9_-]+)").matcher(tijelo);
+		assertThat(link.find()).as("link u mailu: %s", tijelo).isTrue();
+		return link.group(1);
 	}
 
 	@Test
-	void adminDobijaTokenABazaCuvaSamoNjegovHash() throws Exception {
-		String token = procitajToken(pozovi(dino, "Hana.Poziv@Example.com", "CLIENT")
+	void pozivnicaIdeMailomAAdminNeVidiToken() throws Exception {
+		pozovi(dino, "Hana.Poziv@Example.com", "CLIENT")
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.email").value("hana.poziv@example.com"))
-				.andExpect(jsonPath("$.role").value("CLIENT")));
+				.andExpect(jsonPath("$.role").value("CLIENT"))
+				.andExpect(jsonPath("$.token").doesNotExist());
+
+		assertThat(jdbc.queryForMap("select user_id, subject, body from notifications where email = ?",
+				"hana.poziv@example.com"))
+				.containsEntry("user_id", null)
+				.containsEntry("subject", "Pozivnica na SlotBook: Organizacija konsultacije-pmf")
+				.hasEntrySatisfying("body", tijelo -> assertThat((String) tijelo).contains("s ulogom: klijent"));
+	}
+
+	@Test
+	void bazaCuvaSamoHashTokenaIzMaila() throws Exception {
+		pozovi(dino, "selma.poziv@example.com", "CLIENT").andExpect(status().isCreated());
+		String token = tokenIzMaila("selma.poziv@example.com");
 
 		assertThat(jdbc.queryForObject("select count(*) from organization_invites where token_hash = ?", Long.class,
 				RandomToken.sha256(token))).isEqualTo(1);
@@ -126,7 +146,8 @@ class OrganizationInvitesApiTest {
 
 	@Test
 	void novaPozivnicaZamjenjujeStaruIStariTokenNestaje() throws Exception {
-		String stari = procitajToken(pozovi(dino, "lamija.poziv@example.com", "CLIENT").andExpect(status().isCreated()));
+		pozovi(dino, "lamija.poziv@example.com", "CLIENT").andExpect(status().isCreated());
+		String stari = tokenIzMaila("lamija.poziv@example.com");
 		pozovi(dino, "lamija.poziv@example.com", "PROVIDER").andExpect(status().isCreated());
 
 		assertThat(jdbc.queryForList("select role from organization_invites where email = ? and accepted_at is null",

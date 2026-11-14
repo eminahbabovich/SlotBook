@@ -35,4 +35,9 @@ public class NotificationService {
 				new Notification(users.getReferenceById(userId), type, bookingId, content, clock.instant()));
 	}
 
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void enqueueForEmail(String email, NotificationType type, EmailContent content) {
+		notifications.save(new Notification(email, type, content, clock.instant()));
+	}
+
 }

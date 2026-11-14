@@ -28,9 +28,13 @@ public class Notification {
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	// Ili korisnik ili adresa, nikad oboje: pozivnica ide na email koji možda još nema nalog
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", updatable = false)
 	private User user;
+
+	@Column(updatable = false)
+	private String email;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, updatable = false)
@@ -79,6 +83,11 @@ public class Notification {
 		this.createdAt = createdAt;
 	}
 
+	Notification(String email, NotificationType type, EmailContent content, Instant createdAt) {
+		this(null, type, null, content, createdAt);
+		this.email = email;
+	}
+
 	void poslana(Instant sada) {
 		attempts++;
 		status = NotificationStatus.SENT;
@@ -104,8 +113,8 @@ public class Notification {
 		return id;
 	}
 
-	User getUser() {
-		return user;
+	String getRecipient() {
+		return user != null ? user.getEmail() : email;
 	}
 
 	String getSubject() {
