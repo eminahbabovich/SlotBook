@@ -86,6 +86,20 @@ class BookingServiceTest {
 	}
 
 	@Test
+	void nastanakRezervacijeUpisujePrviDogadjajUHistoriji() {
+		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
+
+		UUID id = service.create(konsultacije, studentica, PONEDJELJAK_09).id();
+
+		assertThat(jdbc.queryForList("select from_status, to_status, actor_id from booking_events where booking_id = ?",
+				id)).singleElement().satisfies(red -> {
+					assertThat(red.get("from_status")).isNull();
+					assertThat(red.get("to_status")).isEqualTo("PENDING");
+					assertThat(red.get("actor_id")).isEqualTo(studentica);
+				});
+	}
+
+	@Test
 	void naRucnojPotvrdiRezervacijaCekaProvidera() {
 		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
 

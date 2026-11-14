@@ -116,6 +116,17 @@ class BookingRepositoryTest {
 				.hasMessageContaining("bookings_pocetak_prije_kraja");
 	}
 
+	// Rezervacija ne može nastati kao otkazana, i kad neko upiše historiju mimo Jave
+	@Test
+	void historijaNePrimaNastanakUZavrsnomStanju() {
+		rezervacija(stoBr1, emina, "2035-11-19 09:00+01", "2035-11-19 10:00+01", "CANCELLED");
+		UUID booking = jdbc.queryForObject("select id from bookings", UUID.class);
+
+		assertThatThrownBy(() -> jdbc.update("insert into booking_events values (gen_random_uuid(), ?, null, "
+				+ "'CANCELLED', ?, now())", booking, emina))
+				.hasMessageContaining("booking_events_nastanak");
+	}
+
 	@Test
 	void bazaOdbijaNepoznatStatus() {
 		assertThatThrownBy(
