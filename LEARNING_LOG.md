@@ -45,3 +45,17 @@ DST test je pokazao ono što sam htio vidjeti. Kad se pomak zone uzme za trenuta
 Kod slike se pokazalo da MinIO više nema javne Docker slike, `pull access denied for minio/minio, repository does not exist`. Test je prešao na `adobe/s3mock`. Claude je usput prepisao postojeći `GlobalExceptionHandlerTest` bez čitanja, i vratio ga iz gita. Test da S3 bez endpointa ne starta je prvo prolazio iz pogrešnog razloga: u malom kontekstu `${...}` ostane običan tekst i padne `URI.create`, a ne placeholder.
 
 Bez `@PreAuthorize` na uploadu Bojan iz druge organizacije je dobio `200` i stvarno stavio sliku na sto u tuđoj čitaonici. Test izolacije je to uhvatio, ali tek kad je naučio slati multipart.
+
+## subota, 14. novembar 2026. u 12:14
+
+Cijela Faza 4 u jednoj sesiji, od tabele `bookings` do historije rezervacije.
+
+Djelimičan `EXCLUDE` (s `WHERE status IN ('PENDING', 'CONFIRMED')`) sam prvo probao na Neon-u na probnoj tabeli, ne na `bookings`, jer bi Flyway pao da tabela već postoji. Preklapanje je palo sa `23P01`, i probnu tabelu sam obrisao.
+
+Test sa 20 niti me najviše naučio. Prvi put: jedna rezervacija u bazi, kako treba, ali 19 odgovora `500` i test od 85 sekundi. U logu `deadlock detected ... while checking exclusion constraint on tuple (0,1) in relation "bookings"`, svih 19 sa `40P01`. Mislio sam da se `EXCLUDE` ponaša kao `UNIQUE` i da drugi uvijek dobije `23P01`, a i Claude je to tvrdio u koraku prije. Postgres prvo upiše red pa traži sukobe, pa dvije transakcije čekaju jedna na drugu. Sad se prvo zaključa resurs. Onda me iznenadilo da bez locka test zna i proći, dvaput zaredom, pa sada ima 4 runde.
+
+Isti lock je spasio `Idempotency-Key`. Kad se ključ traži prije locka, 10 istih zahtjeva da 1 × `201` i 9 × `409`, pa bi mi dupli klik javio da je moj termin zauzet.
+
+Claude je pogriješio četiri puta. Grep prije promjene potpisa nije našao `resourceService.create(...)` u testu radnog vremena, pa nije prošlo kompajliranje. U testu s nitima je `JsonPath` tražio `$.id` u `409` odgovoru. Pomoćna metoda `status(UUID)` je pregazila `status()` iz MockMvc-a. I dvije mutacije pustio je odjednom, pa je isključen rok za otkazivanje sakrio da kontroler ne javlja ko vodi resurs.
+
+`S3StorageServiceTest` je jednom pao usred cijele suite s `The target server failed to respond (SDK Attempt Count: 4)`, a sam je prošao dvaput. Nisam ga dirao. `jacoco.exec` je narastao na 82 MB, jer se u njega dopisivalo svako pokretanje, i ono s mutacijama, pa sam pokrivenost mjerio tek kad sam ga obrisao.

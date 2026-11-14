@@ -325,3 +325,19 @@ Kolone `cancelled_at` i `cancel_reason` iz skice nisam napravio. Vrijeme otkaziv
 ## Rok za otkazivanje važi samo za klijenta
 
 Resurs ima `cancel_notice_hours` (V15), od 0 do 168 sati, a podrazumijevano je 0, dakle bez roka. U skici se kolona zvala `min_notice_hours`, ali iz tog imena se ne vidi da je rok za otkazivanje, a ne za rezervaciju, pa sam je preimenovao. Klijent otkazuje najkasnije toliko sati prije početka: tačno na rok još može, sekundu poslije ne, i za obje granice postoji unit test. Poslije roka dobija `409` "Rok za otkazivanje je prošao", sa rokom u odgovoru, da ga frontend prikaže u zoni organizacije. Admin i provider resursa otkazuju bez roka, jer otkazuju i zbog bolesti ili kvara. Ko vodi resurs utvrđuje se istom provjerom kao za potvrdu (`BookingAccess.canManage`). Kad sam rok privremeno isključio, pala su dva testa, a kad kontroler nikad nije javljao da korisnik vodi resurs, pao je test da profesorica otkazuje i poslije roka.
+
+## Moje rezervacije i historija rezervacije
+
+`GET /api/bookings/mine` vraća rezervacije prijavljenog korisnika iz svih organizacija, po stranicama. Redoslijed bira server: najkasniji termin prvo, pa id, isto kao kod resursa, gdje se sort iz zahtjeva ignoriše. Tako budući termini idu prije prošlih. Posebnog filtera za "samo buduće" nema, to ću dodati ako ga frontend bude trebao. Uz svaku rezervaciju ide naziv resursa i zona organizacije, jer klijent ima rezervacije u više organizacija, a vrijeme se prikazuje u zoni organizacije. Resurs i organizacija se učitaju istim upitom (`join fetch`), a ne po jedan upit za svaki red. Indeks `(client_id, start_time)` je u V16. Kad sam iz upita privremeno izbacio uslov za klijenta, pao je test u kojem Hana ne smije vidjeti Lamijinu rezervaciju.
+
+`GET /api/bookings/{id}/events` vraća historiju jedne rezervacije, redom, s imenom osobe koja je promijenila status. Vidi je klijent te rezervacije i ko vodi resurs, ista provjera kao za otkazivanje (`BookingAccess.canView`). Ovo je jedina lista bez stranica, jer rezervacija ima nastanak i najviše dva-tri prelaza.
+
+## EXCLUDE ili SELECT ... FOR UPDATE: šta je na kraju ispalo
+
+U planu je pisalo da biram između `EXCLUDE` constrainta i pesimističnog zaključavanja. Na kraju koristim oba, svako za drugu stvar.
+
+`EXCLUDE` je garancija. Dvije aktivne rezervacije istog resursa se ne mogu preklopiti ni kad red upiše neko mimo Jave, ručno ili kroz budući kod koji zaboravi provjeru. Da sam imao samo `FOR UPDATE`, ta garancija bi zavisila od toga da svaki put koji upisuje rezervaciju prvo zaključa resurs, a to baza ne može provjeriti.
+
+`FOR UPDATE` nad resursom je tu zbog odgovora klijentu. Bez njega je test sa 20 niti dobijao deadlock (`40P01`) i `500` umjesto `409`, jer kod `EXCLUDE` Postgres prvo upiše red pa traži sukobe. Sa lockom rezervacije istog resursa idu jedna za drugom, drugi zahtjev vidi commitan red, dobije `23P01` i vrati se `409`. Isti lock rješava i dupli klik s `Idempotency-Key`, jer duplikat sačeka prvi zahtjev i nađe njegovu rezervaciju.
+
+Cijena je da sve rezervacije istog resursa čekaju jedna drugu, i za različite termine. Jedna rezervacija drži lock par milisekundi, a za jedan resurs (sto, salu, konsultacije) to nije usko grlo. Nisam mjerio pod opterećenjem, to dolazi s k6 testom u Fazi 9.
