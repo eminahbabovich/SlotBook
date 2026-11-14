@@ -446,3 +446,15 @@ Dva pravila formata sam provjerio testom, jer se lako promaše. Zarez i tačka-z
 
 Prilog nastaje s obavijesti, kao tijelo maila, i čuva se u koloni `ics` samo dok obavijest čeka slanje (`notifications_prilog_dok_ceka`). Da bi poslao prilog, pošiljalac je prešao sa `SimpleMailMessage` na `MimeMessage` i `MimeMessageHelper`. Da te metode postoje u našoj verziji, provjerio sam u `spring-context-support-7.0.10.jar` (`javap`). Ručno u Gmailu i Outlooku nisam probao da li se prilog otvori kao događaj, samo da Mailpit primi ispravan fajl.
 
+## Bez ShedLocka: svaki posao je siguran i na dvije instance
+
+ShedLock pazi da `@Scheduled` posao radi samo na jednoj instanci u isto vrijeme. Na Renderu radi jedna instanca, ali to se može promijeniti. Koliko sam razumio Renderov opis deploya bez prekida, stara i nova instanca kratko rade zajedno. To nisam provjerio. Umjesto da uvedem zavisnost i tabelu `shedlock`, provjerio sam svaki posao šta se desi kad ga pokrenu dvije instance odjednom.
+
+Istek i zatvaranje su po jedan uslovni `UPDATE` (`WHERE status = 'PENDING' AND ...`). Drugi posao čeka red koji je prvi zaključao, a kad prvi završi, Postgres pod READ COMMITTED ponovo provjeri uslov na novoj verziji reda. Rezervacija više nije `PENDING`, pa je drugi preskoči. Test to radi bez sreće u rasporedu niti: prvi posao drži transakciju otvorenu, drugi krene u svojoj niti, test u `pg_stat_activity` sačeka da drugi stvarno čeka na lock, i tek onda pusti prvog. Drugi tada vrati 0, a svaka rezervacija ima jedan događaj `EXPIRED` i jednu obavijest. Iznenadilo me šta se desi kad se lista izabere podupitom (`WHERE id IN (SELECT ... WHERE status = 'PENDING')`): drugi posao istekne iste rezervacije još jednom. Postgres ponovo provjerava samo uslov na samom redu, a podupit ostaje iz starog snimka.
+
+Podsjetnik čuva unique indeks. Drugi posao ne vidi podsjetnik prvog dok ovaj nije commitan, pa upiše svoj, čeka na indeksu i padne kad prvi završi. Cijeli njegov krug se poništi, a sljedeći krug podsjetnik više ne traži. U testu je trebao `flush` poslije prvog posla, jer Hibernate inače upiše podsjetnik tek pri commitu i drugi nema na šta čekati. Slanje mailova koristi `FOR UPDATE SKIP LOCKED`, pa druga instanca preskoči obavijest koju prva šalje. To je testirano u koraku slanja.
+
+Cijena: kad dvije instance stvarno rade, istek i podsjetnici rade isti upit dvaput, a kod podsjetnika jedan krug ponekad padne s greškom u logu. Za jedan posao u minuti to je u redu. ShedLock bih uveo kad posao postane skup, npr. statistika preko svih organizacija.
+
+Uz ovo sam dodao dva testa za kriterij Faze 5 koji su do sada bili pokriveni samo posredno. Prvi šalje potvrdu dok je Mailpit pauziran (`docker pause`). Rezervacija nastane, prvi pokušaj padne s `Exception reading response` poslije timeouta od 5 sekundi, a poslije pomjeranja `next_attempt_at` drugi pokušaj stigne u Mailpit (`SENT`, 2 pokušaja). Drugi test provjerava da isti link za novu lozinku drugi put vraća `409`.
+

@@ -139,6 +139,35 @@ class NotificationSenderMailpitTest {
 				.hasEntrySatisfying("sent_at", vrijeme -> assertThat(vrijeme).isNotNull());
 	}
 
+	// Kriterij Faze 5: SMTP ne odgovara (Mailpit pauziran), rezervacija ipak nastaje, a mail ode
+	// u sljedećem pokušaju. Čekanje od minute se preskače pomjeranjem next_attempt_at.
+	@Test
+	void mailStizeIPoslijeGreskeSmtpaARezervacijaOstaje() throws Exception {
+		MAILPIT.getDockerClient().pauseContainerCmd(MAILPIT.getContainerId()).exec();
+		UUID rezervacija;
+		try {
+			rezervacija = bookingService.create(sto, studentica, PONEDJELJAK_09, null).id();
+			assertThat(sender.sendNext()).isTrue();
+		} finally {
+			MAILPIT.getDockerClient().unpauseContainerCmd(MAILPIT.getContainerId()).exec();
+		}
+		UUID obavijest = obavijestStudentice();
+		assertThat(jdbc.queryForMap("select status, attempts, last_error from notifications where id = ?", obavijest))
+				.containsEntry("status", "PENDING").containsEntry("attempts", 1)
+				.hasEntrySatisfying("last_error", greska -> assertThat(greska).isNotNull());
+		assertThat(jdbc.queryForObject("select status from bookings where id = ?", String.class, rezervacija))
+				.isEqualTo("CONFIRMED");
+
+		jdbc.update("update notifications set next_attempt_at = now() - interval '1 second' where id = ?", obavijest);
+		assertThat(sender.sendNext()).isTrue();
+
+		assertThat(jdbc.queryForMap("select status, attempts from notifications where id = ?", obavijest))
+				.containsEntry("status", "SENT").containsEntry("attempts", 2);
+		List<String> poruke = JsonPath.read(mailpit("/api/v1/messages"),
+				"$.messages[?(@.To[0].Address == '%s')].ID".formatted(email));
+		assertThat(poruke).hasSize(1);
+	}
+
 	// Prva instanca drži red dok šalje. Druga ga ne smije čekati ni poslati: preskoči ga.
 	// lock_timeout je tu da test padne za 2 sekunde, a ne da visi, ako SKIP LOCKED nestane.
 	@Test

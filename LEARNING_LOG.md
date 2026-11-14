@@ -59,3 +59,20 @@ Isti lock je spasio `Idempotency-Key`. Kad se ključ traži prije locka, 10 isti
 Claude je pogriješio četiri puta. Grep prije promjene potpisa nije našao `resourceService.create(...)` u testu radnog vremena, pa nije prošlo kompajliranje. U testu s nitima je `JsonPath` tražio `$.id` u `409` odgovoru. Pomoćna metoda `status(UUID)` je pregazila `status()` iz MockMvc-a. I dvije mutacije pustio je odjednom, pa je isključen rok za otkazivanje sakrio da kontroler ne javlja ko vodi resurs.
 
 `S3StorageServiceTest` je jednom pao usred cijele suite s `The target server failed to respond (SDK Attempt Count: 4)`, a sam je prošao dvaput. Nisam ga dirao. `jacoco.exec` je narastao na 82 MB, jer se u njega dopisivalo svako pokretanje, i ono s mutacijama, pa sam pokrivenost mjerio tek kad sam ga obrisao.
+
+## subota, 14. novembar 2026. u 18:28
+
+Faza 5 od početka do kraja, devet koraka. U plan je na početku ušla i Faza 14, AI asistent, između Faze 12 i 13.
+
+Mutacije iz koraka 6 su bile lažno zelene. Skripta je zvala Maven preko `cmd /c mvnw.cmd`, a `cmd` je odgovarao `'mvnw.cmd' is not recognized as an internal or external command`. Exit kod je bio 1, pa je svaka mutacija "pala", a nijedan test se nije pokrenuo. Shvatio sam to tek u koraku 7, kad je surefire izvještaj imao pet testova za mutaciju koja je pokretala jedan. Sad se mutacija računa samo ako u izlazu piše `<<< FAILURE!`, i ponovio sam ih sve.
+
+Najviše me iznenadio istek na dvije instance. Kad je `UPDATE` imao uslov `status = 'PENDING'` direktno u `WHERE`, drugi posao je čekao red i onda ga preskočio. Kad sam isti uslov stavio u podupit (`WHERE id IN (SELECT ...)`), drugi je istekao iste rezervacije još jednom. Postgres poslije čekanja ponovo provjeri samo uslov na redu, a podupit ostane iz starog snimka. Zbog toga nema ShedLocka, a test sada čeka u `pg_stat_activity` dok drugi stvarno ne čeka na lock, umjesto da se nada da će se niti sudariti.
+
+Isti test za podsjetnike je prvo pao s "drugi posao nikad nije čekao na lock". Hibernate upiše novi red tek pri commitu, pa prva transakcija dok je otvorena nije još ništa poslala bazi. Trebao je `flush`.
+
+Mail health indicator je vratio `503` na `/actuator/health` jer lokalno nije bilo SMTP-a. Na Renderu bi to oborilo deploy, pa je isključen. Jedan test je prošao iz pogrešnog razloga: trebao je pasti na `notifications_poslana`, a pao je na `notifications_rezervacija`. Obrisan je. Korak 4 je commitan prije nego što je suite završio, pa je ispravljen s `--amend` dok još nije bio pushan. Od tada se commit radi tek kad pročitam rezultat.
+
+Claude je u resetu lozinke pozvao `user.getPasswordChangedAt()`, koja ne postoji, a prvi unit test za reset nije mogao pasti, jer Mockito za `Optional` sam vrati `Optional.empty()`. U podsjetniku je Postgres javio `operator does not exist: timestamp with time zone <= interval` za `:sada + make_interval(...)`, pa se granica sada računa u Javi. Datum prelaska na ljetno vrijeme 2036. je prvo napisao kao 29.3., a nedjelja je 30.
+
+Naslov "Pozivnica u Čitaonica PMF" ne valja jer se naziv ne može deklinirati, pa je sad "Pozivnica na SlotBook: Čitaonica PMF". Za test ponovnog slanja Mailpit je pauziran preko Dockera, i prvi pokušaj je pao s `Exception reading response` poslije pet sekundi, tačno koliko je timeout.
+

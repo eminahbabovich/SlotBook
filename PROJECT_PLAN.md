@@ -125,7 +125,7 @@ Sva ostala kretanja su zabranjena i vraćaju `409`. Termin zauzimaju samo `PENDI
 - `processed_webhook_events` (event_id PK, received_at)
 - `audit_log` (id, organization_id, actor_id, action, entity_type, entity_id, details JSONB,
   created_at)
-- `shedlock` (ako odlučimo da ga koristimo)
+- `shedlock`: ne koristimo, poslovi su sigurni i na dvije instance (vidi `docs/ODLUKE.md`)
 
 Invarijante:
 - Dvije aktivne rezervacije (`PENDING`, `CONFIRMED`) istog resursa se ne smiju preklapati.
@@ -177,7 +177,7 @@ svaki endpoint opisan u Swaggeru.
 | 2 | Auth i organizacije | Korisnici, BCrypt, JWT + **refresh tokeni** (rotacija + detekcija ponovne upotrebe preko `family_id`), organizacije, uloge po organizaciji, pozivnice, `@PreAuthorize` s vlastitim provjerama članstva | Method security, `PermissionEvaluator` / bean u SpEL, refresh token tok, autorizacija koja ovisi o resursu | gotovo |
 | 3 | Resursi i dostupnost | CRUD resursa, sedmična pravila, `time_off`, **algoritam za slobodne termine**, upload slike kroz `StorageService` (lokalno + S3-kompatibilno), paginacija | `java.time` (`Instant`, `ZonedDateTime`, DST), `TIMESTAMPTZ`, interface + dvije implementacije, `MultipartFile` | gotovo |
 | 4 | Rezervacije i konkurentnost | Kreiranje rezervacije, **`EXCLUDE` constraint**, stanja i prelazi, `booking_events`, `Idempotency-Key`, pravilo otkazivanja, `@Version`, **test sa 20 niti** | PostgreSQL range tipovi, transakcije i izolacija, optimistično vs pesimistično zaključavanje, `409 Conflict`, state machine, idempotentnost | gotovo |
-| 5 | Pozadinski poslovi i obavijesti | `@Scheduled` istek `PENDING` i zatvaranje završenih, podsjetnici, `notifications` tabela (outbox), slanje emaila, `@TransactionalEventListener`, ponovni pokušaj s backoffom, verifikacija emaila, reset lozinke, slanje pozivnica, `.ics` prilog u potvrdi | Scheduling, zašto se email ne šalje unutar iste transakcije, `AFTER_COMMIT`, idempotentnost, ShedLock, sigurni tokeni za reset | u izradi (koraci 1-8 od 9) |
+| 5 | Pozadinski poslovi i obavijesti | `@Scheduled` istek `PENDING` i zatvaranje završenih, podsjetnici, `notifications` tabela (outbox), slanje emaila, `@TransactionalEventListener`, ponovni pokušaj s backoffom, verifikacija emaila, reset lozinke, slanje pozivnica, `.ics` prilog u potvrdi | Scheduling, zašto se email ne šalje unutar iste transakcije, `AFTER_COMMIT`, idempotentnost, ShedLock, sigurni tokeni za reset | gotovo |
 | 6 | Statistika | Agregatni upiti (`GROUP BY`, popunjenost, otkazivanja i no-show po periodu, najtraženiji termini dan x sat), endpointi za providera i admina, CSV izvoz | JPQL/native upiti, projekcije u DTO, indeksi i `EXPLAIN` | ⏳ nije počelo |
 | 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | ⏳ nije počelo |
 | 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | ⏳ nije počelo |
@@ -380,6 +380,14 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Grupe resursa (npr. "sve sale na drugom spratu") i traženje slobodnog resursa iz grupe
 - Redis za rate limiting i keš kad bi radilo više instanci
 - Praćenje troškova i mjerenje potrošnje besplatnih planova
+
+Otvoreno iz Faze 5 (dug, za pregled u Fazi 13):
+
+- Rate limit za reset lozinke, novi link za potvrdu emaila i pozivnice nema, pa se nekome može zatrpati inbox. Ide u Fazu 8.
+- Access token izdat prije reseta lozinke važi još do 15 minuta.
+- Obavijest koja baci grešku koja nije `MailException` (bug) ostaje prva u redu i blokira ostale u tom krugu posla.
+- Mail otkazivanja ne nosi `.ics` s `METHOD:CANCEL`, pa termin ostaje u kalendaru korisnika. Prikaz `.ics` u Gmailu i Outlooku nije ručno proban.
+- Razlika u vremenu odgovora za reset lozinke s postojećim i nepostojećim emailom nije mjerena.
 
 Otvoreno iz Faze 4 (nije ideja nego dug, za pregled u Fazi 13):
 

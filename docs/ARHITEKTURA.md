@@ -1,6 +1,6 @@
 # Arhitektura
 
-Opis onoga što postoji sada (Faze 1 do 4). Obavijesti i frontend još ne postoje, pa ih ovdje nema.
+Opis onoga što postoji sada (Faze 1 do 5). Frontend još ne postoji, pa ga ovdje nema.
 
 ## Paketi i slojevi
 

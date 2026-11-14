@@ -97,6 +97,16 @@ class PasswordResetApiTest {
 		prijava(NOVA).andExpect(status().isOk());
 	}
 
+	// Kriterij Faze 5: isti link ne radi drugi put, ni s drugom lozinkom
+	@Test
+	void istiLinkZaNovuLozinkuNeRadiDvaput() throws Exception {
+		String token = noviLink();
+		postavi(token, NOVA).andExpect(status().isNoContent());
+
+		postavi(token, "lopov-pokusava-ponovo-3").andExpect(status().isConflict());
+		prijava(NOVA).andExpect(status().isOk());
+	}
+
 	// Link je stigao na taj email, pa je i to potvrda emaila
 	@Test
 	void novaLozinkaPotvrdjujeEmail() throws Exception {
