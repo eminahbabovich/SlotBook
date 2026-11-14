@@ -130,6 +130,20 @@ class BookingRepositoryTest {
 	}
 
 	@Test
+	void bezAkteraMoguSamoIstekIZatvaranje() {
+		UUID booking = UUID.randomUUID();
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at) "
+				+ "values (?, ?, ?, '2035-11-19 09:00+01', '2035-11-19 10:00+01', 'CONFIRMED', now())", booking, stoBr1,
+				emina);
+		jdbc.update("insert into booking_events values (gen_random_uuid(), ?, 'CONFIRMED', 'COMPLETED', null, now())",
+				booking);
+
+		assertThatThrownBy(() -> jdbc.update("insert into booking_events values (gen_random_uuid(), ?, "
+				+ "'CONFIRMED', 'CANCELLED', null, now())", booking))
+				.hasMessageContaining("booking_events_akter");
+	}
+
+	@Test
 	void bazaOdbijaNepoznatStatus() {
 		assertThatThrownBy(
 				() -> rezervacija(stoBr1, emina, "2035-11-19 09:00+01", "2035-11-19 10:00+01", "ACTIVE"))

@@ -348,3 +348,17 @@ Rezervacija na ručnoj potvrdi drži termin dok čeka providera. Bez roka bi pro
 
 Rok je isti za sve resurse. Mogao je biti na resursu, kao rok za otkazivanje, ali za to još nemam pravi razlog. Baza čuva dvije stvari: `PENDING` mora imati rok (`bookings_pending_ima_rok`), i rok ne smije biti poslije početka termina (`bookings_rok_do_pocetka`). Postojeće `PENDING` rezervacije je migracija dopunila istim pravilom. Poslije potvrde rok ostaje u bazi, ali ga API više ne vraća.
 
+## Istek i zatvaranje: jedna SQL naredba, a ne entitet
+
+Pozadinski posao (`BookingJob`, svake minute) ne učitava rezervacije u Javu da na svakoj pozove `prijedi`. Jedan `UPDATE ... RETURNING` promijeni status, a `INSERT` u istoj naredbi upiše historiju, s praznim akterom jer promjenu nije napravio korisnik. Baza dozvoljava prazan akter samo za `EXPIRED` i `COMPLETED` (`booking_events_akter`).
+
+Razlog je istovremenost s providerom. Kad provider potvrđuje baš kad posao radi, `UPDATE` sačeka njegov red i ponovo provjeri `status = 'PENDING'`, pa potvrđenu ne dira. Ako posao stigne prvi, poveća `version`, pa providerova potvrda padne na `@Version` i dobije `409`. To drugo dokazuje test `kasnaPotvrdaNePrepisujeIstek`. Prvi slučaj nisam testirao, oslanjam se na to kako Postgres u `READ COMMITTED` ponovo provjeri `WHERE` poslije čekanja na red. Cijena je da pravilo prelaza za ova dva slučaja živi u SQL-u (`WHERE status = 'PENDING'`), a ne u `Booking.prijedi`.
+
+Render na besplatnom planu uspava servis, a uspavan servis ne vrti posao. Istekla rezervacija bi tada i dalje držala termin, jer `EXCLUDE` ne zna za rok (u `WHERE` constrainta ne može stajati `now()`). Zato `BookingService.create`, odmah poslije locka resursa, prvo prebaci istekle rezervacije tog resursa u `EXPIRED`. Posao je tu za historiju i za resurse na koje niko ne rezerviše.
+
+Potvrđena rezervacija se zatvara 24 sata poslije kraja (`slotbook.booking.complete-after-hours`), a ne odmah, jer je `COMPLETED` konačno stanje i provider poslije toga ne bi mogao označiti nedolazak. Dok se provider ne javi, rezervacija u statistici izgleda kao održana.
+
+Provider i dalje može potvrditi rezervaciji kojoj je rok prošao, ako posao još nije stigao. Nisam to zabranio, jer bi kasna potvrda u tom slučaju bila korisna, a termin niko drugi nije uzeo (inače bi `create` već istekao rezervaciju).
+
+ShedLock za sada ne treba, jer radi jedna instanca. I s dvije bi ovaj posao bio siguran iz istog razloga kao gore: druga naredba ne nađe redove koje je prva već promijenila. Nisam to probao s dvije instance.
+

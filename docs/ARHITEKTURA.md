@@ -56,6 +56,7 @@ sequenceDiagram
     C->>C: @PreAuthorize canView(resourceId)
     C->>S: create(resourceId, klijent, start, ključ)
     S->>DB: SELECT resurs FOR UPDATE (drugi zahtjev za isti resurs čeka)
+    S->>DB: istekle PENDING na ovom resursu u EXPIRED (posao možda kasni)
     S->>DB: ima li već rezervacija s ovim ključem? ako ima, vrati nju (201)
     S->>SL: offered(resourceId, start)
     SL-->>S: termin po pravilima ili prazno (400)
@@ -164,7 +165,7 @@ erDiagram
         uuid booking_id FK
         varchar from_status "prazno kod nastanka"
         varchar to_status
-        uuid actor_id FK
+        uuid actor_id FK "prazno kad je promjena automatska"
         timestamptz created_at
     }
 ```
@@ -177,4 +178,4 @@ Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` 
 
 ## Slike i šta dolazi
 
-Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, Cloudflare R2 na produkciji), a bira se preko `slotbook.storage.type`. U Fazi 5 dolaze pozadinski poslovi (istek `PENDING` rezervacija) i tabela `notifications` za slanje emailova.
+Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, Cloudflare R2 na produkciji), a bira se preko `slotbook.storage.type`. Pozadinski posao `BookingJob` (`@Scheduled`, svake minute) prebacuje istekle `PENDING` rezervacije u `EXPIRED` i zatvara potvrđene dan poslije kraja. Oba prelaza su po jedna SQL naredba koja mijenja status i piše historiju bez aktera. U ostatku Faze 5 dolazi tabela `notifications` za slanje emailova.

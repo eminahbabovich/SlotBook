@@ -6,6 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -224,5 +227,95 @@ class BookingServiceTest {
 				.isEqualTo("CANCELLED");
 		assertThat(jdbc.queryForList("select to_status from booking_events where booking_id = ? order by created_at",
 				String.class, id)).containsExactly("PENDING", "CANCELLED");
+	}
+
+	// Direktno u bazu, jer servis ne pravi rezervacije u prošlosti ni s rokom koji je već prošao
+	private UUID upisi(UUID resurs, String status, Instant pocetak, Instant kraj, Instant rok) {
+		UUID id = UUID.randomUUID();
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at, "
+				+ "expires_at) values (?, ?, ?, ?, ?, ?, now() - interval '3 days', ?)", id, resurs, studentica,
+				utc(pocetak), utc(kraj), status, rok == null ? null : utc(rok));
+		return id;
+	}
+
+	private static OffsetDateTime utc(Instant trenutak) {
+		return trenutak.atOffset(ZoneOffset.UTC);
+	}
+
+	private String statusOd(UUID rezervacija) {
+		return jdbc.queryForObject("select status from bookings where id = ?", String.class, rezervacija);
+	}
+
+	@Test
+	void posaoPrebacujeUExpiredSamoOneKojimaJeRokProsao() {
+		UUID konsultacije = resurs("Konsultacije, Baze podataka", 60, false);
+		Instant sada = Instant.now();
+		UUID istekla = upisi(konsultacije, "PENDING", PONEDJELJAK_09, PONEDJELJAK_09.plus(1, ChronoUnit.HOURS),
+				sada.minus(1, ChronoUnit.MINUTES));
+		UUID ceka = upisi(konsultacije, "PENDING", PONEDJELJAK_09.plus(1, ChronoUnit.HOURS),
+				PONEDJELJAK_09.plus(2, ChronoUnit.HOURS), PONEDJELJAK_09);
+
+		service.expireOverdue();
+
+		assertThat(statusOd(istekla)).isEqualTo("EXPIRED");
+		assertThat(statusOd(ceka)).isEqualTo("PENDING");
+		assertThat(jdbc.queryForList("select from_status, to_status, actor_id from booking_events where booking_id = ?",
+				istekla)).singleElement().satisfies(red -> {
+					assertThat(red.get("from_status")).isEqualTo("PENDING");
+					assertThat(red.get("to_status")).isEqualTo("EXPIRED");
+					assertThat(red.get("actor_id")).isNull();
+				});
+	}
+
+	// Posao još nije stigao (servis je spavao), a druga studentica želi isti termin
+	@Test
+	void isteklaRezervacijaNeSmetaNovojIPrijePosla() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+		UUID drugaStudentica = korisnik("lamija." + UUID.randomUUID() + "@example.com", "Lamija");
+		UUID istekla = upisi(sto, "PENDING", PONEDJELJAK_09, PONEDJELJAK_09.plus(1, ChronoUnit.HOURS),
+				Instant.now().minus(1, ChronoUnit.MINUTES));
+
+		BookingResponse nova = service.create(sto, drugaStudentica, PONEDJELJAK_09, null);
+
+		assertThat(nova.status()).isEqualTo(BookingStatus.CONFIRMED);
+		assertThat(statusOd(istekla)).isEqualTo("EXPIRED");
+	}
+
+	// Kraj prije 26 sati se zatvara, kraj prije 23 sata još čeka, jer provider ima dan za nedolazak
+	@Test
+	void potvrdjenaSeZatvaraTekDanPoslijeKraja() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+		Instant sada = Instant.now();
+		UUID davna = upisi(sto, "CONFIRMED", sada.minus(27, ChronoUnit.HOURS), sada.minus(26, ChronoUnit.HOURS), null);
+		UUID jucerasnja = upisi(sto, "CONFIRMED", sada.minus(24, ChronoUnit.HOURS), sada.minus(23, ChronoUnit.HOURS),
+				null);
+
+		service.completeEnded();
+
+		assertThat(statusOd(davna)).isEqualTo("COMPLETED");
+		assertThat(statusOd(jucerasnja)).isEqualTo("CONFIRMED");
+		assertThat(jdbc.queryForObject("select actor_id from booking_events where booking_id = ?", UUID.class, davna))
+				.isNull();
+	}
+
+	// Provider je otvorio rezervaciju (verzija 0), a posao je u međuvremenu istekne. Kasna potvrda ne
+	// smije oživjeti isteklu rezervaciju, jer bi termin možda već imao novu.
+	@Test
+	void kasnaPotvrdaNePrepisujeIstek() {
+		UUID konsultacije = resurs("Konsultacije, Baze podataka", 60, false);
+		UUID id = upisi(konsultacije, "PENDING", PONEDJELJAK_09, PONEDJELJAK_09.plus(1, ChronoUnit.HOURS),
+				Instant.now().minus(1, ChronoUnit.MINUTES));
+		TransactionTemplate providerova = new TransactionTemplate(transakcije);
+		TransactionTemplate posao = new TransactionTemplate(transakcije);
+		posao.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+		assertThatThrownBy(() -> providerova.executeWithoutResult(s -> {
+			Booking zastarjela = bookings.findById(id).orElseThrow();
+			posao.executeWithoutResult(s2 -> service.expireOverdue());
+			zastarjela.prijedi(BookingStatus.CONFIRMED, Instant.parse("2035-11-18T10:00:00Z"));
+			bookings.flush();
+		})).isInstanceOf(ObjectOptimisticLockingFailureException.class);
+
+		assertThat(statusOd(id)).isEqualTo("EXPIRED");
 	}
 }

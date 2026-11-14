@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 interface BookingRepository extends JpaRepository<Booking, UUID> {
@@ -20,6 +21,40 @@ interface BookingRepository extends JpaRepository<Booking, UUID> {
 	// join fetch: naziv resursa i zona organizacije stižu u istom upitu, a ne jedan upit po redu (N+1)
 	@Query("select b from Booking b join fetch b.resource r join fetch r.organization where b.client.id = :clientId")
 	Page<Booking> findMine(UUID clientId, Pageable pageable);
+
+	// Jedna naredba mijenja status i piše historiju, pa ne može biti jedno bez drugog. Kad provider
+	// potvrđuje u istom trenutku, UPDATE čeka njegov red i ponovo provjeri status = 'PENDING', pa
+	// potvrđena ostane potvrđena. version + 1 je tu za obrnut slučaj: providerov stari @Version tada padne.
+	@Modifying
+	@Query(nativeQuery = true, value = """
+			WITH istekle AS (
+				UPDATE bookings SET status = 'EXPIRED', version = version + 1
+				WHERE status = 'PENDING' AND expires_at <= :sada
+				RETURNING id)
+			INSERT INTO booking_events (id, booking_id, from_status, to_status, actor_id, created_at)
+			SELECT gen_random_uuid(), id, 'PENDING', 'EXPIRED', NULL, :sada FROM istekle""")
+	int expireAll(Instant sada);
+
+	// Isto, samo za jedan resurs, pri novoj rezervaciji pod lockom resursa
+	@Modifying
+	@Query(nativeQuery = true, value = """
+			WITH istekle AS (
+				UPDATE bookings SET status = 'EXPIRED', version = version + 1
+				WHERE status = 'PENDING' AND expires_at <= :sada AND resource_id = :resourceId
+				RETURNING id)
+			INSERT INTO booking_events (id, booking_id, from_status, to_status, actor_id, created_at)
+			SELECT gen_random_uuid(), id, 'PENDING', 'EXPIRED', NULL, :sada FROM istekle""")
+	int expireOnResource(UUID resourceId, Instant sada);
+
+	@Modifying
+	@Query(nativeQuery = true, value = """
+			WITH zavrsene AS (
+				UPDATE bookings SET status = 'COMPLETED', version = version + 1
+				WHERE status = 'CONFIRMED' AND end_time <= :granica
+				RETURNING id)
+			INSERT INTO booking_events (id, booking_id, from_status, to_status, actor_id, created_at)
+			SELECT gen_random_uuid(), id, 'CONFIRMED', 'COMPLETED', NULL, :sada FROM zavrsene""")
+	int completeEndedBefore(Instant granica, Instant sada);
 
 	// Pokriva ga indeks iza UNIQUE (client_id, idempotency_key)
 	Optional<Booking> findByClientIdAndIdempotencyKey(UUID clientId, String idempotencyKey);

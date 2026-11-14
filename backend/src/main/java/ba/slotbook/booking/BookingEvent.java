@@ -37,7 +37,8 @@ public class BookingEvent {
 	@Column(name = "to_status", nullable = false, updatable = false)
 	private BookingStatus toStatus;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	// Prazno kad je status promijenio pozadinski posao (istek, zatvaranje završene)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "actor_id", updatable = false)
 	private User actor;
 

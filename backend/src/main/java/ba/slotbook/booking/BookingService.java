@@ -41,10 +41,12 @@ public class BookingService {
 	private final SlotService slotService;
 	private final Clock clock;
 	private final Duration rokZaPotvrdu;
+	private final Duration zatvaranjePoslije;
 
 	public BookingService(BookingRepository bookings, BookingEventRepository events, ResourceRepository resources,
 			UserRepository users, SlotService slotService, Clock clock,
-			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu) {
+			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu,
+			@Value("${slotbook.booking.complete-after-hours}") int satiDoZatvaranja) {
 		this.bookings = bookings;
 		this.events = events;
 		this.resources = resources;
@@ -52,6 +54,7 @@ public class BookingService {
 		this.slotService = slotService;
 		this.clock = clock;
 		this.rokZaPotvrdu = Duration.ofHours(satiZaPotvrdu);
+		this.zatvaranjePoslije = Duration.ofHours(satiDoZatvaranja);
 	}
 
 	// Ko smije rezervisati provjerava @PreAuthorize u kontroleru. Klijent šalje samo početak, a kraj
@@ -66,6 +69,10 @@ public class BookingService {
 		// čekaju jedan na drugog, Postgres to prekine kao deadlock (40P01) tek poslije sekunde, a
 		// klijent dobije 500. Ovako drugi vidi commitan red i dobije 23P01. Preklapanje i dalje čuva baza.
 		Resource resurs = resources.findLockedById(resourceId).orElseThrow(ResourceNotFoundException::new);
+		Instant sada = clock.instant();
+		// Istekla PENDING još drži termin dok je posao ne obradi (Render uspava servis, pa posao kasni),
+		// a EXCLUDE bi novu rezervaciju odbio. Pod lockom resursa ih se ovdje oslobodi odmah.
+		bookings.expireOnResource(resourceId, sada);
 		// Tek poslije locka: dupli klik čeka da prvi zahtjev završi, pa ovdje nađe njegovu rezervaciju
 		if (idempotencyKey != null) {
 			var ranija = bookings.findByClientIdAndIdempotencyKey(clientId, idempotencyKey);
@@ -78,7 +85,6 @@ public class BookingService {
 						"Ovaj termin se ne nudi. Izaberi jedan od slobodnih termina u kalendaru."));
 		BookingStatus status = resurs.isAutoConfirm() ? BookingStatus.CONFIRMED : BookingStatus.PENDING;
 		User klijent = users.getReferenceById(clientId);
-		Instant sada = clock.instant();
 		Booking rezervacija;
 		try {
 			rezervacija = bookings.saveAndFlush(
@@ -126,6 +132,19 @@ public class BookingService {
 			rezervacija.otkaziKaoKlijent(sada);
 		}
 		return zapisi(rezervacija, stari, actorId, sada);
+	}
+
+	// Za BookingJob. Vraća broj isteklih, samo za log.
+	@Transactional
+	public int expireOverdue() {
+		return bookings.expireAll(clock.instant());
+	}
+
+	// Ne odmah na kraju termina: provider ima još dan da označi nedolazak, a COMPLETED je konačno
+	@Transactional
+	public int completeEnded() {
+		Instant sada = clock.instant();
+		return bookings.completeEndedBefore(sada.minus(zatvaranjePoslije), sada);
 	}
 
 	// Najkasniji termin prvo, pa budući termini idu prije prošlih. Sort bira server, kao kod resursa,

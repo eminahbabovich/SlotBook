@@ -46,6 +46,9 @@ class BookingPrelaziApiTest {
 	@Autowired
 	JdbcTemplate jdbc;
 
+	@Autowired
+	BookingService bookingService;
+
 	private String selma;
 	private String hana;
 	private String lamija;
@@ -266,5 +269,18 @@ class BookingPrelaziApiTest {
 
 		mockMvc.perform(get("/api/bookings/{id}/events", rezervacija).header("Authorization", "Bearer " + lamija))
 				.andExpect(status().isForbidden());
+	}
+
+	// Istek nema aktera, a historija ga i dalje prikazuje
+	@Test
+	void historijaPokazujeIIstekBezImena() throws Exception {
+		UUID rezervacija = rezervacija(hana, resurs(false));
+		jdbc.update("update bookings set expires_at = now() - interval '1 minute' where id = ?", rezervacija);
+		bookingService.expireOverdue();
+
+		mockMvc.perform(get("/api/bookings/{id}/events", rezervacija).header("Authorization", "Bearer " + hana))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[*].toStatus", contains("PENDING", "EXPIRED")))
+				.andExpect(jsonPath("$[1].actorName").value(nullValue()));
 	}
 }
