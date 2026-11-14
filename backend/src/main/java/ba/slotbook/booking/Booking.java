@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "bookings")
@@ -50,6 +51,11 @@ public class Booking {
 	@Column(name = "idempotency_key", updatable = false)
 	private String idempotencyKey;
 
+	// Provider potvrđuje dok klijent otkazuje: bez ovoga oba pročitaju PENDING, oba prođu i
+	// pobijedi ko zadnji upiše, a historija ima dva prelaza iz PENDING. Sa @Version drugi padne.
+	@Version
+	private long version;
+
 	protected Booking() {
 	}
 
@@ -62,6 +68,17 @@ public class Booking {
 		this.status = status;
 		this.createdAt = createdAt;
 		this.idempotencyKey = idempotencyKey;
+	}
+
+	// Pravilo prelaza je u entitetu, pa ga ne može zaobići nijedan servis koji mijenja status
+	void prijedi(BookingStatus novi, Instant sada) {
+		if (!status.mozePreciU(novi)) {
+			throw new BookingTransitionException(status, novi);
+		}
+		if (novi == BookingStatus.NO_SHOW && sada.isBefore(startTime)) {
+			throw new NoShowTooEarlyException();
+		}
+		this.status = novi;
 	}
 
 	public UUID getId() {

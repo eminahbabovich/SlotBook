@@ -15,6 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import ba.slotbook.TestcontainersConfiguration;
 import ba.slotbook.availability.AvailabilityInterval;
@@ -50,6 +54,12 @@ class BookingServiceTest {
 
 	@Autowired
 	JdbcTemplate jdbc;
+
+	@Autowired
+	BookingRepository bookings;
+
+	@Autowired
+	PlatformTransactionManager transakcije;
 
 	private UUID profesorica;
 	private UUID citaonica;
@@ -178,5 +188,29 @@ class BookingServiceTest {
 				"klik-3");
 
 		assertThat(lamijina.id()).isNotEqualTo(hanina.id());
+	}
+
+	// Provider je otvorio rezervaciju (verzija 0), a studentica je u međuvremenu otkaže (verzija 1).
+	// Providerova potvrda ne smije prepisati otkazivanje: UPDATE ... where version = 0 ne nađe red.
+	@Test
+	void zastarjelaRezervacijaSeNeMozeUpisatiPrekoNovije() {
+		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
+		UUID id = service.create(konsultacije, studentica, PONEDJELJAK_09, null).id();
+		TransactionTemplate providerova = new TransactionTemplate(transakcije);
+		TransactionTemplate studenticina = new TransactionTemplate(transakcije);
+		studenticina.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+		assertThatThrownBy(() -> providerova.executeWithoutResult(s -> {
+			Booking zastarjela = bookings.findById(id).orElseThrow();
+			studenticina.executeWithoutResult(
+					s2 -> service.changeStatus(id, studentica, BookingStatus.CANCELLED));
+			zastarjela.prijedi(BookingStatus.CONFIRMED, Instant.parse("2035-11-18T10:00:00Z"));
+			bookings.flush();
+		})).isInstanceOf(ObjectOptimisticLockingFailureException.class);
+
+		assertThat(jdbc.queryForObject("select status from bookings where id = ?", String.class, id))
+				.isEqualTo("CANCELLED");
+		assertThat(jdbc.queryForList("select to_status from booking_events where booking_id = ? order by created_at",
+				String.class, id)).containsExactly("PENDING", "CANCELLED");
 	}
 }

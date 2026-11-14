@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -25,7 +26,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
+import ba.slotbook.booking.BookingStatus;
+import ba.slotbook.booking.BookingTransitionException;
 import ba.slotbook.booking.IdempotencyKeyReusedException;
+import ba.slotbook.booking.NoShowTooEarlyException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.organization.AlreadyMemberException;
 import ba.slotbook.organization.InviteNotUsableException;
@@ -111,6 +115,46 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.");
 		problem.setTitle("Termin je zauzet");
+		return problem;
+	}
+
+	// Stanje ide i kao polje, da frontend može osvježiti prikaz bez parsiranja teksta
+	@ExceptionHandler(BookingTransitionException.class)
+	ProblemDetail prelazNijeDozvoljen(BookingTransitionException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ova promjena nije moguća jer je rezervacija " + opis(ex.getFrom()) + ". Osvježi prikaz.");
+		problem.setTitle("Promjena nije moguća");
+		problem.setProperty("status", ex.getFrom());
+		problem.setProperty("trazeniStatus", ex.getTo());
+		return problem;
+	}
+
+	private static String opis(BookingStatus status) {
+		return switch (status) {
+			case PENDING -> "na čekanju";
+			case CONFIRMED -> "potvrđena";
+			case REJECTED -> "odbijena";
+			case EXPIRED -> "istekla";
+			case CANCELLED -> "otkazana";
+			case COMPLETED -> "završena";
+			case NO_SHOW -> "označena kao nedolazak";
+		};
+	}
+
+	@ExceptionHandler(NoShowTooEarlyException.class)
+	ProblemDetail nedolazakPrerano(NoShowTooEarlyException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Nedolazak se može označiti tek kad termin počne.");
+		problem.setTitle("Termin još nije počeo");
+		return problem;
+	}
+
+	// @Version: neko je istu rezervaciju promijenio između čitanja i upisa
+	@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+	ProblemDetail istovremenaIzmjena(ObjectOptimisticLockingFailureException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Rezervaciju je u međuvremenu promijenio neko drugi. Osvježi prikaz i pokušaj ponovo.");
+		problem.setTitle("Rezervacija je promijenjena");
 		return problem;
 	}
 

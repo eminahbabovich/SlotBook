@@ -36,4 +36,36 @@ public class BookingController {
 				request.startTime().toInstant(), idempotencyKey);
 	}
 
+	// Prelazi stanja su posebne adrese, a ne PUT sa statusom u tijelu: svaki ima svoje pravilo ko ga smije
+	@PostMapping("/api/bookings/{bookingId}/confirm")
+	@PreAuthorize("@bookingAccess.canManage(#bookingId, authentication)")
+	public BookingResponse confirm(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token) {
+		return bookingService.changeStatus(bookingId, UUID.fromString(token.getSubject()), BookingStatus.CONFIRMED);
+	}
+
+	@PostMapping("/api/bookings/{bookingId}/reject")
+	@PreAuthorize("@bookingAccess.canManage(#bookingId, authentication)")
+	public BookingResponse reject(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token) {
+		return bookingService.changeStatus(bookingId, UUID.fromString(token.getSubject()), BookingStatus.REJECTED);
+	}
+
+	@PostMapping("/api/bookings/{bookingId}/cancel")
+	@PreAuthorize("@bookingAccess.canCancel(#bookingId, authentication)")
+	public BookingResponse cancel(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token) {
+		return bookingService.changeStatus(bookingId, UUID.fromString(token.getSubject()), BookingStatus.CANCELLED);
+	}
+
+	// Klijent je došao. QR check-in iz Faze 10 će ići na isti prelaz.
+	@PostMapping("/api/bookings/{bookingId}/check-in")
+	@PreAuthorize("@bookingAccess.canManage(#bookingId, authentication)")
+	public BookingResponse checkIn(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token) {
+		return bookingService.changeStatus(bookingId, UUID.fromString(token.getSubject()), BookingStatus.COMPLETED);
+	}
+
+	@PostMapping("/api/bookings/{bookingId}/no-show")
+	@PreAuthorize("@bookingAccess.canManage(#bookingId, authentication)")
+	public BookingResponse noShow(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token) {
+		return bookingService.changeStatus(bookingId, UUID.fromString(token.getSubject()), BookingStatus.NO_SHOW);
+	}
+
 }

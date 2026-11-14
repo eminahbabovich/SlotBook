@@ -91,6 +91,19 @@ public class BookingService {
 		return BookingResponse.from(rezervacija);
 	}
 
+	// Svaka promjena statusa ide ovuda. Pravilo prelaza čuva entitet, istovremenu izmjenu @Version,
+	// a zapis u historiji je u istoj transakciji. Postojanje i pristup je provjerio @PreAuthorize,
+	// a rezervacije se ne brišu.
+	@Transactional
+	public BookingResponse changeStatus(UUID bookingId, UUID actorId, BookingStatus novi) {
+		Booking rezervacija = bookings.findById(bookingId).orElseThrow();
+		BookingStatus stari = rezervacija.getStatus();
+		Instant sada = clock.instant();
+		rezervacija.prijedi(novi, sada);
+		events.save(new BookingEvent(rezervacija, stari, novi, users.getReferenceById(actorId), sada));
+		return BookingResponse.from(rezervacija);
+	}
+
 	// Isti ključ i isti zahtjev vraćaju raniju rezervaciju, u stanju u kojem je sada. Isti ključ
 	// za drugi termin je greška klijenta (422 po nacrtu IETF-a za Idempotency-Key).
 	private BookingResponse ponovljen(Booking ranija, UUID resourceId, Instant start) {

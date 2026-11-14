@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,9 +52,11 @@ class OrganizationIsolationApiTest {
 		// Umjesto JSON tijela ide multipart s ispravnom slikom
 		static final String SLIKA = "<multipart slika>";
 
-		// Ruta bez parametara, da se poredi s obrascem iz aplikacije
+		// Ruta bez parametara, da se poredi s obrascem iz aplikacije. Ime varijable rezervacije
+		// u testu kaže u kojem je stanju, a u aplikaciji je {bookingId}.
 		String ruta() {
-			return metoda.name() + " " + putanja.split("\\?")[0];
+			return metoda.name() + " " + putanja.split("\\?")[0].replaceFirst("/api/bookings/\\{[^}]+}",
+					"/api/bookings/{bookingId}");
 		}
 
 	}
@@ -91,7 +94,13 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/slots?from=2035-08-06&to=2035-08-13", null),
 			// POST prije GET-a, da admin u drugom testu ima šta pročitati
 			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/image", Zahtjev.SLIKA),
-			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/image", null));
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/image", null),
+			// Svaki prelaz na svojoj rezervaciji, u stanju iz kojeg je prelaz dozvoljen
+			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaPotvrdu}/confirm", null),
+			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaOdbijanje}/reject", null),
+			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaOtkazivanje}/cancel", null),
+			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaDolazak}/check-in", null),
+			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaNedolazak}/no-show", null));
 
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 13 };
 
@@ -116,6 +125,7 @@ class OrganizationIsolationApiTest {
 	private UUID citaonica;
 	private UUID stoCitaonice;
 	private UUID odmorStola;
+	private Map<String, UUID> rezervacije;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
 	@BeforeEach
@@ -127,6 +137,35 @@ class OrganizationIsolationApiTest {
 		stoCitaonice = stoCitaonice();
 		odmorStola = odmorStola();
 		ponedjeljkomOtvoreno();
+		rezervacije = rezervacijeZaPrelaze();
+	}
+
+	// Almin prelaz ih promijeni, pa se prije svakog testa prave nove. Klijent je Alma, admin čitaonice.
+	// Nedolazak traži termin koji je počeo, zato je on u prošlosti.
+	private Map<String, UUID> rezervacijeZaPrelaze() {
+		jdbc.update("delete from booking_events where booking_id in (select id from bookings where resource_id = ?)",
+				stoCitaonice);
+		jdbc.update("delete from bookings where resource_id = ?", stoCitaonice);
+		UUID almaId = users.findByEmail("alma.izolacija@example.com").orElseThrow().getId();
+		return Map.of(
+				"zaPotvrdu", rezervacija(almaId, "2036-01-07 08:00+01", "PENDING"),
+				"zaOdbijanje", rezervacija(almaId, "2036-01-07 09:00+01", "PENDING"),
+				"zaOtkazivanje", rezervacija(almaId, "2036-01-07 10:00+01", "CONFIRMED"),
+				"zaDolazak", rezervacija(almaId, "2036-01-07 11:00+01", "CONFIRMED"),
+				"zaNedolazak", rezervacija(almaId, "2020-01-06 08:00+01", "CONFIRMED"));
+	}
+
+	private UUID rezervacija(UUID klijent, String pocetak, String status) {
+		UUID id = UUID.randomUUID();
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at) "
+				+ "values (?, ?, ?, ?::timestamptz, ?::timestamptz + interval '1 hour', ?, now())", id, stoCitaonice,
+				klijent, pocetak, pocetak, status);
+		return id;
+	}
+
+	private String statusiRezervacija() {
+		return jdbc.queryForObject("select string_agg(status, ',' order by start_time) from bookings "
+				+ "where resource_id = ?", String.class, stoCitaonice);
 	}
 
 	// Rezervacija traži radno vrijeme, a Almin PUT radnog vremena dolazi u listi tek poslije rezervacije
@@ -197,8 +236,9 @@ class OrganizationIsolationApiTest {
 
 	private int posalji(Zahtjev zahtjev, String token) throws Exception {
 		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
-		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja())
-				.buildAndExpand(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola)).toUri();
+		Map<String, Object> varijable = new HashMap<>(rezervacije);
+		varijable.putAll(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola));
+		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja()).buildAndExpand(varijable).toUri();
 		if (Zahtjev.SLIKA.equals(zahtjev.tijelo())) {
 			return mockMvc.perform(multipart(zahtjev.metoda(), adresa)
 					.file(new MockMultipartFile("file", "sto.png", "image/png", PNG))
@@ -228,6 +268,7 @@ class OrganizationIsolationApiTest {
 		long izuzetakaPrije = brojIzuzetaka();
 		String slikaPrije = kljucSlike();
 		long rezervacijaPrije = brojRezervacija();
+		String statusiPrije = statusiRezervacija();
 
 		for (Zahtjev zahtjev : ZAHTJEVI) {
 			assertThat(posalji(zahtjev, bojan)).as(zahtjev.ruta()).isEqualTo(403);
@@ -244,6 +285,7 @@ class OrganizationIsolationApiTest {
 		assertThat(brojIzuzetaka()).isEqualTo(izuzetakaPrije);
 		assertThat(kljucSlike()).isEqualTo(slikaPrije);
 		assertThat(brojRezervacija()).isEqualTo(rezervacijaPrije);
+		assertThat(statusiRezervacija()).isEqualTo(statusiPrije);
 	}
 
 	private long brojRezervacija() {
@@ -272,14 +314,15 @@ class OrganizationIsolationApiTest {
 		}
 	}
 
-	// Čuvar: novi endpoint pod /api/organizations/{id}/... ili /api/resources/{id} ne može proći mimo
-	// ovog testa. Resurs pripada organizaciji i kad je nema u putanji.
+	// Čuvar: novi endpoint pod /api/organizations/{id}/..., /api/resources/{id} ili /api/bookings/{id}
+	// ne može proći mimo ovog testa. Resurs i rezervacija pripadaju organizaciji i kad je nema u putanji.
 	@Test
 	void svakaRutaNadPodacimaOrganizacijeJeUOvomTestu() {
 		Set<String> uAplikaciji = new TreeSet<>();
 		rute.getHandlerMethods().keySet().forEach(info -> info.getPatternValues().stream()
 				.filter(putanja -> putanja.matches("/api/organizations/\\{[^}]+}/.+")
-						|| putanja.matches("/api/resources/\\{[^}]+}.*"))
+						|| putanja.matches("/api/resources/\\{[^}]+}.*")
+						|| putanja.matches("/api/bookings/\\{[^}]+}.*"))
 				.forEach(putanja -> {
 					var metode = info.getMethodsCondition().getMethods();
 					// Mapiranje bez metode prima svaku metodu, a skup mu je prazan, pa bi ga forEach preskočio
