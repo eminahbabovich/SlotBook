@@ -1,6 +1,8 @@
 package ba.slotbook.booking;
 
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -148,6 +150,36 @@ class BookingApiTest {
 		rezervisi(hana, sto(), "2035-11-19T09:00:00")
 				.andExpect(status().isBadRequest())
 				.andExpect(content().contentTypeCompatibleWith("application/problem+json"));
+	}
+
+	private ResultActions slobodniTermini(String token, UUID resurs) throws Exception {
+		return mockMvc.perform(get("/api/resources/{id}/slots", resurs)
+				.param("from", "2035-11-19")
+				.param("to", "2035-11-20")
+				.header("Authorization", "Bearer " + token));
+	}
+
+	// Ponedjeljak 08-12 po Sarajevu je 07-11 UTC. Hanin termin u 09:00 (08:00 UTC) više se ne nudi, ni Lamiji.
+	@Test
+	void rezervisanTerminNestajeIzSlobodnihTermina() throws Exception {
+		UUID sto = sto();
+		rezervisi(hana, sto, "2035-11-19T09:00:00+01:00").andExpect(status().isCreated());
+
+		slobodniTermini(lamija, sto)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.slots[*].start",
+						contains("2035-11-19T07:00:00Z", "2035-11-19T09:00:00Z", "2035-11-19T10:00:00Z")));
+	}
+
+	@Test
+	void otkazanaRezervacijaNeZauzimaTermin() throws Exception {
+		UUID sto = sto();
+		jdbc.update("insert into bookings values (gen_random_uuid(), ?, ?, '2035-11-19 08:00Z', '2035-11-19 09:00Z', "
+				+ "'CANCELLED', now())", sto, users.findByEmail("hana.rezervacije@example.com").orElseThrow().getId());
+
+		slobodniTermini(lamija, sto)
+				.andExpect(jsonPath("$.slots[*].start", contains("2035-11-19T07:00:00Z", "2035-11-19T08:00:00Z",
+						"2035-11-19T09:00:00Z", "2035-11-19T10:00:00Z")));
 	}
 
 	// Klijent ne vidi deaktiviran resurs, pa ga ne može ni rezervisati

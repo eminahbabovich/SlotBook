@@ -238,7 +238,7 @@ Kad sam privremeno uzimao pomak zone za trenutak upita (`getOffset(now)`) umjest
 
 Termin se nudi samo ako cijeli stane u radno vrijeme (08:00-10:30 sa satnim terminima daje 08 i 09) i ako počinje poslije sada. Izuzetak zatvara termin samo ako se stvarno preklapaju, a kraj je isključen kao kod `tstzrange`. Izuzetak koji završava u 11:00 ne dira termin od 11:00. Kad sam poređenje privremeno promijenio da uključuje krajeve, taj test je pao.
 
-Rezervacije se još ne oduzimaju, jer ih nema do Faze 4, a endpoint koji ovo vraća dolazi u sljedećem koraku.
+Rezervacije se tada još nisu oduzimale, jer ih nije bilo do Faze 4. Od Faze 4 se oduzimaju, vidi "Slobodni termini bez zauzetih" ispod.
 
 ## Endpoint za slobodne termine: datumi, najviše 31 dan
 
@@ -295,3 +295,11 @@ Historija statusa (`booking_events`, V12) se upisuje u istoj transakciji kao pro
 Birao sam između tri rješenja: zaključati red resursa prije upisa, prevesti `40P01` u `409`, ili ponoviti transakciju poslije deadlocka. Uzeo sam prvo. `BookingService.create` prvo radi `SELECT ... FOR UPDATE` nad resursom (isti `findLockedById` kao kod radnog vremena), pa rezervacije istog resursa idu jedna za drugom, a drugi zahtjev vidi commitan red i dobije `23P01`. Preklapanje i dalje čuva `EXCLUDE`. Lock je tu zbog čiste greške, a ne kao zaštita. Cijena je da i rezervacije različitih termina istog resursa čekaju jedna drugu. Prevođenje `40P01` u `409` bi pretpostavljalo da je svaki deadlock zbog preklapanja, a ponavljanje bi tražilo kod izvan transakcije.
 
 Deadlock zavisi od tajminga. Bez locka je jedna runda od 20 niti pala u prva dva pokretanja, a u sljedeća dva je prošla. Zato test sada ima 4 runde, svaku na svoj termin. Sa lockom je prošao u svakom pokretanju, a svih 76 odbijenih zahtjeva dobije `23P01`. Bez locka je pao u oba pokretanja s 4 runde, svaki put s jednom rundom od 19 × `40P01`. Da test bez locka padne svaki put, ne mogu garantovati. Sam paralelni dio sa lockom traje 0,6-0,7 s za jednu rundu na mom laptopu, a test u cjelini oko minut, najviše zbog starta konteksta i 21 BCrypt registracije.
+
+## Slobodni termini bez zauzetih: SlotController prelazi u booking
+
+`GET /api/resources/{id}/slots` sada od ponuđenih termina oduzima one koje drži `PENDING` ili `CONFIRMED` rezervacija. Otkazane i ostale ne smetaju, i za to postoji test, koji je pao kad sam privremeno uzimao rezervacije u svim stanjima. Lista stanja koja drže termin je na jednom mjestu u Javi (`BookingStatus.DRZE_TERMIN`), i ista je kao `WHERE` u constraintu.
+
+Rezervacija već zavisi od `availability` (pita `SlotService.offered`), pa da je `SlotService` počeo čitati rezervacije, paketi bi zavisili jedan od drugog. Nisam htio interface u `availability` koji bi implementirao `booking`, jer bi to bila apstrakcija samo da se zaobiđe zavisnost. Umjesto toga je `SlotController` prešao u `booking`, uz `FreeSlotService` koji uzme ponuđene termine i izbaci zauzete. `availability` zna šta nude pravila, a `booking` šta je od toga slobodno. Adresa endpointa se nije promijenila.
+
+Upit za zauzete termine je običan izvedeni upit (`startTime < do` i `endTime > od`). Ne koristi gist indeks iz constrainta, jer taj indeks radi nad `tstzrange(start_time, end_time)`. Da li to smeta, gledam u Fazi 9 s `EXPLAIN`, a ne sada.

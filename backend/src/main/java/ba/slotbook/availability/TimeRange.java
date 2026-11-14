@@ -6,7 +6,7 @@ import java.time.Instant;
 // i izuzetak od 10:00 se dodiruju, ali ne preklapaju
 public record TimeRange(Instant start, Instant end) {
 
-	boolean overlaps(TimeRange drugi) {
+	public boolean overlaps(TimeRange drugi) {
 		return start.isBefore(drugi.end) && drugi.start.isBefore(end);
 	}
 
