@@ -273,3 +273,11 @@ Za test sam prvo dodao Testcontainers modul za MinIO, a onda se pokazalo da MinI
 Implementacija se bira preko `slotbook.storage.type`, a `StorageSelectionTest` pokazuje da se bez podešavanja bira disk, a uz `s3` S3. Podaci za S3 (`S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`) nemaju podrazumijevane vrijednosti. S tipom `s3` aplikacija bez njih ne starta, i za to postoji test. Prvi put je taj test prolazio iz pogrešnog razloga: mali Spring kontekst u testu nepoznat `${...}` ostavi kao tekst, pa je padao `URI.create`. Sad test učita isti mehanizam za placeholdere kao aplikacija i provjerava poruku o placeholderu. Kad je tip `local`, S3 podaci se ne čitaju, pa lokalno i u testovima ne trebaju.
 
 Dok R2 ne bude podešen, Render radi s tipom `local`, pa slike nestanu sa svakim deployem ili restartom. Za demo to još nije bitno, jer frontenda nema.
+
+## Rezervacije: djelimičan EXCLUDE, klijent bez FK na članstvo
+
+Tabela `bookings` ima `EXCLUDE` constraint s `WHERE (status IN ('PENDING', 'CONFIRMED'))`. Bez tog `WHERE` bi otkazana, odbijena ili istekla rezervacija zauvijek držala svoj termin. Kad sam `WHERE` privremeno izbacio, pao je test u kojem preko otkazane rezervacije ide nova. Kad sam raspon privremeno napravio s uključenim krajem (`'[]'`), pao je test da 09-10 i 10-11 mogu zajedno. Na Neon-u sam 14.11. napravio probnu tabelu s istim constraintom: preko `CANCELLED` reda je prošao `CONFIRMED`, a preklapanje 09:30-10:30 je palo sa `23P01`. Tabelu sam onda obrisao, da Flyway može sam izvršiti V10.
+
+Preklapanje se poredi po trenutku, ne po satu iz teksta. `08:30+00` i `09:30+01` su isti trenutak i odbijaju se, za to postoji test.
+
+`client_id` ide na `users`, a ne složenim FK na `organization_members` kao kod providera. Takav FK bi u bazi garantovao da je klijent član organizacije, ali bi `bookings` morao nositi i `organization_id`, a izlazak iz organizacije ne bi mogao obrisati red članstva dok postoje stare rezervacije. Članstvo je pravilo u trenutku rezervacije, pa ga provjerava servis. Za razliku od preklapanja, to nije nešto što mora važiti zauvijek.
