@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import com.jayway.jsonpath.JsonPath;
 
@@ -109,12 +110,20 @@ class BookingApiTest {
 	}
 
 	private ResultActions rezervisi(String token, UUID resurs, String pocetak) throws Exception {
-		return mockMvc.perform(post("/api/resources/{id}/bookings", resurs)
+		return mockMvc.perform(zahtjev(token, resurs, pocetak));
+	}
+
+	private ResultActions rezervisi(String token, UUID resurs, String pocetak, String kljuc) throws Exception {
+		return mockMvc.perform(zahtjev(token, resurs, pocetak).header("Idempotency-Key", kljuc));
+	}
+
+	private MockHttpServletRequestBuilder zahtjev(String token, UUID resurs, String pocetak) {
+		return post("/api/resources/{id}/bookings", resurs)
 				.header("Authorization", "Bearer " + token)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 						{"startTime": "%s"}
-						""".formatted(pocetak)));
+						""".formatted(pocetak));
 	}
 
 	@Test
@@ -193,4 +202,35 @@ class BookingApiTest {
 		rezervisi(hana, sto, "2035-11-19T09:00:00+01:00").andExpect(status().isForbidden());
 	}
 
+	@Test
+	void ponovljenZahtjevSIstimKljucemVracaIstuRezervacijuIStatus201() throws Exception {
+		UUID sto = sto();
+		String kljuc = UUID.randomUUID().toString();
+		String prvi = rezervisi(hana, sto, "2035-11-19T09:00:00+01:00", kljuc)
+				.andExpect(status().isCreated())
+				.andReturn().getResponse().getContentAsString();
+
+		rezervisi(hana, sto, "2035-11-19T09:00:00+01:00", kljuc)
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.id").value(JsonPath.<String>read(prvi, "$.id")));
+	}
+
+	@Test
+	void istiKljucZaDrugiTerminDaje422() throws Exception {
+		UUID sto = sto();
+		String kljuc = UUID.randomUUID().toString();
+		rezervisi(hana, sto, "2035-11-19T09:00:00+01:00", kljuc).andExpect(status().isCreated());
+
+		rezervisi(hana, sto, "2035-11-19T10:00:00+01:00", kljuc)
+				.andExpect(status().isUnprocessableContent())
+				.andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+				.andExpect(jsonPath("$.title").value("Ključ je već iskorišten"));
+	}
+
+	@Test
+	void predugKljucDaje400ZaZaglavlje() throws Exception {
+		rezervisi(hana, sto(), "2035-11-19T09:00:00+01:00", "k".repeat(101))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("Idempotency-Key"));
+	}
 }

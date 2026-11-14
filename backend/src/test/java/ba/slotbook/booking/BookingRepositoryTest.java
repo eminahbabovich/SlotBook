@@ -136,7 +136,8 @@ class BookingRepositoryTest {
 
 	private Booking nova(UUID resurs, UUID klijent, String od, String doo) {
 		return new Booking(em.getReference(Resource.class, resurs), em.getReference(User.class, klijent),
-				Instant.parse(od), Instant.parse(doo), BookingStatus.CONFIRMED, Instant.parse("2035-11-18T12:00:00Z"));
+				Instant.parse(od), Instant.parse(doo), BookingStatus.CONFIRMED, Instant.parse("2035-11-18T12:00:00Z"),
+				null);
 	}
 
 	@Test

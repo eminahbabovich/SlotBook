@@ -47,17 +47,21 @@ public class Booking {
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
+	@Column(name = "idempotency_key", updatable = false)
+	private String idempotencyKey;
+
 	protected Booking() {
 	}
 
 	Booking(Resource resource, User client, Instant startTime, Instant endTime, BookingStatus status,
-			Instant createdAt) {
+			Instant createdAt, String idempotencyKey) {
 		this.resource = resource;
 		this.client = client;
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.status = status;
 		this.createdAt = createdAt;
+		this.idempotencyKey = idempotencyKey;
 	}
 
 	public UUID getId() {

@@ -23,6 +23,9 @@ public class BookingService {
 
 	// SQLSTATE za prekršen EXCLUDE constraint. Jedini takav na bookings je bookings_bez_preklapanja.
 	private static final String EXCLUSION_VIOLATION = "23P01";
+	// Prekršen UNIQUE. Na bookings je to samo (client_id, idempotency_key), jer UUID ključ generiše Hibernate.
+	private static final String UNIQUE_VIOLATION = "23505";
+	private static final int NAJDUZI_KLJUC = 100;
 
 	private final BookingRepository bookings;
 	private final BookingEventRepository events;
@@ -44,11 +47,22 @@ public class BookingService {
 	// Ko smije rezervisati provjerava @PreAuthorize u kontroleru. Klijent šalje samo početak, a kraj
 	// se uzima iz ponuđenog termina, pa rezervacija ne može biti duža ni pomjerena od termina u kalendaru.
 	@Transactional
-	public BookingResponse create(UUID resourceId, UUID clientId, Instant start) {
+	public BookingResponse create(UUID resourceId, UUID clientId, Instant start, String idempotencyKey) {
+		if (idempotencyKey != null && (idempotencyKey.isBlank() || idempotencyKey.length() > NAJDUZI_KLJUC)) {
+			throw new InvalidFieldException("Idempotency-Key", "Ključ mora imati od 1 do " + NAJDUZI_KLJUC
+					+ " znakova. Najbolje je poslati novi UUID za svaku rezervaciju.");
+		}
 		// Rezervacije istog resursa idu jedna za drugom. Bez ovoga dva istovremena upisa u EXCLUDE
 		// čekaju jedan na drugog, Postgres to prekine kao deadlock (40P01) tek poslije sekunde, a
 		// klijent dobije 500. Ovako drugi vidi commitan red i dobije 23P01. Preklapanje i dalje čuva baza.
 		Resource resurs = resources.findLockedById(resourceId).orElseThrow(ResourceNotFoundException::new);
+		// Tek poslije locka: dupli klik čeka da prvi zahtjev završi, pa ovdje nađe njegovu rezervaciju
+		if (idempotencyKey != null) {
+			var ranija = bookings.findByClientIdAndIdempotencyKey(clientId, idempotencyKey);
+			if (ranija.isPresent()) {
+				return ponovljen(ranija.get(), resourceId, start);
+			}
+		}
 		TimeRange termin = slotService.offered(resourceId, start)
 				.orElseThrow(() -> new InvalidFieldException("startTime",
 						"Ovaj termin se ne nudi. Izaberi jedan od slobodnih termina u kalendaru."));
@@ -57,18 +71,33 @@ public class BookingService {
 		Instant sada = clock.instant();
 		Booking rezervacija;
 		try {
-			rezervacija = bookings.saveAndFlush(new Booking(resurs, klijent, termin.start(), termin.end(), status, sada));
+			rezervacija = bookings.saveAndFlush(
+					new Booking(resurs, klijent, termin.start(), termin.end(), status, sada, idempotencyKey));
 		} catch (DataIntegrityViolationException e) {
 			// Ostale greške integriteta nisu zauzet termin i ne smiju se tako prijaviti korisniku
-			if (e.getMostSpecificCause() instanceof SQLException sql
-					&& EXCLUSION_VIOLATION.equals(sql.getSQLState())) {
-				throw new SlotTakenException();
+			if (e.getMostSpecificCause() instanceof SQLException sql) {
+				if (EXCLUSION_VIOLATION.equals(sql.getSQLState())) {
+					throw new SlotTakenException();
+				}
+				// Isti ključ u istom trenutku za drugi resurs: lock resursa ih nije poredao, pa odlučuje UNIQUE
+				if (UNIQUE_VIOLATION.equals(sql.getSQLState())) {
+					throw new IdempotencyKeyReusedException();
+				}
 			}
 			throw e;
 		}
 		// Nastanak je prvi prelaz stanja. Ista transakcija: ako ovaj upis padne, nema ni rezervacije.
 		events.save(new BookingEvent(rezervacija, null, status, klijent, sada));
 		return BookingResponse.from(rezervacija);
+	}
+
+	// Isti ključ i isti zahtjev vraćaju raniju rezervaciju, u stanju u kojem je sada. Isti ključ
+	// za drugi termin je greška klijenta (422 po nacrtu IETF-a za Idempotency-Key).
+	private BookingResponse ponovljen(Booking ranija, UUID resourceId, Instant start) {
+		if (!ranija.getResource().getId().equals(resourceId) || !ranija.getStartTime().equals(start)) {
+			throw new IdempotencyKeyReusedException();
+		}
+		return BookingResponse.from(ranija);
 	}
 
 }

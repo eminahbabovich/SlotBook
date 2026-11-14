@@ -25,6 +25,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
+import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.organization.AlreadyMemberException;
 import ba.slotbook.organization.InviteNotUsableException;
@@ -110,6 +111,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.");
 		problem.setTitle("Termin je zauzet");
+		return problem;
+	}
+
+	@ExceptionHandler(IdempotencyKeyReusedException.class)
+	ProblemDetail kljucIskoristen(IdempotencyKeyReusedException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT,
+				"Ovaj Idempotency-Key je već poslan uz drugu rezervaciju. Za novu rezervaciju pošalji novi ključ.");
+		problem.setTitle("Ključ je već iskorišten");
 		return problem;
 	}
 

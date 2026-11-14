@@ -130,6 +130,18 @@ class BookingIstovremenoApiTest {
 				""".formatted(pocetak)), HttpResponse.BodyHandlers.discarding()).statusCode();
 	}
 
+	// Status i, kad je 201, id rezervacije, npr. "201 3f2a..." ili samo "409"
+	private String rezervisiSKljucem(String token, UUID resurs, String pocetak, String kljuc) throws Exception {
+		HttpRequest zahtjev = HttpRequest.newBuilder(post("/api/resources/" + resurs + "/bookings", token, """
+				{"startTime": "%s"}
+				""".formatted(pocetak)), (ime, vrijednost) -> true)
+				.header("Idempotency-Key", kljuc)
+				.build();
+		HttpResponse<String> odgovor = http.send(zahtjev, HttpResponse.BodyHandlers.ofString());
+		return odgovor.statusCode() == 201 ? "201 " + JsonPath.read(odgovor.body(), "$.id")
+				: String.valueOf(odgovor.statusCode());
+	}
+
 	private HttpRequest post(String putanja, String token, String tijelo) {
 		HttpRequest.Builder zahtjev = HttpRequest.newBuilder(URI.create("http://localhost:" + port + putanja))
 				.header("Content-Type", "application/json")
@@ -140,4 +152,39 @@ class BookingIstovremenoApiTest {
 		return zahtjev.build();
 	}
 
+	// Dupli klik iz deset niti: svi dobiju istu rezervaciju, jer duplikat prvo čeka lock resursa,
+	// a tek onda traži raniju rezervaciju s istim ključem
+	@Test
+	void desetIstovremenihZahtjevaSIstimKljucemDajuJednuRezervaciju() throws Exception {
+		UUID profesor = userService.register("lejla.kljuc@example.com", LOZINKA, "Lejla").id();
+		UUID katedra = organizationService.create(profesor, "Katedra za matematiku", "katedra-kljuc",
+				"Europe/Sarajevo").id();
+		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Analiza", null, 30, true).id();
+		availabilityService.replace(konsultacije,
+				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(12, 0))));
+		UUID student = userService.register("tarik.kljuc@example.com", LOZINKA, "Tarik").id();
+		jdbc.update("insert into organization_members values (?, ?, 'CLIENT', now())", katedra, student);
+		String token = prijava("tarik.kljuc@example.com");
+		String kljuc = UUID.randomUUID().toString();
+
+		CountDownLatch start = new CountDownLatch(1);
+		List<Future<String>> odgovori = new ArrayList<>();
+		try (ExecutorService niti = Executors.newFixedThreadPool(10)) {
+			for (int i = 0; i < 10; i++) {
+				odgovori.add(niti.submit(() -> {
+					start.await();
+					return rezervisiSKljucem(token, konsultacije, "2035-11-19T10:00:00+01:00", kljuc);
+				}));
+			}
+			start.countDown();
+		}
+		List<String> rezultati = new ArrayList<>();
+		for (Future<String> odgovor : odgovori) {
+			rezultati.add(odgovor.get());
+		}
+
+		assertThat(rezultati).hasSize(10).allMatch(r -> r.startsWith("201 ")).containsOnly(rezultati.getFirst());
+		assertThat(jdbc.queryForObject("select count(*) from bookings where resource_id = ?", Long.class,
+				konsultacije)).isEqualTo(1);
+	}
 }

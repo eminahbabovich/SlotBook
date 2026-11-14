@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,9 +29,11 @@ public class BookingController {
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@resourceAccess.canView(#resourceId, authentication)")
 	public BookingResponse create(@PathVariable UUID resourceId, @AuthenticationPrincipal Jwt token,
-			@Valid @RequestBody BookingRequest request) {
+			@Valid @RequestBody BookingRequest request,
+			@RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
+		// Ponovljen zahtjev s istim ključem vraća isti odgovor, i isti status 201
 		return bookingService.create(resourceId, UUID.fromString(token.getSubject()),
-				request.startTime().toInstant());
+				request.startTime().toInstant(), idempotencyKey);
 	}
 
 }

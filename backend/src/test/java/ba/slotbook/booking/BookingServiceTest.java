@@ -79,7 +79,7 @@ class BookingServiceTest {
 	void naAutomatskojPotvrdiRezervacijaJePotvrdjenaAKrajIdeIzTrajanjaTermina() {
 		UUID sto = resurs("Sto br. 3", 60, true);
 
-		BookingResponse rezervacija = service.create(sto, studentica, PONEDJELJAK_09);
+		BookingResponse rezervacija = service.create(sto, studentica, PONEDJELJAK_09, null);
 
 		assertThat(rezervacija.status()).isEqualTo(BookingStatus.CONFIRMED);
 		assertThat(rezervacija.endTime()).isEqualTo(Instant.parse("2035-11-19T09:00:00Z"));
@@ -89,7 +89,7 @@ class BookingServiceTest {
 	void nastanakRezervacijeUpisujePrviDogadjajUHistoriji() {
 		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
 
-		UUID id = service.create(konsultacije, studentica, PONEDJELJAK_09).id();
+		UUID id = service.create(konsultacije, studentica, PONEDJELJAK_09, null).id();
 
 		assertThat(jdbc.queryForList("select from_status, to_status, actor_id from booking_events where booking_id = ?",
 				id)).singleElement().satisfies(red -> {
@@ -103,7 +103,7 @@ class BookingServiceTest {
 	void naRucnojPotvrdiRezervacijaCekaProvidera() {
 		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
 
-		assertThat(service.create(konsultacije, studentica, PONEDJELJAK_09).status())
+		assertThat(service.create(konsultacije, studentica, PONEDJELJAK_09, null).status())
 				.isEqualTo(BookingStatus.PENDING);
 	}
 
@@ -112,7 +112,7 @@ class BookingServiceTest {
 	void pocetakKojiNijePoravnatNaTerminSeOdbija() {
 		UUID sto = resurs("Sto br. 3", 60, true);
 
-		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2035-11-19T08:30:00Z")))
+		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2035-11-19T08:30:00Z"), null))
 				.isInstanceOf(InvalidFieldException.class)
 				.hasFieldOrPropertyWithValue("polje", "startTime");
 	}
@@ -122,12 +122,12 @@ class BookingServiceTest {
 		UUID sto = resurs("Sto br. 3", 60, true);
 
 		// 12:00 je kraj radnog vremena, a utorak nema pravila
-		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2035-11-19T11:00:00Z")))
+		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2035-11-19T11:00:00Z"), null))
 				.isInstanceOf(InvalidFieldException.class);
-		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2035-11-20T08:00:00Z")))
+		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2035-11-20T08:00:00Z"), null))
 				.isInstanceOf(InvalidFieldException.class);
 		// Ponedjeljak 16.11.2020. u 09:00, pravi termin, ali prošao
-		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2020-11-16T08:00:00Z")))
+		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2020-11-16T08:00:00Z"), null))
 				.isInstanceOf(InvalidFieldException.class);
 	}
 
@@ -135,12 +135,48 @@ class BookingServiceTest {
 	void zauzetTerminDajeSlotTakenIOstajeJednaRezervacija() {
 		UUID sto = resurs("Sto br. 3", 60, true);
 		UUID drugaStudentica = korisnik("lamija." + UUID.randomUUID() + "@example.com", "Lamija");
-		service.create(sto, studentica, PONEDJELJAK_09);
+		service.create(sto, studentica, PONEDJELJAK_09, null);
 
-		assertThatThrownBy(() -> service.create(sto, drugaStudentica, PONEDJELJAK_09))
+		assertThatThrownBy(() -> service.create(sto, drugaStudentica, PONEDJELJAK_09, null))
 				.isInstanceOf(SlotTakenException.class);
 		assertThat(jdbc.queryForObject("select count(*) from bookings where resource_id = ?", Long.class, sto))
 				.isEqualTo(1);
 	}
 
+	// Dupli klik: drugi zahtjev ne pravi ništa novo, ni rezervaciju ni zapis u historiji
+	@Test
+	void istiKljucDvaputVracaIstuRezervaciju() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+
+		BookingResponse prva = service.create(sto, studentica, PONEDJELJAK_09, "klik-1");
+		BookingResponse druga = service.create(sto, studentica, PONEDJELJAK_09, "klik-1");
+
+		assertThat(druga).isEqualTo(prva);
+		assertThat(jdbc.queryForObject("select count(*) from bookings where resource_id = ?", Long.class, sto))
+				.isEqualTo(1);
+		assertThat(jdbc.queryForObject("select count(*) from booking_events where booking_id = ?", Long.class,
+				prva.id())).isEqualTo(1);
+	}
+
+	@Test
+	void istiKljucZaDrugiTerminSeOdbija() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+		service.create(sto, studentica, PONEDJELJAK_09, "klik-2");
+
+		assertThatThrownBy(() -> service.create(sto, studentica, Instant.parse("2035-11-19T09:00:00Z"), "klik-2"))
+				.isInstanceOf(IdempotencyKeyReusedException.class);
+	}
+
+	// Ključ je jedinstven po klijentu, a ne globalno: druga studentica ne dobija tuđu rezervaciju
+	@Test
+	void istiKljucDrugogKlijentaJeNovaRezervacija() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+		UUID drugaStudentica = korisnik("lamija." + UUID.randomUUID() + "@example.com", "Lamija");
+		BookingResponse hanina = service.create(sto, studentica, PONEDJELJAK_09, "klik-3");
+
+		BookingResponse lamijina = service.create(sto, drugaStudentica, Instant.parse("2035-11-19T09:00:00Z"),
+				"klik-3");
+
+		assertThat(lamijina.id()).isNotEqualTo(hanina.id());
+	}
 }

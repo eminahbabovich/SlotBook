@@ -303,3 +303,11 @@ Deadlock zavisi od tajminga. Bez locka je jedna runda od 20 niti pala u prva dva
 Rezervacija već zavisi od `availability` (pita `SlotService.offered`), pa da je `SlotService` počeo čitati rezervacije, paketi bi zavisili jedan od drugog. Nisam htio interface u `availability` koji bi implementirao `booking`, jer bi to bila apstrakcija samo da se zaobiđe zavisnost. Umjesto toga je `SlotController` prešao u `booking`, uz `FreeSlotService` koji uzme ponuđene termine i izbaci zauzete. `availability` zna šta nude pravila, a `booking` šta je od toga slobodno. Adresa endpointa se nije promijenila.
 
 Upit za zauzete termine je običan izvedeni upit (`startTime < do` i `endTime > od`). Ne koristi gist indeks iz constrainta, jer taj indeks radi nad `tstzrange(start_time, end_time)`. Da li to smeta, gledam u Fazi 9 s `EXPLAIN`, a ne sada.
+
+## Idempotency-Key: isti ključ vraća istu rezervaciju
+
+Klijent uz `POST .../bookings` smije poslati zaglavlje `Idempotency-Key` (1 do 100 znakova, frontend će slati novi UUID za svaki klik na "Rezerviši"). Ključ je u koloni `idempotency_key`, a `UNIQUE (client_id, idempotency_key)` ga čini jedinstvenim po klijentu, ne globalno. Dvije studentice koje slučajno pošalju isti ključ dobiju svaka svoju rezervaciju, i to ima test. Bez ključa sve radi kao prije, jer `UNIQUE` ne poredi `NULL`.
+
+Ponašanje sam uzeo iz IETF nacrta `draft-ietf-httpapi-idempotency-key-header-08`, odjeljak 2.7. Isti ključ za isti resurs i početak vraća raniju rezervaciju, opet sa `201`, u stanju u kojem je sada. Isti ključ za drugi termin je `422`, kako nacrt preporučuje. Nacrt za zahtjev s ključem koji se još obrađuje predlaže `409`. Kod mene duplikat čeka lock resursa iz koraka sa 20 niti, pa umjesto `409` dobije gotov odgovor. Rok trajanja ključa nisam uveo, ključ vrijedi dok postoji rezervacija.
+
+Redoslijed je bitan: prvo lock resursa, pa tek onda traženje ranije rezervacije s ključem. Test šalje 10 istovremenih zahtjeva istog studenta s istim ključem i očekuje 10 puta `201` s istim id-jem. Kad sam traženje privremeno stavio prije locka, dobio sam 1 × `201` i 9 × `409`, što bi korisniku za vlastiti dupli klik prikazalo "termin je zauzet". Isti ključ u istom trenutku za dva različita resursa lock ne poreda, pa tada odlučuje `UNIQUE` i drugi dobije `422`. Taj slučaj nisam testirao.
