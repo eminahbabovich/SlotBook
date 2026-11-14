@@ -1,6 +1,9 @@
 package ba.slotbook.booking;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -232,5 +235,27 @@ class BookingApiTest {
 		rezervisi(hana, sto(), "2035-11-19T09:00:00+01:00", "k".repeat(101))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.greske[0].polje").value("Idempotency-Key"));
+	}
+
+	private String idIzOdgovora(ResultActions odgovor) throws Exception {
+		return JsonPath.read(odgovor.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(),
+				"$.id");
+	}
+
+	// Hana vidi svoje rezervacije iz svih resursa, sa nazivom i zonom, a Lamijinu ne
+	@Test
+	void mojeRezervacijeSuSamoMoje() throws Exception {
+		UUID sto = sto();
+		String hanina = idIzOdgovora(rezervisi(hana, sto, "2035-11-19T09:00:00+01:00"));
+		String lamijina = idIzOdgovora(rezervisi(lamija, sto, "2035-11-19T10:00:00+01:00"));
+
+		mockMvc.perform(get("/api/bookings/mine").param("size", "100")
+				.header("Authorization", "Bearer " + hana))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[*].id", hasItem(hanina)))
+				.andExpect(jsonPath("$.content[*].id", not(hasItem(lamijina))))
+				.andExpect(jsonPath("$.content[?(@.id == '%s')].timezone".formatted(hanina)).value("Europe/Sarajevo"))
+				.andExpect(jsonPath("$.content[?(@.id == '%s')].resourceName".formatted(hanina))
+						.value(hasItem(startsWith("Sto "))));
 	}
 }

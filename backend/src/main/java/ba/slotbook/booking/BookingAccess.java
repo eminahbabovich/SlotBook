@@ -28,8 +28,8 @@ public class BookingAccess {
 				.orElse(false);
 	}
 
-	// Klijent otkazuje svoju rezervaciju, a admin i provider bilo koju na resursu koji vode
-	public boolean canCancel(UUID bookingId, Authentication authentication) {
+	// Klijent vidi i otkazuje svoju rezervaciju, a admin i provider bilo koju na resursu koji vode
+	public boolean canView(UUID bookingId, Authentication authentication) {
 		if (!(authentication instanceof JwtAuthenticationToken jwt)) {
 			return false;
 		}

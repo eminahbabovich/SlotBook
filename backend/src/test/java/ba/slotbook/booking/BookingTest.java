@@ -78,6 +78,16 @@ class BookingTest {
 		assertThat(prekasno.getStatus()).isEqualTo(BookingStatus.CONFIRMED);
 	}
 
+	// Poslije roka, ali već otkazana: poruka treba reći da je otkazana, a ne da je rok prošao
+	@Test
+	void vecOtkazanaRezervacijaDajeGreskuPrelazaANeRoka() {
+		Booking rezervacija = naResursuSRokom(2);
+		rezervacija.otkaziKaoKlijent(POCETAK.minusSeconds(3 * 3600));
+
+		assertThatThrownBy(() -> rezervacija.otkaziKaoKlijent(POCETAK))
+				.isInstanceOf(BookingTransitionException.class);
+	}
+
 	@Test
 	void bezRokaKlijentOtkazujeDoSamogPocetka() {
 		Booking rezervacija = naResursuSRokom(0);

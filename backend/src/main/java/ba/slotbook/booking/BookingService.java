@@ -3,15 +3,20 @@ package ba.slotbook.booking;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ba.slotbook.availability.SlotService;
 import ba.slotbook.availability.TimeRange;
 import ba.slotbook.error.InvalidFieldException;
+import ba.slotbook.paging.PageResponse;
 import ba.slotbook.resource.Resource;
 import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.resource.ResourceRepository;
@@ -115,6 +120,21 @@ public class BookingService {
 			rezervacija.otkaziKaoKlijent(sada);
 		}
 		return zapisi(rezervacija, stari, actorId, sada);
+	}
+
+	// Najkasniji termin prvo, pa budući termini idu prije prošlih. Sort bira server, kao kod resursa,
+	// a id razdvaja rezervacije s istim početkom (različiti resursi), da nijedna ne preskoči stranicu.
+	@Transactional(readOnly = true)
+	public PageResponse<MyBookingResponse> mine(UUID clientId, Pageable pageable) {
+		Pageable poPocetku = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+				Sort.by(Sort.Order.desc("startTime"), Sort.Order.asc("id")));
+		return PageResponse.from(bookings.findMine(clientId, poPocetku).map(MyBookingResponse::from));
+	}
+
+	// Historija jedne rezervacije je kratka (nastanak i par prelaza), pa nema stranica
+	@Transactional(readOnly = true)
+	public List<BookingEventResponse> history(UUID bookingId) {
+		return events.findHistory(bookingId).stream().map(BookingEventResponse::from).toList();
 	}
 
 	private BookingResponse zapisi(Booking rezervacija, BookingStatus stari, UUID actorId, Instant sada) {

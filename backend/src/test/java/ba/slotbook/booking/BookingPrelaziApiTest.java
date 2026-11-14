@@ -1,6 +1,7 @@
 package ba.slotbook.booking;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -243,5 +244,25 @@ class BookingPrelaziApiTest {
 		UUID rezervacija = uskoroNaResursuSRokom();
 
 		prelaz(selma, rezervacija, "cancel").andExpect(jsonPath("$.status").value("CANCELLED"));
+	}
+
+	@Test
+	void historijaPokazujeKoJeStaPromijenioRedom() throws Exception {
+		UUID rezervacija = rezervacija(hana, resurs(false));
+		prelaz(selma, rezervacija, "confirm").andExpect(status().isOk());
+
+		mockMvc.perform(get("/api/bookings/{id}/events", rezervacija).header("Authorization", "Bearer " + hana))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[*].toStatus", contains("PENDING", "CONFIRMED")))
+				.andExpect(jsonPath("$[*].actorName", contains("Hana", "Selma")))
+				.andExpect(jsonPath("$[0].fromStatus").doesNotExist());
+	}
+
+	@Test
+	void historijuTudjeRezervacijeStudenticaNeVidi() throws Exception {
+		UUID rezervacija = rezervacija(hana, resurs(true));
+
+		mockMvc.perform(get("/api/bookings/{id}/events", rezervacija).header("Authorization", "Bearer " + lamija))
+				.andExpect(status().isForbidden());
 	}
 }

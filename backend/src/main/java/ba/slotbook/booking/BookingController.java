@@ -1,12 +1,15 @@
 package ba.slotbook.booking;
 
+import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ba.slotbook.paging.PageResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -39,6 +43,18 @@ public class BookingController {
 				request.startTime().toInstant(), idempotencyKey);
 	}
 
+	// Samo svoje: ID klijenta je iz tokena, pa nema šta provjeravati osim prijave
+	@GetMapping("/api/bookings/mine")
+	public PageResponse<MyBookingResponse> mine(@AuthenticationPrincipal Jwt token, Pageable pageable) {
+		return bookingService.mine(UUID.fromString(token.getSubject()), pageable);
+	}
+
+	@GetMapping("/api/bookings/{bookingId}/events")
+	@PreAuthorize("@bookingAccess.canView(#bookingId, authentication)")
+	public List<BookingEventResponse> history(@PathVariable UUID bookingId) {
+		return bookingService.history(bookingId);
+	}
+
 	// Prelazi stanja su posebne adrese, a ne PUT sa statusom u tijelu: svaki ima svoje pravilo ko ga smije
 	@PostMapping("/api/bookings/{bookingId}/confirm")
 	@PreAuthorize("@bookingAccess.canManage(#bookingId, authentication)")
@@ -53,7 +69,7 @@ public class BookingController {
 	}
 
 	@PostMapping("/api/bookings/{bookingId}/cancel")
-	@PreAuthorize("@bookingAccess.canCancel(#bookingId, authentication)")
+	@PreAuthorize("@bookingAccess.canView(#bookingId, authentication)")
 	public BookingResponse cancel(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token,
 			Authentication authentication) {
 		return bookingService.cancel(bookingId, UUID.fromString(token.getSubject()),

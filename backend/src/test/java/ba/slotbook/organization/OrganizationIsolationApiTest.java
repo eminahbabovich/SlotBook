@@ -96,6 +96,7 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/image", Zahtjev.SLIKA),
 			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/image", null),
 			// Svaki prelaz na svojoj rezervaciji, u stanju iz kojeg je prelaz dozvoljen
+			new Zahtjev(HttpMethod.GET, "/api/bookings/{zaPotvrdu}/events", null),
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaPotvrdu}/confirm", null),
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaOdbijanje}/reject", null),
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaOtkazivanje}/cancel", null),
