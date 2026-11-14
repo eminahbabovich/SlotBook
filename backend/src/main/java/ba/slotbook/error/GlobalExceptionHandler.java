@@ -25,6 +25,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
+import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.organization.AlreadyMemberException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
@@ -101,6 +102,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.");
 		problem.setTitle("Email je već registrovan");
+		return problem;
+	}
+
+	@ExceptionHandler(SlotTakenException.class)
+	ProblemDetail terminZauzet(SlotTakenException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.");
+		problem.setTitle("Termin je zauzet");
 		return problem;
 	}
 

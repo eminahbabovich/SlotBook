@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -59,6 +60,18 @@ public class SlotService {
 
 		var kalkulator = new SlotCalculator(zona, pravila, Duration.ofMinutes(resurs.getSlotMinutes()), izuzeci);
 		return new SlotsResponse(zona.getId(), kalkulator.between(from, to, clock.instant()));
+	}
+
+	// Termin s ovim početkom, ako ga kalendar nudi: poravnat na trajanje, u radnom vremenu, izvan
+	// izuzetaka i u budućnosti. Zauzetost se ovdje namjerno ne gleda. Nju čuva baza (EXCLUDE), jer
+	// bi provjera u Javi kod dva istovremena zahtjeva u oba vidjela slobodan termin.
+	@Transactional(readOnly = true)
+	public Optional<TimeRange> offered(UUID resourceId, Instant start) {
+		Resource resurs = resources.findById(resourceId).orElseThrow(ResourceNotFoundException::new);
+		LocalDate dan = start.atZone(ZoneId.of(resurs.getOrganization().getTimezone())).toLocalDate();
+		return slots(resourceId, dan, dan.plusDays(1)).slots().stream()
+				.filter(termin -> termin.start().equals(start))
+				.findFirst();
 	}
 
 	static void provjeri(LocalDate from, LocalDate to) {
