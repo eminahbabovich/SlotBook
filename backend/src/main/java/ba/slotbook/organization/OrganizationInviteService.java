@@ -6,13 +6,13 @@ import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ba.slotbook.auth.RandomToken;
 import ba.slotbook.notification.EmailContent;
 import ba.slotbook.notification.NotificationService;
-import ba.slotbook.notification.NotificationType;
 import ba.slotbook.organization.InviteNotUsableException.Reason;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
@@ -54,10 +54,18 @@ public class OrganizationInviteService {
 		String token = RandomToken.generate();
 		Instant sada = clock.instant();
 		Organization organizacija = organizations.getReferenceById(organizationId);
-		OrganizationInvite invite = invites.save(new OrganizationInvite(organizacija, normalizovan, role,
-				RandomToken.sha256(token), sada, sada.plus(TRAJE)));
-		// Stari mail iz zamijenjene pozivnice ostaje u inboxu, ali njegov token više nije u bazi (404)
-		notifications.enqueueForEmail(normalizovan, NotificationType.ORGANIZATION_INVITE,
+		OrganizationInvite invite;
+		try {
+			invite = invites.saveAndFlush(new OrganizationInvite(organizacija, normalizovan, role,
+					RandomToken.sha256(token), sada, sada.plus(TRAJE)));
+		} catch (DataIntegrityViolationException e) {
+			// Dva admina u istom trenutku: oba obrišu staru, oba upisuju, a indeks pusti samo prvog
+			if (e.getMostSpecificCause().getMessage().contains("organization_invites_jedna_otvorena")) {
+				throw new InviteRaceException();
+			}
+			throw e;
+		}
+		notifications.enqueueInvite(normalizovan, invite.getId(),
 				mailPozivnice(organizacija.getName(), role, appUrl + "/pozivnica#token=" + token));
 		return InviteResponse.from(invite);
 	}

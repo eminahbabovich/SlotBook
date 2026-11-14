@@ -36,6 +36,10 @@ public class Notification {
 	@Column(updatable = false)
 	private String email;
 
+	// Samo ID, kao booking_id. Baza briše obavijest zajedno sa zamijenjenom pozivnicom (ON DELETE CASCADE).
+	@Column(name = "invite_id", updatable = false)
+	private UUID inviteId;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, updatable = false)
 	private NotificationType type;
@@ -83,9 +87,10 @@ public class Notification {
 		this.createdAt = createdAt;
 	}
 
-	Notification(String email, NotificationType type, EmailContent content, Instant createdAt) {
-		this(null, type, null, content, createdAt);
+	Notification(String email, UUID inviteId, EmailContent content, Instant createdAt) {
+		this(null, NotificationType.ORGANIZATION_INVITE, null, content, createdAt);
 		this.email = email;
+		this.inviteId = inviteId;
 	}
 
 	void poslana(Instant sada) {

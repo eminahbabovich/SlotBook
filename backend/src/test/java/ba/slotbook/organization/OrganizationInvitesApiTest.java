@@ -154,6 +154,9 @@ class OrganizationInvitesApiTest {
 				String.class, "lamija.poziv@example.com")).containsExactly("PROVIDER");
 		assertThat(jdbc.queryForObject("select count(*) from organization_invites where token_hash = ?", Long.class,
 				RandomToken.sha256(stari))).isZero();
+		// Mail stare pozivnice nestaje s njom, pa ne ode link koji vraća 404
+		assertThat(jdbc.queryForList("select body from notifications where email = ?", String.class,
+				"lamija.poziv@example.com")).singleElement().asString().contains("s ulogom: provider");
 	}
 
 	@Test

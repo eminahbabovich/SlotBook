@@ -85,6 +85,7 @@ erDiagram
     users ||--o{ notifications : "prima"
     users ||--o{ user_tokens : "linkovi iz maila"
     bookings ||--o{ notifications : "o čemu"
+    organization_invites ||--o| notifications : "mail pozivnice"
 
     users {
         uuid id PK
@@ -176,6 +177,7 @@ erDiagram
         uuid id PK
         uuid user_id FK "prazno samo za pozivnicu"
         varchar email "samo za pozivnicu"
+        uuid invite_id FK "ON DELETE CASCADE"
         varchar type "BOOKING_CONFIRMED..."
         uuid booking_id FK
         varchar status "PENDING, SENT, FAILED"

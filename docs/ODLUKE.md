@@ -139,7 +139,7 @@ Pozivnica se označava iskorištenom uslovnim `UPDATE ... SET accepted_at = ... 
 Šta nije riješeno:
 
 - Verifikacija emaila je tek u Fazi 5. Do tada neko može registrovati tuđi email i, ako dođe do tokena, prihvatiti pozivnicu poslanu na taj email.
-- Ako dva admina u istom trenutku pozovu isti email, oba obrišu staru (koje nema) i oba upisuju. Jedan dobije `500` od indeksa. Pravilo u bazi ostaje tačno, ali odgovor nije lijep. Nisam to testirao.
+- Ako dva admina u istom trenutku pozovu isti email, oba obrišu staru (koje nema) i oba upisuju. Jedan dobije `500` od indeksa. Pravilo u bazi ostaje tačno, ali odgovor nije lijep. Nisam to testirao. (Riješeno u Fazi 5, vidi "Pozivnice emailom".)
 - Pozivnica se ne može opozvati, a stari redovi se ne brišu. Opoziv nije u planu Faze 2, a čišćenje dolazi s `@Scheduled` poslovima u Fazi 5.
 
 ## Test izolacije organizacija i čuvar ruta
@@ -420,7 +420,9 @@ Pozivnica ide na email koji možda još nema nalog, a obavijest je do sada uvije
 
 `POST /api/organizations/{id}/invites` više ne vraća token. Link `APP_URL/pozivnica#token=...` dobije samo pozvana osoba, a stranica ga šalje na `POST /api/invites/accept` kao i do sada. Time je mnogo manji rizik iz Faze 2, da neko registruje tuđi email i prihvati pozivnicu poslanu na njega: za to sad treba pristup tom inboxu. Prihvatanje i dalje ne traži potvrđen email, jer token iz maila već dokazuje isto.
 
-Kad admin pošalje novu pozivnicu na isti email, stara se briše, pa link iz starog maila vraća `404`. Ako stari mail još nije poslan, ode i on, s linkom koji ne radi. Nisam to sprječavao, jer bi tražilo vezu između obavijesti i pozivnice samo zbog ovog slučaja.
+Kad admin pošalje novu pozivnicu na isti email, stara se briše, pa link iz starog maila vraća `404`. Prvo sam to ostavio tako, pa bi stari mail, ako još nije poslan, otišao s linkom koji ne radi. Onda sam obavijesti dodao `invite_id` s `ON DELETE CASCADE`: brisanje stare pozivnice briše i njen mail, a test provjerava da poslije zamjene čeka samo jedan, s novom ulogom. Usput nestane i red poslanog maila za staru pozivnicu, što mi ne smeta, jer tijela ionako nema. Ostaje uzak prozor: ako pošiljalac upravo šalje stari mail, brisanje čeka njegov commit i mail ipak ode.
+
+Dva admina koja u istom trenutku pozovu isti email su ranije davala `500`, jer oba obrišu staru pozivnicu i oba upisuju novu, a parcijalni indeks pusti samo prvog. Sada se ta greška indeksa (prepoznata po imenu `organization_invites_jedna_otvorena`) prevodi u `409` s porukom da pogleda listu pozivnica. Odluku i dalje donosi baza. Test s 8 niti u 5 krugova provjerava da na kraju postoji jedna pozivnica i jedan mail i da nijedna nit ne dobije drugu grešku. Bez prevođenja je pao s `duplicate key`. Sam `409` kroz HTTP nisam testirao, handler je isti kao ostali.
 
 Naslov maila je "Pozivnica na SlotBook: Čitaonica PMF", a ne "Pozivnica u Čitaonica PMF", jer se naziv organizacije ne može deklinirati.
 

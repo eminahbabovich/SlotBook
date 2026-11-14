@@ -33,6 +33,7 @@ import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.NoShowTooEarlyException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.organization.AlreadyMemberException;
+import ba.slotbook.organization.InviteRaceException;
 import ba.slotbook.auth.UserTokenException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
@@ -184,6 +185,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Ovu adresu već koristi druga organizacija. Izaberi drugu.");
 		problem.setTitle("Adresa je zauzeta");
+		return problem;
+	}
+
+	@ExceptionHandler(InviteRaceException.class)
+	ProblemDetail pozivnicaUIstomTrenutku(InviteRaceException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Neko je u istom trenutku poslao pozivnicu na ovaj email. Pogledaj listu pozivnica i pokušaj ponovo ako treba.");
+		problem.setTitle("Pozivnica je upravo poslana");
 		return problem;
 	}
 

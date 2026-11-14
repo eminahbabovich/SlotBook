@@ -36,8 +36,8 @@ public class NotificationService {
 	}
 
 	@Transactional(propagation = Propagation.MANDATORY)
-	public void enqueueForEmail(String email, NotificationType type, EmailContent content) {
-		notifications.save(new Notification(email, type, content, clock.instant()));
+	public void enqueueInvite(String email, UUID inviteId, EmailContent content) {
+		notifications.save(new Notification(email, inviteId, content, clock.instant()));
 	}
 
 }

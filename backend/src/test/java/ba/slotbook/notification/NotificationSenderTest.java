@@ -50,7 +50,7 @@ class NotificationSenderTest {
 	// Pozvana osoba možda još nema nalog, pa mail ide na adresu iz pozivnice
 	@Test
 	void pozivnicaIdeNaAdresuBezNaloga() {
-		Notification pozivnica = new Notification("tarik@example.com", NotificationType.ORGANIZATION_INVITE,
+		Notification pozivnica = new Notification("tarik@example.com", UUID.randomUUID(),
 				new EmailContent("Pozivnica na SlotBook: Teretana Grbavica", "link"), SADA);
 		when(notifications.findNextDue(SADA)).thenReturn(Optional.of(pozivnica));
 
