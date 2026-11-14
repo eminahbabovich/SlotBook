@@ -341,3 +341,10 @@ U planu je pisalo da biram između `EXCLUDE` constrainta i pesimističnog zaklju
 `FOR UPDATE` nad resursom je tu zbog odgovora klijentu. Bez njega je test sa 20 niti dobijao deadlock (`40P01`) i `500` umjesto `409`, jer kod `EXCLUDE` Postgres prvo upiše red pa traži sukobe. Sa lockom rezervacije istog resursa idu jedna za drugom, drugi zahtjev vidi commitan red, dobije `23P01` i vrati se `409`. Isti lock rješava i dupli klik s `Idempotency-Key`, jer duplikat sačeka prvi zahtjev i nađe njegovu rezervaciju.
 
 Cijena je da sve rezervacije istog resursa čekaju jedna drugu, i za različite termine. Jedna rezervacija drži lock par milisekundi, a za jedan resurs (sto, salu, konsultacije) to nije usko grlo. Nisam mjerio pod opterećenjem, to dolazi s k6 testom u Fazi 9.
+
+## Rok za potvrdu: 24 sata, najkasnije početak termina
+
+Rezervacija na ručnoj potvrdi drži termin dok čeka providera. Bez roka bi profesorica koja ne otvori aplikaciju sedmicu dana držala termine zauzetim, a niko drugi ih ne bi mogao uzeti. Zato `PENDING` rezervacija dobija `expires_at` u trenutku nastanka: 24 sata (`slotbook.booking.pending-hours`), a ako termin počinje ranije, onda početak termina. Rok se upisuje u bazu i ne mijenja se, pa pozadinski posao koji dolazi u sljedećem koraku samo traži `PENDING` s prošlim rokom.
+
+Rok je isti za sve resurse. Mogao je biti na resursu, kao rok za otkazivanje, ali za to još nemam pravi razlog. Baza čuva dvije stvari: `PENDING` mora imati rok (`bookings_pending_ima_rok`), i rok ne smije biti poslije početka termina (`bookings_rok_do_pocetka`). Postojeće `PENDING` rezervacije je migracija dopunila istim pravilom. Poslije potvrde rok ostaje u bazi, ali ga API više ne vraća.
+

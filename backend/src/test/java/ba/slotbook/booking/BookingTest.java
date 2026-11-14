@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,10 +17,11 @@ import ba.slotbook.resource.Resource;
 class BookingTest {
 
 	private static final Instant POCETAK = Instant.parse("2035-11-19T08:00:00Z");
+	private static final Duration DAN = Duration.ofHours(24);
 
 	private static Booking u(BookingStatus status) {
 		return new Booking(null, null, POCETAK, POCETAK.plusSeconds(3600), status, POCETAK.minusSeconds(86400),
-				null);
+				null, DAN);
 	}
 
 	// Svih 49 parova: prolazi tačno 7 iz tabele u PROJECT_PLAN.md, a ostali daju BookingTransitionException.
@@ -61,7 +63,7 @@ class BookingTest {
 		Resource resurs = mock(Resource.class);
 		when(resurs.getCancelNoticeHours()).thenReturn(sati);
 		return new Booking(resurs, null, POCETAK, POCETAK.plusSeconds(3600), BookingStatus.CONFIRMED,
-				POCETAK.minusSeconds(86400), null);
+				POCETAK.minusSeconds(86400), null, DAN);
 	}
 
 	// Termin u 08:00 UTC, rok 2 sata: u 06:00:00 još može, u 06:00:01 ne
@@ -95,5 +97,28 @@ class BookingTest {
 		rezervacija.otkaziKaoKlijent(POCETAK);
 
 		assertThat(rezervacija.getStatus()).isEqualTo(BookingStatus.CANCELLED);
+	}
+
+	private static Booking nastala(BookingStatus status, Instant kad) {
+		return new Booking(null, null, POCETAK, POCETAK.plusSeconds(3600), status, kad, null, DAN);
+	}
+
+	@Test
+	void nepotvrdjenaCekaDanOdNastanka() {
+		Instant prijeTriDana = POCETAK.minus(Duration.ofDays(3));
+
+		assertThat(nastala(BookingStatus.PENDING, prijeTriDana).getExpiresAt()).isEqualTo(prijeTriDana.plus(DAN));
+	}
+
+	// Rezervisano dva sata prije termina: rok je početak, ne sutra
+	@Test
+	void rokZaPotvrduNeIdePoslijePocetkaTermina() {
+		assertThat(nastala(BookingStatus.PENDING, POCETAK.minus(Duration.ofHours(2))).getExpiresAt())
+				.isEqualTo(POCETAK);
+	}
+
+	@Test
+	void potvrdjenaOdmahNemaRok() {
+		assertThat(nastala(BookingStatus.CONFIRMED, POCETAK.minus(Duration.ofDays(3))).getExpiresAt()).isNull();
 	}
 }

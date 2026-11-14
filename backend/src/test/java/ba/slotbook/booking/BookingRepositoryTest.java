@@ -3,6 +3,7 @@ package ba.slotbook.booking;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -65,8 +66,9 @@ class BookingRepositoryTest {
 	}
 
 	private void rezervacija(UUID resurs, UUID klijent, String od, String doo, String status) {
-		jdbc.update("insert into bookings values (gen_random_uuid(), ?, ?, ?::timestamptz, ?::timestamptz, ?, now())",
-				resurs, klijent, od, doo, status);
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at, "
+				+ "expires_at) values (gen_random_uuid(), ?, ?, ?::timestamptz, ?::timestamptz, ?, now(), ?::timestamptz)",
+				resurs, klijent, od, doo, status, od);
 	}
 
 	@Test
@@ -137,7 +139,7 @@ class BookingRepositoryTest {
 	private Booking nova(UUID resurs, UUID klijent, String od, String doo) {
 		return new Booking(em.getReference(Resource.class, resurs), em.getReference(User.class, klijent),
 				Instant.parse(od), Instant.parse(doo), BookingStatus.CONFIRMED, Instant.parse("2035-11-18T12:00:00Z"),
-				null);
+				null, Duration.ofHours(24));
 	}
 
 	@Test
@@ -161,4 +163,21 @@ class BookingRepositoryTest {
 				.hasMessageContaining("bookings_bez_preklapanja");
 	}
 
+	private void rezervacijaSRokom(String status, String rok) {
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at, "
+				+ "expires_at) values (gen_random_uuid(), ?, ?, '2035-11-19 09:00+01', '2035-11-19 10:00+01', ?, now(), "
+				+ "?::timestamptz)", stoBr1, emina, status, rok);
+	}
+
+	@Test
+	void bazaOdbijaNepotvrdjenuRezervacijuBezRoka() {
+		assertThatThrownBy(() -> rezervacijaSRokom("PENDING", null))
+				.hasMessageContaining("bookings_pending_ima_rok");
+	}
+
+	@Test
+	void bazaOdbijaRokZaPotvrduPoslijePocetkaTermina() {
+		assertThatThrownBy(() -> rezervacijaSRokom("PENDING", "2035-11-19 09:00:01+01"))
+				.hasMessageContaining("bookings_rok_do_pocetka");
+	}
 }

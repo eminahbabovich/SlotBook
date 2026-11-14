@@ -109,12 +109,24 @@ class BookingServiceTest {
 				});
 	}
 
+	// Rok dolazi iz slotbook.booking.pending-hours (24) i upisuje se u bazu, ne računa se pri čitanju
 	@Test
-	void naRucnojPotvrdiRezervacijaCekaProvidera() {
+	void naRucnojPotvrdiRezervacijaCekaProvideraDanOdNastanka() {
 		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
 
-		assertThat(service.create(konsultacije, studentica, PONEDJELJAK_09, null).status())
-				.isEqualTo(BookingStatus.PENDING);
+		BookingResponse rezervacija = service.create(konsultacije, studentica, PONEDJELJAK_09, null);
+
+		assertThat(rezervacija.status()).isEqualTo(BookingStatus.PENDING);
+		assertThat(rezervacija.expiresAt()).isNotNull();
+		assertThat(jdbc.queryForObject("select extract(epoch from expires_at - created_at) from bookings where id = ?",
+				Double.class, rezervacija.id())).isEqualTo(86400.0);
+	}
+
+	@Test
+	void naAutomatskojPotvrdiNemaRokaZaPotvrdu() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+
+		assertThat(service.create(sto, studentica, PONEDJELJAK_09, null).expiresAt()).isNull();
 	}
 
 	// 09:30 je u radnom vremenu, ali satni termini počinju u 08, 09, 10 i 11

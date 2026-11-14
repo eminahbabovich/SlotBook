@@ -158,9 +158,9 @@ class OrganizationIsolationApiTest {
 
 	private UUID rezervacija(UUID klijent, String pocetak, String status) {
 		UUID id = UUID.randomUUID();
-		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at) "
-				+ "values (?, ?, ?, ?::timestamptz, ?::timestamptz + interval '1 hour', ?, now())", id, stoCitaonice,
-				klijent, pocetak, pocetak, status);
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at, "
+				+ "expires_at) values (?, ?, ?, ?::timestamptz, ?::timestamptz + interval '1 hour', ?, now(), "
+				+ "?::timestamptz)", id, stoCitaonice, klijent, pocetak, pocetak, status, pocetak);
 		return id;
 	}
 

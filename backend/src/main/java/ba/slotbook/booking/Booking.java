@@ -49,6 +49,10 @@ public class Booking {
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
+	// Samo za PENDING: do kada provider mora potvrditi. Poslije toga rezervacija ističe.
+	@Column(name = "expires_at", updatable = false)
+	private Instant expiresAt;
+
 	@Column(name = "idempotency_key", updatable = false)
 	private String idempotencyKey;
 
@@ -61,7 +65,7 @@ public class Booking {
 	}
 
 	Booking(Resource resource, User client, Instant startTime, Instant endTime, BookingStatus status,
-			Instant createdAt, String idempotencyKey) {
+			Instant createdAt, String idempotencyKey, Duration rokZaPotvrdu) {
 		this.resource = resource;
 		this.client = client;
 		this.startTime = startTime;
@@ -69,6 +73,11 @@ public class Booking {
 		this.status = status;
 		this.createdAt = createdAt;
 		this.idempotencyKey = idempotencyKey;
+		// Termin za dva sata ne može čekati potvrdu 24 sata, pa je rok najkasnije početak termina
+		if (status == BookingStatus.PENDING) {
+			Instant rok = createdAt.plus(rokZaPotvrdu);
+			this.expiresAt = rok.isBefore(startTime) ? rok : startTime;
+		}
 	}
 
 	// Pravilo prelaza je u entitetu, pa ga ne može zaobići nijedan servis koji mijenja status
@@ -123,6 +132,10 @@ public class Booking {
 
 	public Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	public Instant getExpiresAt() {
+		return expiresAt;
 	}
 
 }

@@ -3,6 +3,7 @@ package ba.slotbook.booking;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -140,7 +141,8 @@ class BookingPrelaziApiTest {
 
 		prelaz(selma, rezervacija, "confirm")
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value("CONFIRMED"));
+				.andExpect(jsonPath("$.status").value("CONFIRMED"))
+				.andExpect(jsonPath("$.expiresAt").value(nullValue()));
 
 		var zadnji = jdbc.queryForMap("select from_status, to_status, actor_id from booking_events "
 				+ "where booking_id = ? and from_status is not null", rezervacija);

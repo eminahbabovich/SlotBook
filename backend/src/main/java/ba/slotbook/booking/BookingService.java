@@ -2,10 +2,12 @@ package ba.slotbook.booking;
 
 import java.sql.SQLException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,15 +40,18 @@ public class BookingService {
 	private final UserRepository users;
 	private final SlotService slotService;
 	private final Clock clock;
+	private final Duration rokZaPotvrdu;
 
 	public BookingService(BookingRepository bookings, BookingEventRepository events, ResourceRepository resources,
-			UserRepository users, SlotService slotService, Clock clock) {
+			UserRepository users, SlotService slotService, Clock clock,
+			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu) {
 		this.bookings = bookings;
 		this.events = events;
 		this.resources = resources;
 		this.users = users;
 		this.slotService = slotService;
 		this.clock = clock;
+		this.rokZaPotvrdu = Duration.ofHours(satiZaPotvrdu);
 	}
 
 	// Ko smije rezervisati provjerava @PreAuthorize u kontroleru. Klijent šalje samo početak, a kraj
@@ -77,7 +82,8 @@ public class BookingService {
 		Booking rezervacija;
 		try {
 			rezervacija = bookings.saveAndFlush(
-					new Booking(resurs, klijent, termin.start(), termin.end(), status, sada, idempotencyKey));
+					new Booking(resurs, klijent, termin.start(), termin.end(), status, sada, idempotencyKey,
+							rokZaPotvrdu));
 		} catch (DataIntegrityViolationException e) {
 			// Ostale greške integriteta nisu zauzet termin i ne smiju se tako prijaviti korisniku
 			if (e.getMostSpecificCause() instanceof SQLException sql) {
