@@ -374,3 +374,21 @@ U planu je `notifications` imala `payload JSONB`. Za sada su sve obavijesti o re
 
 Primaoca bira `BookingService`: nova rezervacija na čekanju ide provideru resursa, potvrda, odbijanje i istek klijentu, a otkazivanje drugoj strani od one koja je otkazala. Dolazak, nedolazak i zatvaranje ne šalju ništa.
 
+## Slanje emaila: tekst unaprijed, jedna obavijest po transakciji, SKIP LOCKED
+
+Tekst emaila (`subject`, `body`) se piše kad obavijest nastane, u `BookingService`, gdje su rezervacija, resurs i zona organizacije pri ruci. Pošiljalac samo uzme red i pošalje ga. Da se tekst pravi pri slanju, paket `notification` bi morao čitati rezervacije, a `booking` već zna za `notification`, pa bi to bio krug. Usput mail kaže ono što je bilo tačno kad se desila promjena. Ovim je i `payload JSONB` iz plana za sada nepotreban.
+
+Vrijeme u mailu je u zoni organizacije, formatirano s `Locale.forLanguageTag("bs")`. Nisam bio siguran da li Javin CLDR za bosanski daje "novembar" ili "novembra", pa sam to provjerio testom: dobija se "ponedjeljak, 19. novembar 2035. u 09:00".
+
+`NotificationSender.sendNext` uzme jednu obavijest (`FOR UPDATE SKIP LOCKED`), pošalje je i upiše ishod, sve u jednoj transakciji. Red je zaključan dok traje slanje, pa ga drugi krug posla ili druga instanca preskoči umjesto da ga pošalje još jednom. To dokazuje test u kojem jedna transakcija drži red, a druga ga ne nađe. Bez `SKIP LOCKED` ista ta druga čeka i padne na `lock timeout`. Cijena: ako mail ode, a commit poslije padne, obavijest ostane `PENDING` i ode još jednom. Biram da mail ode dvaput, a ne nijednom.
+
+Ponovni pokušaj je poslije 1, 5, 25 i 125 minuta, a poslije petog neuspjeha obavijest je `FAILED`, s porukom zadnje greške u `last_error`. Hvata se samo `MailException`. Druga greška je bug: transakcija se poništi, obavijest ostane kakva je bila i čeka popravku koda. To znači da bi takva obavijest blokirala ostale u istom krugu, jer bi se uvijek uzimala prva. Nisam to rješavao dok se ne desi.
+
+SMTP ima timeout od 5 sekundi (`spring.mail.properties.mail.smtp.*timeout`). Bez toga JavaMail čeka beskonačno, a posao stoji.
+
+U testovima je posao za slanje isključen preko `src/test/resources/application-default.properties`. Spring taj fajl učita kad nijedan profil nije aktivan, a postoji samo na classpathu testova. Bez toga bi svaki test koji napravi rezervaciju slao mail na `localhost:1025`, pa u lokalni Mailpit ako radi. Da je u produkciji uključen, provjerava `ProdProfilTest`.
+
+Na Renderu SMTP još nije podešen. Obavijesti tamo padaju i poslije pet pokušaja ostaju `FAILED`, a rezervacije rade normalno. Pravi SMTP dolazi u Fazi 12.
+
+Mail starter sam doda provjeru SMTP-a u `/actuator/health`. To sam otkrio tek kad je pao `SecurityApiTest`: health je vratio `503`, jer u testu nema SMTP-a. Na Renderu bi isto tako pao health check i novi deploy ne bi prošao. Zato je `management.health.mail.enabled=false`. Aplikacija je zdrava i kad mail ne radi, jer obavijesti čekaju u tabeli.
+

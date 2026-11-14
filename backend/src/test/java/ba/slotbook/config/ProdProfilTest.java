@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.config.ScheduledTaskHolder;
 import org.springframework.test.context.ActiveProfiles;
 
 import ba.slotbook.TestcontainersConfiguration;
@@ -23,6 +24,15 @@ class ProdProfilTest {
 
 	@Autowired
 	Environment env;
+
+	@Autowired
+	ScheduledTaskHolder raspored;
+
+	// U testovima je slanje isključeno (application-default u test resursima), a u prod profilu mora raditi
+	@Test
+	void uProdukcijiSeObavijestiSalju() {
+		assertThat(raspored.getScheduledTasks()).anyMatch(z -> z.toString().contains("NotificationJob.posalji"));
+	}
 
 	@Test
 	void bazaSeUProdProfiluSpajaPrekoDbVarijabli() {

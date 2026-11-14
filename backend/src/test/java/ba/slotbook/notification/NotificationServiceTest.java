@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.IllegalTransactionStateException;
@@ -30,6 +31,15 @@ class NotificationServiceTest {
 	@Autowired
 	JdbcTemplate jdbc;
 
+	@Autowired
+	ApplicationContext kontekst;
+
+	// Inače bi svaki test koji napravi rezervaciju slao mail na localhost:1025
+	@Test
+	void testoviNeSaljuMailoveSami() {
+		assertThat(kontekst.getBeansOfType(NotificationJob.class)).isEmpty();
+	}
+
 	private UUID korisnik() {
 		return users.save(new User("nedim." + UUID.randomUUID() + "@example.com", "hash", "Nedim",
 				Instant.parse("2035-11-01T10:00:00Z"))).getId();
@@ -40,7 +50,8 @@ class NotificationServiceTest {
 	void obavijestSeNeUpisujeBezTransakcijePozivaoca() {
 		UUID nedim = korisnik();
 
-		assertThatThrownBy(() -> service.enqueueForBooking(nedim, NotificationType.BOOKING_CONFIRMED, UUID.randomUUID()))
+		assertThatThrownBy(() -> service.enqueueForBooking(nedim, NotificationType.BOOKING_CONFIRMED,
+				UUID.randomUUID(), new EmailContent("Rezervacija potvrđena", "Termin je tvoj.")))
 				.isInstanceOf(IllegalTransactionStateException.class);
 		assertThat(jdbc.queryForObject("select count(*) from notifications where user_id = ?", Long.class, nedim))
 				.isZero();
@@ -51,7 +62,8 @@ class NotificationServiceTest {
 		UUID nedim = korisnik();
 
 		assertThatThrownBy(() -> jdbc.update("insert into notifications (id, user_id, type, status, next_attempt_at, "
-				+ "created_at) values (gen_random_uuid(), ?, 'BOOKING_CONFIRMED', 'PENDING', now(), now())", nedim))
+				+ "created_at, subject, body) values (gen_random_uuid(), ?, 'BOOKING_CONFIRMED', 'PENDING', now(), now(), "
+				+ "'Rezervacija potvrđena', 'Termin je tvoj.')", nedim))
 				.hasMessageContaining("notifications_rezervacija");
 	}
 

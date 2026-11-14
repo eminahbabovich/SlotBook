@@ -142,7 +142,7 @@ public class BookingService {
 	// Za BookingJob. Vraća broj isteklih, samo za log.
 	@Transactional
 	public int expireOverdue() {
-		List<ExpiredBooking> istekle = bookings.expireAll(clock.instant());
+		List<UUID> istekle = bookings.expireAll(clock.instant());
 		javiIsteklim(istekle);
 		return istekle.size();
 	}
@@ -181,22 +181,26 @@ public class BookingService {
 	private void obavijesti(Booking rezervacija, UUID actorId) {
 		UUID klijent = rezervacija.getClient().getId();
 		UUID provider = rezervacija.getResource().getProvider().getId();
-		UUID id = rezervacija.getId();
 		switch (rezervacija.getStatus()) {
-			case PENDING -> notifications.enqueueForBooking(provider, NotificationType.BOOKING_AWAITS_CONFIRMATION, id);
-			case CONFIRMED -> notifications.enqueueForBooking(klijent, NotificationType.BOOKING_CONFIRMED, id);
-			case REJECTED -> notifications.enqueueForBooking(klijent, NotificationType.BOOKING_REJECTED, id);
+			case PENDING -> javi(provider, NotificationType.BOOKING_AWAITS_CONFIRMATION, rezervacija);
+			case CONFIRMED -> javi(klijent, NotificationType.BOOKING_CONFIRMED, rezervacija);
+			case REJECTED -> javi(klijent, NotificationType.BOOKING_REJECTED, rezervacija);
 			// Javlja se drugoj strani: kad otkaže klijent, provideru, a kad otkaže osoblje, klijentu
-			case CANCELLED -> notifications.enqueueForBooking(actorId.equals(klijent) ? provider : klijent,
-					NotificationType.BOOKING_CANCELLED, id);
+			case CANCELLED -> javi(actorId.equals(klijent) ? provider : klijent, NotificationType.BOOKING_CANCELLED,
+					rezervacija);
 			default -> {
 			}
 		}
 	}
 
-	private void javiIsteklim(List<ExpiredBooking> istekle) {
-		for (ExpiredBooking istekla : istekle) {
-			notifications.enqueueForBooking(istekla.getClientId(), NotificationType.BOOKING_EXPIRED, istekla.getId());
+	private void javi(UUID primalac, NotificationType tip, Booking rezervacija) {
+		notifications.enqueueForBooking(primalac, tip, rezervacija.getId(), BookingEmails.za(tip, rezervacija));
+	}
+
+	// Za tekst emaila trebaju naziv resursa i zona, pa se istekle učitaju. Po krugu posla ih je malo.
+	private void javiIsteklim(List<UUID> istekle) {
+		for (Booking rezervacija : bookings.findAllById(istekle)) {
+			javi(rezervacija.getClient().getId(), NotificationType.BOOKING_EXPIRED, rezervacija);
 		}
 	}
 
