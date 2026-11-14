@@ -14,7 +14,7 @@ Ovdje je samo ono što dolazi dalje.
 
 ---
 
-# PROJEKAT 2: SlotBook (faze 1-13)
+# PROJEKAT 2: SlotBook (faze 1-14)
 
 **Problem:** zajednički resursi (učionice za učenje, prostor za sastanke, termini
 konsultacija, teretana) rezerviraju se preko poruka i tabela, uz preklapanja i zabune.
@@ -186,6 +186,7 @@ svaki endpoint opisan u Swaggeru.
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | ⏳ nije počelo |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | ⏳ nije počelo |
 | 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | ⏳ nije počelo |
+| 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s **tool calling**, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/ai-assistant.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
 
 Pravilo iz P1 ostaje: ne čekati kraj s deployem. Zato u Fazi 1 uradimo "hodajući kostur"
 (prazan endpoint na live adresi), a u Fazi 12 samo punimo ono što već radi.
@@ -193,6 +194,7 @@ Pravilo iz P1 ostaje: ne čekati kraj s deployem. Zato u Fazi 1 uradimo "hodaju�
 **Ako vrijeme stisne:** faze 1-9 i 12 su jezgro. Ako treba birati, Faza 12 se radi prije
 faza 10 i 11, jer je live projekat s čvrstim jezgrom vrijedniji od nedovršenih dodataka.
 Unutar faze 10 redoslijed je već po vrijednosti, pa se ono s kraja liste može izostaviti.
+Faza 14 je dodatak izvan jezgra i ne smije ga mijenjati: ako je nema, aplikacija je ista.
 
 ## Kriterij "gotovo" po fazi
 
@@ -222,6 +224,69 @@ Unutar faze 10 redoslijed je već po vrijednosti, pa se ono s kraja liste može 
 12. Live URL radi, demo računi rade, README i `docs/` su ažurni.
 13. Pregled koda je urađen, nalazi su ili ispravljeni ili zapisani u `docs/ODLUKE.md`
     kao svjesno ostavljeni, lista dodataka je zatvorena.
+14. Kroz chat se može naći slobodan termin, rezervisati ga i otkazati. Rezervacija i
+    otkazivanje se ne dese bez potvrde korisnika, i to čuva server, ne samo prompt.
+    Rezervacija iz chata ide kroz isti `BookingService` kao obična (isti `409`, ista
+    izolacija organizacija), što dokazuje integracioni test s mockanim LLM klijentom.
+    Testovi prolaze bez API ključa, ključ nije u repou (gitleaks), a timeout LLM-a daje
+    prijateljsku poruku umjesto `500`.
+
+## Faza 14 po koracima
+
+Svaki korak je jedna sesija ili manje. Domen ostaje naš: "alat za usluge" je kod nas
+`list_resources`, jer imamo resurse (čitaonica, termin konsultacija, sala), a ne usluge.
+
+1. **Odluka: zvanični Anthropic Java SDK ili Spring AI.** Provjeriti da li Spring AI
+   podržava naš Spring Boot (4.1) i kako izgleda tool calling u obje varijante. Predlog
+   je zvanični SDK (`com.anthropic:anthropic-java`): petlja alata je napisana kod nas pa je
+   mogu objasniti liniju po liniju, imamo jednog provajdera, i nema još jednog sloja
+   konfiguracije. Spring AI bi dao zamjenu provajdera i manje koda, a košta magiju koju
+   na intervjuu moram znati objasniti. Model i verziju SDK-a provjeravamo u dokumentaciji
+   kad dođemo do koraka. Odluka ide u `docs/ODLUKE.md`.
+2. **Klijent i konfiguracija.** `ANTHROPIC_API_KEY` samo iz varijable okruženja, lažna
+   vrijednost u `.env.example`, opis u README-u, na Renderu ga upisujem ručno. Timeout,
+   `max_tokens` i najveći broj krugova alata su u konfiguraciji. Bez ključa se aplikacija
+   normalno pokreće, a chat vraća `503`. Poziv SDK-a je u jednoj klasi, da je test može
+   zamijeniti.
+3. **Historija razgovora.** Flyway migracija za `chat_sessions` (korisnik, organizacija,
+   vrijeme zadnje poruke) i `chat_messages` (uloga, sadržaj, vrijeme). Sesija pripada
+   jednom korisniku i jednoj organizaciji, tuđa sesija se ne može čitati ni nastaviti.
+   Modelu ide samo zadnjih N poruka, da razgovor ne raste bez kraja.
+4. **Alati za čitanje:** `list_resources`, `check_availability` (resurs, datum, od-do
+   lokalno vrijeme) i `get_my_bookings`. Svaki alat zove postojeći servis
+   (`ResourceService`, `FreeSlotService`, `BookingService.mine`), bez svoje poslovne
+   logike. "Sutra poslije 16h" se pretvara u `Instant` u zoni organizacije, preko `Clock`
+   beana, istom logikom kao kalendar, pa DST radi i ovdje. Unit test za svaki alat.
+5. **Alati za pisanje i potvrda:** `create_booking` i `cancel_booking` ne mijenjaju ništa,
+   nego zapisuju prijedlog uz sesiju, a asistent pita korisnika. Rezervacija nastaje tek
+   kad korisnik potvrdi (`POST /api/chat/{sessionId}/confirm`, dugme u widgetu), kroz
+   `BookingService.create` s `Idempotency-Key` iz prijedloga, pa dupli klik ne pravi dvije.
+   Zašto ne samo pravilo u promptu: model može pogriješiti ili ga tekst korisnika može
+   nagovoriti, a server ne može. Ovo je predlog, odlučujemo na početku koraka.
+6. **Autorizacija u alatima.** `@PreAuthorize` je na kontrolerima, a alate zove
+   `ChatService`, pa se `ResourceAccess` i `BookingAccess` pozivaju eksplicitno. ID
+   korisnika uvijek dolazi iz tokena, nikad iz argumenata koje je napisao model, a resurs
+   mora biti iz organizacije sesije. Test: chat u organizaciji A traži resurs iz B i ništa
+   se ne desi.
+7. **Petlja i endpoint.** `POST /api/chat` (poruka i opcionalno `sessionId`):
+   `ChatService` šalje historiju i alate, izvršava alate koje model traži i vraća rezultat,
+   najviše N krugova. Nema slobodnih termina, nevažeći datum i zauzet termin (`409`) idu
+   modelu kao rezultat alata s greškom, pa on korisniku kaže prirodnim jezikom šta da
+   pokuša. Timeout ili greška API-ja daje Problem Details s porukom na bosanskom. Rate
+   limit po korisniku (Bucket4j iz Faze 8), jer svaki poziv košta.
+8. **Integracioni testovi s mockanim LLM klijentom.** Klijent vraća unaprijed zadane
+   odgovore (prvo zahtjev za alat, pa tekst). Dokazujemo: bez potvrde nema rezervacije;
+   dva chata na isti termin daju jednu rezervaciju i jednu poruku da je zauzeto; druga
+   poruka u sesiji šalje modelu i prvu; tuđa organizacija i tuđa sesija ne prolaze;
+   timeout daje `503`. Test izolacije organizacija dobija nove rute.
+9. **Chat widget (React).** Na stranici za rezervaciju iz Faze 7, po `docs/DIZAJN.md`.
+   Stanja učitavanja, greške i praznog razgovora, prijedlog rezervacije s dugmadima
+   Potvrdi i Odustani, vrijeme u zoni organizacije, rad tastaturom i na telefonu.
+10. **Dokumentacija i ručna provjera.** Sekcija u README-u, `docs/ai-assistant.md`
+    (arhitektura, petlja alata, zašto potvrda na serveru, zašto isti servisi, šta nije
+    provjereno, jednostavnim riječima za intervju), sekvencijski dijagram u
+    `docs/ARHITEKTURA.md`. Par razgovora s pravim ključem zapisujem iskreno: šta je
+    radilo, šta nije, koliko krugova i tokena je trebalo.
 
 ## Strategija testiranja
 
@@ -257,6 +322,8 @@ Unutar faze 10 redoslijed je već po vrijednosti, pa se ono s kraja liste može 
   historija rezervacija ostanu tačne.
 - ShedLock: treba li nam dok radi jedna instanca, i šta se desi kad radi dvije.
 - Jezik UI-ja: bosanski, struktura spremna za engleski.
+- AI asistent: zvanični Anthropic Java SDK vs Spring AI, i potvrda rezervacije na serveru
+  vs samo pravilo u promptu.
 
 ## Rizici koje provjeravamo rano
 
@@ -270,6 +337,9 @@ Unutar faze 10 redoslijed je već po vrijednosti, pa se ono s kraja liste može 
   provjeriti prije nego što bilo šta tvrdimo u README-u. Stvarni novac ne ide kroz projekat.
 - Opseg: plan je velik. Pravilo "ako vrijeme stisne" iznad je tu da jezgro ne zavisi od
   dodataka.
+- AI asistent: kompatibilnost SDK-a (ili Spring AI) s našim Spring Bootom i Jacksonom,
+  trošak API poziva na live demu (limit i rate limit prije nego što link ide u
+  portfolio), i model koji pogrešno shvati datum. Zato alati sami provjeravaju ulaz.
 
 ## Definicija "gotovo" za Projekat 2
 
