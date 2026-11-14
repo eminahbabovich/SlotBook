@@ -186,7 +186,7 @@ svaki endpoint opisan u Swaggeru.
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | ⏳ nije počelo |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | ⏳ nije počelo |
 | 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | ⏳ nije počelo |
-| 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s **tool calling**, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/ai-assistant.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
+| 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s **tool calling**, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
 
 Pravilo iz P1 ostaje: ne čekati kraj s deployem. Zato u Fazi 1 uradimo "hodajući kostur"
 (prazan endpoint na live adresi), a u Fazi 12 samo punimo ono što već radi.
@@ -195,6 +195,7 @@ Pravilo iz P1 ostaje: ne čekati kraj s deployem. Zato u Fazi 1 uradimo "hodaju�
 faza 10 i 11, jer je live projekat s čvrstim jezgrom vrijedniji od nedovršenih dodataka.
 Unutar faze 10 redoslijed je već po vrijednosti, pa se ono s kraja liste može izostaviti.
 Faza 14 je dodatak izvan jezgra i ne smije ga mijenjati: ako je nema, aplikacija je ista.
+Ako se radi, radi se prije Faze 13, da završni pregled obuhvati i nju.
 
 ## Kriterij "gotovo" po fazi
 
@@ -282,7 +283,7 @@ Svaki korak je jedna sesija ili manje. Domen ostaje naš: "alat za usluge" je ko
 9. **Chat widget (React).** Na stranici za rezervaciju iz Faze 7, po `docs/DIZAJN.md`.
    Stanja učitavanja, greške i praznog razgovora, prijedlog rezervacije s dugmadima
    Potvrdi i Odustani, vrijeme u zoni organizacije, rad tastaturom i na telefonu.
-10. **Dokumentacija i ručna provjera.** Sekcija u README-u, `docs/ai-assistant.md`
+10. **Dokumentacija i ručna provjera.** Sekcija u README-u, `docs/AI_ASISTENT.md`
     (arhitektura, petlja alata, zašto potvrda na serveru, zašto isti servisi, šta nije
     provjereno, jednostavnim riječima za intervju), sekvencijski dijagram u
     `docs/ARHITEKTURA.md`. Par razgovora s pravim ključem zapisujem iskreno: šta je
@@ -379,3 +380,9 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Grupe resursa (npr. "sve sale na drugom spratu") i traženje slobodnog resursa iz grupe
 - Redis za rate limiting i keš kad bi radilo više instanci
 - Praćenje troškova i mjerenje potrošnje besplatnih planova
+
+Otvoreno iz Faze 4 (nije ideja nego dug, za pregled u Fazi 13):
+
+- `S3StorageServiceTest` je jednom pao usred cijele suite (`The target server failed to respond`), a sam prolazi.
+- Handler za `ObjectOptimisticLockingFailureException` (`409`) nije provjeren kroz HTTP, samo `@Version` u servisu.
+- Grana `23505` -> `422` (dva različita termina s istim `Idempotency-Key` u istom trenutku) nema test.
