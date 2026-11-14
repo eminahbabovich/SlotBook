@@ -187,6 +187,7 @@ erDiagram
         timestamptz sent_at
         varchar subject "tekst nastaje s obavijesti"
         text body
+        text ics "prilog uz potvrdu"
         varchar last_error
     }
     booking_events {

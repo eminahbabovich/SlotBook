@@ -209,7 +209,7 @@ public class BookingService {
 	}
 
 	private void javi(UUID primalac, NotificationType tip, Booking rezervacija) {
-		notifications.enqueueForBooking(primalac, tip, rezervacija.getId(), BookingEmails.za(tip, rezervacija));
+		notifications.enqueueForBooking(primalac, tip, rezervacija.getId(), BookingEmails.za(tip, rezervacija, clock.instant()));
 	}
 
 	// Za tekst emaila trebaju naziv resursa i zona, pa se istekle učitaju. Po krugu posla ih je malo.

@@ -434,3 +434,15 @@ Ko rezerviše manje od dan unaprijed, ne dobija podsjetnik, jer je potvrdu dobio
 
 Najviše jedan podsjetnik po rezervaciji čuva baza, parcijalnim UNIQUE indeksom nad `notifications (booking_id) WHERE type = 'BOOKING_REMINDER'`. Upit posla preskače rezervacije koje podsjetnik već imaju, pa se indeks u normalnom radu ne aktivira. Aktivira se kad dva posla krenu u isto vrijeme, npr. na dvije instance: drugi tada padne na indeksu, cijeli njegov krug se poništi i ponovi minutu kasnije. Test bez provjere u upitu pokazuje da baza odbije drugi podsjetnik (`duplicate key`). Da li uopšte puštati dvije instance, odlučujem s ShedLockom u zadnjem koraku Faze 5.
 
+## Prilog .ics uz potvrdu rezervacije, pisan ručno
+
+Potvrda rezervacije nosi `termin.ics` (iCalendar, RFC 5545). Fajl pišem sam u `BookingCalendar`, bez biblioteke: to su četiri polja (`UID`, `DTSTART`, `DTEND`, `SUMMARY`) i par pravila formata. Biblioteka poput ical4j bi bila veća od cijelog paketa `notification`.
+
+Vrijeme ide u UTC-u, s `Z` na kraju (`DTSTART:20351119T080000Z`). Kalendar ga sam prikaže u zoni korisnika, pa ne treba blok `VTIMEZONE` s pravilima ljetnog vremena. Termin u 09:00 prije i poslije prelaska na ljetno vrijeme (30.3.2036) u fajlu je u 08:00Z i 07:00Z, a u kalendaru oba u 09:00. To provjerava test. Kad sam u mutaciji formatirao po sarajevskom vremenu, a ostavio `Z`, test je pao, jer bi kalendar termin pomjerio za sat ili dva.
+
+Dva pravila formata sam provjerio testom, jer se lako promaše. Zarez i tačka-zarez u nazivu idu s `\` ispred, inače "Sala 2, prvi sprat" postane dvije vrijednosti. Red duži od 75 bajtova se lomi, a nastavak počinje razmakom. Broje se bajtovi, ne znakovi: č je dva bajta u UTF-8, pa bi brojanje znakova dalo predugačke redove. Lomi se između znakova, da se nijedno slovo ne prepolovi.
+
+`UID` je ID rezervacije, pa isti termin poslan dvaput (at-least-once slanje) kalendar prepozna kao isti. Kad se rezervacija otkaže, mail otkazivanja ne nosi `.ics` s `METHOD:CANCEL`, pa termin ostaje u kalendaru dok ga korisnik ne obriše. To nisam radio, jer bi tražilo i `ORGANIZER`, a Gmail i Outlook se tu ponašaju različito, što nisam mogao provjeriti.
+
+Prilog nastaje s obavijesti, kao tijelo maila, i čuva se u koloni `ics` samo dok obavijest čeka slanje (`notifications_prilog_dok_ceka`). Da bi poslao prilog, pošiljalac je prešao sa `SimpleMailMessage` na `MimeMessage` i `MimeMessageHelper`. Da te metode postoje u našoj verziji, provjerio sam u `spring-context-support-7.0.10.jar` (`javap`). Ručno u Gmailu i Outlooku nisam probao da li se prilog otvori kao događaj, samo da Mailpit primi ispravan fajl.
+

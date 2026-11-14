@@ -82,6 +82,16 @@ class NotificationServiceTest {
 				.hasMessageContaining("notifications_primalac");
 	}
 
+	@Test
+	void bazaOdbijaPoslanuObavijestSPrilogom() {
+		UUID nedim = korisnik();
+
+		assertThatThrownBy(() -> jdbc.update("insert into notifications (id, user_id, type, status, next_attempt_at, "
+				+ "created_at, sent_at, subject, ics) values (gen_random_uuid(), ?, 'EMAIL_VERIFICATION', 'SENT', "
+				+ "now(), now(), now(), 'Potvrdi email za SlotBook', 'BEGIN:VCALENDAR')", nedim))
+				.hasMessageContaining("notifications_prilog_dok_ceka");
+	}
+
 	// Mail za potvrdu emaila nosi token. Poslana obavijest ga ne smije čuvati.
 	@Test
 	void bazaOdbijaPoslanuObavijestSTijelom() {

@@ -18,7 +18,7 @@ final class BookingEmails {
 	private BookingEmails() {
 	}
 
-	static EmailContent za(NotificationType tip, Booking rezervacija) {
+	static EmailContent za(NotificationType tip, Booking rezervacija, Instant sada) {
 		ZoneId zona = ZoneId.of(rezervacija.getResource().getOrganization().getTimezone());
 		String resurs = rezervacija.getResource().getName();
 		String termin = kad(rezervacija.getStartTime(), zona);
@@ -28,7 +28,8 @@ final class BookingEmails {
 							+ "). Potvrdi ili odbij rezervaciju u aplikaciji do " + kad(rezervacija.getExpiresAt(), zona)
 							+ ". Poslije toga ističe sama i termin je ponovo slobodan.");
 			case BOOKING_CONFIRMED -> new EmailContent("Rezervacija potvrđena: " + resurs, "Termin " + termin + " ("
-					+ resurs + ") je tvoj. Ako ne možeš doći, otkaži ga u aplikaciji, da ga može uzeti neko drugi.");
+					+ resurs + ") je tvoj. U prilogu je termin za kalendar. Ako ne možeš doći, otkaži ga u aplikaciji, "
+					+ "da ga može uzeti neko drugi.", BookingCalendar.ics(rezervacija, sada));
 			case BOOKING_REJECTED -> new EmailContent("Rezervacija odbijena: " + resurs, "Rezervacija za termin "
 					+ termin + " (" + resurs + ") nije prihvaćena. Slobodne termine vidiš u aplikaciji.");
 			case BOOKING_CANCELLED -> new EmailContent("Rezervacija otkazana: " + resurs,

@@ -70,6 +70,9 @@ public class Notification {
 	// Briše se kad obavijest više ne čeka slanje: u mailu za potvrdu emaila je token
 	private String body;
 
+	// Prilog za kalendar, briše se zajedno s tijelom
+	private String ics;
+
 	@Column(name = "last_error")
 	private String lastError;
 
@@ -82,6 +85,7 @@ public class Notification {
 		this.bookingId = bookingId;
 		this.subject = content.subject();
 		this.body = content.body();
+		this.ics = content.ics();
 		this.status = NotificationStatus.PENDING;
 		this.nextAttemptAt = createdAt;
 		this.createdAt = createdAt;
@@ -99,6 +103,7 @@ public class Notification {
 		sentAt = sada;
 		lastError = null;
 		body = null;
+		ics = null;
 	}
 
 	// Razmak raste puta pet: 1, 5, 25 i 125 minuta. Kratak prekid SMTP-a prođe za minutu, a dug
@@ -109,6 +114,7 @@ public class Notification {
 		if (attempts >= NAJVISE_POKUSAJA) {
 			status = NotificationStatus.FAILED;
 			body = null;
+			ics = null;
 		} else {
 			nextAttemptAt = sada.plus(Duration.ofMinutes((long) Math.pow(5, attempts - 1)));
 		}
@@ -128,6 +134,10 @@ public class Notification {
 
 	String getBody() {
 		return body;
+	}
+
+	String getIcs() {
+		return ics;
 	}
 
 	NotificationStatus getStatus() {

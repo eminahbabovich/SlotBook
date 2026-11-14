@@ -13,12 +13,16 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import ba.slotbook.user.User;
+import jakarta.mail.Message;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 
 class NotificationSenderTest {
 
@@ -29,6 +33,11 @@ class NotificationSenderTest {
 	private final NotificationSender sender = new NotificationSender(notifications, mailSender,
 			Clock.fixed(SADA, ZoneOffset.UTC), "SlotBook <noreply@slotbook.local>");
 
+	@BeforeEach
+	void praznaPoruka() {
+		when(mailSender.createMimeMessage()).thenAnswer(poziv -> new MimeMessage((Session) null));
+	}
+
 	// SMTP ne odgovara: obavijest ostaje, s razlogom, i čeka minutu
 	@Test
 	void neuspjeloSlanjeSePonavljaZaMinutu() {
@@ -37,7 +46,7 @@ class NotificationSenderTest {
 		Notification obavijest = new Notification(emina, NotificationType.BOOKING_CONFIRMED, UUID.randomUUID(),
 				new EmailContent("Rezervacija potvrđena", "Termin je tvoj."), SADA.minusSeconds(30));
 		when(notifications.findNextDue(SADA)).thenReturn(Optional.of(obavijest));
-		doThrow(new MailSendException("Connection refused")).when(mailSender).send(any(SimpleMailMessage.class));
+		doThrow(new MailSendException("Connection refused")).when(mailSender).send(any(MimeMessage.class));
 
 		assertThat(sender.sendNext()).isTrue();
 
@@ -49,15 +58,17 @@ class NotificationSenderTest {
 
 	// Pozvana osoba možda još nema nalog, pa mail ide na adresu iz pozivnice
 	@Test
-	void pozivnicaIdeNaAdresuBezNaloga() {
+	void pozivnicaIdeNaAdresuBezNaloga() throws Exception {
 		Notification pozivnica = new Notification("tarik@example.com", UUID.randomUUID(),
 				new EmailContent("Pozivnica na SlotBook: Teretana Grbavica", "link"), SADA);
 		when(notifications.findNextDue(SADA)).thenReturn(Optional.of(pozivnica));
 
 		sender.sendNext();
 
-		verify(mailSender).send(org.mockito.ArgumentMatchers.<SimpleMailMessage>argThat(
-				mail -> mail.getTo().length == 1 && mail.getTo()[0].equals("tarik@example.com")));
+		ArgumentCaptor<MimeMessage> mail = ArgumentCaptor.forClass(MimeMessage.class);
+		verify(mailSender).send(mail.capture());
+		assertThat(mail.getValue().getRecipients(Message.RecipientType.TO)).extracting(Object::toString)
+				.containsExactly("tarik@example.com");
 		assertThat(pozivnica.getStatus()).isEqualTo(NotificationStatus.SENT);
 	}
 
