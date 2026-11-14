@@ -119,8 +119,8 @@ Sva ostala kretanja su zabranjena i vraćaju `409`. Termin zauzimaju samo `PENDI
 - `booking_series` (id, resource_id, client_id, rule, created_at)
 - `waitlist_entries` (id, resource_id, client_id, start_time, end_time, status,
   notified_at, created_at)
-- `notifications` (id, user_id, type, payload JSONB, status, attempts, next_attempt_at,
-  created_at, sent_at)
+- `notifications` (id, user_id, type, booking_id, status, attempts, next_attempt_at,
+  created_at, sent_at). Umjesto `payload JSONB` za sada `booking_id`, vidi odluke.
 - `payments` (id, booking_id, provider_ref, amount, currency, status, created_at)
 - `processed_webhook_events` (event_id PK, received_at)
 - `audit_log` (id, organization_id, actor_id, action, entity_type, entity_id, details JSONB,

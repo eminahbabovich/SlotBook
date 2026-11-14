@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ba.slotbook.availability.SlotService;
 import ba.slotbook.availability.TimeRange;
 import ba.slotbook.error.InvalidFieldException;
+import ba.slotbook.notification.NotificationService;
+import ba.slotbook.notification.NotificationType;
 import ba.slotbook.paging.PageResponse;
 import ba.slotbook.resource.Resource;
 import ba.slotbook.resource.ResourceNotFoundException;
@@ -39,12 +41,13 @@ public class BookingService {
 	private final ResourceRepository resources;
 	private final UserRepository users;
 	private final SlotService slotService;
+	private final NotificationService notifications;
 	private final Clock clock;
 	private final Duration rokZaPotvrdu;
 	private final Duration zatvaranjePoslije;
 
 	public BookingService(BookingRepository bookings, BookingEventRepository events, ResourceRepository resources,
-			UserRepository users, SlotService slotService, Clock clock,
+			UserRepository users, SlotService slotService, NotificationService notifications, Clock clock,
 			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu,
 			@Value("${slotbook.booking.complete-after-hours}") int satiDoZatvaranja) {
 		this.bookings = bookings;
@@ -52,6 +55,7 @@ public class BookingService {
 		this.resources = resources;
 		this.users = users;
 		this.slotService = slotService;
+		this.notifications = notifications;
 		this.clock = clock;
 		this.rokZaPotvrdu = Duration.ofHours(satiZaPotvrdu);
 		this.zatvaranjePoslije = Duration.ofHours(satiDoZatvaranja);
@@ -72,7 +76,7 @@ public class BookingService {
 		Instant sada = clock.instant();
 		// Istekla PENDING još drži termin dok je posao ne obradi (Render uspava servis, pa posao kasni),
 		// a EXCLUDE bi novu rezervaciju odbio. Pod lockom resursa ih se ovdje oslobodi odmah.
-		bookings.expireOnResource(resourceId, sada);
+		javiIsteklim(bookings.expireOnResource(resourceId, sada));
 		// Tek poslije locka: dupli klik čeka da prvi zahtjev završi, pa ovdje nađe njegovu rezervaciju
 		if (idempotencyKey != null) {
 			var ranija = bookings.findByClientIdAndIdempotencyKey(clientId, idempotencyKey);
@@ -105,6 +109,7 @@ public class BookingService {
 		}
 		// Nastanak je prvi prelaz stanja. Ista transakcija: ako ovaj upis padne, nema ni rezervacije.
 		events.save(new BookingEvent(rezervacija, null, status, klijent, sada));
+		obavijesti(rezervacija, clientId);
 		return BookingResponse.from(rezervacija);
 	}
 
@@ -137,7 +142,9 @@ public class BookingService {
 	// Za BookingJob. Vraća broj isteklih, samo za log.
 	@Transactional
 	public int expireOverdue() {
-		return bookings.expireAll(clock.instant());
+		List<ExpiredBooking> istekle = bookings.expireAll(clock.instant());
+		javiIsteklim(istekle);
+		return istekle.size();
 	}
 
 	// Ne odmah na kraju termina: provider ima još dan da označi nedolazak, a COMPLETED je konačno
@@ -165,7 +172,32 @@ public class BookingService {
 	private BookingResponse zapisi(Booking rezervacija, BookingStatus stari, UUID actorId, Instant sada) {
 		events.save(new BookingEvent(rezervacija, stari, rezervacija.getStatus(), users.getReferenceById(actorId),
 				sada));
+		obavijesti(rezervacija, actorId);
 		return BookingResponse.from(rezervacija);
+	}
+
+	// Ko treba znati za novi status. U istoj transakciji kao promjena (outbox), a šalje se kasnije.
+	// Dolazak, nedolazak i zatvaranje ne šalju ništa: klijent je tu bio ili nije, i to zna.
+	private void obavijesti(Booking rezervacija, UUID actorId) {
+		UUID klijent = rezervacija.getClient().getId();
+		UUID provider = rezervacija.getResource().getProvider().getId();
+		UUID id = rezervacija.getId();
+		switch (rezervacija.getStatus()) {
+			case PENDING -> notifications.enqueueForBooking(provider, NotificationType.BOOKING_AWAITS_CONFIRMATION, id);
+			case CONFIRMED -> notifications.enqueueForBooking(klijent, NotificationType.BOOKING_CONFIRMED, id);
+			case REJECTED -> notifications.enqueueForBooking(klijent, NotificationType.BOOKING_REJECTED, id);
+			// Javlja se drugoj strani: kad otkaže klijent, provideru, a kad otkaže osoblje, klijentu
+			case CANCELLED -> notifications.enqueueForBooking(actorId.equals(klijent) ? provider : klijent,
+					NotificationType.BOOKING_CANCELLED, id);
+			default -> {
+			}
+		}
+	}
+
+	private void javiIsteklim(List<ExpiredBooking> istekle) {
+		for (ExpiredBooking istekla : istekle) {
+			notifications.enqueueForBooking(istekla.getClientId(), NotificationType.BOOKING_EXPIRED, istekla.getId());
+		}
 	}
 
 	// Isti ključ i isti zahtjev vraćaju raniju rezervaciju, u stanju u kojem je sada. Isti ključ

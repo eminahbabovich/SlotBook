@@ -25,26 +25,29 @@ interface BookingRepository extends JpaRepository<Booking, UUID> {
 	// Jedna naredba mijenja status i piše historiju, pa ne može biti jedno bez drugog. Kad provider
 	// potvrđuje u istom trenutku, UPDATE čeka njegov red i ponovo provjeri status = 'PENDING', pa
 	// potvrđena ostane potvrđena. version + 1 je tu za obrnut slučaj: providerov stari @Version tada padne.
-	@Modifying
+	// Bez @Modifying, jer naredba vraća redove: istekle rezervacije, da klijenti dobiju obavijest
 	@Query(nativeQuery = true, value = """
 			WITH istekle AS (
 				UPDATE bookings SET status = 'EXPIRED', version = version + 1
 				WHERE status = 'PENDING' AND expires_at <= :sada
-				RETURNING id)
-			INSERT INTO booking_events (id, booking_id, from_status, to_status, actor_id, created_at)
-			SELECT gen_random_uuid(), id, 'PENDING', 'EXPIRED', NULL, :sada FROM istekle""")
-	int expireAll(Instant sada);
+				RETURNING id, client_id),
+			historija AS (
+				INSERT INTO booking_events (id, booking_id, from_status, to_status, actor_id, created_at)
+				SELECT gen_random_uuid(), id, 'PENDING', 'EXPIRED', NULL, :sada FROM istekle)
+			SELECT id, client_id AS "clientId" FROM istekle""")
+	List<ExpiredBooking> expireAll(Instant sada);
 
 	// Isto, samo za jedan resurs, pri novoj rezervaciji pod lockom resursa
-	@Modifying
 	@Query(nativeQuery = true, value = """
 			WITH istekle AS (
 				UPDATE bookings SET status = 'EXPIRED', version = version + 1
 				WHERE status = 'PENDING' AND expires_at <= :sada AND resource_id = :resourceId
-				RETURNING id)
-			INSERT INTO booking_events (id, booking_id, from_status, to_status, actor_id, created_at)
-			SELECT gen_random_uuid(), id, 'PENDING', 'EXPIRED', NULL, :sada FROM istekle""")
-	int expireOnResource(UUID resourceId, Instant sada);
+				RETURNING id, client_id),
+			historija AS (
+				INSERT INTO booking_events (id, booking_id, from_status, to_status, actor_id, created_at)
+				SELECT gen_random_uuid(), id, 'PENDING', 'EXPIRED', NULL, :sada FROM istekle)
+			SELECT id, client_id AS "clientId" FROM istekle""")
+	List<ExpiredBooking> expireOnResource(UUID resourceId, Instant sada);
 
 	@Modifying
 	@Query(nativeQuery = true, value = """

@@ -362,3 +362,15 @@ Provider i dalje može potvrditi rezervaciji kojoj je rok prošao, ako posao jo�
 
 ShedLock za sada ne treba, jer radi jedna instanca. I s dvije bi ovaj posao bio siguran iz istog razloga kao gore: druga naredba ne nađe redove koje je prva već promijenila. Nisam to probao s dvije instance.
 
+## Obavijesti kroz outbox, bez @TransactionalEventListener
+
+Email se ne šalje iz transakcije rezervacije. Da se šalje, spor SMTP bi držao lock resursa, a greška pri slanju bi poništila rezervaciju koja je inače dobra. Obrnuto je još gore: mail ode, a transakcija poslije padne, pa klijent dobije potvrdu za rezervaciju koje nema.
+
+Zato `BookingService` u istoj transakciji upiše red u `notifications`, a poseban posao ga kasnije pošalje. Rezervacija i obavijest su tako ili obje u bazi ili nijedna. `NotificationService.enqueueForBooking` ima `Propagation.MANDATORY`, pa poziv bez transakcije pozivaoca baci izuzetak umjesto da obavijest upiše sama. Probao sam i `REQUIRES_NEW`: obavijest tada padne na FK, jer nova transakcija ne vidi rezervaciju koja još nije commitana.
+
+Plan je spominjao `@TransactionalEventListener(AFTER_COMMIT)`. Taj listener se pokreće poslije commita, ali u memoriji, pa ako aplikacija padne između commita i slanja, obavijest je izgubljena i nigdje nema traga. Outbox tabela to rješava, pa listener za sada ne uvodim. Mogao bi kasnije poslužiti da se poslije commita odmah probudi slanje, umjesto da se čeka sljedeći krug posla, ali to je samo brzina, ne pouzdanost.
+
+U planu je `notifications` imala `payload JSONB`. Za sada su sve obavijesti o rezervaciji, pa je dovoljan `booking_id`, a tekst emaila se pravi pri slanju iz rezervacije, resursa i zone organizacije. JSON bi ovdje bio još jedan format koji Hibernate mora znati čitati, a nisam provjerio kako to radi s Jacksonom koji ide uz naš Spring Boot. Pozivnice i reset lozinke će trebati nešto drugo, i tada odlučujem šta.
+
+Primaoca bira `BookingService`: nova rezervacija na čekanju ide provideru resursa, potvrda, odbijanje i istek klijentu, a otkazivanje drugoj strani od one koja je otkazala. Dolazak, nedolazak i zatvaranje ne šalju ništa.
+

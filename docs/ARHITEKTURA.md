@@ -4,7 +4,7 @@ Opis onoga što postoji sada (Faze 1 do 4). Obavijesti i frontend još ne postoj
 
 ## Paketi i slojevi
 
-Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike) i `status`.
+Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike) i `status`.
 
 Unutar paketa je uvijek isti red: kontroler prima zahtjev i provjerava pristup, servis drži pravila i transakciju, repozitorij priča s bazom. Kontroler vraća samo DTO (`record`), nikad entitet. Repozitorij organizacija je vidljiv samo u paketu `organization`, pa paket `resource` do organizacije dolazi preko `OrganizationService`. Isto važi za rezervacije: `BookingRepository` vidi samo paket `booking`.
 
@@ -82,6 +82,8 @@ erDiagram
     users ||--o{ bookings : "klijent"
     bookings ||--o{ booking_events : "historija"
     users ||--o{ booking_events : "promijenio"
+    users ||--o{ notifications : "prima"
+    bookings ||--o{ notifications : "o čemu"
 
     users {
         uuid id PK
@@ -160,6 +162,17 @@ erDiagram
         varchar idempotency_key "UNIQUE s client_id"
         bigint version "@Version"
     }
+    notifications {
+        uuid id PK
+        uuid user_id FK
+        varchar type "BOOKING_CONFIRMED..."
+        uuid booking_id FK
+        varchar status "PENDING, SENT, FAILED"
+        int attempts
+        timestamptz next_attempt_at
+        timestamptz created_at
+        timestamptz sent_at
+    }
     booking_events {
         uuid id PK
         uuid booking_id FK
@@ -178,4 +191,4 @@ Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` 
 
 ## Slike i šta dolazi
 
-Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, Cloudflare R2 na produkciji), a bira se preko `slotbook.storage.type`. Pozadinski posao `BookingJob` (`@Scheduled`, svake minute) prebacuje istekle `PENDING` rezervacije u `EXPIRED` i zatvara potvrđene dan poslije kraja. Oba prelaza su po jedna SQL naredba koja mijenja status i piše historiju bez aktera. U ostatku Faze 5 dolazi tabela `notifications` za slanje emailova.
+Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, Cloudflare R2 na produkciji), a bira se preko `slotbook.storage.type`. Pozadinski posao `BookingJob` (`@Scheduled`, svake minute) prebacuje istekle `PENDING` rezervacije u `EXPIRED` i zatvara potvrđene dan poslije kraja. Oba prelaza su po jedna SQL naredba koja mijenja status i piše historiju bez aktera. Obavijesti idu kroz tabelu `notifications` (outbox): `BookingService` je upiše preko `NotificationService` u istoj transakciji kao promjenu rezervacije, a slanje dolazi u sljedećem koraku Faze 5. Paket `booking` zna za `notification`, a obrnuto ne, zato obavijest drži samo `booking_id`.

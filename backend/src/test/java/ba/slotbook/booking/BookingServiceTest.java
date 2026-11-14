@@ -318,4 +318,76 @@ class BookingServiceTest {
 
 		assertThat(statusOd(id)).isEqualTo("EXPIRED");
 	}
+
+	// "TIP primalac" za svaku obavijest o rezervaciji, redom kako su nastale
+	private List<String> obavijesti(UUID rezervacija) {
+		return jdbc.queryForList("select type || ' ' || user_id from notifications where booking_id = ? "
+				+ "order by created_at, type", String.class, rezervacija);
+	}
+
+	@Test
+	void naRucnojPotvrdiObavijestIdeProfesoriciANaAutomatskojStudentici() {
+		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
+		UUID sto = resurs("Sto br. 3", 60, true);
+
+		UUID ceka = service.create(konsultacije, studentica, PONEDJELJAK_09, null).id();
+		UUID potvrdjena = service.create(sto, studentica, PONEDJELJAK_09, null).id();
+
+		assertThat(obavijesti(ceka)).containsExactly("BOOKING_AWAITS_CONFIRMATION " + profesorica);
+		assertThat(obavijesti(potvrdjena)).containsExactly("BOOKING_CONFIRMED " + studentica);
+	}
+
+	@Test
+	void potvrduIOdbijanjeSaznajeStudentica() {
+		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
+		UUID prva = service.create(konsultacije, studentica, PONEDJELJAK_09, null).id();
+		UUID druga = service.create(konsultacije, studentica, Instant.parse("2035-11-19T08:30:00Z"), null).id();
+
+		service.changeStatus(prva, profesorica, BookingStatus.CONFIRMED);
+		service.changeStatus(druga, profesorica, BookingStatus.REJECTED);
+
+		assertThat(obavijesti(prva)).endsWith("BOOKING_CONFIRMED " + studentica);
+		assertThat(obavijesti(druga)).endsWith("BOOKING_REJECTED " + studentica);
+	}
+
+	// Ko otkaže, taj zna. Obavijest ide drugoj strani.
+	@Test
+	void otkazivanjeSaznajeDrugaStrana() {
+		UUID sto = resurs("Sto br. 3", 60, true);
+		UUID otkazalaStudentica = service.create(sto, studentica, PONEDJELJAK_09, null).id();
+		UUID otkazalaProfesorica = service.create(sto, studentica, Instant.parse("2035-11-19T09:00:00Z"), null).id();
+
+		service.cancel(otkazalaStudentica, studentica, false);
+		service.cancel(otkazalaProfesorica, profesorica, true);
+
+		assertThat(obavijesti(otkazalaStudentica)).endsWith("BOOKING_CANCELLED " + profesorica);
+		assertThat(obavijesti(otkazalaProfesorica)).endsWith("BOOKING_CANCELLED " + studentica);
+	}
+
+	@Test
+	void istekSaznajeStudentica() {
+		UUID konsultacije = resurs("Konsultacije, Baze podataka", 60, false);
+		UUID istekla = upisi(konsultacije, "PENDING", PONEDJELJAK_09, PONEDJELJAK_09.plus(1, ChronoUnit.HOURS),
+				Instant.now().minus(1, ChronoUnit.MINUTES));
+
+		service.expireOverdue();
+
+		assertThat(obavijesti(istekla)).containsExactly("BOOKING_EXPIRED " + studentica);
+	}
+
+	// Outbox: rezervacija koja se poništi ne ostavlja obavijest o sebi
+	@Test
+	void ponistenaRezervacijaNeOstavljaObavijest() {
+		UUID konsultacije = resurs("Konsultacije, Baze podataka", 30, false);
+
+		new TransactionTemplate(transakcije).executeWithoutResult(s -> {
+			service.create(konsultacije, studentica, PONEDJELJAK_09, null);
+			s.setRollbackOnly();
+		});
+
+		assertThat(jdbc.queryForObject("select count(*) from notifications where user_id = ?", Long.class,
+				profesorica)).isZero();
+		assertThat(jdbc.queryForObject("select count(*) from bookings where resource_id = ?", Long.class,
+				konsultacije)).isZero();
+	}
 }

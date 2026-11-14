@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.net.URI;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,9 +143,12 @@ class OrganizationIsolationApiTest {
 	}
 
 	// Almin prelaz ih promijeni, pa se prije svakog testa prave nove. Klijent je Alma, admin čitaonice.
-	// Nedolazak traži termin koji je počeo, zato je on u prošlosti.
+	// Nedolazak traži termin koji je počeo, zato je on prije dva sata. Ne ranije: BookingJob potvrđene
+	// zatvara dan poslije kraja, pa bi stara rezervacija usred testa postala COMPLETED.
 	private Map<String, UUID> rezervacijeZaPrelaze() {
 		jdbc.update("delete from booking_events where booking_id in (select id from bookings where resource_id = ?)",
+				stoCitaonice);
+		jdbc.update("delete from notifications where booking_id in (select id from bookings where resource_id = ?)",
 				stoCitaonice);
 		jdbc.update("delete from bookings where resource_id = ?", stoCitaonice);
 		UUID almaId = users.findByEmail("alma.izolacija@example.com").orElseThrow().getId();
@@ -153,7 +157,7 @@ class OrganizationIsolationApiTest {
 				"zaOdbijanje", rezervacija(almaId, "2036-01-07 09:00+01", "PENDING"),
 				"zaOtkazivanje", rezervacija(almaId, "2036-01-07 10:00+01", "CONFIRMED"),
 				"zaDolazak", rezervacija(almaId, "2036-01-07 11:00+01", "CONFIRMED"),
-				"zaNedolazak", rezervacija(almaId, "2020-01-06 08:00+01", "CONFIRMED"));
+				"zaNedolazak", rezervacija(almaId, OffsetDateTime.now().minusHours(2).toString(), "CONFIRMED"));
 	}
 
 	private UUID rezervacija(UUID klijent, String pocetak, String status) {
