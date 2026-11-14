@@ -13,6 +13,7 @@ import ba.slotbook.availability.SlotService;
 import ba.slotbook.availability.TimeRange;
 import ba.slotbook.error.InvalidFieldException;
 import ba.slotbook.resource.Resource;
+import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.resource.ResourceRepository;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
@@ -44,10 +45,13 @@ public class BookingService {
 	// se uzima iz ponuđenog termina, pa rezervacija ne može biti duža ni pomjerena od termina u kalendaru.
 	@Transactional
 	public BookingResponse create(UUID resourceId, UUID clientId, Instant start) {
+		// Rezervacije istog resursa idu jedna za drugom. Bez ovoga dva istovremena upisa u EXCLUDE
+		// čekaju jedan na drugog, Postgres to prekine kao deadlock (40P01) tek poslije sekunde, a
+		// klijent dobije 500. Ovako drugi vidi commitan red i dobije 23P01. Preklapanje i dalje čuva baza.
+		Resource resurs = resources.findLockedById(resourceId).orElseThrow(ResourceNotFoundException::new);
 		TimeRange termin = slotService.offered(resourceId, start)
 				.orElseThrow(() -> new InvalidFieldException("startTime",
 						"Ovaj termin se ne nudi. Izaberi jedan od slobodnih termina u kalendaru."));
-		Resource resurs = resources.getReferenceById(resourceId);
 		BookingStatus status = resurs.isAutoConfirm() ? BookingStatus.CONFIRMED : BookingStatus.PENDING;
 		User klijent = users.getReferenceById(clientId);
 		Instant sada = clock.instant();
