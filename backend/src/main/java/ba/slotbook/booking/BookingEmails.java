@@ -35,6 +35,8 @@ final class BookingEmails {
 					"Rezervacija za termin " + termin + " (" + resurs + ") je otkazana i termin je ponovo slobodan.");
 			case BOOKING_EXPIRED -> new EmailContent("Rezervacija istekla: " + resurs, "Rezervacija za termin "
 					+ termin + " (" + resurs + ") nije potvrđena na vrijeme, pa je istekla. Slobodne termine vidiš u aplikaciji.");
+			// Bez default grane, da novi tip obavijesti o rezervaciji ne prođe kompajler bez teksta
+			case EMAIL_VERIFICATION -> throw new IllegalArgumentException("Nije obavijest o rezervaciji: " + tip);
 		};
 	}
 

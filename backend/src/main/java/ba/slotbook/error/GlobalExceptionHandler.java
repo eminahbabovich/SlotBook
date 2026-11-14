@@ -33,6 +33,7 @@ import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.NoShowTooEarlyException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.organization.AlreadyMemberException;
+import ba.slotbook.auth.VerificationTokenException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
@@ -207,6 +208,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 					"Pozivnica je istekla. Zamoli admina organizacije da ti pošalje novu.");
 		};
 		problem.setTitle("Pozivnica ne važi");
+		return problem;
+	}
+
+	@ExceptionHandler(VerificationTokenException.class)
+	ProblemDetail linkZaPotvrduNeVazi(VerificationTokenException ex) {
+		ProblemDetail problem = switch (ex.getReason()) {
+			case NOT_FOUND -> ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+					"Link za potvrdu emaila ne postoji. Provjeri da li je kopiran cijeli link iz maila.");
+			case ALREADY_USED -> ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+					"Ovaj link je već iskorišten. Ako email još nije potvrđen, zatraži novi link u profilu.");
+			case EXPIRED -> ProblemDetail.forStatusAndDetail(HttpStatus.GONE,
+					"Link za potvrdu emaila je istekao. Zatraži novi link u profilu.");
+		};
+		problem.setTitle("Link za potvrdu ne važi");
 		return problem;
 	}
 

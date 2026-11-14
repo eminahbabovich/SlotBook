@@ -59,7 +59,7 @@ public class Notification {
 	@Column(nullable = false, updatable = false)
 	private String subject;
 
-	@Column(nullable = false, updatable = false)
+	// Briše se kad obavijest više ne čeka slanje: u mailu za potvrdu emaila je token
 	private String body;
 
 	@Column(name = "last_error")
@@ -84,6 +84,7 @@ public class Notification {
 		status = NotificationStatus.SENT;
 		sentAt = sada;
 		lastError = null;
+		body = null;
 	}
 
 	// Razmak raste puta pet: 1, 5, 25 i 125 minuta. Kratak prekid SMTP-a prođe za minutu, a dug
@@ -93,6 +94,7 @@ public class Notification {
 		lastError = greska.length() > NAJDUZA_GRESKA ? greska.substring(0, NAJDUZA_GRESKA) : greska;
 		if (attempts >= NAJVISE_POKUSAJA) {
 			status = NotificationStatus.FAILED;
+			body = null;
 		} else {
 			nextAttemptAt = sada.plus(Duration.ofMinutes((long) Math.pow(5, attempts - 1)));
 		}

@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -26,6 +27,8 @@ public class UserService {
 
 	// Ne pitamo prvo "postoji li email": dva istovremena zahtjeva bi oba dobila "ne postoji".
 	// Odluku donosi UNIQUE u bazi, a mi samo prevodimo njenu grešku.
+	// Transakcija je tu da mail za potvrdu, koji upisuje pozivalac, nastane zajedno s nalogom ili nikako
+	@Transactional
 	public UserResponse register(String email, String password, String displayName) {
 		User user = new User(email, passwordEncoder.encode(password), displayName, clock.instant());
 		try {

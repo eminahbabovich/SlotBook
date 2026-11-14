@@ -392,3 +392,15 @@ Na Renderu SMTP još nije podešen. Obavijesti tamo padaju i poslije pet pokuša
 
 Mail starter sam doda provjeru SMTP-a u `/actuator/health`. To sam otkrio tek kad je pao `SecurityApiTest`: health je vratio `503`, jer u testu nema SMTP-a. Na Renderu bi isto tako pao health check i novi deploy ne bi prošao. Zato je `management.health.mail.enabled=false`. Aplikacija je zdrava i kad mail ne radi, jer obavijesti čekaju u tabeli.
 
+## Potvrda emaila: token u fragmentu linka, tijelo maila se briše poslije slanja
+
+Token za potvrdu je isti `RandomToken` kao za refresh i pozivnice (32 nasumična bajta), a u `user_tokens` ide samo njegov SHA-256. Link važi 24 sata i može se iskoristiti jednom. Dva klika u istom trenutku rješava `UPDATE ... WHERE used_at IS NULL`, kao kod pozivnica. Tokeni su u paketu `auth`, ne u `user`, jer `notification` već zna za `user`, a `user` koji šalje obavijesti bi napravio krug.
+
+Problem je bio što mail mora nositi pravi token, a mail iz outboxa čeka u tabeli `notifications`. Da tijelo ostane tamo, ko pročita bazu mogao bi potvrditi tuđi email, a u sljedećem koraku i resetovati tuđu lozinku. Zato tijelo postoji samo dok obavijest čeka slanje: kad je `SENT` ili `FAILED`, tijelo se briše, i to čuva baza (`notifications_tijelo_dok_ceka`). Važi za sve obavijesti, i za one o rezervaciji, jer mi poslan tekst ne treba, a manje ličnih podataka u bazi je bolje. Dok čeka, token je i dalje u bazi, obično manje od 30 sekundi. Kad SMTP ne radi, može čekati do dva i po sata, dok obavijest ne postane `FAILED`.
+
+Link je `APP_URL/potvrda-emaila#token=...`. Dio poslije `#` preglednik ne šalje serveru, pa token ne završi u logovima hostinga frontenda ni u `Referer` zaglavlju. Stranica ga pročita i pošalje na `POST /api/auth/verify-email` u tijelu zahtjeva. Taj endpoint ne traži prijavu, jer se mail često otvori na telefonu gdje korisnik nije prijavljen.
+
+Nalog i prvi mail nastaju u istoj transakciji (`EmailVerificationService.register`), pa nema naloga kojem link nije ni krenuo. Ako mail ne stigne, prijavljen korisnik traži novi (`POST /api/me/email-verification`). Stari linkovi ostaju važeći do svog roka. Za već potvrđen email odgovor je isti (`204`), samo se mail ne šalje. Ograničenje koliko često se smije tražiti novi link dolazi s rate limitingom u Fazi 8.
+
+Nepotvrđen email za sada ništa ne zabranjuje: može se prijaviti i rezervisati. Šta tačno treba zabraniti (npr. prihvatanje pozivnice ili rezervaciju) odlučujem kad dođe frontend i vidim tok.
+

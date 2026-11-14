@@ -28,6 +28,9 @@ public class User {
 	@Column(name = "display_name", nullable = false)
 	private String displayName;
 
+	@Column(name = "email_verified_at")
+	private Instant emailVerifiedAt;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -65,6 +68,17 @@ public class User {
 
 	public Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	// Prva potvrda ostaje: drugi klik na drugi link iz istog dana ne mijenja vrijeme
+	public void verifyEmail(Instant sada) {
+		if (emailVerifiedAt == null) {
+			emailVerifiedAt = sada;
+		}
+	}
+
+	public boolean isEmailVerified() {
+		return emailVerifiedAt != null;
 	}
 
 }

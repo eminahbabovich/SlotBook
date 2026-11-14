@@ -20,6 +20,8 @@ U Fazi 4 član organizacije rezerviše termin koji kalendar nudi (`POST /api/res
 
 U Fazi 5 (u izradi) rezervacija na ručnoj potvrdi čeka providera 24 sata, a najkasnije do početka termina. Pozadinski posao svake minute prebaci isteklu u `EXPIRED` i oslobodi termin, a potvrđenu zatvori (`COMPLETED`) dan poslije kraja termina, da provider stigne označiti nedolazak. Ako posao kasni, nova rezervacija na istom resursu sama oslobodi istekle. Svaka promjena koju neko treba saznati (nova rezervacija na čekanju, potvrda, odbijanje, otkazivanje, istek) upisuje obavijest u tabelu `notifications`, u istoj transakciji kao promjena. Poseban posao svakih 30 sekundi šalje te obavijesti emailom. Ako SMTP ne odgovara, pokušava ponovo poslije 1, 5, 25 i 125 minuta, a poslije petog neuspjeha odustaje i zapiše razlog. Test šalje potvrdu rezervacije kroz pravi SMTP u Mailpit i provjerava naslov, tekst sa č i vrijeme u zoni organizacije. Lokalno se mailovi vide u Mailpitu na http://localhost:8025. Na Renderu SMTP još nije podešen, pa tamo obavijesti padaju i poslije pet pokušaja ostaju `FAILED`. To dolazi u Fazi 12.
 
+Poslije registracije stiže mail s linkom za potvrdu emaila, koji važi 24 sata i može se iskoristiti jednom (`POST /api/auth/verify-email`, token u tijelu). Prijavljen korisnik može zatražiti novi link (`POST /api/me/email-verification`), a `GET /api/me` kaže da li je email potvrđen. Baza čuva samo hash tokena, a tijelo maila se briše čim je poslan. Nepotvrđen email za sada ništa ne zabranjuje. Link vodi na stranicu frontenda (`APP_URL`), koja još ne postoji.
+
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |

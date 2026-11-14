@@ -83,6 +83,7 @@ erDiagram
     bookings ||--o{ booking_events : "historija"
     users ||--o{ booking_events : "promijenio"
     users ||--o{ notifications : "prima"
+    users ||--o{ user_tokens : "linkovi iz maila"
     bookings ||--o{ notifications : "o čemu"
 
     users {
@@ -91,6 +92,15 @@ erDiagram
         varchar password_hash
         varchar display_name
         timestamptz created_at
+        timestamptz email_verified_at
+    }
+    user_tokens {
+        uuid id PK
+        uuid user_id FK
+        varchar type "EMAIL_VERIFY"
+        varchar token_hash UK "SHA-256, ne token"
+        timestamptz expires_at
+        timestamptz used_at
     }
     refresh_tokens {
         uuid id PK

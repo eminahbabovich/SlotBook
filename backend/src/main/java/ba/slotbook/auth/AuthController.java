@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import ba.slotbook.user.UserResponse;
-import ba.slotbook.user.UserService;
 import jakarta.validation.Valid;
 
 @RestController
@@ -23,18 +22,18 @@ public class AuthController {
 
 	static final String REFRESH_KOLACIC = "refresh_token";
 
-	private final UserService userService;
+	private final EmailVerificationService verification;
 	private final AuthService authService;
 
-	public AuthController(UserService userService, AuthService authService) {
-		this.userService = userService;
+	public AuthController(EmailVerificationService verification, AuthService authService) {
+		this.verification = verification;
 		this.authService = authService;
 	}
 
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
 	public UserResponse register(@Valid @RequestBody RegisterRequest request) {
-		return userService.register(request.email(), request.password(), request.displayName());
+		return verification.register(request.email(), request.password(), request.displayName());
 	}
 
 	@PostMapping("/login")

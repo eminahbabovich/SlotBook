@@ -33,10 +33,12 @@ class NotificationTest {
 		assertThat(razmaci).containsExactly(Duration.ofMinutes(1), Duration.ofMinutes(5), Duration.ofMinutes(25),
 				Duration.ofMinutes(125));
 		assertThat(obavijest.getStatus()).isEqualTo(NotificationStatus.PENDING);
+		assertThat(obavijest.getBody()).isEqualTo("Termin je tvoj.");
 
 		obavijest.neuspjela(sada, "MailSendException: Connection refused");
 		assertThat(obavijest.getStatus()).isEqualTo(NotificationStatus.FAILED);
 		assertThat(obavijest.getAttempts()).isEqualTo(5);
+		assertThat(obavijest.getBody()).isNull();
 	}
 
 	@Test
@@ -59,6 +61,7 @@ class NotificationTest {
 		assertThat(obavijest.getSentAt()).isEqualTo(NASTALA.plusSeconds(60));
 		assertThat(obavijest.getLastError()).isNull();
 		assertThat(obavijest.getAttempts()).isEqualTo(2);
+		assertThat(obavijest.getBody()).isNull();
 	}
 
 }

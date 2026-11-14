@@ -128,8 +128,9 @@ class NotificationSenderMailpitTest {
 		assertThat((String) JsonPath.read(poruka, "$.Subject")).isEqualTo("Rezervacija potvrđena: Sto br. 3 u čitaonici");
 		assertThat((String) JsonPath.read(poruka, "$.Text"))
 				.contains("Termin ponedjeljak, 19. novembar 2035. u 09:00 (Sto br. 3 u čitaonici) je tvoj.");
-		assertThat(jdbc.queryForMap("select status, attempts, sent_at from notifications where id = ?",
+		assertThat(jdbc.queryForMap("select status, attempts, sent_at, body from notifications where id = ?",
 				obavijestStudentice())).containsEntry("status", "SENT").containsEntry("attempts", 1)
+				.containsEntry("body", null)
 				.hasEntrySatisfying("sent_at", vrijeme -> assertThat(vrijeme).isNotNull());
 	}
 
