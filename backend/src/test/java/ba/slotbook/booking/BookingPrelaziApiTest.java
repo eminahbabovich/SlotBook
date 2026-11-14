@@ -211,4 +211,37 @@ class BookingPrelaziApiTest {
 		prelaz(selma, rezervacija, "check-in").andExpect(jsonPath("$.status").value("COMPLETED"));
 	}
 
+	// Termin za sat vremena na resursu s rokom od 2 sata. Red se upisuje direktno, jer API ne prima
+	// termine iz prošlosti ni van radnog vremena, a ovdje treba termin blizu sadašnjeg trenutka.
+	private UUID uskoroNaResursuSRokom() throws Exception {
+		UUID resurs = idIz(mockMvc.perform(post("/api/organizations/{id}/resources", katedra)
+				.header("Authorization", "Bearer " + selma)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"name": "Konsultacije %s", "slotMinutes": 60, "cancelNoticeHours": 2}
+						""".formatted(UUID.randomUUID().toString().substring(0, 8)))));
+		UUID rezervacija = UUID.randomUUID();
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at) "
+				+ "values (?, ?, ?, now() + interval '1 hour', now() + interval '2 hours', 'CONFIRMED', now())",
+				rezervacija, resurs, id("hana.prelazi@example.com"));
+		return rezervacija;
+	}
+
+	@Test
+	void studenticaNeMozeOtkazatiPoslijeRoka() throws Exception {
+		UUID rezervacija = uskoroNaResursuSRokom();
+
+		prelaz(hana, rezervacija, "cancel")
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.title").value("Rok za otkazivanje je prošao"))
+				.andExpect(jsonPath("$.rokZaOtkazivanje").exists());
+		assertThat(stanje(rezervacija)).isEqualTo("CONFIRMED");
+	}
+
+	@Test
+	void profesoricaOtkazujeIPoslijeRoka() throws Exception {
+		UUID rezervacija = uskoroNaResursuSRokom();
+
+		prelaz(selma, rezervacija, "cancel").andExpect(jsonPath("$.status").value("CANCELLED"));
+	}
 }

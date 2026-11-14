@@ -28,6 +28,7 @@ import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
 import ba.slotbook.booking.BookingStatus;
 import ba.slotbook.booking.BookingTransitionException;
+import ba.slotbook.booking.CancelDeadlinePassedException;
 import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.NoShowTooEarlyException;
 import ba.slotbook.booking.SlotTakenException;
@@ -139,6 +140,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			case COMPLETED -> "završena";
 			case NO_SHOW -> "označena kao nedolazak";
 		};
+	}
+
+	// Rok ide i kao polje, da ga frontend prikaže u zoni organizacije
+	@ExceptionHandler(CancelDeadlinePassedException.class)
+	ProblemDetail rokZaOtkazivanjeProsao(CancelDeadlinePassedException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ovaj termin se može otkazati najkasnije " + ex.getNoticeHours()
+						+ " h prije početka. Ako ne možeš doći, javi se osobi koja vodi termin.");
+		problem.setTitle("Rok za otkazivanje je prošao");
+		problem.setProperty("rokZaOtkazivanje", ex.getDeadline());
+		return problem;
 	}
 
 	@ExceptionHandler(NoShowTooEarlyException.class)

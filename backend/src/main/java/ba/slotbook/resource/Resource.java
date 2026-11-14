@@ -47,6 +47,9 @@ public class Resource {
 	@Column(name = "auto_confirm", nullable = false)
 	private boolean autoConfirm;
 
+	@Column(name = "cancel_notice_hours", nullable = false)
+	private int cancelNoticeHours;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -57,20 +60,21 @@ public class Resource {
 	}
 
 	Resource(Organization organization, User provider, String name, String description, int slotMinutes,
-			boolean autoConfirm, Instant createdAt) {
+			boolean autoConfirm, int cancelNoticeHours, Instant createdAt) {
 		this.organization = organization;
 		this.provider = provider;
 		this.active = true;
 		this.createdAt = createdAt;
-		update(name, description, slotMinutes, autoConfirm);
+		update(name, description, slotMinutes, autoConfirm, cancelNoticeHours);
 	}
 
-	void update(String name, String description, int slotMinutes, boolean autoConfirm) {
+	void update(String name, String description, int slotMinutes, boolean autoConfirm, int cancelNoticeHours) {
 		this.name = name.strip();
 		// Prazan opis iz forme je isto što i bez opisa, da frontend ne mora razlikovati "" i null
 		this.description = description == null || description.isBlank() ? null : description.strip();
 		this.slotMinutes = slotMinutes;
 		this.autoConfirm = autoConfirm;
+		this.cancelNoticeHours = cancelNoticeHours;
 	}
 
 	void changeProvider(User provider) {
@@ -120,6 +124,10 @@ public class Resource {
 
 	public boolean isAutoConfirm() {
 		return autoConfirm;
+	}
+
+	public int getCancelNoticeHours() {
+		return cancelNoticeHours;
 	}
 
 }

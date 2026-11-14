@@ -34,7 +34,8 @@ public class ResourceController {
 	public ResourceResponse create(@PathVariable UUID id, @AuthenticationPrincipal Jwt token,
 			@Valid @RequestBody ResourceRequest request) {
 		return resourceService.create(id, UUID.fromString(token.getSubject()), request.name(),
-				request.description(), request.slotMinutes(), request.autoConfirm());
+				request.description(), request.slotMinutes(), request.autoConfirm(),
+				request.cancelNoticeHours());
 	}
 
 	// PUT mijenja sva polja koja se uređuju, pa tijelo ima ista pravila kao kod kreiranja
@@ -43,7 +44,7 @@ public class ResourceController {
 	public ResourceResponse update(@PathVariable UUID id, @PathVariable UUID resourceId,
 			@Valid @RequestBody ResourceRequest request) {
 		return resourceService.update(id, resourceId, request.name(), request.description(), request.slotMinutes(),
-				request.autoConfirm());
+				request.autoConfirm(), request.cancelNoticeHours());
 	}
 
 	// Ko vodi resurs određuje samo admin, provider ne može resurs prebaciti na drugoga

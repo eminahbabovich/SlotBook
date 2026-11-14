@@ -79,7 +79,7 @@ class BookingServiceTest {
 	}
 
 	private UUID resurs(String naziv, int minuta, boolean autoConfirm) {
-		UUID id = resourceService.create(citaonica, profesorica, naziv, null, minuta, autoConfirm).id();
+		UUID id = resourceService.create(citaonica, profesorica, naziv, null, minuta, autoConfirm, 0).id();
 		availabilityService.replace(id,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0))));
 		return id;

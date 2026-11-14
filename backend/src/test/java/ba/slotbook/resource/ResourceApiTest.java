@@ -118,16 +118,18 @@ class ResourceApiTest {
 				.andExpect(jsonPath("$.description").doesNotExist())
 				.andExpect(jsonPath("$.slotMinutes").value(60))
 				.andExpect(jsonPath("$.autoConfirm").value(true))
+				.andExpect(jsonPath("$.cancelNoticeHours").value(0))
 				.andExpect(jsonPath("$.active").value(true));
 	}
 
 	@Test
 	void resursNaRucnojPotvrdiToPamtiIIzmjenaToMozeVratiti() throws Exception {
 		String odgovor = napravi(emina, """
-				{"name": "Konsultacije kod trenera", "slotMinutes": 30, "autoConfirm": false}
+				{"name": "Konsultacije kod trenera", "slotMinutes": 30, "autoConfirm": false, "cancelNoticeHours": 24}
 				""")
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.autoConfirm").value(false))
+				.andExpect(jsonPath("$.cancelNoticeHours").value(24))
 				.andReturn().getResponse().getContentAsString();
 		UUID konsultacije = UUID.fromString(JsonPath.read(odgovor, "$.id"));
 
@@ -398,4 +400,12 @@ class ResourceApiTest {
 				.andExpect(jsonPath("$.greske[0].polje").value("slotMinutes"));
 	}
 
+	@Test
+	void rokZaOtkazivanjeDuziOdSedmiceDaje400() throws Exception {
+		napravi(emina, """
+				{"name": "Masaža", "slotMinutes": 60, "cancelNoticeHours": 169}
+				""")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("cancelNoticeHours"));
+	}
 }

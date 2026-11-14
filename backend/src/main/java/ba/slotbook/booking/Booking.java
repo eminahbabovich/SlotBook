@@ -1,5 +1,6 @@
 package ba.slotbook.booking;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -79,6 +80,21 @@ public class Booking {
 			throw new NoShowTooEarlyException();
 		}
 		this.status = novi;
+	}
+
+	// Klijent otkazuje najkasnije onoliko sati prije početka koliko piše na resursu. Tačno na rok
+	// još može, sekundu poslije ne. Prvo se provjerava prelaz, da otkazana rezervacija dobije
+	// poruku da je već otkazana, a ne da je rok prošao.
+	void otkaziKaoKlijent(Instant sada) {
+		if (!status.mozePreciU(BookingStatus.CANCELLED)) {
+			throw new BookingTransitionException(status, BookingStatus.CANCELLED);
+		}
+		int sati = resource.getCancelNoticeHours();
+		Instant rok = startTime.minus(Duration.ofHours(sati));
+		if (sada.isAfter(rok)) {
+			throw new CancelDeadlinePassedException(rok, sati);
+		}
+		prijedi(BookingStatus.CANCELLED, sada);
 	}
 
 	public UUID getId() {

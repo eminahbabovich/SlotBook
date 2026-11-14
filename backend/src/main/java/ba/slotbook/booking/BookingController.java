@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,9 +20,11 @@ import jakarta.validation.Valid;
 public class BookingController {
 
 	private final BookingService bookingService;
+	private final BookingAccess bookingAccess;
 
-	public BookingController(BookingService bookingService) {
+	public BookingController(BookingService bookingService, BookingAccess bookingAccess) {
 		this.bookingService = bookingService;
+		this.bookingAccess = bookingAccess;
 	}
 
 	// Rezerviše ko vidi resurs: član organizacije, a klijent samo na aktivnom resursu
@@ -51,8 +54,10 @@ public class BookingController {
 
 	@PostMapping("/api/bookings/{bookingId}/cancel")
 	@PreAuthorize("@bookingAccess.canCancel(#bookingId, authentication)")
-	public BookingResponse cancel(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token) {
-		return bookingService.changeStatus(bookingId, UUID.fromString(token.getSubject()), BookingStatus.CANCELLED);
+	public BookingResponse cancel(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token,
+			Authentication authentication) {
+		return bookingService.cancel(bookingId, UUID.fromString(token.getSubject()),
+				bookingAccess.canManage(bookingId, authentication));
 	}
 
 	// Klijent je došao. QR check-in iz Faze 10 će ići na isti prelaz.

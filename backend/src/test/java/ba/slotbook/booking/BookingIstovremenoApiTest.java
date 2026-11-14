@@ -72,7 +72,7 @@ class BookingIstovremenoApiTest {
 		UUID profesor = userService.register("edin.istovremeno@example.com", LOZINKA, "Edin").id();
 		UUID katedra = organizationService.create(profesor, "Katedra za softversko inženjerstvo",
 				"katedra-istovremeno", "Europe/Sarajevo").id();
-		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Algoritmi", null, 30, true).id();
+		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Algoritmi", null, 30, true, 0).id();
 		availabilityService.replace(konsultacije,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(12, 0))));
 
@@ -159,7 +159,7 @@ class BookingIstovremenoApiTest {
 		UUID profesor = userService.register("lejla.kljuc@example.com", LOZINKA, "Lejla").id();
 		UUID katedra = organizationService.create(profesor, "Katedra za matematiku", "katedra-kljuc",
 				"Europe/Sarajevo").id();
-		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Analiza", null, 30, true).id();
+		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Analiza", null, 30, true, 0).id();
 		availabilityService.replace(konsultacije,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(12, 0))));
 		UUID student = userService.register("tarik.kljuc@example.com", LOZINKA, "Tarik").id();

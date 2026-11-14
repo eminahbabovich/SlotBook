@@ -21,10 +21,16 @@ public record ResourceRequest(
 		Integer slotMinutes,
 
 		// Ko ne pošalje polje, dobije automatsku potvrdu, i kod PUT-a, kao što opis bez vrijednosti postane prazan
-		Boolean autoConfirm) {
+		Boolean autoConfirm,
+
+		// Bez polja nema roka, klijent otkazuje do početka termina
+		@Min(value = 0, message = "Rok za otkazivanje ne može biti negativan. Za otkazivanje bez roka pošalji 0.")
+		@Max(value = 168, message = "Rok za otkazivanje može biti najviše 168 sati (sedmica).")
+		Integer cancelNoticeHours) {
 
 	public ResourceRequest {
 		autoConfirm = autoConfirm == null ? Boolean.TRUE : autoConfirm;
+		cancelNoticeHours = cancelNoticeHours == null ? 0 : cancelNoticeHours;
 	}
 
 }

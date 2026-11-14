@@ -100,7 +100,26 @@ public class BookingService {
 		BookingStatus stari = rezervacija.getStatus();
 		Instant sada = clock.instant();
 		rezervacija.prijedi(novi, sada);
-		events.save(new BookingEvent(rezervacija, stari, novi, users.getReferenceById(actorId), sada));
+		return zapisi(rezervacija, stari, actorId, sada);
+	}
+
+	// Rok za otkazivanje važi za klijenta. Ko vodi resurs otkazuje i u zadnji čas (bolest, kvar).
+	@Transactional
+	public BookingResponse cancel(UUID bookingId, UUID actorId, boolean vodiResurs) {
+		Booking rezervacija = bookings.findById(bookingId).orElseThrow();
+		BookingStatus stari = rezervacija.getStatus();
+		Instant sada = clock.instant();
+		if (vodiResurs) {
+			rezervacija.prijedi(BookingStatus.CANCELLED, sada);
+		} else {
+			rezervacija.otkaziKaoKlijent(sada);
+		}
+		return zapisi(rezervacija, stari, actorId, sada);
+	}
+
+	private BookingResponse zapisi(Booking rezervacija, BookingStatus stari, UUID actorId, Instant sada) {
+		events.save(new BookingEvent(rezervacija, stari, rezervacija.getStatus(), users.getReferenceById(actorId),
+				sada));
 		return BookingResponse.from(rezervacija);
 	}
 
