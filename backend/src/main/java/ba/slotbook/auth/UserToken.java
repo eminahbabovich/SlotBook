@@ -20,10 +20,6 @@ import jakarta.persistence.Table;
 @Table(name = "user_tokens")
 class UserToken {
 
-	enum Type {
-		EMAIL_VERIFY
-	}
-
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
@@ -34,7 +30,7 @@ class UserToken {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, updatable = false)
-	private Type type;
+	private UserTokenType type;
 
 	@Column(name = "token_hash", nullable = false, updatable = false)
 	private String tokenHash;
@@ -51,7 +47,7 @@ class UserToken {
 	protected UserToken() {
 	}
 
-	UserToken(User user, Type type, String tokenHash, Instant createdAt, Instant expiresAt) {
+	UserToken(User user, UserTokenType type, String tokenHash, Instant createdAt, Instant expiresAt) {
 		this.user = user;
 		this.type = type;
 		this.tokenHash = tokenHash;

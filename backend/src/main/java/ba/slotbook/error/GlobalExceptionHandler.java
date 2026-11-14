@@ -33,7 +33,7 @@ import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.NoShowTooEarlyException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.organization.AlreadyMemberException;
-import ba.slotbook.auth.VerificationTokenException;
+import ba.slotbook.auth.UserTokenException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
@@ -211,17 +211,29 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		return problem;
 	}
 
-	@ExceptionHandler(VerificationTokenException.class)
-	ProblemDetail linkZaPotvrduNeVazi(VerificationTokenException ex) {
-		ProblemDetail problem = switch (ex.getReason()) {
-			case NOT_FOUND -> ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
-					"Link za potvrdu emaila ne postoji. Provjeri da li je kopiran cijeli link iz maila.");
-			case ALREADY_USED -> ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-					"Ovaj link je već iskorišten. Ako email još nije potvrđen, zatraži novi link u profilu.");
-			case EXPIRED -> ProblemDetail.forStatusAndDetail(HttpStatus.GONE,
+	@ExceptionHandler(UserTokenException.class)
+	ProblemDetail linkIzMailaNeVazi(UserTokenException ex) {
+		return switch (ex.getType()) {
+			case EMAIL_VERIFY -> linkNeVazi(ex.getReason(), "Link za potvrdu ne važi",
+					"Link za potvrdu emaila ne postoji. Provjeri da li je kopiran cijeli link iz maila.",
+					"Ovaj link je već iskorišten. Ako email još nije potvrđen, zatraži novi link u profilu.",
 					"Link za potvrdu emaila je istekao. Zatraži novi link u profilu.");
+			// Iskorišten je i kad je lozinka promijenjena drugim, novijim linkom
+			case PASSWORD_RESET -> linkNeVazi(ex.getReason(), "Link za novu lozinku ne važi",
+					"Link za novu lozinku ne postoji. Provjeri da li je kopiran cijeli link iz maila.",
+					"Lozinka je već promijenjena. Prijavi se novom lozinkom ili zatraži novi link.",
+					"Link za novu lozinku je istekao. Zatraži novi link na stranici za prijavu.");
 		};
-		problem.setTitle("Link za potvrdu ne važi");
+	}
+
+	private static ProblemDetail linkNeVazi(UserTokenException.Reason razlog, String naslov, String nePostoji,
+			String iskoristen, String istekao) {
+		ProblemDetail problem = switch (razlog) {
+			case NOT_FOUND -> ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, nePostoji);
+			case ALREADY_USED -> ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, iskoristen);
+			case EXPIRED -> ProblemDetail.forStatusAndDetail(HttpStatus.GONE, istekao);
+		};
+		problem.setTitle(naslov);
 		return problem;
 	}
 

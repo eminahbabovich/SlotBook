@@ -66,6 +66,10 @@ public class User {
 		return displayName;
 	}
 
+	public void changePassword(String passwordHash) {
+		this.passwordHash = passwordHash;
+	}
+
 	public Instant getCreatedAt() {
 		return createdAt;
 	}

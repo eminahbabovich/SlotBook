@@ -8,13 +8,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import ba.slotbook.user.User;
+
 interface UserTokenRepository extends JpaRepository<UserToken, UUID> {
 
-	Optional<UserToken> findByTokenHashAndType(String tokenHash, UserToken.Type type);
+	Optional<UserToken> findByTokenHashAndType(String tokenHash, UserTokenType type);
 
 	// Dva klika u istom trenutku: prvi upiše used_at, drugi čeka zaključan red i onda ne nađe ništa (0)
 	@Modifying
 	@Query("update UserToken t set t.usedAt = :sada where t.id = :id and t.usedAt is null")
 	int markUsed(UUID id, Instant sada);
+
+	@Modifying
+	@Query("update UserToken t set t.usedAt = :sada where t.user = :user and t.type = :type and t.usedAt is null")
+	int markAllUsed(User user, UserTokenType type, Instant sada);
 
 }

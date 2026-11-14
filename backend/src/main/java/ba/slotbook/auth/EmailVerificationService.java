@@ -2,14 +2,12 @@ package ba.slotbook.auth;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ba.slotbook.auth.VerificationTokenException.Reason;
 import ba.slotbook.notification.EmailContent;
 import ba.slotbook.notification.NotificationService;
 import ba.slotbook.notification.NotificationType;
@@ -25,12 +23,12 @@ public class EmailVerificationService {
 
 	private final UserService userService;
 	private final UserRepository users;
-	private final UserTokenRepository tokens;
+	private final UserTokenService tokens;
 	private final NotificationService notifications;
 	private final Clock clock;
 	private final String appUrl;
 
-	public EmailVerificationService(UserService userService, UserRepository users, UserTokenRepository tokens,
+	public EmailVerificationService(UserService userService, UserRepository users, UserTokenService tokens,
 			NotificationService notifications, Clock clock, @Value("${slotbook.app-url}") String appUrl) {
 		this.userService = userService;
 		this.users = users;
@@ -59,26 +57,13 @@ public class EmailVerificationService {
 
 	@Transactional
 	public void verify(String token) {
-		UserToken zapis = tokens.findByTokenHashAndType(RandomToken.sha256(token), UserToken.Type.EMAIL_VERIFY)
-				.orElseThrow(() -> new VerificationTokenException(Reason.NOT_FOUND));
-		Instant sada = clock.instant();
-		if (zapis.isExpired(sada)) {
-			throw new VerificationTokenException(Reason.EXPIRED);
-		}
-		if (tokens.markUsed(zapis.getId(), sada) == 0) {
-			throw new VerificationTokenException(Reason.ALREADY_USED);
-		}
-		zapis.getUser().verifyEmail(sada);
+		tokens.use(token, UserTokenType.EMAIL_VERIFY).verifyEmail(clock.instant());
 	}
 
 	// Token je u fragmentu (#), ne u ?query: preglednik fragment ne šalje serveru, pa ga nema u
 	// logovima ni u Refereru. Stranica u frontendu ga pročita i pošalje na POST /api/auth/verify-email.
 	private void posaljiLink(User user) {
-		String token = RandomToken.generate();
-		Instant sada = clock.instant();
-		tokens.save(new UserToken(user, UserToken.Type.EMAIL_VERIFY, RandomToken.sha256(token), sada,
-				sada.plus(LINK_TRAJE)));
-		String link = appUrl + "/potvrda-emaila#token=" + token;
+		String link = appUrl + "/potvrda-emaila#token=" + tokens.issue(user, UserTokenType.EMAIL_VERIFY, LINK_TRAJE);
 		notifications.enqueue(user.getId(), NotificationType.EMAIL_VERIFICATION, new EmailContent(
 				"Potvrdi email za SlotBook",
 				"Zdravo " + user.getDisplayName() + ",\n\nda potvrdiš da je ovo tvoj email, otvori link:\n" + link

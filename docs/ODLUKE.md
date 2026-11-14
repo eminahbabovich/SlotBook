@@ -404,3 +404,13 @@ Nalog i prvi mail nastaju u istoj transakciji (`EmailVerificationService.registe
 
 Nepotvrđen email za sada ništa ne zabranjuje: može se prijaviti i rezervisati. Šta tačno treba zabraniti (npr. prihvatanje pozivnice ili rezervaciju) odlučujem kad dođe frontend i vidim tok.
 
+## Reset lozinke: isti mehanizam kao potvrda emaila, uz odjavu sa svih uređaja
+
+Link za novu lozinku koristi istu tabelu `user_tokens` i isti token u fragmentu (`/nova-lozinka#token=...`). Logiku za izdavanje i jednokratno iskorištavanje sam izvukao u `UserTokenService`, da potvrda emaila i reset ne ponavljaju isti kod. Tip tokena je dio upita, pa link za potvrdu emaila ne može postaviti lozinku. Test to provjerava.
+
+Link važi sat vremena, a ne 24 kao potvrda emaila, jer daje pristup nalogu. Kad se lozinka promijeni, dešavaju se još tri stvari, u istoj transakciji. Svi ostali neiskorišteni linkovi za reset tog korisnika postaju iskorišteni, inače bi stariji mail iz inboxa mogao ponovo promijeniti lozinku. Svi refresh tokeni korisnika se poništavaju, pa ko je znao staru lozinku ostaje bez sesije. Email se računa kao potvrđen, jer je link stigao baš na njega.
+
+Access token koji je već izdat i dalje važi do 15 minuta. To nisam rješavao, jer bi tražilo provjeru u bazi na svakom zahtjevu, a 15 minuta je ionako rok koji sam prihvatio za odjavu.
+
+`POST /api/auth/password-reset` vraća `204` i za email bez naloga, da se ne može provjeriti ko je registrovan. Za postojeći nalog server upiše token i obavijest, a za nepoznat email samo pročita bazu. Razlika u vremenu odgovora je vjerovatno nekoliko milisekundi. Nisam je mjerio. Kod prijave sam vrijeme izjednačio, jer je tamo razlika bila BCrypt od 100 ms. Ovdje je razlika mala, a i rate limiting iz Faze 8 ograničava koliko pokušaja neko ima. Isti rate limiting treba i da ovaj endpoint ne postane način da se nekome zatrpa inbox.
+

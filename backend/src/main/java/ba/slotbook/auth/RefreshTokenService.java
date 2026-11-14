@@ -72,6 +72,12 @@ public class RefreshTokenService {
 				.ifPresent(token -> tokens.revokeFamily(token.getFamilyId(), clock.instant()));
 	}
 
+	// Poslije nove lozinke: sve sesije na svim uređajima
+	@Transactional
+	public void revokeAllOf(UUID userId) {
+		tokens.revokeAllOf(userId, clock.instant());
+	}
+
 	private Issued issue(UUID userId, UUID familyId) {
 		String refreshToken = RandomToken.generate();
 

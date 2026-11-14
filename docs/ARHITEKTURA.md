@@ -97,7 +97,7 @@ erDiagram
     user_tokens {
         uuid id PK
         uuid user_id FK
-        varchar type "EMAIL_VERIFY"
+        varchar type "EMAIL_VERIFY, PASSWORD_RESET"
         varchar token_hash UK "SHA-256, ne token"
         timestamptz expires_at
         timestamptz used_at

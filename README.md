@@ -22,6 +22,8 @@ U Fazi 5 (u izradi) rezervacija na ručnoj potvrdi čeka providera 24 sata, a na
 
 Poslije registracije stiže mail s linkom za potvrdu emaila, koji važi 24 sata i može se iskoristiti jednom (`POST /api/auth/verify-email`, token u tijelu). Prijavljen korisnik može zatražiti novi link (`POST /api/me/email-verification`), a `GET /api/me` kaže da li je email potvrđen. Baza čuva samo hash tokena, a tijelo maila se briše čim je poslan. Nepotvrđen email za sada ništa ne zabranjuje. Link vodi na stranicu frontenda (`APP_URL`), koja još ne postoji.
 
+Ko zaboravi lozinku, traži link na `POST /api/auth/password-reset`. Odgovor je isti i za email bez naloga, da se ne može provjeriti ko je registrovan. Link važi sat vremena. Nova lozinka se postavlja na `POST /api/auth/password-reset/confirm`, a time prestaju važiti stariji linkovi za reset i sve sesije na svim uređajima.
+
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |
