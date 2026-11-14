@@ -117,7 +117,26 @@ class ResourceApiTest {
 				.andExpect(jsonPath("$.providerId").value(id("emina.resursi@example.com").toString()))
 				.andExpect(jsonPath("$.description").doesNotExist())
 				.andExpect(jsonPath("$.slotMinutes").value(60))
+				.andExpect(jsonPath("$.autoConfirm").value(true))
 				.andExpect(jsonPath("$.active").value(true));
+	}
+
+	@Test
+	void resursNaRucnojPotvrdiToPamtiIIzmjenaToMozeVratiti() throws Exception {
+		String odgovor = napravi(emina, """
+				{"name": "Konsultacije kod trenera", "slotMinutes": 30, "autoConfirm": false}
+				""")
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.autoConfirm").value(false))
+				.andReturn().getResponse().getContentAsString();
+		UUID konsultacije = UUID.fromString(JsonPath.read(odgovor, "$.id"));
+
+		izmijeni(emina, teretana, konsultacije, """
+				{"name": "Konsultacije kod trenera", "slotMinutes": 30, "autoConfirm": true}
+				""")
+				.andExpect(jsonPath("$.autoConfirm").value(true));
+		assertThat(jdbc.queryForObject("select auto_confirm from resources where id = ?", Boolean.class,
+				konsultacije)).isTrue();
 	}
 
 	@Test

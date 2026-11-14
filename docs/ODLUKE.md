@@ -281,3 +281,5 @@ Tabela `bookings` ima `EXCLUDE` constraint s `WHERE (status IN ('PENDING', 'CONF
 Preklapanje se poredi po trenutku, ne po satu iz teksta. `08:30+00` i `09:30+01` su isti trenutak i odbijaju se, za to postoji test.
 
 `client_id` ide na `users`, a ne složenim FK na `organization_members` kao kod providera. Takav FK bi u bazi garantovao da je klijent član organizacije, ali bi `bookings` morao nositi i `organization_id`, a izlazak iz organizacije ne bi mogao obrisati red članstva dok postoje stare rezervacije. Članstvo je pravilo u trenutku rezervacije, pa ga provjerava servis. Za razliku od preklapanja, to nije nešto što mora važiti zauvijek.
+
+Resurs ima `auto_confirm` (V11). Kad ga nema u zahtjevu, uzima se `true`, i kod `POST` i kod `PUT`, isto kao što opis koji nije poslan postane prazan. Postojeći resursi su migracijom ostali na automatskoj potvrdi, jer su do sada tako i radili.

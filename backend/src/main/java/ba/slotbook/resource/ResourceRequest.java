@@ -18,5 +18,13 @@ public record ResourceRequest(
 		@NotNull(message = "Unesi trajanje termina u minutama.")
 		@Min(value = 5, message = "Termin traje najmanje 5 minuta.")
 		@Max(value = 480, message = "Termin traje najviše 480 minuta (8 sati).")
-		Integer slotMinutes) {
+		Integer slotMinutes,
+
+		// Ko ne pošalje polje, dobije automatsku potvrdu, i kod PUT-a, kao što opis bez vrijednosti postane prazan
+		Boolean autoConfirm) {
+
+	public ResourceRequest {
+		autoConfirm = autoConfirm == null ? Boolean.TRUE : autoConfirm;
+	}
+
 }

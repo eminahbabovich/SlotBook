@@ -55,7 +55,7 @@ class AvailabilityIstovremenoTest {
 				Instant.parse("2026-11-13T10:00:00Z")));
 		UUID citaonica = organizationService.create(emir.getId(), "Čitaonica Vijećnica", "citaonica-istovremeno",
 				"Europe/Sarajevo").id();
-		UUID sto = resourceService.create(citaonica, emir.getId(), "Sto 12", null, 60).id();
+		UUID sto = resourceService.create(citaonica, emir.getId(), "Sto 12", null, 60, true).id();
 
 		CountDownLatch start = new CountDownLatch(1);
 		List<Future<String>> rezultati = new ArrayList<>();

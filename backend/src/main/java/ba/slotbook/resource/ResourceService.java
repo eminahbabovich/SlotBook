@@ -36,9 +36,9 @@ public class ResourceService {
 	// organizacije čuva i baza (resources_provider_clan).
 	@Transactional
 	public ResourceResponse create(UUID organizationId, UUID providerId, String name, String description,
-			int slotMinutes) {
+			int slotMinutes, boolean autoConfirm) {
 		Resource resource = resources.save(new Resource(organizationService.getReference(organizationId),
-				users.getReferenceById(providerId), name, description, slotMinutes, clock.instant()));
+				users.getReferenceById(providerId), name, description, slotMinutes, autoConfirm, clock.instant()));
 		return ResourceResponse.from(resource);
 	}
 
@@ -46,10 +46,10 @@ public class ResourceService {
 	// i kad ga korisnik smije uređivati tamo. Izmjenu u bazu upiše Hibernate pri commitu (dirty checking).
 	@Transactional
 	public ResourceResponse update(UUID organizationId, UUID resourceId, String name, String description,
-			int slotMinutes) {
+			int slotMinutes, boolean autoConfirm) {
 		Resource resource = resources.findByIdAndOrganizationId(resourceId, organizationId)
 				.orElseThrow(ResourceNotFoundException::new);
-		resource.update(name, description, slotMinutes);
+		resource.update(name, description, slotMinutes, autoConfirm);
 		return ResourceResponse.from(resource);
 	}
 

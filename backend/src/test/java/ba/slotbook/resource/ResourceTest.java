@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class ResourceTest {
 
 	private Resource resurs(String naziv, String opis) {
-		return new Resource(null, null, naziv, opis, 60, Instant.parse("2026-11-13T10:00:00Z"));
+		return new Resource(null, null, naziv, opis, 60, true, Instant.parse("2026-11-13T10:00:00Z"));
 	}
 
 	@Test
@@ -30,11 +30,12 @@ class ResourceTest {
 	void izmjenaCistiPodatkeKaoIKreiranje() {
 		Resource sala = resurs("Sala 2", "Drugi sprat");
 
-		sala.update(" Sala 3 ", "  ", 45);
+		sala.update(" Sala 3 ", "  ", 45, false);
 
 		assertThat(sala.getName()).isEqualTo("Sala 3");
 		assertThat(sala.getDescription()).isNull();
 		assertThat(sala.getSlotMinutes()).isEqualTo(45);
+		assertThat(sala.isAutoConfirm()).isFalse();
 	}
 
 	@Test
