@@ -70,6 +70,10 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/resources/{resourceId}", """
 					{"name": "Sto za izolaciju", "slotMinutes": 90}
 					"""),
+			// Prije DELETE-a, jer se deaktiviran resurs ne može rezervisati. Trajanje je tada 90 minuta, pa 08:00 odgovara.
+			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/bookings", """
+					{"startTime": "2035-08-06T08:00:00+02:00"}
+					"""),
 			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/resources/{resourceId}", null),
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/resources/{resourceId}/provider", """
 					{"providerId": "{almaId}"}
@@ -122,6 +126,14 @@ class OrganizationIsolationApiTest {
 		organizacija(bojan, "teretana-izolacija");
 		stoCitaonice = stoCitaonice();
 		odmorStola = odmorStola();
+		ponedjeljkomOtvoreno();
+	}
+
+	// Rezervacija traži radno vrijeme, a Almin PUT radnog vremena dolazi u listi tek poslije rezervacije
+	private void ponedjeljkomOtvoreno() {
+		jdbc.update("insert into availability_rules select gen_random_uuid(), ?, 1, '08:00', '20:00' "
+				+ "where not exists (select 1 from availability_rules where resource_id = ?)", stoCitaonice,
+				stoCitaonice);
 	}
 
 	// Almin DELETE ga obriše, pa se pravi ponovo prije svakog testa
@@ -215,6 +227,7 @@ class OrganizationIsolationApiTest {
 		long pravilaPrije = brojPravila();
 		long izuzetakaPrije = brojIzuzetaka();
 		String slikaPrije = kljucSlike();
+		long rezervacijaPrije = brojRezervacija();
 
 		for (Zahtjev zahtjev : ZAHTJEVI) {
 			assertThat(posalji(zahtjev, bojan)).as(zahtjev.ruta()).isEqualTo(403);
@@ -230,6 +243,11 @@ class OrganizationIsolationApiTest {
 		assertThat(brojPravila()).isEqualTo(pravilaPrije);
 		assertThat(brojIzuzetaka()).isEqualTo(izuzetakaPrije);
 		assertThat(kljucSlike()).isEqualTo(slikaPrije);
+		assertThat(brojRezervacija()).isEqualTo(rezervacijaPrije);
+	}
+
+	private long brojRezervacija() {
+		return jdbc.queryForObject("select count(*) from bookings where resource_id = ?", Long.class, stoCitaonice);
 	}
 
 	private String kljucSlike() {

@@ -21,7 +21,7 @@ U Fazi 3 admin ili provider organizacije može napraviti resurs, npr. salu ili t
 | 1 | Temelji i infrastruktura | gotovo |
 | 2 | Auth i organizacije | gotovo |
 | 3 | Resursi i dostupnost, slobodni termini | gotovo |
-| 4 | Rezervacije i konkurentnost | nije počelo |
+| 4 | Rezervacije i konkurentnost | u izradi |
 | 5 | Pozadinski poslovi i email obavijesti | nije počelo |
 | 6 | Statistika | nije počelo |
 | 7 | Frontend (jezgro) | nije počelo |
