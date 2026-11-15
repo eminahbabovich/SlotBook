@@ -3,6 +3,7 @@ package ba.slotbook.stats;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -123,6 +124,68 @@ class StatsApiTest {
 				.header("Authorization", "Bearer " + lejla))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.greske[0].polje").value("to"));
+	}
+
+	@Test
+	void csvSaPopunjenoscuSePreuzimaKaoFajl() throws Exception {
+		mockMvc.perform(get("/api/organizations/{id}/stats" + NOVEMBAR, citaonica)
+				.header("Authorization", "Bearer " + lejla)
+				.accept("text/csv"))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType("text/csv;charset=UTF-8"))
+				.andExpect(header().string("Content-Disposition",
+						"attachment; filename=\"popunjenost-2035-11-01-2035-12-01.csv\""))
+				.andExpect(content().string("﻿Resurs;Zauzeto (min);Ponuđeno (min);Popunjenost (%)\r\n"
+						+ "Sto br. 1;240;840;29\r\n"
+						+ "Sto br. 2;60;480;13\r\n"));
+	}
+
+	// CSV ima svoju metodu u kontroleru, pa i svoj @PreAuthorize koji treba provjeriti
+	@Test
+	void klijentNeMozePreuzetiNiCsv() throws Exception {
+		mockMvc.perform(get("/api/organizations/{id}/stats" + NOVEMBAR, citaonica)
+				.header("Authorization", "Bearer " + emina)
+				.accept("text/csv"))
+				.andExpect(status().isForbidden());
+	}
+
+	// Test izolacije šalje zahtjev bez Accept i pogodi JSON metodu, pa se CSV za tuđu organizaciju
+	// provjerava ovdje. Bojan je admin, ali svoje teretane.
+	@Test
+	void adminDrugeOrganizacijeNeMozePreuzetiCsv() throws Exception {
+		String bojan = token("bojan.statistika@example.com", "Bojan");
+		if (jdbc.queryForList("select id from organizations where slug = 'teretana-statistika'").isEmpty()) {
+			mockMvc.perform(post("/api/organizations")
+					.header("Authorization", "Bearer " + bojan)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{"name": "Teretana za statistiku", "slug": "teretana-statistika", "timezone": "Europe/Sarajevo"}
+							"""))
+					.andExpect(status().isCreated());
+		}
+
+		mockMvc.perform(get("/api/organizations/{id}/stats" + NOVEMBAR, citaonica)
+				.header("Authorization", "Bearer " + bojan)
+				.accept("text/csv"))
+				.andExpect(status().isForbidden());
+	}
+
+	// Bez zaglavlja Accept (curl, stari klijent) i dalje stiže JSON, a ne fajl
+	@Test
+	void bezAcceptZaglavljaStizeJson() throws Exception {
+		mockMvc.perform(get("/api/organizations/{id}/stats" + NOVEMBAR, citaonica)
+				.header("Authorization", "Bearer " + lejla))
+				.andExpect(status().isOk())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+	}
+
+	// Klijent je tražio CSV, a greška je Problem Details u JSON-u. Treba ostati 400, ne 406.
+	@Test
+	void neispravanPeriodZaCsvIDaljeDaje400() throws Exception {
+		mockMvc.perform(get("/api/organizations/{id}/stats?from=2035-01-01&to=2036-01-03", citaonica)
+				.header("Authorization", "Bearer " + lejla)
+				.accept("text/csv"))
+				.andExpect(status().isBadRequest());
 	}
 
 	private UUID novaCitaonica() throws Exception {
