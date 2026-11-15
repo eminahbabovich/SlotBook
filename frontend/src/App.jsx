@@ -10,28 +10,26 @@ const FONTOVI = [
 	{ naziv: 'Big Shoulders Display', familija: 'Big Shoulders Display Variable', velicina: 32, tezina: 700 },
 	{ naziv: 'IBM Plex Sans', familija: 'IBM Plex Sans Variable', velicina: 16, tezina: 400 },
 	{ naziv: 'IBM Plex Mono', familija: 'IBM Plex Mono', velicina: 16, tezina: 400 },
-] as const
-
-type Font = (typeof FONTOVI)[number]
+]
 
 // Slovo koje font nema browser crta rezervnim fontom. Zato se svako slovo izmjeri dvaput,
 // jednom s rezervnim monospace, jednom sa serif. Ako font ima slovo, širina je ista. Ako
 // nema, širine su različite. unicode-range iz CSS-a nije dovoljan dokaz: fajl bez njega
 // se prijavi za sva slova, a u sebi ih nema.
-async function slovaBezFonta(font: Font): Promise<string[]> {
+async function slovaBezFonta(font) {
 	const opis = `${font.tezina} ${font.velicina}px "${font.familija}"`
 	await document.fonts.load(opis, NASA_SLOVA)
 	const platno = document.createElement('canvas').getContext('2d')
 	if (platno === null) return ['canvas nije dostupan']
 
-	const sirina = (slovo: string, rezervni: string) => {
+	const sirina = (slovo, rezervni) => {
 		platno.font = `${opis}, ${rezervni}`
 		return platno.measureText(slovo).width
 	}
 	return [...NASA_SLOVA.replaceAll(' ', '')].filter((slovo) => sirina(slovo, 'monospace') !== sirina(slovo, 'serif'))
 }
 
-function ProbaFonta({ font }: { font: Font }) {
+function ProbaFonta({ font }) {
 	const [rezultat, setRezultat] = useState('provjerava se')
 
 	useEffect(() => {

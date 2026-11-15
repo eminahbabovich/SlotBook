@@ -237,13 +237,14 @@ Ako se radi, radi se prije Faze 13, da završni pregled obuhvati i nju.
 Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda na 375 i
 1280 px i ima učitavanje, prazno stanje, grešku i uspjeh.
 
-1. **Kostur i fontovi.** Vite + React + TypeScript (strogo), tri fonta preko Fontsource,
+1. **Kostur i fontovi.** Vite + React u JavaScriptu (TypeScript ne), tri fonta preko Fontsource,
    provjera da crtaju č, ć, š, đ, ž u browseru. Gotovo 15.11.2026.
 2. **Tokeni i Vitest.** Boje, razmaci, fontovi i zaobljenja iz `DIZAJN.md` kao CSS
    varijable na jednom mjestu, osnovni stilovi, Vitest + Testing Library postavljeni s
    prvim testom.
-3. **API sloj.** `apiFetch`, `ApiError` iz Problem Detailsa, tipovi prvih DTO-ova, Vite
-   proxy na backend. Odluka: TanStack Query ili vlastiti hook, i Zod ili ručna provjera.
+3. **API sloj.** `apiFetch`, `ApiError` iz Problem Detailsa, funkcije za prve endpointe,
+   Vite proxy na backend, testovi koji čuvaju imena polja iz DTO-ova (nema TypeScripta da
+   ih čuva). Odluka: TanStack Query ili vlastiti hook.
 4. **Prijava, registracija i refresh.** Access token u memoriji, refresh kolačić, jedan
    refresh za više paralelnih `401` (test).
 5. **Izbor organizacije i rute.** Router, zaštićene rute po ulozi, izbor organizacije.
