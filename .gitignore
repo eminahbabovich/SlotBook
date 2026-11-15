@@ -50,5 +50,11 @@ pgdata/
 # --- Lokalna uputstva za rad s alatima: ostaju samo na računaru ---
 CLAUDE.md
 
+# --- Graf koda (graphify), pravi se lokalno ---
+graphify-out/
+
+# --- Skillovi za Claude Code: kao i CLAUDE.md, ostaju samo na računaru ---
+.claude/skills/
+
 # --- Slike iz lokalnog skladišta ---
 uploads/

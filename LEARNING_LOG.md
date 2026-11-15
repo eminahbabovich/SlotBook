@@ -76,3 +76,11 @@ Claude je u resetu lozinke pozvao `user.getPasswordChangedAt()`, koja ne postoji
 
 Naslov "Pozivnica u Čitaonica PMF" ne valja jer se naziv ne može deklinirati, pa je sad "Pozivnica na SlotBook: Čitaonica PMF". Za test ponovnog slanja Mailpit je pauziran preko Dockera, i prvi pokušaj je pao s `Exception reading response` poslije pet sekundi, tačno koliko je timeout.
 
+## nedjelja, 15. novembar 2026. u 13:35
+
+Sesija bez nove faze, sređivao sam alate. Instalirao sam graphify da Claude prvo gleda graf koda prije nego što otvara fajlove. Prvi graf nije imao nijednu migraciju: `26 .sql file(s) contributed nothing to the graph because a dependency is missing: tree_sitter_sql`. Sa `graphifyy[sql]` je izašlo 1798 čvorova. rtk nisam instalirao. Nemam ni brew ni cargo, a `cargo install rtk` bi ionako povukao drugi projekat s istim imenom.
+
+Usput je ispao bug iz Faze 4. Handler za nedozvoljen prelaz je radio `setProperty("status", ...)`, a Spring `properties` iz `ProblemDetail` ispisuje na vrh JSON-a preko `@JsonAnyGetter` (provjerio sam `javap` na `spring-web-7.0.10.jar`). Na `409` je u polju `status` stajao `"CANCELLED"`, ne `409`. Test to nije uhvatio jer je potvrđivao baš to: `jsonPath("$.status").value("CANCELLED")`. Kad sam ga promijenio da traži `409`, prvo nije ni krenuo jer Docker nije bio upaljen (`Could not find a valid Docker environment`). Onda je pao s `value <CANCELLED> of type <java.lang.String> cannot be converted to type <java.lang.Integer>`. Polje se sada zove `trenutniStatus`, a svih 307 testova prolazi.
+
+Iznenadilo me da globalni skill u `~/.claude/skills/` pobjeđuje projektni s istim imenom. Zato projektni sada imaju prefiks `slotbook-`.
+
