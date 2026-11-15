@@ -1,5 +1,6 @@
 package ba.slotbook.resource;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +20,11 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 	Page<Resource> findByOrganizationIdAndActiveTrue(UUID organizationId, Pageable pageable);
 
 	Optional<Resource> findByIdAndOrganizationId(UUID id, UUID organizationId);
+
+	// Za statistiku: svi resursi, i deaktivirani, jer su u prošlom periodu možda radili
+	List<Resource> findByOrganizationIdOrderByNameAscIdAsc(UUID organizationId);
+
+	List<Resource> findByOrganizationIdAndProviderIdOrderByNameAscIdAsc(UUID organizationId, UUID providerId);
 
 	// SELECT ... FOR UPDATE: drugi zahtjev koji mijenja isti resurs čeka kraj ove transakcije
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
