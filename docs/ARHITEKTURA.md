@@ -4,11 +4,11 @@ Opis onoga što postoji sada (Faze 1 do 5). Frontend još ne postoji, pa ga ovdj
 
 ## Paketi i slojevi
 
-Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike) i `status`.
+Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, `stats`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike) i `status`.
 
 Unutar paketa je uvijek isti red: kontroler prima zahtjev i provjerava pristup, servis drži pravila i transakciju, repozitorij priča s bazom. Kontroler vraća samo DTO (`record`), nikad entitet. Repozitorij organizacija je vidljiv samo u paketu `organization`, pa paket `resource` do organizacije dolazi preko `OrganizationService`. Isto važi za rezervacije: `BookingRepository` vidi samo paket `booking`.
 
-Zavisnosti idu u jednom smjeru: `booking` zna za `availability` (koji termini se nude), a `availability` ne zna za rezervacije. Zato je `GET /api/resources/{id}/slots` u paketu `booking`: `FreeSlotService` uzme ponuđene termine iz `SlotService` i izbaci zauzete.
+Zavisnosti idu u jednom smjeru: `booking` zna za `availability` (koji termini se nude), a `availability` ne zna za rezervacije. Zato je `GET /api/resources/{id}/slots` u paketu `booking`: `FreeSlotService` uzme ponuđene termine iz `SlotService` i izbaci zauzete. Paket `stats` samo čita: rezervacije broji vlastitim upitima u `StatsRepository` (`Repository<Booking, UUID>`, bez `save` i `delete`), a ponuđene minute za popunjenost uzima iz `SlotService`, da kalendar i statistika imaju istu definiciju radnog vremena. Za `stats` ne zna niko.
 
 ## Tok jednog zahtjeva
 

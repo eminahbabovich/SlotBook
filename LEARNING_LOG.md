@@ -84,3 +84,18 @@ Usput je ispao bug iz Faze 4. Handler za nedozvoljen prelaz je radio `setPropert
 
 Iznenadilo me da globalni skill u `~/.claude/skills/` pobjeđuje projektni s istim imenom. Zato projektni sada imaju prefiks `slotbook-`.
 
+## nedjelja, 15. novembar 2026. u 15:05
+
+Cijela Faza 6 u jednoj sesiji, statistika u devet koraka. Najviše sam naučio na `extract(hour FROM start_time)`. Bez `AT TIME ZONE` radi u zoni konekcije, pa su se dvije srijede u 9:00, jedna prije i jedna poslije 28. oktobra, raspale na 7 i 8 sati. U mutaciji je ponoćni termin u ponedjeljak ispao kao nedjelja u 23 h. `isodow` broji od ponedjeljka kao `java.time`, a obični `dow` od nedjelje kao nule.
+
+Record iz native upita radi direktno u Spring Data JPA 4.1.2. To sam prvo vidio u bytecodu (`isDtoProjection`, `instantiateDto`), a onda u testu. `extract` vraća `numeric`, pa ide `CAST(... AS integer)`, inače konstruktor recorda s `int` ne bi odgovarao.
+
+Za popunjenost sam htio pisati SQL nad radnim vremenom, ali sam uzeo isti `SlotCalculator` koji pravi kalendar. Usput se pokazalo da on vraća samo buduće termine, a statistika gleda prošlost, pa je dobio `allBetween`. Testovi kalkulatora iz Faze 3 su prošli bez izmjene.
+
+`UnfinishedStubbingException` u Mockitu: `mockResursa.getId()` sam pozvao unutar `when(...).thenReturn(...)` za drugi mock. ID sad pravim prije.
+
+Test izolacije nije pokrivao CSV. Šalje zahtjev bez `Accept`, pa uvijek pogodi JSON metodu, a CSV metoda ima svoj `@PreAuthorize`. Dodao sam poseban test s adminom tuđe organizacije.
+
+`EXPLAIN` na 408 hiljada redova je potvrdio sumnju: statistika jedne čitaonice za mjesec je čitala cijelu tabelu, jer je jedini indeks bio parcijalan, onaj iza `EXCLUDE`. S indeksom `(resource_id, start_time)` mjesec je pao s oko 20 na oko 2 ms, a godina se nije pomjerila. Kad sam za godinu zabranio seq scan, indeks je dotakao 20 552 stranice, a cijela tabela ih ima 7 010, pa planer bira dobro. Git Bash mi je `/migracije` u `docker exec` pretvorio u `C:/Program Files/Git/migracije`, pa je trebao `MSYS_NO_PATHCONV=1`.
+
+Pitao sam Claude-a zašto svaki korak traje par minuta. Dogovorili smo se 14.11. da mutacije idu u jednom Maven pokretanju, a on ih je pokretao svaku posebno, oko 18 puta. Cijela suite (2:28) ide sada samo prije pusha.

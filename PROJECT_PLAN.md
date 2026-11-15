@@ -178,7 +178,7 @@ svaki endpoint opisan u Swaggeru.
 | 3 | Resursi i dostupnost | CRUD resursa, sedmična pravila, `time_off`, **algoritam za slobodne termine**, upload slike kroz `StorageService` (lokalno + S3-kompatibilno), paginacija | `java.time` (`Instant`, `ZonedDateTime`, DST), `TIMESTAMPTZ`, interface + dvije implementacije, `MultipartFile` | gotovo |
 | 4 | Rezervacije i konkurentnost | Kreiranje rezervacije, **`EXCLUDE` constraint**, stanja i prelazi, `booking_events`, `Idempotency-Key`, pravilo otkazivanja, `@Version`, **test sa 20 niti** | PostgreSQL range tipovi, transakcije i izolacija, optimistično vs pesimistično zaključavanje, `409 Conflict`, state machine, idempotentnost | gotovo |
 | 5 | Pozadinski poslovi i obavijesti | `@Scheduled` istek `PENDING` i zatvaranje završenih, podsjetnici, `notifications` tabela (outbox), slanje emaila, `@TransactionalEventListener`, ponovni pokušaj s backoffom, verifikacija emaila, reset lozinke, slanje pozivnica, `.ics` prilog u potvrdi | Scheduling, zašto se email ne šalje unutar iste transakcije, `AFTER_COMMIT`, idempotentnost, ShedLock, sigurni tokeni za reset | gotovo |
-| 6 | Statistika | Agregatni upiti (`GROUP BY`, popunjenost, otkazivanja i no-show po periodu, najtraženiji termini dan x sat), endpointi za providera i admina, CSV izvoz | JPQL/native upiti, projekcije u DTO, indeksi i `EXPLAIN` | ⏳ nije počelo |
+| 6 | Statistika | Agregatni upiti (`GROUP BY`, popunjenost, otkazivanja i no-show po periodu, najtraženiji termini dan x sat), endpointi za providera i admina, CSV izvoz | JPQL/native upiti, projekcije u DTO, indeksi i `EXPLAIN` | gotovo |
 | 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | ⏳ nije počelo |
 | 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | ⏳ nije počelo |
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | ⏳ nije počelo |
@@ -380,6 +380,14 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Grupe resursa (npr. "sve sale na drugom spratu") i traženje slobodnog resursa iz grupe
 - Redis za rate limiting i keš kad bi radilo više instanci
 - Praćenje troškova i mjerenje potrošnje besplatnih planova
+
+Otvoreno iz Faze 6 (dug, za pregled u Fazi 13):
+
+- Radno vrijeme i deaktivacija resursa nemaju historiju, pa se popunjenost prošlog perioda računa po sadašnjim pravilima i može preći 100 %.
+- CSV nije ručno otvoren u Excelu: separator `;`, BOM i apostrof ispred formule su po dokumentaciji, ne provjereni.
+- Upiti statistike su mjereni samo lokalno, sve u memoriji. Na Neon-u nisu mjereni, kao ni cijeli zahtjev (2-3 upita po resursu za ponuđene minute) i trošak upisa zbog novog indeksa.
+- Za `400` uz `Accept: text/csv` provjeren je samo status, ne i tijelo greške.
+- Indeks s `INCLUDE (status, end_time)` za godišnji period nije proban.
 
 Otvoreno iz Faze 5 (dug, za pregled u Fazi 13):
 

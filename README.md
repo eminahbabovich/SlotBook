@@ -8,7 +8,7 @@ Ovo je moj drugi projekat nakon [RoomSplita](https://github.com/eminahbabovich/r
 
 ## Status
 
-Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost) i 5 (pozadinski poslovi i email obavijesti) su gotove. Sljedeća je Faza 6, statistika.
+Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost), 5 (pozadinski poslovi i email obavijesti) i 6 (statistika) su gotove. Sljedeća je Faza 7, frontend.
 
 U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 
@@ -26,6 +26,8 @@ Poslije registracije stiže mail s linkom za potvrdu emaila, koji važi 24 sata 
 
 Ko zaboravi lozinku, traži link na `POST /api/auth/password-reset`. Odgovor je isti i za email bez naloga, da se ne može provjeriti ko je registrovan. Link važi sat vremena. Nova lozinka se postavlja na `POST /api/auth/password-reset/confirm`, a time prestaju važiti stariji linkovi za reset i sve sesije na svim uređajima.
 
+U Fazi 6 admin i provider vide statistiku organizacije za period do godinu dana (`GET /api/organizations/{id}/stats?from=2035-11-01&to=2035-12-01`, datumi u zoni organizacije, `to` se ne uključuje). U njoj je broj rezervacija po statusu, najtraženiji termini po danu u sedmici i satu, i popunjenost svakog resursa kao zauzete i ponuđene minute. Admin vidi cijelu organizaciju, provider samo resurse koje vodi, a klijent dobije `403`. Period se gleda po početku termina, a dan i sat po lokalnom vremenu, pa srijeda u 9 ostaje srijeda u 9 i preko prelaska na zimsko vrijeme. Ponuđene minute računa isti kod koji pravi kalendar slobodnih termina. Sa zaglavljem `Accept: text/csv` isti endpoint vraća popunjenost kao CSV za Excel. Kriterij faze dokazuje test koji upiše mjesec rezervacija u čitaonici i poredi cijeli JSON s brojkama koje sam izračunao ručno. Indeks za statistiku sam izmjerio na 408 hiljada rezervacija: za jedan mjesec upit je pao s oko 20 na oko 2 ms, a za cijelu godinu se ništa ne mijenja. Brojke su u [docs/PERFORMANSE.md](docs/PERFORMANSE.md). Radno vrijeme nema historiju, pa se prošli period računa po sadašnjem radnom vremenu. Nisam provjerio da li Render već vrti ovu verziju.
+
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |
@@ -33,7 +35,7 @@ Ko zaboravi lozinku, traži link na `POST /api/auth/password-reset`. Odgovor je 
 | 3 | Resursi i dostupnost, slobodni termini | gotovo |
 | 4 | Rezervacije i konkurentnost | gotovo |
 | 5 | Pozadinski poslovi i email obavijesti | gotovo |
-| 6 | Statistika | nije počelo |
+| 6 | Statistika | gotovo |
 | 7 | Frontend (jezgro) | nije počelo |
 | 8 | Sigurnost i GDPR | nije počelo |
 | 9 | Observability i performanse | nije počelo |
@@ -42,9 +44,9 @@ Ko zaboravi lozinku, traži link na `POST /api/auth/password-reset`. Odgovor je 
 | 12 | Deploy i prezentacija | nije počelo |
 | 13 | Završni pregled i dodaci | nije počelo |
 
-Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), a slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md).
+Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md), a mjerenja u [docs/PERFORMANSE.md](docs/PERFORMANSE.md).
 
-Trenutno ima 307 testova i svi prolaze. JaCoCo mjeri 96,9 % linija glavnog koda (1299 od 1341), izmjereno 14.11.2026. iz jednog čistog pokretanja. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (13): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
+Trenutno ima 334 testa i svi prolaze. JaCoCo mjeri 97,1 % linija glavnog koda (1385 od 1427), izmjereno 15.11.2026. iz jednog čistog pokretanja. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
 
 ## Tehnologije
 
@@ -95,7 +97,7 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 ## Struktura
 
-`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.booking`, `ba.slotbook.resource`...), ne po sloju. `frontend/` još ne postoji, a u `docs/` su `ODLUKE.md` (odluke i zašto) i `ARHITEKTURA.md` (slojevi, tok zahtjeva i model podataka). `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
+`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.booking`, `ba.slotbook.resource`...), ne po sloju. `frontend/` još ne postoji, a u `docs/` su `ODLUKE.md` (odluke i zašto) i `ARHITEKTURA.md` (slojevi, tok zahtjeva i model podataka) i `PERFORMANSE.md` (mjerenja, a SQL skripte za njih su u `docs/mjerenja/`). `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
 
 ## Live demo i screenshotovi
 
