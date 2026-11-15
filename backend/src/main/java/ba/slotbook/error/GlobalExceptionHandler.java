@@ -121,13 +121,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		return problem;
 	}
 
-	// Stanje ide i kao polje, da frontend može osvježiti prikaz bez parsiranja teksta
+	// Stanje ide i kao polje, da frontend može osvježiti prikaz bez parsiranja teksta.
+	// Ne pod imenom "status": properties se ispisuju na vrhu JSON-a (@JsonAnyGetter) i
+	// pregazili bi HTTP status koji Problem Details tu propisuje.
 	@ExceptionHandler(BookingTransitionException.class)
 	ProblemDetail prelazNijeDozvoljen(BookingTransitionException ex) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Ova promjena nije moguća jer je rezervacija " + opis(ex.getFrom()) + ". Osvježi prikaz.");
 		problem.setTitle("Promjena nije moguća");
-		problem.setProperty("status", ex.getFrom());
+		problem.setProperty("trenutniStatus", ex.getFrom());
 		problem.setProperty("trazeniStatus", ex.getTo());
 		return problem;
 	}

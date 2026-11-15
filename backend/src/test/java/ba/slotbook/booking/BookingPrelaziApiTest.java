@@ -201,7 +201,8 @@ class BookingPrelaziApiTest {
 		prelaz(selma, rezervacija, "confirm")
 				.andExpect(status().isConflict())
 				.andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-				.andExpect(jsonPath("$.status").value("CANCELLED"))
+				.andExpect(jsonPath("$.status").value(409))
+				.andExpect(jsonPath("$.trenutniStatus").value("CANCELLED"))
 				.andExpect(jsonPath("$.trazeniStatus").value("CONFIRMED"));
 		assertThat(stanje(rezervacija)).isEqualTo("CANCELLED");
 	}
