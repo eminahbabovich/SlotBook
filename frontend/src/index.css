@@ -10,14 +10,35 @@ body {
 	background: var(--podloga);
 	color: var(--tekst);
 	font-family: var(--font-tekst);
+	font-size: var(--velicina-tekst);
+	line-height: var(--prored-tekst);
 }
 
-/* Uski display font ne ide ispod 24 px. Browser daje h1 32 px i h2 24 px, pa se to
-   za sada ne dira. Ljestvica veličina još nije u DIZAJN.md. */
+/* Uski display font ne ide ispod 24 px, zato h3 ima najmanju veličinu naslova. */
 h1,
-h2 {
+h2,
+h3 {
 	font-family: var(--font-naslov);
 	font-weight: 700;
+	line-height: var(--prored-naslov);
+}
+
+h1 {
+	font-size: var(--velicina-naslov-1);
+}
+
+h2 {
+	font-size: var(--velicina-naslov-2);
+}
+
+h3 {
+	font-size: var(--velicina-naslov-3);
+}
+
+/* Tamni okvir, ne žut: žuta na podlozi ima kontrast 1,61:1, a okvir fokusa treba 3:1. */
+:focus-visible {
+	outline: var(--fokus);
+	outline-offset: var(--fokus-odmak);
 }
 
 /* Vremena i datumi: cifre iste širine, da se 08:00 i 11:00 poravnaju kao polasci. */

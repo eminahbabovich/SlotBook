@@ -6,7 +6,7 @@ Pravilo: boja, font, razmak ili zaobljenje kojeg ovdje nema ne ulazi u UI. Ako n
 
 ## Ideja
 
-Inspiracija je tabla s polascima na stanici i tramvajski red vožnje na stajalištu. Dan je tabla, a termin je jedan red: vrijeme lijevo, tabularnim ciframa, poravnato kao polasci. Linije su jake i horizontalne, a sjena i zaobljenih kartica gotovo nema. Žuta je jedina jaka boja i znači samo jedno: ovo je tvoje, kao istaknut polazak. Jedini izuzetak je okvir fokusa za tastaturu.
+Inspiracija je tabla s polascima na stanici i tramvajski red vožnje na stajalištu. Dan je tabla, a termin je jedan red: vrijeme lijevo, tabularnim ciframa, poravnato kao polasci. Linije su jake i horizontalne, a sjena i zaobljenih kartica gotovo nema. Žuta je jedina jaka boja i znači samo jedno: ovo je tvoje, kao istaknut polazak. Izuzetaka nema, ni za fokus.
 
 ## Boje
 
@@ -17,7 +17,7 @@ Kontrast je računat po WCAG formuli za relativnu luminansu. Svaki par prolazi A
 | `--podloga` | `#F4F1EA` | papir reda vožnje, pozadina svega | |
 | `--tekst` | `#16191D` | tekst, linije, ikone | 15,63 na podlozi |
 | `--tekst-sporedni` | `#5A6069` | datum ispod naslova, napomene | 5,62 na podlozi |
-| `--moje` | `#F2B705` | samo moja rezervacija i fokus | tekst na žutoj 9,70 |
+| `--moje` | `#F2B705` | samo moja rezervacija | tekst na žutoj 9,70 |
 | `--greska` | `#B3261E` | greška i ono što se ne može vratiti | 5,79 na podlozi |
 
 Žuta se ne koristi za dugmad, linkove ni ukras. Ako je žuto, korisnik zna da je to njegov termin.
@@ -30,6 +30,19 @@ U browseru je provjereno 15.11.2026, u Edgeu, na 375 i 1280 px: "Čitaonica PMF,
 
 Uski display font se ne stavlja na duge naslove i ne ide ispod 24 px, jer se na telefonu teško čita.
 
+Veličine teksta (izabrane 15.11.2026). Osnova je 16 px, a ispod 14 px se ne ide:
+
+| Varijabla | Veličina | Font | Gdje |
+|---|---|---|---|
+| `--velicina-sitno` | `14px` | Plex Sans | datum ispod naslova, napomene, oznake "MOJE" i "ČEKA POTVRDU" |
+| `--velicina-tekst` | `16px` | Plex Sans | sav ostali tekst, dugmad, polja forme |
+| `--velicina-vrijeme` | `18px` | Plex Mono | vrijeme u redu termina, da se po njemu traži |
+| `--velicina-naslov-3` | `24px` | Big Shoulders | naslov dana na tabli |
+| `--velicina-naslov-2` | `32px` | Big Shoulders | naslov dijela ekrana |
+| `--velicina-naslov-1` | `40px` | Big Shoulders | naslov ekrana, jedan po ekranu |
+
+Prored je 1,5 za tekst (`--prored-tekst`) i 1,1 za naslove (`--prored-naslov`), jer uski naslov s velikim proredom izgleda kao dva odvojena reda.
+
 ## Razmaci i oblik
 
 Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48). Red termina je visok najmanje 48 px, da se lako pogodi prstom. Zaobljenje je 2 px ili nikakvo. Sjena se ne koristi, a granice prave linije od 1 px (`--tekst` na 20 % ili puna kod naslova dana).
@@ -38,9 +51,11 @@ Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48). Red termina je visok na
 
 Sve vrijednosti su u `frontend/src/tokeni.css`, kao CSS varijable. Boje se zovu kao u tabeli iznad. Fontovi su `--font-naslov`, `--font-tekst` i `--font-brojevi`, razmaci `--razmak-4` do `--razmak-48` (broj je vrijednost u px), a tu su još `--zaobljenje` (2 px), `--linija` (`--tekst` na 20 %) i `--red-min-visina` (48 px). Test `tokeni.test.js` pada kad se boje u `tokeni.css` razlikuju od tabele u ovom fajlu i kad neki drugi fajl u `frontend/src` napiše boju direktno (hex, `rgb()`, `hsl()`).
 
-Ljestvica veličina teksta i prored ovdje još nisu određeni, pa u kodu stoje vrijednosti koje browser daje sam (h1 32 px, h2 24 px).
+Isti test provjerava i veličine teksta: tabela veličina ovdje i `tokeni.css` moraju se slagati, a `font-size` i `fontSize` s brojem van `tokeni.css` obaraju test.
 
-Otvoreno: žuti okvir fokusa na podlozi ima kontrast 1,61:1, a WCAG traži najmanje 3:1 za okvir fokusa. Ostale kontraste iz tabele sam izračunao po istoj formuli i slažu se. Dok se ne odluči kako izgleda fokus, ostaje okvir koji crta browser.
+## Fokus
+
+Fokus je tamni okvir od 3 px u boji `--tekst`, odmaknut 2 px od elementa (`--fokus`, `--fokus-odmak`). Prvo je bio planiran žuti, ali žuta na podlozi ima kontrast 1,61:1, a WCAG traži najmanje 3:1 za okvir fokusa. Tamni ima 15,63:1 na podlozi i 9,70:1 na žutoj traci moje rezervacije, pa se vidi i tamo. Ostale kontraste iz tabele boja sam izračunao po istoj formuli i slažu se.
 
 ## Stanja termina
 
@@ -110,4 +125,4 @@ Prije i poslije:
 
 Za studenticu koja pred ispit traži sto u čitaonici, za profesora koji drži konsultacije i za osobu koja vodi salu u teretani. Niko od njih ne želi provoditi vrijeme u aplikaciji. Žele termin i da znaju da je njihov. Zato aplikacija ne požuruje i ne vara. Otkazivanje se ne skriva, nema odbrojavanja ("još samo 2 termina!") koje nije stvarno, i nema dugmeta za odbijanje koje posramljuje ("Ne, ne treba mi termin").
 
-Pristupačnost je dio poštovanja, ne dodatak: kontrast AA, sve radi tastaturom, fokus je vidljiv (žuti okvir), a čitač ekrana čita cijelu rečenicu ("utorak, 19. novembar, 08:00 do 09:00, slobodno").
+Pristupačnost je dio poštovanja, ne dodatak: kontrast AA, sve radi tastaturom, fokus je vidljiv (tamni okvir), a čitač ekrana čita cijelu rečenicu ("utorak, 19. novembar, 08:00 do 09:00, slobodno").

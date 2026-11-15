@@ -6,31 +6,54 @@ import { describe, expect, test } from 'vitest'
 const SRC = fileURLToPath(new URL('.', import.meta.url))
 const DIZAJN = fileURLToPath(new URL('../../docs/DIZAJN.md', import.meta.url))
 
-function bojeIzTabeleDizajna() {
-	const redovi = readFileSync(DIZAJN, 'utf-8').matchAll(/^\| `(--[a-z-]+)` \| `(#[0-9a-fA-F]{6})` \|/gm)
-	return Object.fromEntries([...redovi].map(([, ime, hex]) => [ime, hex.toLowerCase()]))
+// Redovi tabela u DIZAJN.md: | `--ime` | `vrijednost` | ...
+function izDizajna(uslov) {
+	const redovi = readFileSync(DIZAJN, 'utf-8').matchAll(/^\| `(--[a-z0-9-]+)` \| `([^`]+)` \|/gm)
+	return izdvoji(redovi, uslov)
 }
 
-function bojeIzTokena() {
-	const redovi = readFileSync(join(SRC, 'tokeni.css'), 'utf-8').matchAll(/(--[a-z-]+):\s*(#[0-9a-fA-F]{6});/g)
-	return Object.fromEntries([...redovi].map(([, ime, hex]) => [ime, hex.toLowerCase()]))
+// Redovi u tokeni.css: --ime: vrijednost;
+function izTokena(uslov) {
+	const redovi = readFileSync(join(SRC, 'tokeni.css'), 'utf-8').matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)
+	return izdvoji(redovi, uslov)
 }
 
-describe('boje iz docs/DIZAJN.md', () => {
+function izdvoji(redovi, uslov) {
+	const parovi = [...redovi].map(([, ime, vrijednost]) => [ime, vrijednost.trim().toLowerCase()])
+	return Object.fromEntries(parovi.filter(([ime, vrijednost]) => uslov(ime, vrijednost)))
+}
+
+function fajloviSaDirektnom(uzorak) {
+	const fajlovi = readdirSync(SRC, { recursive: true }).filter(
+		(put) => /\.(css|jsx?)$/.test(put) && !put.endsWith('.test.js') && put !== 'tokeni.css',
+	)
+	expect(fajlovi.length).toBeGreaterThan(0)
+	return fajlovi.filter((put) => uzorak.test(readFileSync(join(SRC, put), 'utf-8')))
+}
+
+const jeBoja = (_ime, vrijednost) => vrijednost.startsWith('#')
+const jeVelicina = (ime) => ime.startsWith('--velicina-')
+
+describe('vrijednosti iz docs/DIZAJN.md', () => {
 	test('tokeni imaju tačno boje iz tabele u DIZAJN.md, ni jednu više ni manje', () => {
-		const izDizajna = bojeIzTabeleDizajna()
+		const boje = izDizajna(jeBoja)
 
-		expect(Object.keys(izDizajna)).toHaveLength(5)
-		expect(bojeIzTokena()).toEqual(izDizajna)
+		expect(Object.keys(boje)).toHaveLength(5)
+		expect(izTokena(jeBoja)).toEqual(boje)
+	})
+
+	test('tokeni imaju tačno veličine teksta iz tabele u DIZAJN.md', () => {
+		const velicine = izDizajna(jeVelicina)
+
+		expect(Object.keys(velicine)).toHaveLength(6)
+		expect(izTokena(jeVelicina)).toEqual(velicine)
 	})
 
 	test('nijedan fajl osim tokeni.css ne piše boju direktno', () => {
-		const fajlovi = readdirSync(SRC, { recursive: true }).filter(
-			(put) => /\.(css|jsx?)$/.test(put) && !put.endsWith('.test.js') && put !== 'tokeni.css',
-		)
-		const sBojom = fajlovi.filter((put) => /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/.test(readFileSync(join(SRC, put), 'utf-8')))
+		expect(fajloviSaDirektnom(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/)).toEqual([])
+	})
 
-		expect(fajlovi.length).toBeGreaterThan(0)
-		expect(sBojom).toEqual([])
+	test('nijedan fajl osim tokeni.css ne piše veličinu teksta brojem', () => {
+		expect(fajloviSaDirektnom(/font-size:\s*\d|fontSize:\s*\d/)).toEqual([])
 	})
 })

@@ -13,6 +13,15 @@
 	--font-tekst: 'IBM Plex Sans Variable', sans-serif;
 	--font-brojevi: 'IBM Plex Mono', monospace;
 
+	--velicina-sitno: 14px;
+	--velicina-tekst: 16px;
+	--velicina-vrijeme: 18px;
+	--velicina-naslov-3: 24px;
+	--velicina-naslov-2: 32px;
+	--velicina-naslov-1: 40px;
+	--prored-tekst: 1.5;
+	--prored-naslov: 1.1;
+
 	--razmak-4: 4px;
 	--razmak-8: 8px;
 	--razmak-12: 12px;
@@ -23,4 +32,7 @@
 
 	--zaobljenje: 2px;
 	--red-min-visina: 48px;
+
+	--fokus: 3px solid var(--tekst);
+	--fokus-odmak: 2px;
 }
