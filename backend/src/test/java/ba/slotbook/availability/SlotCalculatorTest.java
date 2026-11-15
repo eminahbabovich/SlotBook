@@ -110,6 +110,40 @@ class SlotCalculatorTest {
 				.isEqualTo(utc("2026-11-16T07:00:00Z", "2026-11-16T10:00:00Z", "2026-11-16T11:00:00Z"));
 	}
 
+	// Statistika gleda prošli mjesec, pa joj trebaju i termini koji su već prošli
+	@Test
+	void sviTerminiPeriodaUkljucujuIProsle() {
+		var kalkulator = new SlotCalculator(SARAJEVO, List.of(pravilo(MONDAY, "08:00", "10:00")), SAT, List.of());
+		Instant poslijeSvih = Instant.parse("2026-12-01T00:00:00Z");
+
+		assertThat(kalkulator.between(LocalDate.parse("2026-11-16"), LocalDate.parse("2026-11-17"), poslijeSvih))
+				.isEmpty();
+		assertThat(kalkulator.allBetween(LocalDate.parse("2026-11-16"), LocalDate.parse("2026-11-17")))
+				.extracting(TimeRange::start)
+				.isEqualTo(utc("2026-11-16T07:00:00Z", "2026-11-16T08:00:00Z"));
+	}
+
+	// 08:00-10:30 dva puta sedmično, satni termini: po 120 minuta, jer zadnjih pola sata ne stane
+	// termin. Izuzetak zatvara jedan termin, pa ostaje 180.
+	@Test
+	void ponudjeneMinuteSuZbirTerminaBezIzuzetaka() {
+		var kalkulator = new SlotCalculator(SARAJEVO,
+				List.of(pravilo(MONDAY, "08:00", "10:30"), pravilo(DayOfWeek.WEDNESDAY, "08:00", "10:30")), SAT,
+				List.of(izuzetak("2026-11-18T09:00:00+01:00", "2026-11-18T10:00:00+01:00")));
+
+		assertThat(kalkulator.offeredMinutes(LocalDate.parse("2026-11-16"), LocalDate.parse("2026-11-23")))
+				.isEqualTo(180);
+	}
+
+	// Noć vraćanja sata: 00:00-04:00 po zidnom satu je 5 stvarnih sati, pa i 300 ponuđenih minuta
+	@Test
+	void ponudjeneMinuteUNociVracanjaSataSuStvarneMinute() {
+		var kalkulator = new SlotCalculator(SARAJEVO, List.of(pravilo(SUNDAY, "00:00", "04:00")), SAT, List.of());
+
+		assertThat(kalkulator.offeredMinutes(LocalDate.parse("2026-10-25"), LocalDate.parse("2026-10-26")))
+				.isEqualTo(300);
+	}
+
 	// U 09:30 se termin od 09:00 više ne nudi, jer je već počeo
 	@Test
 	void terminKojiJeVecPoceoSeNeNudi() {

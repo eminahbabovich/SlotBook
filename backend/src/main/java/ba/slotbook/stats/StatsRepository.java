@@ -68,4 +68,29 @@ interface StatsRepository extends Repository<Booking, UUID> {
 	List<DayHourCount> countByDayAndHourForProvider(UUID organizationId, UUID providerId, Instant periodOd,
 			Instant periodDo);
 
+	// Brojilac popunjenosti. Zauzeto je ono što je držalo termin do kraja: i nedolazak, jer taj termin
+	// niko drugi nije mogao uzeti. PENDING ne ulazi, jer prošao termin ne smije ostati na čekanju.
+	// Minute iz razlike trenutaka, pa termin preko noći pomjeranja sata traje stvarno vrijeme.
+	@Query(nativeQuery = true, value = """
+			SELECT b.resource_id, CAST(sum(extract(epoch FROM b.end_time - b.start_time)) / 60 AS bigint)
+			FROM bookings b
+			JOIN resources r ON r.id = b.resource_id
+			WHERE r.organization_id = :organizationId
+				AND b.status IN ('CONFIRMED', 'COMPLETED', 'NO_SHOW')
+				AND b.start_time >= :periodOd AND b.start_time < :periodDo
+			GROUP BY b.resource_id""")
+	List<BookedMinutes> bookedMinutes(UUID organizationId, Instant periodOd, Instant periodDo);
+
+	@Query(nativeQuery = true, value = """
+			SELECT b.resource_id, CAST(sum(extract(epoch FROM b.end_time - b.start_time)) / 60 AS bigint)
+			FROM bookings b
+			JOIN resources r ON r.id = b.resource_id
+			WHERE r.organization_id = :organizationId
+				AND r.provider_id = :providerId
+				AND b.status IN ('CONFIRMED', 'COMPLETED', 'NO_SHOW')
+				AND b.start_time >= :periodOd AND b.start_time < :periodDo
+			GROUP BY b.resource_id""")
+	List<BookedMinutes> bookedMinutesForProvider(UUID organizationId, UUID providerId, Instant periodOd,
+			Instant periodDo);
+
 }

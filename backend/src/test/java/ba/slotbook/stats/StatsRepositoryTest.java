@@ -133,6 +133,39 @@ class StatsRepositoryTest {
 						new DayHourCount(4, 14, 1));
 	}
 
+	@Test
+	void zauzeteMinuteBrojeSamoTermineKojiSuDrzaliMjestoIStvarnoTrajanje() {
+		rezervacija(stoBr1, "2035-11-03 09:00+01", "CONFIRMED");
+		rezervacija(stoBr1, "2035-11-04 09:00+01", "COMPLETED");
+		rezervacija(stoBr1, "2035-11-05 09:00+01", "NO_SHOW");
+		// Dva sata za vrijeme ispita: broje se minute, ne rezervacije
+		rezervacija(stoBr1, "2035-11-08 09:00+01", 120, "CONFIRMED");
+		rezervacija(stoBr1, "2035-11-06 09:00+01", "CANCELLED");
+		rezervacija(stoBr1, "2035-11-07 09:00+01", "PENDING");
+		rezervacija(stoBr2, "2035-11-03 09:00+01", "COMPLETED");
+		rezervacija(stoBr2, "2035-11-04 09:00+01", "EXPIRED");
+		rezervacija(stoBr2, "2035-11-05 09:00+01", "REJECTED");
+		rezervacija(stoBr2, "2035-12-01 00:00+01", "CONFIRMED");
+		rezervacija(salaZaJogu, "2035-11-10 18:00+01", "CONFIRMED");
+
+		assertThat(stats.bookedMinutes(citaonica, NOVEMBAR_OD, NOVEMBAR_DO)).containsExactlyInAnyOrder(
+				new BookedMinutes(stoBr1, 300),
+				new BookedMinutes(stoBr2, 60));
+	}
+
+	@Test
+	void providerUZauzetimMinutamaVidiSamoSvojeResurseISamoUTrazenojOrganizaciji() {
+		UUID kabinet = kabinetKodAmre();
+		UUID pilates = pilatesKodSelme();
+
+		rezervacija(stoBr1, "2035-11-07 09:00+01", "CONFIRMED");
+		rezervacija(kabinet, "2035-11-07 09:00+01", "CONFIRMED");
+		rezervacija(pilates, "2035-11-07 09:00+01", "CONFIRMED");
+
+		assertThat(stats.bookedMinutesForProvider(citaonica, selma, NOVEMBAR_OD, NOVEMBAR_DO))
+				.containsExactly(new BookedMinutes(stoBr1, 60));
+	}
+
 	// Druga osoba u istoj čitaonici, s konsultacijama u svom kabinetu
 	private UUID kabinetKodAmre() {
 		UUID amra = korisnik("amra@example.com", "Amra");
@@ -171,9 +204,13 @@ class StatsRepositoryTest {
 	}
 
 	private void rezervacija(UUID resurs, String pocetak, String status) {
+		rezervacija(resurs, pocetak, 60, status);
+	}
+
+	private void rezervacija(UUID resurs, String pocetak, int minuta, String status) {
 		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at, "
-				+ "expires_at) values (gen_random_uuid(), ?, ?, ?::timestamptz, ?::timestamptz + interval '1 hour', "
-				+ "?, now(), ?::timestamptz)", resurs, emina, pocetak, pocetak, status, pocetak);
+				+ "expires_at) values (gen_random_uuid(), ?, ?, ?::timestamptz, ?::timestamptz + make_interval(mins => ?), "
+				+ "?, now(), ?::timestamptz)", resurs, emina, pocetak, pocetak, minuta, status, pocetak);
 	}
 
 }

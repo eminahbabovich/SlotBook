@@ -458,3 +458,16 @@ Cijena: kad dvije instance stvarno rade, istek i podsjetnici rade isti upit dvap
 
 Uz ovo sam dodao dva testa za kriterij Faze 5 koji su do sada bili pokriveni samo posredno. Prvi šalje potvrdu dok je Mailpit pauziran (`docker pause`). Rezervacija nastane, prvi pokušaj padne s `Exception reading response` poslije timeouta od 5 sekundi, a poslije pomjeranja `next_attempt_at` drugi pokušaj stigne u Mailpit (`SENT`, 2 pokušaja). Drugi test provjerava da isti link za novu lozinku drugi put vraća `409`.
 
+## Statistika: period po početku termina, agregati u bazi, popunjenost iz kalendara
+
+Period se gleda po početku termina, ne po trenutku kad je rezervacija napravljena. "Novembar" je ono što se u novembru dešavalo u čitaonici, i to vlasnik sale najčešće pita. Granica je `[od, do)` kao kod termina, pa se dva susjedna mjeseca ne preklapaju. Termin koji počne 31.10. u 23:30 i završi u novembru pripada oktobru.
+
+Brojanje radi baza (`GROUP BY`), a rezultat ide pravo u Java record. Za JPQL je to `select new ...`, a za native upite Spring Data JPA 4.1.2 sam pozove konstruktor recorda po redoslijedu kolona. To sam prvo vidio `javap`-om na `spring-data-jpa-4.1.2.jar` (`isDtoProjection`, `instantiateDto`), a onda u testu. Redoslijed kolona je zato dio ugovora s recordom, a test ga provjerava.
+
+Provider vidi samo resurse koje vodi. Za to su posebne metode (`...ForProvider`), a ne jedan `providerId` koji smije biti `null` i tada znači "sve". Greška u servisu tako može dati premalo podataka, ali ne i tuđe. Organizacija ostaje u uslovu i kod providera, jer isti korisnik može voditi resurse u dvije organizacije. Za svaki upit postoji test u kojem Selma vodi i salu u drugoj organizaciji, a mutacija bez uslova po organizaciji ga obori.
+
+Dan i sat za "najtraženije termine" se računaju s `AT TIME ZONE` i zonom organizacije iz tabele `organizations`. Bez toga `extract` radi u zoni konekcije, pa bi srijeda u 9:00 prije i poslije 28.10.2035. pala u 7 i 8 po UTC-u. Test s te dvije srijede to pokazuje. Traženost broji sve statuse, i otkazane, jer je i taj termin neko htio.
+
+Popunjenost je zauzete minute kroz ponuđene minute. Zauzeto je `CONFIRMED`, `COMPLETED` i `NO_SHOW`. Nedolazak ulazi jer taj termin niko drugi nije mogao uzeti. Ponuđene minute računa isti `SlotCalculator` koji pravi kalendar, a ne poseban SQL nad pravilima. Tako postoji jedna definicija radnog vremena, s već testiranim DST-om i izuzecima. Broje se termini, ne radno vrijeme: 08:00-10:30 sa satnim terminima daje 120 minuta. Kalkulator je zato dobio `allBetween`, koji vraća i prošle termine, a stari `between` ih samo filtrira. Cijena su 2-3 upita po resursu, što ću izmjeriti s većim brojem resursa.
+
+Ograničenje: radno vrijeme i deaktivacija resursa nemaju historiju. Ako admin sredinom mjeseca promijeni radno vrijeme, popunjenost za prvu polovinu se računa po novom. Deaktiviran resurs se i dalje računa po svojim pravilima, jer je u prošlom periodu možda radio, a inače bi imao zauzete minute bez ijedne ponuđene. Popunjenost zato može izaći i preko 100 %, npr. kad se radno vrijeme skrati poslije rezervacija. Ne sječem je na 100 %. Plan je da API vrati obje brojke, a ne samo procenat.

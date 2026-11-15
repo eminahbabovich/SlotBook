@@ -47,19 +47,31 @@ public class SlotService {
 		if (!resurs.isActive()) {
 			return new SlotsResponse(zona.getId(), List.of());
 		}
+		return new SlotsResponse(zona.getId(), kalkulator(resurs, from, to).between(from, to, clock.instant()));
+	}
 
+	// Za popunjenost u statistici. Bez ograničenja od 31 dan, jer period ograničava statistika, i bez
+	// provjere aktivnosti: resurs deaktiviran danas je prošlog mjeseca možda radio, a historiju
+	// aktivacije ni radnog vremena ne čuvamo, pa se računa po pravilima kakva su sada.
+	@Transactional(readOnly = true)
+	public long offeredMinutes(UUID resourceId, LocalDate from, LocalDate to) {
+		Resource resurs = resources.findById(resourceId).orElseThrow(ResourceNotFoundException::new);
+		return kalkulator(resurs, from, to).offeredMinutes(from, to);
+	}
+
+	private SlotCalculator kalkulator(Resource resurs, LocalDate from, LocalDate to) {
+		ZoneId zona = ZoneId.of(resurs.getOrganization().getTimezone());
 		Instant pocetak = from.atStartOfDay(zona).toInstant();
 		Instant kraj = to.atStartOfDay(zona).toInstant();
-		List<TimeRange> izuzeci = timeOffs.findByResourceIdAndStartsAtBeforeAndEndsAtAfter(resourceId, kraj, pocetak)
+		List<TimeRange> izuzeci = timeOffs.findByResourceIdAndStartsAtBeforeAndEndsAtAfter(resurs.getId(), kraj,
+				pocetak)
 				.stream()
 				.map(t -> new TimeRange(t.getStartsAt(), t.getEndsAt()))
 				.toList();
-		List<AvailabilityInterval> pravila = rules.findByResourceId(resourceId).stream()
+		List<AvailabilityInterval> pravila = rules.findByResourceId(resurs.getId()).stream()
 				.map(AvailabilityRule::interval)
 				.toList();
-
-		var kalkulator = new SlotCalculator(zona, pravila, Duration.ofMinutes(resurs.getSlotMinutes()), izuzeci);
-		return new SlotsResponse(zona.getId(), kalkulator.between(from, to, clock.instant()));
+		return new SlotCalculator(zona, pravila, Duration.ofMinutes(resurs.getSlotMinutes()), izuzeci);
 	}
 
 	// Termin s ovim početkom, ako ga kalendar nudi: poravnat na trajanje, u radnom vremenu, izvan
