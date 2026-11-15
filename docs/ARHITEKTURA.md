@@ -8,7 +8,7 @@ Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po slo
 
 Unutar paketa je uvijek isti red: kontroler prima zahtjev i provjerava pristup, servis drži pravila i transakciju, repozitorij priča s bazom. Kontroler vraća samo DTO (`record`), nikad entitet. Repozitorij organizacija je vidljiv samo u paketu `organization`, pa paket `resource` do organizacije dolazi preko `OrganizationService`. Isto važi za rezervacije: `BookingRepository` vidi samo paket `booking`.
 
-Zavisnosti idu u jednom smjeru: `booking` zna za `availability` (koji termini se nude), a `availability` ne zna za rezervacije. Zato je `GET /api/resources/{id}/slots` u paketu `booking`: `FreeSlotService` uzme ponuđene termine iz `SlotService` i izbaci zauzete. Paket `stats` samo čita: rezervacije broji vlastitim upitima u `StatsRepository` (`Repository<Booking, UUID>`, bez `save` i `delete`), a ponuđene minute za popunjenost uzima iz `SlotService`, da kalendar i statistika imaju istu definiciju radnog vremena. Za `stats` ne zna niko.
+Zavisnosti idu u jednom smjeru: `booking` zna za `availability` (koji termini se nude), a `availability` ne zna za rezervacije. Zato je `GET /api/resources/{id}/slots` u paketu `booking`: `FreeSlotService` uzme ponuđene termine iz `SlotService` i podijeli ih na slobodne i zauzete. Paket `stats` samo čita: rezervacije broji vlastitim upitima u `StatsRepository` (`Repository<Booking, UUID>`, bez `save` i `delete`), a ponuđene minute za popunjenost uzima iz `SlotService`, da kalendar i statistika imaju istu definiciju radnog vremena. Za `stats` ne zna niko.
 
 ## Tok jednog zahtjeva
 
@@ -204,7 +204,7 @@ Resurs ne pokazuje na `users` direktno, nego na par (organizacija, korisnik) u `
 
 ## Slobodni termini
 
-Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` ide kroz `FreeSlotService`, koji prvo pita `SlotService`, koji iz baze učita resurs sa zonom organizacije, sedmična pravila i izuzetke koji dodiruju traženi period. Onda sve to preda klasi `SlotCalculator`, koja nema ni Spring ni bazu i samo računa. Trenutno vrijeme dolazi iz `Clock` beana, pa se termini koji su već počeli ne nude. Na kraju `FreeSlotService` izbaci termine koje drži `PENDING` ili `CONFIRMED` rezervacija.
+Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` ide kroz `FreeSlotService`, koji prvo pita `SlotService`, koji iz baze učita resurs sa zonom organizacije, sedmična pravila i izuzetke koji dodiruju traženi period. Onda sve to preda klasi `SlotCalculator`, koja nema ni Spring ni bazu i samo računa. Trenutno vrijeme dolazi iz `Clock` beana, pa se termini koji su već počeli ne nude. Na kraju `FreeSlotService` termine koje drži `PENDING` ili `CONFIRMED` rezervacija prebaci u listu `taken`, a uz svoju rezervaciju korisnik dobije i njen status.
 
 ## Slike i šta dolazi
 

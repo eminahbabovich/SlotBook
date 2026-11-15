@@ -531,3 +531,25 @@ Stranica organizacije je traži u mojoj listi, a ne na `GET /api/organizations/{
 Forma za novu organizaciju predlaže adresu iz naziva ("Čitaonica PMF" postaje `citaonica-pmf`, đ postaje dj) dok je korisnik sam ne promijeni. Zona je padajuća lista gradova iz `Intl.supportedValuesOf('timeZone')`, bez fiksnih pomaka, jer ih backend odbija. Zauzeta adresa (`409`) za sada stoji kao greška cijele forme, ne ispod polja, jer `409` nema listu `greske`.
 
 Svaka zaštita ima test koji pada kad se ona ukloni. Probao sam 7 mutacija i svaku je uhvatio bar jedan test. Jednu na prvi pokušaj nije: kad sam izbacio osvježavanje liste poslije nove organizacije, test je i dalje prolazio, jer je lažni backend odgovarao odmah. Popravio sam test tako da lista namjerno čeka, i tek onda je pao.
+
+## Kalendar vidi i zauzete termine, ali ne čije su
+
+`DIZAJN.md` traži da kalendar razlikuje slobodno, zauzeto, moje i moje na čekanju, a `/slots` je vraćao samo slobodne. Moje rezervacije su postojale na `/api/bookings/mine`, ali taj endpoint nema filter po resursu ni danu i ide po stranicama, pa bi frontend morao vući sve i filtrirati sam. Zato `/slots` sada ima i listu `taken`: `{ start, end, myStatus }`. `myStatus` je `PENDING` ili `CONFIRMED` kad je rezervacija moja, a `null` kad je tuđa. Drugi vide samo da je termin zauzet, ne ko ga drži ni da li čeka potvrdu. Postojeća polja su ista, pa je promjena kompatibilna.
+
+Zauzet termin ima vrijeme ponuđenog termina, ne rezervacije, da kalendar ostane mreža istih dužina. Ako admin promijeni dužinu termina, jedan termin može dodirivati više rezervacija, i tada prednost ima moja, da je ne prikažem kao tuđu. Ovaj slučaj nisam testirao.
+
+Prvi test za rezervaciju na čekanju je ubacivao `PENDING` red direktno u bazu i pao na constraintu `bookings_pending_ima_rok`, jer rezervacija na čekanju mora imati rok za potvrdu. Greška je bila u testu, pa sada rezervaciju pravi kroz API na stolu s `autoConfirm: false`. Kad sam privremeno pustio da status vidi svako, pao je test u kojem Lamija ne smije vidjeti status Hanine rezervacije.
+
+## Kalendar: jedan dan, sedmica u jednom pozivu, vrijeme kroz Intl
+
+Kalendar je i na desktopu jedan dan kao lista, isto kao na telefonu. Sedmična mreža bi tražila drugi raspored i strelice u dvije dimenzije, a jednodnevni prikaz radi svugdje. Mreža je zapisana u Dodacima. Termini se učitavaju za sedam dana odjednom (`from` je prvi dan, `to` osmi), a traka s danima samo bira šta se prikazuje. Tako klik na drugi dan ne čeka mrežu.
+
+Za vrijeme nisam uzeo biblioteku. `Intl.DateTimeFormat` s opcijom `timeZone` pretvara trenutak iz backenda u sat i dan u zoni organizacije, a dan je string `"2035-11-19"`, kao `LocalDate` u Javi. Dani se dodaju u UTC-u, gdje dan uvijek ima 24 sata, pa prelazak na ljetno vrijeme ne preskoči ni duplira dan. Za to postoje testovi preko 25. marta 2035, kad sat skače s 02:00 na 03:00. "Danas" je dan u zoni organizacije i računa se jednom, kad se kalendar otvori. Testovi zamrznu vrijeme na 00:30 po Sarajevu, kad je u UTC-u još prethodni dan. Mutacija koja "danas" ili dan termina računa po UTC-u tada obori test, a prije tog testa nijedna nije.
+
+Prvo sam nazive dana i mjeseci uzimao iz `Intl.DateTimeFormat('bs')`. Testovi su prolazili, jer Node ima puni ICU. U Edgeu 157 je pisalo "M11 19, Mon": jezik `bs` postoji, ali nema podataka. `hr` daje "studenoga", a `sr-Latn` "ponedeljak". Zato su nazivi sada dva niza u `vrijeme.js`, a sat se formatira s `en-GB`, gdje su samo brojevi. Test glumi browser bez bosanskog (zamijeni `Intl` prije uvoza modula) i pao je dok nazivi nisu prebačeni u nizove. Firefox i Safari nisam provjerio.
+
+Oznaka zone ide samo kad bi sat na uređaju bio drugačiji. Moj browser je u `Europe/Zagreb`, koji ima isto vrijeme kao Sarajevo, pa poređenje po imenu zone ne bi imalo smisla.
+
+Izbor termina (klik ili Enter) za sada samo ispiše koji je termin izabran. Potvrda i slanje rezervacije su korak 7. Strelice gore i dolje idu samo kroz slobodne termine, jer su samo oni dugmad. Zauzet ili tuđ termin se ne može izabrati, a čitač ekrana ga pročita kao tekst reda.
+
+Svaka od 8 mutacija (stanja, provjera polja `taken`, danas i dan po UTC-u, strelice, odlazak u prošlost, 12-satni format, dodavanje dana kao 24 sata u lokalnoj zoni) oborila je bar jedan test.

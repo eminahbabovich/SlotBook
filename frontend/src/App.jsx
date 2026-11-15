@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { BrowserRouter, Link, Route, Routes } from 'react-router'
 import { serverNeOdgovara } from './forma/porukaGreske.js'
+import { KalendarResursa } from './kalendar/KalendarResursa.jsx'
 import { Organizacija } from './organizacije/Organizacija.jsx'
 import { Organizacije } from './organizacije/Organizacije.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
@@ -37,6 +38,7 @@ export default function App() {
 							<Route element={<Cuvar za="prijavljene" />}>
 								<Route path="/" element={<Organizacije />} />
 								<Route path="/o/:slug" element={<Organizacija />} />
+								<Route path="/o/:slug/r/:resursId" element={<KalendarResursa />} />
 							</Route>
 							<Route path="*" element={<NePostoji />} />
 						</Routes>

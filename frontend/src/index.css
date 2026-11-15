@@ -88,3 +88,13 @@ time {
 	font-family: var(--font-brojevi);
 	font-variant-numeric: tabular-nums;
 }
+
+/* Tekst samo za čitač ekrana, npr. najava da se termini učitavaju */
+.skriveno {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}

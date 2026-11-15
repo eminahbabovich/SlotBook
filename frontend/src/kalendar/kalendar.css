@@ -1,0 +1,112 @@
+/* Stanja termina iz DIZAJN.md: svako se razlikuje i bez boje (ivica, šrafura, tekst, oznaka). */
+.sedmica {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--razmak-16);
+	margin: var(--razmak-16) 0 var(--razmak-8);
+}
+
+.dani {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: var(--razmak-4);
+	margin-bottom: var(--razmak-24);
+}
+
+/* Dan i broj uvijek u dva reda, da sve kolone na telefonu izgledaju isto */
+.dan {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: var(--red-min-visina);
+	padding: 0;
+	font: inherit;
+	font-size: var(--velicina-sitno);
+	color: var(--tekst);
+	background: transparent;
+	border: 1px solid var(--linija);
+	border-radius: var(--zaobljenje);
+	cursor: pointer;
+}
+
+/* Izabran dan: puna tamna ivica i podebljan tekst, ne samo druga boja */
+.dan[aria-pressed='true'] {
+	border: 3px solid var(--tekst);
+	font-weight: 700;
+}
+
+.termini {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-top: 1px solid var(--tekst);
+}
+
+.termin {
+	border-bottom: 1px solid var(--linija);
+}
+
+.termin-red {
+	box-sizing: border-box;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--razmak-16);
+	width: 100%;
+	min-height: var(--red-min-visina);
+	padding: var(--razmak-8) var(--razmak-12);
+	font: inherit;
+	color: var(--tekst);
+	text-align: left;
+	background: transparent;
+	border: 0;
+}
+
+.termin time {
+	font-size: var(--velicina-vrijeme);
+}
+
+.termin-oznaka {
+	font-size: var(--velicina-sitno);
+}
+
+.termin-slobodno button {
+	cursor: pointer;
+}
+
+.termin-slobodno button:hover time {
+	text-decoration: underline;
+}
+
+.termin-zauzeto .termin-red {
+	color: var(--tekst-sporedni);
+	background: repeating-linear-gradient(135deg, var(--linija) 0 var(--razmak-4), transparent var(--razmak-4) var(--razmak-12));
+}
+
+.termin-zauzeto time {
+	text-decoration: line-through;
+}
+
+.termin-moje .termin-red {
+	background: var(--moje);
+}
+
+.termin-ceka .termin-red {
+	border: 3px dashed var(--moje);
+}
+
+.termin-moje .termin-oznaka,
+.termin-ceka .termin-oznaka {
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.termin-kostur {
+	min-height: var(--red-min-visina);
+}
+
+.prazan-dan,
+.izabran {
+	margin-top: var(--razmak-16);
+}

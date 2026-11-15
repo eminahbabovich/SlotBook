@@ -2,7 +2,9 @@ package ba.slotbook.booking;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -96,12 +98,16 @@ class BookingApiTest {
 
 	// Sto sa satnim terminima, ponedjeljkom od 08 do 12
 	private UUID sto() throws Exception {
+		return sto(true);
+	}
+
+	private UUID sto(boolean autoConfirm) throws Exception {
 		UUID sto = idIz(mockMvc.perform(post("/api/organizations/{id}/resources", citaonica)
 				.header("Authorization", "Bearer " + amila)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-						{"name": "Sto %s", "slotMinutes": 60}
-						""".formatted(UUID.randomUUID().toString().substring(0, 8)))));
+						{"name": "Sto %s", "slotMinutes": 60, "autoConfirm": %s}
+						""".formatted(UUID.randomUUID().toString().substring(0, 8), autoConfirm))));
 		mockMvc.perform(put("/api/resources/{id}/availability", sto)
 				.header("Authorization", "Bearer " + amila)
 				.contentType(MediaType.APPLICATION_JSON)
@@ -191,7 +197,35 @@ class BookingApiTest {
 
 		slobodniTermini(lamija, sto)
 				.andExpect(jsonPath("$.slots[*].start", contains("2035-11-19T07:00:00Z", "2035-11-19T08:00:00Z",
-						"2035-11-19T09:00:00Z", "2035-11-19T10:00:00Z")));
+						"2035-11-19T09:00:00Z", "2035-11-19T10:00:00Z")))
+				.andExpect(jsonPath("$.taken", empty()));
+	}
+
+	// Kalendar mora razlikovati zauzet termin od moje rezervacije. Lamija vidi samo da je termin
+	// zauzet, a ne čiji je ni u kom statusu. Hana vidi da je njen.
+	@Test
+	void zauzetTerminVideSviAliSamoVlasnicaVidiDaJeNjen() throws Exception {
+		UUID sto = sto();
+		rezervisi(hana, sto, "2035-11-19T09:00:00+01:00").andExpect(status().isCreated());
+
+		slobodniTermini(lamija, sto)
+				.andExpect(jsonPath("$.taken[*].start", contains("2035-11-19T08:00:00Z")))
+				.andExpect(jsonPath("$.taken[0].end").value("2035-11-19T09:00:00Z"))
+				.andExpect(jsonPath("$.taken[0].myStatus").value(nullValue()));
+		slobodniTermini(hana, sto)
+				.andExpect(jsonPath("$.taken[*].start", contains("2035-11-19T08:00:00Z")))
+				.andExpect(jsonPath("$.taken[0].myStatus").value("CONFIRMED"));
+	}
+
+	@Test
+	void mojaRezervacijaNaCekanjuJeZauzetaSaStatusomPending() throws Exception {
+		UUID sto = sto(false);
+		rezervisi(hana, sto, "2035-11-19T11:00:00+01:00").andExpect(jsonPath("$.status").value("PENDING"));
+
+		slobodniTermini(hana, sto)
+				.andExpect(jsonPath("$.slots[*].start", not(hasItem("2035-11-19T10:00:00Z"))))
+				.andExpect(jsonPath("$.taken[*].start", contains("2035-11-19T10:00:00Z")))
+				.andExpect(jsonPath("$.taken[0].myStatus").value("PENDING"));
 	}
 
 	// Klijent ne vidi deaktiviran resurs, pa ga ne može ni rezervisati

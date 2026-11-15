@@ -79,3 +79,10 @@
 	text-decoration: underline;
 	cursor: pointer;
 }
+
+/* Isključen prelaz (npr. sedmica prije danas) ne smije izgledati kao link koji radi */
+.dugme-tekst:disabled {
+	color: var(--tekst-sporedni);
+	text-decoration: none;
+	cursor: default;
+}

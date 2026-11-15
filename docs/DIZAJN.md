@@ -59,6 +59,8 @@ Polje ima punu tamnu ivicu od 1 px, jer ivica polja treba kontrast 3:1, a `--lin
 
 Lista organizacija je kao tabla s polascima: red po organizaciji, naziv lijevo, uloga desno sitnijim sivim slovima, tanka linija (`--linija`) između redova i puna tamna linija iznad prvog. Red je visok najmanje `--red-min-visina`, cijeli je link i na hover podvlači naziv. Nema kartica ni sjene.
 
+Kalendar je jedan dan kao lista, i na telefonu i na desktopu. Iznad je traka sa sedam dana (kratki naziv i broj u dva reda), a izabran dan ima tamnu ivicu od 3 px i podebljan tekst. Termin je red visine `--red-min-visina`: vrijeme lijevo u `--font-brojevi` veličine `--velicina-vrijeme`, oznaka stanja desno. Šrafura zauzetog termina je `--linija` pod 135 stepeni, 4 px pruga na svakih 12 px (`--razmak-4`, `--razmak-12`). Moja na čekanju ima isprekidanu žutu ivicu od 3 px. Žuta ivica na podlozi ima kontrast samo 1,61:1, pa stanje ne nosi ivica nego tekst "ČEKA POTVRDU". Isključeno tekst-dugme (npr. "Prethodnih 7 dana" na prvoj sedmici) je sivo i bez podvlake.
+
 Forma je široka najviše `--sirina-forme` (400 px), da red za email na desktopu ne bude preko cijelog ekrana. Tu vrijednost sam potvrdio 15.11.2026, poslije koraka 4 Faze 7.
 
 ## Fokus

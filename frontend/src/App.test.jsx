@@ -1,50 +1,15 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import App from './App.jsx'
 import { postaviToken } from './api/apiFetch.js'
-
-const problem = (status, tijelo) =>
-	new Response(JSON.stringify({ status, ...tijelo }), { status, headers: { 'Content-Type': 'application/problem+json' } })
-const json = (tijelo, status = 200) => new Response(JSON.stringify(tijelo), { status, headers: { 'Content-Type': 'application/json' } })
-
-const HANA = { id: 'u1', email: 'hana@primjer.ba', displayName: 'Hana Šehić', emailVerified: false }
-const CITAONICA = { id: 'o1', name: 'Čitaonica PMF', slug: 'citaonica-pmf', timezone: 'Europe/Sarajevo', role: 'ADMIN' }
-const TERETANA = { id: 'o2', name: 'Teretana Ilidža', slug: 'teretana-ilidza', timezone: 'Europe/Sarajevo', role: 'CLIENT' }
-const BEZ_SESIJE = () => problem(401, { title: 'Sesija je istekla', detail: 'Sesija je istekla ili je prekinuta. Prijavi se ponovo.' })
-const TOKEN = () => json({ accessToken: 'tok', tokenType: 'Bearer', expiresIn: 900 })
-
-// Odgovori po metodi i putanji ("GET /api/me"), ili samo po putanji. Funkcija dobije tijelo
-// zahtjeva i zaglavlja, da test može provjeriti šta je poslano.
-function backend(odgovori) {
-	const fetch = vi.fn(async (putanja, opcije) => {
-		const odgovor = odgovori[`${opcije.method} ${putanja}`] ?? odgovori[putanja]
-		if (odgovor === undefined) throw new Error(`test nema odgovor za ${opcije.method} ${putanja}`)
-		return odgovor(opcije.body === undefined ? undefined : JSON.parse(opcije.body), opcije.headers)
-	})
-	vi.stubGlobal('fetch', fetch)
-	return fetch
-}
-
-const PRIJAVLJENA = {
-	'/api/auth/refresh': TOKEN,
-	'/api/me': () => json(HANA),
-	'/api/me/organizations': () => json([CITAONICA, TERETANA]),
-}
+import { BEZ_SESIJE, CITAONICA, HANA, PRIJAVLJENA, TERETANA, TOKEN, backend, json, otvori, problem, tijelo } from './test/lazniBackend.js'
 
 async function prijaviSe(korisnik, email = 'hana@primjer.ba', lozinka = 'čitaonica1') {
 	await korisnik.type(await screen.findByLabelText('Email'), email)
 	await korisnik.type(screen.getByLabelText('Lozinka'), lozinka)
 	await korisnik.click(screen.getByRole('button', { name: 'Prijavi se' }))
 }
-
-function otvori(adresa) {
-	window.history.pushState({}, '', adresa)
-	render(<App />)
-}
-
-const tijelo = (fetch, kljuc) => JSON.parse(fetch.mock.calls.findLast(([p, o]) => `${o.method} ${p}` === kljuc)[1].body)
 
 beforeEach(() => postaviToken(null))
 afterEach(() => {
@@ -179,7 +144,7 @@ describe('organizacije', () => {
 		await userEvent.setup().click(await screen.findByRole('link', { name: /Čitaonica PMF/ }))
 
 		expect(await screen.findByRole('heading', { name: 'Čitaonica PMF' })).toBeTruthy()
-		expect(screen.getByText(/admin/)).toBeTruthy()
+		expect(screen.getByText('Tvoja uloga: admin.')).toBeTruthy()
 		expect(screen.getByText(/Europe\/Sarajevo/)).toBeTruthy()
 		expect(window.location.pathname).toBe('/o/citaonica-pmf')
 	})

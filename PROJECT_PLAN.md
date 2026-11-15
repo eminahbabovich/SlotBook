@@ -257,7 +257,10 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    još nema rute samo za admina ili providera. Čuvar po ulozi dolazi s prvom takvom rutom
    (korak 9 ili 10). Provjereno s lažnim backendom, s pravim ne.
 6. **Kalendar slobodnih termina.** Dan i lista na telefonu, zona organizacije, dan
-   prelaska na ljetno vrijeme, tastatura, stanja bez boje.
+   prelaska na ljetno vrijeme, tastatura, stanja bez boje. Gotovo 15.11.2026: `/slots`
+   dobio listu `taken` s mojim statusom, kalendar je jedan dan i na desktopu, vrijeme kroz
+   `Intl` i vlastite bosanske nazive. Izbor termina za sada samo kaže koji je termin
+   izabran, potvrda dolazi u koraku 7. Provjereno s lažnim backendom u Edgeu, s pravim ne.
 7. **Tok rezervacije.** Potvrda, `Idempotency-Key` po namjeri, `409` s najbližim
    slobodnim terminom.
 8. **Moje rezervacije i otkazivanje.** Rok za otkazivanje iz odgovora, potvrda prije
@@ -416,6 +419,9 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Grupe resursa (npr. "sve sale na drugom spratu") i traženje slobodnog resursa iz grupe
 - Redis za rate limiting i keš kad bi radilo više instanci
 - Praćenje troškova i mjerenje potrošnje besplatnih planova
+- Sedmična mreža kalendara na desktopu (sada je jedan dan i na telefonu i na desktopu)
+- Broj slobodnih termina ispod svakog dana u traci s danima
+- Strelice lijevo i desno kroz traku s danima (sada samo Tab)
 
 Otvoreno iz Faze 6 (dug, za pregled u Fazi 13):
 
