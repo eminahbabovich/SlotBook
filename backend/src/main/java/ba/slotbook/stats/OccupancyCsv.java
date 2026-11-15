@@ -38,6 +38,11 @@ final class OccupancyCsv {
 	// Naziv unosi korisnik, pa može imati separator, navodnik ili novi red. Tada ide pod navodnike,
 	// a navodnik unutra se udvostruči.
 	private static String polje(String tekst) {
+		// CSV injection: provider bi mogao nazvati resurs =HYPERLINK(...), a Excel bi to kod admina
+		// izvršio kao formulu. Apostrof ispred Excel čita kao "ovo je tekst" i ne prikazuje ga.
+		if (!tekst.isEmpty() && "=+-@\t\r".indexOf(tekst.charAt(0)) >= 0) {
+			tekst = "'" + tekst;
+		}
 		if (tekst.contains(";") || tekst.contains("\"") || tekst.contains("\n") || tekst.contains("\r")) {
 			return "\"" + tekst.replace("\"", "\"\"") + "\"";
 		}

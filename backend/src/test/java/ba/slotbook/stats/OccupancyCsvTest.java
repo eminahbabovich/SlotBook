@@ -32,6 +32,22 @@ class OccupancyCsvTest {
 				"\"Sala \"\"Đulbašta\"\"\";0;60;0");
 	}
 
+	// Excel bi ove nazive izvršio kao formule. Crtica usred naziva (Kabinet 2-14) ostaje kakva jeste.
+	@Test
+	void nazivKojiExcelCitaKaoFormuluDobijaApostrof() {
+		String csv = OccupancyCsv.write(List.of(
+				new ResourceOccupancy(UUID.randomUUID(), "=HYPERLINK(\"http://zlo.example\")", 0, 60),
+				new ResourceOccupancy(UUID.randomUUID(), "@SUM(1)", 0, 60),
+				new ResourceOccupancy(UUID.randomUUID(), "-1 sprat, garaža", 0, 60),
+				new ResourceOccupancy(UUID.randomUUID(), "Kabinet 2-14", 0, 60)));
+
+		assertThat(csv.lines().skip(1).toList()).containsExactly(
+				"\"'=HYPERLINK(\"\"http://zlo.example\"\")\";0;60;0",
+				"'@SUM(1);0;60;0",
+				"'-1 sprat, garaža;0;60;0",
+				"Kabinet 2-14;0;60;0");
+	}
+
 	// Resurs bez radnog vremena: dijeljenje nulom bi dalo NaN ili beskonačno
 	@Test
 	void bezPonudjenihMinutaProcenatOstajePrazan() {
