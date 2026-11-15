@@ -1,0 +1,10 @@
+/* Fontovi iz docs/DIZAJN.md, self-hostani preko Fontsource paketa. */
+@import '@fontsource-variable/big-shoulders-display';
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource/ibm-plex-mono/400.css';
+
+/* Boje, razmaci i fontovi kao CSS varijable dolaze u sljedećem koraku, iz docs/DIZAJN.md. */
+body {
+	margin: 0;
+	padding: 16px;
+}

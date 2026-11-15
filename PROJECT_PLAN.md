@@ -179,7 +179,7 @@ svaki endpoint opisan u Swaggeru.
 | 4 | Rezervacije i konkurentnost | Kreiranje rezervacije, **`EXCLUDE` constraint**, stanja i prelazi, `booking_events`, `Idempotency-Key`, pravilo otkazivanja, `@Version`, **test sa 20 niti** | PostgreSQL range tipovi, transakcije i izolacija, optimistično vs pesimistično zaključavanje, `409 Conflict`, state machine, idempotentnost | gotovo |
 | 5 | Pozadinski poslovi i obavijesti | `@Scheduled` istek `PENDING` i zatvaranje završenih, podsjetnici, `notifications` tabela (outbox), slanje emaila, `@TransactionalEventListener`, ponovni pokušaj s backoffom, verifikacija emaila, reset lozinke, slanje pozivnica, `.ics` prilog u potvrdi | Scheduling, zašto se email ne šalje unutar iste transakcije, `AFTER_COMMIT`, idempotentnost, ShedLock, sigurni tokeni za reset | gotovo |
 | 6 | Statistika | Agregatni upiti (`GROUP BY`, popunjenost, otkazivanja i no-show po periodu, najtraženiji termini dan x sat), endpointi za providera i admina, CSV izvoz | JPQL/native upiti, projekcije u DTO, indeksi i `EXPLAIN` | gotovo |
-| 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | ⏳ nije počelo |
+| 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | u izradi |
 | 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | ⏳ nije počelo |
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | ⏳ nije počelo |
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | ⏳ nije počelo |
@@ -231,6 +231,33 @@ Ako se radi, radi se prije Faze 13, da završni pregled obuhvati i nju.
     izolacija organizacija), što dokazuje integracioni test s mockanim LLM klijentom.
     Testovi prolaze bez API ključa, ključ nije u repou (gitleaks), a timeout LLM-a daje
     prijateljsku poruku umjesto `500`.
+
+## Faza 7 po koracima
+
+Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda na 375 i
+1280 px i ima učitavanje, prazno stanje, grešku i uspjeh.
+
+1. **Kostur i fontovi.** Vite + React + TypeScript (strogo), tri fonta preko Fontsource,
+   provjera da crtaju č, ć, š, đ, ž u browseru. Gotovo 15.11.2026.
+2. **Tokeni i Vitest.** Boje, razmaci, fontovi i zaobljenja iz `DIZAJN.md` kao CSS
+   varijable na jednom mjestu, osnovni stilovi, Vitest + Testing Library postavljeni s
+   prvim testom.
+3. **API sloj.** `apiFetch`, `ApiError` iz Problem Detailsa, tipovi prvih DTO-ova, Vite
+   proxy na backend. Odluka: TanStack Query ili vlastiti hook, i Zod ili ručna provjera.
+4. **Prijava, registracija i refresh.** Access token u memoriji, refresh kolačić, jedan
+   refresh za više paralelnih `401` (test).
+5. **Izbor organizacije i rute.** Router, zaštićene rute po ulozi, izbor organizacije.
+6. **Kalendar slobodnih termina.** Dan i lista na telefonu, zona organizacije, dan
+   prelaska na ljetno vrijeme, tastatura, stanja bez boje.
+7. **Tok rezervacije.** Potvrda, `Idempotency-Key` po namjeri, `409` s najbližim
+   slobodnim terminom.
+8. **Moje rezervacije i otkazivanje.** Rok za otkazivanje iz odgovora, potvrda prije
+   otkazivanja.
+9. **Kalendar providera.** Potvrdi, odbij, nije došao.
+10. **Admin.** Članovi i pozivnice, resursi, radno vrijeme i izuzeci.
+11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz.
+12. **Playwright glavni tok i kraj faze.** Prijava, termin, rezervacija, otkazivanje,
+    konflikt. README, `docs/` i status.
 
 ## Faza 14 po koracima
 

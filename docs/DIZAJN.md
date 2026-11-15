@@ -26,7 +26,7 @@ Kontrast je računat po WCAG formuli za relativnu luminansu. Svaki par prolazi A
 
 `Big Shoulders Display` je za naslove: uzak je, kao natpisi na stanici. `IBM Plex Sans` je za sav tekst, a `IBM Plex Mono` za vremena, datume i brojeve, s tabularnim ciframa, da se 08:00 i 11:00 poravnaju. Svi imaju subset `latin-ext` (č, ć, š, đ, ž), što sam provjerio preko Fontsource API-ja. Self-hostaju se preko Fontsource paketa, ne učitavaju se s Google servera.
 
-Još nije provjereno, i to je prvi zadatak Faze 7: kako "Čitaonica PMF, đački termin, ž" izgleda u browseru u sva tri fonta. Ako neki ne prođe, mijenja se prije bilo čega drugog.
+U browseru je provjereno 15.11.2026, u Edgeu, na 375 i 1280 px: "Čitaonica PMF, đački termin, ž" i sva velika i mala slova č, ć, š, đ, ž crta svaki od tri fonta, a ne rezervni font iz sistema. Probna stranica svako slovo izmjeri preko canvasa dvaput, s rezervnim `monospace` i sa `serif`, pa iste širine znače da slovo dolazi iz našeg fonta. Kad sam Mono privremeno sveo na `latin` subset, a Big Shoulders na nepostojeće ime, oba su pokazala slova koja fale. Kvačice i crtu na đ sam pogledao i okom. Na Firefoxu i Safariju nisam provjerio.
 
 Uski display font se ne stavlja na duge naslove i ne ide ispod 24 px, jer se na telefonu teško čita.
 

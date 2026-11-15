@@ -1,0 +1,68 @@
+import { useEffect, useState } from 'react'
+
+// Privremena stranica za prvi zadatak Faze 7: da li sva tri fonta iz docs/DIZAJN.md
+// stvarno crtaju naša slova u browseru. Zamijenit će je prvi pravi ekran.
+
+const PROBNI_TEKST = 'Čitaonica PMF, đački termin, ž'
+const NASA_SLOVA = 'Č č Ć ć Š š Đ đ Ž ž'
+
+const FONTOVI = [
+	{ naziv: 'Big Shoulders Display', familija: 'Big Shoulders Display Variable', velicina: 32, tezina: 700 },
+	{ naziv: 'IBM Plex Sans', familija: 'IBM Plex Sans Variable', velicina: 16, tezina: 400 },
+	{ naziv: 'IBM Plex Mono', familija: 'IBM Plex Mono', velicina: 16, tezina: 400 },
+] as const
+
+type Font = (typeof FONTOVI)[number]
+
+// Slovo koje font nema browser crta rezervnim fontom. Zato se svako slovo izmjeri dvaput,
+// jednom s rezervnim monospace, jednom sa serif. Ako font ima slovo, širina je ista. Ako
+// nema, širine su različite. unicode-range iz CSS-a nije dovoljan dokaz: fajl bez njega
+// se prijavi za sva slova, a u sebi ih nema.
+async function slovaBezFonta(font: Font): Promise<string[]> {
+	const opis = `${font.tezina} ${font.velicina}px "${font.familija}"`
+	await document.fonts.load(opis, NASA_SLOVA)
+	const platno = document.createElement('canvas').getContext('2d')
+	if (platno === null) return ['canvas nije dostupan']
+
+	const sirina = (slovo: string, rezervni: string) => {
+		platno.font = `${opis}, ${rezervni}`
+		return platno.measureText(slovo).width
+	}
+	return [...NASA_SLOVA.replaceAll(' ', '')].filter((slovo) => sirina(slovo, 'monospace') !== sirina(slovo, 'serif'))
+}
+
+function ProbaFonta({ font }: { font: Font }) {
+	const [rezultat, setRezultat] = useState('provjerava se')
+
+	useEffect(() => {
+		let ugasen = false
+		slovaBezFonta(font).then((fale) => {
+			if (!ugasen) setRezultat(fale.length === 0 ? 'sva slova iz fonta' : `fale: ${fale.join(' ')}`)
+		})
+		return () => {
+			ugasen = true
+		}
+	}, [font])
+
+	const stil = { fontFamily: `"${font.familija}", monospace`, fontSize: font.velicina, fontWeight: font.tezina }
+
+	return (
+		<section>
+			<h2>{font.naziv}</h2>
+			<p style={stil}>{PROBNI_TEKST}</p>
+			<p style={stil}>{NASA_SLOVA}</p>
+			<p data-font={font.naziv}>{rezultat}</p>
+		</section>
+	)
+}
+
+export default function App() {
+	return (
+		<main>
+			<h1>Proba fontova</h1>
+			{FONTOVI.map((font) => (
+				<ProbaFonta key={font.naziv} font={font} />
+			))}
+		</main>
+	)
+}
