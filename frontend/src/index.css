@@ -41,6 +41,29 @@ h3 {
 	outline-offset: var(--fokus-odmak);
 }
 
+h1 {
+	margin: 0 0 var(--razmak-24);
+}
+
+/* Traka s imenom na vrhu, kao natpis iznad table s polascima. */
+.zaglavlje {
+	margin-bottom: var(--razmak-32);
+	border-bottom: 1px solid var(--tekst);
+}
+
+.znak {
+	margin: 0 0 var(--razmak-8);
+	font-family: var(--font-naslov);
+	font-size: var(--velicina-naslov-3);
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.ime-naloga {
+	margin: 0;
+	font-weight: 600;
+}
+
 /* Vremena i datumi: cifre iste širine, da se 08:00 i 11:00 poravnaju kao polasci. */
 time {
 	font-family: var(--font-brojevi);

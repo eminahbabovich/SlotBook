@@ -13,13 +13,11 @@ export async function registracija(ime, email, lozinka) {
 	await prijava(email, lozinka)
 }
 
-// Token se briše i kad poziv ne uspije, da korisnik na ovom računaru sigurno bude odjavljen.
+// Token se briše tek kad server potvrdi odjavu. Refresh kolačić briše samo server, pa bi
+// brisanje tokena bez toga bila lažna odjava: poslije osvježavanja stranice sesija se vrati.
 export async function odjava() {
-	try {
-		await apiFetch('/api/auth/logout', { metoda: 'POST' })
-	} finally {
-		postaviToken(null)
-	}
+	await apiFetch('/api/auth/logout', { metoda: 'POST' })
+	postaviToken(null)
 }
 
 // UserResponse(id, email, displayName, emailVerified) iz GET /api/me.

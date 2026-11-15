@@ -42,7 +42,17 @@ describe('auth', () => {
 		expect(tijelo(fetch, '/api/auth/login')).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1' })
 	})
 
-	test('odjava briše token i kad server ne odgovara', async () => {
+	test('odjava briše token kad je server potvrdi', async () => {
+		const fetch = backend()
+		await prijava('hana@primjer.ba', 'čitaonica1')
+
+		await odjava()
+		await mojNalog()
+
+		expect(fetch.mock.calls.at(-1)[1].headers.Authorization).toBeUndefined()
+	})
+
+	test('kad odjava ne uspije, token ostaje, jer refresh kolačić ostaje u browseru', async () => {
 		const fetch = backend()
 		await prijava('hana@primjer.ba', 'čitaonica1')
 		fetch.mockImplementationOnce(async () => Promise.reject(new TypeError('Failed to fetch')))
@@ -50,7 +60,7 @@ describe('auth', () => {
 		await expect(odjava()).rejects.toMatchObject({ status: 0 })
 		await mojNalog()
 
-		expect(fetch.mock.calls.at(-1)[1].headers.Authorization).toBeUndefined()
+		expect(fetch.mock.calls.at(-1)[1].headers.Authorization).toBe('Bearer tok')
 	})
 
 	test('mojNalog vraća polja koja UI koristi, a bez emailVerified pada glasno', async () => {

@@ -504,4 +504,10 @@ Kad zahtjev s tokenom dobije `401`, `apiFetch` obnovi token i ponovi zahtjev jed
 
 Testovi su u `sesija.test.js`. Kad sam privremeno isključio zajednički refresh, test s tri paralelna `401` je pao, jer su otišla tri refresha. Pala su i ostala četiri pravila kad sam ih isključio jedno po jedno. Jedan test je prvo bio slab: provjeravao je zadnji poziv, a to je s greškom bio refresh, ne zahtjev, pa mutacija nije pala. Ispravio sam ga da gleda zadnji poziv na `/api/me`.
 
+Odjava briše token tek kad backend potvrdi. Prvo sam ga brisao i kad poziv ne uspije, ali refresh kolačić briše samo server. Poslije osvježavanja stranice sesija bi se vratila, pa bi to bila lažna odjava. Sada korisnik vidi "Odjava nije uspjela" i ostaje prijavljen.
+
+Na početku aplikacije `SesijaProvider` pozove `obnoviSesiju`. React u dev modu (`StrictMode`) pokrene efekat dvaput, a oba poziva dobiju isti refresh, pa backend ne vidi dva refresha istim kolačićem. Bez zajedničkog refresha bi se korisnik u dev modu odjavljivao na svako osvježavanje.
+
+Forme imaju `noValidate`, pa browser ne provjerava polja sam. Provjeru radi backend, a njegove poruke (`greske` iz `400`) stoje ispod polja. Tako su sve poruke na bosanskom i na jednom mjestu. Ugrađene poruke browsera bi bile na jeziku sistema. Cijena je jedan zahtjev više kad je polje prazno.
+
 Ograničenje: zajednički refresh radi unutar jednog taba. Dva taba koja u istoj sekundi dobiju `401` i dalje mogu poslati dva refresha i odjaviti korisnika. To nisam riješio.

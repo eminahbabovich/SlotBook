@@ -1,0 +1,80 @@
+.forma {
+	display: grid;
+	gap: var(--razmak-16);
+	max-width: var(--sirina-forme);
+}
+
+.polje label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: var(--razmak-4);
+}
+
+/* Puna tamna ivica: ivica polja treba kontrast 3:1, a --linija (20 %) ga nema. */
+.polje input {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: var(--red-min-visina);
+	padding: 0 var(--razmak-12);
+	font: inherit;
+	color: var(--tekst);
+	background: var(--podloga);
+	border: 1px solid var(--tekst);
+	border-radius: var(--zaobljenje);
+}
+
+/* Neispravno polje se razlikuje i bez boje: deblja ivica i tekst greške ispod. */
+.polje input[aria-invalid='true'] {
+	border: 3px solid var(--greska);
+}
+
+.napomena,
+.greska-polja {
+	font-size: var(--velicina-sitno);
+	margin: var(--razmak-4) 0 0;
+}
+
+.napomena {
+	color: var(--tekst-sporedni);
+}
+
+.greska-polja {
+	color: var(--greska);
+}
+
+.greska-forme {
+	margin: 0;
+	padding: var(--razmak-8) var(--razmak-12);
+	border-left: var(--razmak-4) solid var(--greska);
+}
+
+.dugme {
+	justify-self: start;
+	min-height: var(--red-min-visina);
+	padding: 0 var(--razmak-24);
+	font: inherit;
+	font-weight: 600;
+	color: var(--podloga);
+	background: var(--tekst);
+	border: 1px solid var(--tekst);
+	border-radius: var(--zaobljenje);
+	cursor: pointer;
+}
+
+.dugme:disabled {
+	background: var(--tekst-sporedni);
+	border-color: var(--tekst-sporedni);
+	cursor: wait;
+}
+
+/* Dugme koje izgleda kao link: vodi na drugi ekran, ne šalje podatke. */
+.dugme-tekst {
+	min-height: var(--red-min-visina);
+	padding: 0;
+	font: inherit;
+	color: var(--tekst);
+	background: none;
+	border: none;
+	text-decoration: underline;
+	cursor: pointer;
+}
