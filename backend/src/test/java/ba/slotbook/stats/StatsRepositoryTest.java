@@ -83,13 +83,8 @@ class StatsRepositoryTest {
 
 	@Test
 	void providerVidiSamoSvojeResurseISamoUTrazenojOrganizaciji() {
-		// Druga osoba u istoj čitaonici, s konsultacijama u svom kabinetu
-		UUID amra = korisnik("amra@example.com", "Amra");
-		clan(citaonica, amra);
-		UUID kabinet = resurs(citaonica, amra, "Kabinet 2-14");
-		// Selma vodi i pilates u teretani, pa je provider u dvije organizacije
-		clan(teretana, selma);
-		UUID pilates = resurs(teretana, selma, "Sala za pilates");
+		UUID kabinet = kabinetKodAmre();
+		UUID pilates = pilatesKodSelme();
 
 		rezervacija(stoBr1, "2035-11-03 09:00+01", "CONFIRMED");
 		rezervacija(stoBr2, "2035-11-04 09:00+01", "CONFIRMED");
@@ -102,6 +97,53 @@ class StatsRepositoryTest {
 				.containsExactlyInAnyOrder(
 						new StatusCount(CONFIRMED, 2),
 						new StatusCount(CANCELLED, 1));
+	}
+
+	@Test
+	void danISatSeRacunajuUZoniOrganizacijePrekoKrajaLjetnogVremena() {
+		// Ljetno vrijeme 2035. završava u nedjelju 28.10. Obje srijede su u 9:00 u Sarajevu, a u UTC-u
+		// jedna je u 7:00, druga u 8:00.
+		rezervacija(stoBr1, "2035-10-24 09:00+02", "CONFIRMED");
+		rezervacija(stoBr1, "2035-10-31 09:00+01", "COMPLETED");
+		rezervacija(stoBr2, "2035-10-31 09:00+01", "CANCELLED");
+		// Noćni termin u ispitnom roku: ponedjeljak u 00:30 lokalno je nedjelja 23:30 u UTC-u
+		rezervacija(stoBr1, "2035-10-29 00:30+01", "CONFIRMED");
+		rezervacija(salaZaJogu, "2035-10-31 09:00+01", "CONFIRMED");
+
+		Instant od = OffsetDateTime.parse("2035-10-22T00:00+02:00").toInstant();
+		Instant doo = OffsetDateTime.parse("2035-11-05T00:00+01:00").toInstant();
+
+		assertThat(stats.countByDayAndHour(citaonica, od, doo)).containsExactly(
+				new DayHourCount(1, 0, 1),
+				new DayHourCount(3, 9, 3));
+	}
+
+	@Test
+	void providerUDanuISatuVidiSamoSvojeResurseISamoUTrazenojOrganizaciji() {
+		UUID kabinet = kabinetKodAmre();
+		UUID pilates = pilatesKodSelme();
+
+		rezervacija(stoBr1, "2035-11-07 09:00+01", "CONFIRMED");
+		rezervacija(stoBr2, "2035-11-08 14:00+01", "PENDING");
+		rezervacija(kabinet, "2035-11-07 09:00+01", "CONFIRMED");
+		rezervacija(pilates, "2035-11-07 09:00+01", "CONFIRMED");
+
+		assertThat(stats.countByDayAndHourForProvider(citaonica, selma, NOVEMBAR_OD, NOVEMBAR_DO)).containsExactly(
+						new DayHourCount(3, 9, 1),
+						new DayHourCount(4, 14, 1));
+	}
+
+	// Druga osoba u istoj čitaonici, s konsultacijama u svom kabinetu
+	private UUID kabinetKodAmre() {
+		UUID amra = korisnik("amra@example.com", "Amra");
+		clan(citaonica, amra);
+		return resurs(citaonica, amra, "Kabinet 2-14");
+	}
+
+	// Selma vodi i pilates u teretani, pa je provider u dvije organizacije
+	private UUID pilatesKodSelme() {
+		clan(teretana, selma);
+		return resurs(teretana, selma, "Sala za pilates");
 	}
 
 	private void clan(UUID organizacija, UUID korisnik) {

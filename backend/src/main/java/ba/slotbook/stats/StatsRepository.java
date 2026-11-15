@@ -36,4 +36,36 @@ interface StatsRepository extends Repository<Booking, UUID> {
 	List<StatusCount> countByStatusForProvider(UUID organizationId, UUID providerId, Instant periodOd,
 			Instant periodDo);
 
+	// Native, jer JPQL nema AT TIME ZONE. Dan i sat se izvlače u zoni organizacije, inače bi termin
+	// u 9:00 ljeti pao u 7 po UTC-u, a zimi u 8, i ista navika bi se raspala na dva sata. Broje se svi
+	// statusi: i otkazan termin je neko htio. CAST jer extract vraća numeric, a record traži int.
+	@Query(nativeQuery = true, value = """
+			SELECT CAST(extract(isodow FROM b.start_time AT TIME ZONE o.timezone) AS integer) AS dan,
+				CAST(extract(hour FROM b.start_time AT TIME ZONE o.timezone) AS integer) AS sat,
+				count(*) AS broj
+			FROM bookings b
+			JOIN resources r ON r.id = b.resource_id
+			JOIN organizations o ON o.id = r.organization_id
+			WHERE r.organization_id = :organizationId
+				AND b.start_time >= :periodOd AND b.start_time < :periodDo
+			GROUP BY dan, sat
+			ORDER BY dan, sat""")
+	List<DayHourCount> countByDayAndHour(UUID organizationId, Instant periodOd, Instant periodDo);
+
+	// Isto, samo resursi koje provider vodi, iz istog razloga kao countByStatusForProvider
+	@Query(nativeQuery = true, value = """
+			SELECT CAST(extract(isodow FROM b.start_time AT TIME ZONE o.timezone) AS integer) AS dan,
+				CAST(extract(hour FROM b.start_time AT TIME ZONE o.timezone) AS integer) AS sat,
+				count(*) AS broj
+			FROM bookings b
+			JOIN resources r ON r.id = b.resource_id
+			JOIN organizations o ON o.id = r.organization_id
+			WHERE r.organization_id = :organizationId
+				AND r.provider_id = :providerId
+				AND b.start_time >= :periodOd AND b.start_time < :periodDo
+			GROUP BY dan, sat
+			ORDER BY dan, sat""")
+	List<DayHourCount> countByDayAndHourForProvider(UUID organizationId, UUID providerId, Instant periodOd,
+			Instant periodDo);
+
 }
