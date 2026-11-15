@@ -110,3 +110,37 @@
 .izabran {
 	margin-top: var(--razmak-16);
 }
+
+/* Potvrda je red ispod izabranog termina, s punom tamnom ivicom lijevo, kao greška forme,
+   samo tamna: "ovo je pitanje za tebe", ne nova kartica. */
+.termin-potvrda {
+	padding: var(--razmak-16) 0 var(--razmak-16) var(--razmak-16);
+	border-left: var(--razmak-4) solid var(--tekst);
+	border-bottom: 1px solid var(--linija);
+}
+
+.potvrda {
+	display: grid;
+	gap: var(--razmak-12);
+}
+
+.potvrda-pitanje {
+	margin: 0;
+	font-weight: 600;
+}
+
+.potvrda-dugmad {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--razmak-8) var(--razmak-24);
+}
+
+.poruka-rezervacije:empty {
+	display: none;
+}
+
+.poruka-rezervacije {
+	margin-top: var(--razmak-16);
+	font-weight: 600;
+}

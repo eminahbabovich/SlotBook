@@ -262,7 +262,9 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    `Intl` i vlastite bosanske nazive. Izbor termina za sada samo kaže koji je termin
    izabran, potvrda dolazi u koraku 7. Provjereno s lažnim backendom u Edgeu, s pravim ne.
 7. **Tok rezervacije.** Potvrda, `Idempotency-Key` po namjeri, `409` s najbližim
-   slobodnim terminom.
+   slobodnim terminom. Gotovo 15.11.2026: potvrda ispod termina, ključ kad se termin
+   izabere, najbliži slobodan iz učitane sedmice (frontend, bez promjene backenda).
+   Provjereno s lažnim backendom u Edgeu, s pravim ne.
 8. **Moje rezervacije i otkazivanje.** Rok za otkazivanje iz odgovora, potvrda prije
    otkazivanja.
 9. **Kalendar providera.** Potvrdi, odbij, nije došao.

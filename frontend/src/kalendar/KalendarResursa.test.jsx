@@ -69,7 +69,7 @@ test('četiri stanja termina se razlikuju i tekstom, ne samo bojom', async () =>
 	expect(screen.getAllByRole('button', { name: /slobodno$/ })).toHaveLength(2)
 })
 
-test('strelice idu kroz slobodne termine, a Enter bira termin', async () => {
+test('strelice idu kroz slobodne termine, a Enter otvara potvrdu za termin', async () => {
 	backend({ ...PRIJAVLJENA, ...RESURSI, ...KALENDAR })
 	otvori('/o/citaonica-pmf/r/r1')
 	const korisnik = userEvent.setup()
@@ -79,7 +79,7 @@ test('strelice idu kroz slobodne termine, a Enter bira termin', async () => {
 	expect(document.activeElement.getAttribute('aria-label')).toMatch(/12:00 do 13:00, slobodno/)
 	await korisnik.keyboard('{ArrowUp}{Enter}')
 
-	expect(screen.getByRole('status').textContent).toMatch(/Izabran termin: ponedjeljak, 19. novembar, 08:00 do 09:00/)
+	expect(screen.getByRole('group', { name: 'Rezervisati ponedjeljak, 19. novembar, 08:00 do 09:00?' })).toBeTruthy()
 })
 
 test('dan bez termina kaže to i vodi na prvi dan sedmice sa slobodnim terminom', async () => {

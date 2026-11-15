@@ -553,3 +553,13 @@ Oznaka zone ide samo kad bi sat na uređaju bio drugačiji. Moj browser je u `Eu
 Izbor termina (klik ili Enter) za sada samo ispiše koji je termin izabran. Potvrda i slanje rezervacije su korak 7. Strelice gore i dolje idu samo kroz slobodne termine, jer su samo oni dugmad. Zauzet ili tuđ termin se ne može izabrati, a čitač ekrana ga pročita kao tekst reda.
 
 Svaka od 8 mutacija (stanja, provjera polja `taken`, danas i dan po UTC-u, strelice, odlazak u prošlost, 12-satni format, dodavanje dana kao 24 sata u lokalnoj zoni) oborila je bar jedan test.
+
+## Rezervacija iz kalendara: ključ po namjeri, najbliži slobodan na frontendu
+
+`Idempotency-Key` nastaje kad korisnik izabere termin (`crypto.randomUUID()`), a ne pri kliku na "Rezerviši". Dupli klik i "Pokušaj ponovo" poslije pada mreže zato nose isti ključ, pa backend ne napravi drugu rezervaciju, nego vrati prvu. Kad mreža pukne, ne znamo da li je zahtjev stigao, i poruka to kaže: "Nije jasno da li je rezervacija stigla... ako je stigla, neće se napraviti dvaput." Drugi termin je nova namjera i dobija novi ključ. Dok se zahtjev šalje, dugme je isključeno.
+
+Na `409` backend vraća samo poruku. Najbliži slobodan termin računam na frontendu, iz sedmice koja je već učitana: termin se odmah u kešu označi kao zauzet (`setQueryData`), kalendar se učita ponovo, a ponuda se računa iz onoga što je u kešu. Drugi put je bio polje u odgovoru na `409`, ali to bi značilo računati termine u obradi greške i mijenjati ugovor. Cijena ovog rješenja je da se najbliži traži samo u učitanih 7 dana. Ako ih nema, poruka to kaže. Kod istog razmaka prednost ima kasniji termin, jer je raniji možda već prošao dok korisnik čita poruku.
+
+Potvrda nije modal, nego red ispod termina. Na telefonu se vidi odmah, a fokus i dalje ide gdje treba: na "Rezerviši" kad se potvrda otvori, nazad na termin poslije "Odustani" ili Esc, i na poruku poslije uspjeha, jer dugme nestaje zajedno s potvrdom. Native `<dialog>` bih uzeo za pravi modal, ali jsdom u testovima nema `showModal`, a modal nije ni trebao.
+
+Testovi lažnim backendom koji pamti termine provjeravaju ključ (UUID, isti poslije pada mreže, drugi za drugi termin), jedan zahtjev na dupli klik, termin zauzet odmah poslije `409` dok nova lista namjerno čeka, i fokus. Probao sam 7 mutacija i svaku je uhvatio jedan test. Jednu sam prvi put napisao tako da je pokvarila sintaksu, pa se testovi nisu ni pokrenuli. To se ne računa, i ponovio sam je ispravno.

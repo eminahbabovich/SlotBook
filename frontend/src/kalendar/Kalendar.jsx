@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { kalendarResursa } from '../api/termini.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from '../vrijeme/vrijeme.js'
+import { opisTermina, opisTrenutka } from './opis.js'
+import { Potvrda } from './Potvrda.jsx'
 
 const PORUKE = {
 	serverNeOdgovara: 'Termini se nisu učitali, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -20,23 +22,54 @@ export function Kalendar({ resursId, zona }) {
 	const [danas] = useState(() => danUZoni(new Date(), zona))
 	const [pocetak, setPocetak] = useState(danas)
 	const [dan, setDan] = useState(danas)
+	// { termin, kljuc }: ključ nastaje kad korisnik izabere termin, jednom po namjeri
 	const [izabran, setIzabran] = useState(null)
+	const [poruka, setPoruka] = useState(null)
+	const lista = useRef(null)
+	const porukaRef = useRef(null)
 	const dani = sedmicaOd(pocetak)
+	const kljucKalendara = ['kalendar', resursId, pocetak]
 
 	const { data, isPending, isError, error, refetch } = useQuery({
-		queryKey: ['kalendar', resursId, pocetak],
+		queryKey: kljucKalendara,
 		queryFn: () => kalendarResursa(resursId, pocetak, dodajDane(pocetak, 7)),
 	})
 
 	function izaberiDan(novi) {
 		setDan(novi)
 		setIzabran(null)
+		setPoruka(null)
 	}
 
 	function pomjeriSedmicu(smjer) {
 		const novi = dodajDane(pocetak, 7 * smjer)
 		setPocetak(novi)
 		izaberiDan(novi)
+	}
+
+	function izaberiTermin(termin) {
+		setDan(danUZoni(termin.pocetak, zona))
+		setIzabran({ termin, kljuc: crypto.randomUUID() })
+		setPoruka(null)
+	}
+
+	// Fokus se vraća na termin s kojeg je potvrda otvorena, da tastatura ne krene od vrha stranice
+	function odustani() {
+		const pocetakTermina = izabran.termin.pocetak
+		setIzabran(null)
+		lista.current?.querySelector(`button[data-pocetak="${pocetakTermina}"]`)?.focus()
+	}
+
+	function uspjeh(rezervacija) {
+		const termin = opisTermina(izabran.termin, zona)
+		setIzabran(null)
+		setPoruka(
+			rezervacija.status === 'PENDING'
+				? `Zahtjev je poslan, a termin ${termin} čeka potvrdu.${rezervacija.rokPotvrde ? ` Rok za potvrdu: ${opisTrenutka(rezervacija.rokPotvrde, zona)}.` : ''}`
+				: `Termin je tvoj: ${termin}.`,
+		)
+		// Dugme "Rezerviši" nestaje s potvrdom, pa fokus ide na poruku, ne na vrh stranice
+		porukaRef.current?.focus()
 	}
 
 	return (
@@ -68,18 +101,42 @@ export function Kalendar({ resursId, zona }) {
 
 			{isPending && <Ucitavanje />}
 			{isError && <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />}
-			{data && <Dan dan={dan} dani={dani} kalendar={data} naIzborDana={izaberiDan} naIzborTermina={setIzabran} />}
-
-			{izabran && (
-				<p role="status" className="izabran">
-					Izabran termin: {opisTermina(izabran, data.zona)}. Rezervacija iz kalendara još ne radi.
-				</p>
+			{data && (
+				<Dan
+					dan={dan}
+					dani={dani}
+					kalendar={data}
+					lista={lista}
+					naIzborDana={izaberiDan}
+					naIzborTermina={izaberiTermin}
+					potvrda={
+						izabran && (
+							<Potvrda
+								key={izabran.kljuc}
+								resursId={resursId}
+								kljucKalendara={kljucKalendara}
+								termin={izabran.termin}
+								kljuc={izabran.kljuc}
+								zona={zona}
+								termini={data.termini}
+								naOdustani={odustani}
+								naIzbor={izaberiTermin}
+								naUspjeh={uspjeh}
+							/>
+						)
+					}
+					izabran={izabran?.termin}
+				/>
 			)}
+
+			<p role="status" className="poruka-rezervacije" ref={porukaRef} tabIndex={-1}>
+				{poruka}
+			</p>
 		</div>
 	)
 }
 
-function Dan({ dan, dani, kalendar, naIzborDana, naIzborTermina }) {
+function Dan({ dan, dani, kalendar, lista, naIzborDana, naIzborTermina, potvrda, izabran }) {
 	const { zona, termini } = kalendar
 	const zaDan = termini.filter((t) => danUZoni(t.pocetak, zona) === dan)
 
@@ -105,21 +162,38 @@ function Dan({ dan, dani, kalendar, naIzborDana, naIzborTermina }) {
 			{zonaUredjajaRazlicita(zaDan.map((t) => t.pocetak), zona) && (
 				<p className="napomena-blok">Vremena su po zoni {zona}, a tvoj uređaj je u drugoj zoni.</p>
 			)}
-			<ul className="termini" aria-label={`Termini, ${nazivDana(dan)}`} onKeyDown={strelice}>
+			<ul className="termini" aria-label={`Termini, ${nazivDana(dan)}`} onKeyDown={strelice} ref={lista}>
 				{zaDan.map((t) => (
-					<li key={t.pocetak} className={`termin termin-${t.stanje}`}>
-						{t.stanje === 'slobodno' ? (
-							<button type="button" className="termin-red" aria-label={`${opisTermina(t, zona)}, slobodno`} onClick={() => naIzborTermina(t)}>
-								<Sadrzaj termin={t} zona={zona} />
-							</button>
-						) : (
-							<div className="termin-red">
-								<Sadrzaj termin={t} zona={zona} />
-							</div>
-						)}
-					</li>
+					<Red key={t.pocetak} termin={t} zona={zona} naIzbor={naIzborTermina} potvrda={t.pocetak === izabran?.pocetak && potvrda} />
 				))}
 			</ul>
+		</>
+	)
+}
+
+// Potvrda ide u svoj red odmah ispod termina, da se na telefonu vidi bez skrolanja
+function Red({ termin, zona, naIzbor, potvrda }) {
+	return (
+		<>
+			<li className={`termin termin-${termin.stanje}`}>
+				{termin.stanje === 'slobodno' ? (
+					<button
+						type="button"
+						className="termin-red"
+						data-pocetak={termin.pocetak}
+						aria-label={`${opisTermina(termin, zona)}, slobodno`}
+						aria-expanded={Boolean(potvrda)}
+						onClick={() => naIzbor(termin)}
+					>
+						<Sadrzaj termin={termin} zona={zona} />
+					</button>
+				) : (
+					<div className="termin-red">
+						<Sadrzaj termin={termin} zona={zona} />
+					</div>
+				)}
+			</li>
+			{potvrda && <li className="termin-potvrda">{potvrda}</li>}
 		</>
 	)
 }
@@ -135,15 +209,10 @@ function Sadrzaj({ termin, zona }) {
 	)
 }
 
-// "ponedjeljak, 19. novembar, 08:00 do 09:00": cijela rečenica za čitač ekrana.
-function opisTermina(termin, zona) {
-	return `${nazivDana(danUZoni(termin.pocetak, zona))}, ${satUZoni(termin.pocetak, zona)} do ${satUZoni(termin.kraj, zona)}`
-}
-
 // Gore i dolje idu kroz slobodne termine (samo su oni dugmad), Home i End na prvi i zadnji.
 // Tab i dalje radi, strelice su samo brži put kroz dug dan.
 function strelice(dogadjaj) {
-	const dugmad = [...dogadjaj.currentTarget.querySelectorAll('button')]
+	const dugmad = [...dogadjaj.currentTarget.querySelectorAll('button[data-pocetak]')]
 	const trenutno = dugmad.indexOf(document.activeElement)
 	const novo = { ArrowDown: trenutno + 1, ArrowUp: trenutno - 1, Home: 0, End: dugmad.length - 1 }[dogadjaj.key]
 	if (trenutno === -1 || novo === undefined || dugmad[novo] === undefined) return
