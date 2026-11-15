@@ -243,12 +243,14 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    varijable na jednom mjestu, osnovni stilovi, Vitest s prvim testom (boje u kodu su
    tačno one iz `DIZAJN.md`). Testing Library dolazi s prvim testom komponente. Gotovo
    15.11.2026.
-3. **API sloj.** `apiFetch`, `ApiError` iz Problem Detailsa, funkcije za prve endpointe,
-   Vite proxy na backend, testovi koji čuvaju imena polja iz DTO-ova (nema TypeScripta da
-   ih čuva). Odluka: TanStack Query ili vlastiti hook.
+3. **API sloj.** `apiFetch`, `ApiError` iz Problem Detailsa, prva funkcija
+   (`getStatus`), Vite proxy na backend, testovi koji čuvaju imena polja iz DTO-ova
+   (nema TypeScripta da ih čuva). Gotovo 15.11.2026. Odluka TanStack Query ili vlastiti
+   hook je pomjerena u korak 5, gdje prvi ekran učitava podatke.
 4. **Prijava, registracija i refresh.** Access token u memoriji, refresh kolačić, jedan
    refresh za više paralelnih `401` (test).
 5. **Izbor organizacije i rute.** Router, zaštićene rute po ulozi, izbor organizacije.
+   Odluka: TanStack Query ili vlastiti hook za učitavanje podataka.
 6. **Kalendar slobodnih termina.** Dan i lista na telefonu, zona organizacije, dan
    prelaska na ljetno vrijeme, tastatura, stanja bez boje.
 7. **Tok rezervacije.** Potvrda, `Idempotency-Key` po namjeri, `409` s najbližim

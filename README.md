@@ -93,7 +93,7 @@ cd backend
 .\mvnw.cmd test
 ```
 
-Frontend traži Node (koristim 26). Za sada ima samo probnu stranicu fontova na http://localhost:5173. Testovi (Vitest) ne traže backend:
+Frontend traži Node (koristim 26). Za sada ima samo probnu stranicu fontova na http://localhost:5173. Vite zahtjeve na `/api` prosljeđuje backendu na portu 8080, pa backend treba biti pokrenut. Testovi (Vitest) ne traže backend:
 
 ```powershell
 cd frontend
@@ -106,7 +106,7 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 ## Struktura
 
-`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.booking`, `ba.slotbook.resource`...), ne po sloju. `frontend/` je React aplikacija (Vite, JavaScript), za sada samo kostur, a u `docs/` su `ODLUKE.md` (odluke i zašto) i `ARHITEKTURA.md` (slojevi, tok zahtjeva i model podataka) i `PERFORMANSE.md` (mjerenja, a SQL skripte za njih su u `docs/mjerenja/`). `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
+`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.booking`, `ba.slotbook.resource`...), ne po sloju. `frontend/` je React aplikacija (Vite, JavaScript). Pozivi backenda su samo u `frontend/src/api/`, a boje, fontovi i razmaci samo u `frontend/src/tokeni.css`. U `docs/` su `ODLUKE.md` (odluke i zašto) i `ARHITEKTURA.md` (slojevi, tok zahtjeva i model podataka) i `PERFORMANSE.md` (mjerenja, a SQL skripte za njih su u `docs/mjerenja/`). `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
 
 ## Live demo i screenshotovi
 

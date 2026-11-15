@@ -485,3 +485,13 @@ Uvozim cijele Fontsource CSS fajlove, sa svim subsetovima. Svaki subset ima svoj
 Vrijednosti iz `docs/DIZAJN.md` su CSS varijable u jednom fajlu, `frontend/src/tokeni.css`. Tailwind nisam uzeo. Njegova podrazumijevana paleta i razmaci bi se morali isključiti da ne uđe nešto čega nema u `DIZAJN.md`, a klase u JSX-u bih morao učiti kao još jedan jezik. Za pet boja i sedam razmaka obične varijable su dovoljne. Nijedna boja se ne piše direktno van `tokeni.css`, i to provjerava test: kad sam žutu u tokenima promijenio za jednu cifru, dodao boju koje u `DIZAJN.md` nema, ili napisao `#ffffff` i `rgb(0 0 0)` u `index.css`, test je svaki put pao.
 
 Vitest je 5.1.0, jer podržava Vite 8 (`peerDependencies` kaže `^6.4.0 || ^7.0.0 || ^8.0.0`). `npm test` ga pokreće jednom, bez praćenja izmjena.
+
+## API sloj u frontendu: jedan fetch, jedna vrsta greške
+
+Frontend zove backend samo kroz `apiFetch` u `frontend/src/api/apiFetch.js`. Svaki odgovor koji nije `2xx` postaje `ApiError` sa dva polja: `status` iz HTTP odgovora i `problem`, tj. Problem Details iz tijela ili `null`. Status se namjerno ne čita iz tijela. U Fazi 4 je `setProperty("status", ...)` pregazio broj sa `"CANCELLED"`, i za to sada postoji test na frontendu. Kad odgovora uopšte nema, `status` je 0. Lokalno se to skoro ne dešava, jer Vite proxy, kad backend ne radi, vrati `502 Bad Gateway` s običnim tekstom. To sam provjerio s ugašenim lažnim backendom na portu 8080.
+
+Bez TypeScripta build ne zna kako izgleda odgovor. Zato funkcija za endpoint odmah provjeri polja bez kojih ekran ne može (`provjeriPolja`) i baci grešku sa putanjom i imenom polja, npr. `/api/status: nema polja vrijeme`. Testovi API sloja koriste JSON prepisan iz backend testova. Ako backend preimenuje polje, ti testovi to ne vide, jer imaju svoju kopiju JSON-a. Ali provjera polja padne odmah u browseru, sa jasnom porukom, a ne kao `undefined` na ekranu.
+
+U dev modu Vite prosljeđuje `/api` na `http://localhost:8080`, pa su frontend i backend za browser isti sajt, i refresh kolačić sa `SameSite=Strict` može raditi. Proxy sam provjerio lažnim backendom koji vraća putanju koju je dobio: stiglo je `/api/status`, bez izmjene. Sa pravim backendom nisam provjerio, jer ga za to moram pokrenuti sa `.env`. Kako se poziva backend u produkciji odlučuje se u Fazi 12, zajedno s domenom.
+
+Odluku TanStack Query ili vlastiti hook sam pomjerio u korak 5, gdje prvi ekran stvarno učitava podatke. `apiFetch` ne zavisi od nje.
