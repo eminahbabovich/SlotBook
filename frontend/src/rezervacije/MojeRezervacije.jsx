@@ -7,25 +7,13 @@ import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
 import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
 import { Otkazivanje } from './Otkazivanje.jsx'
+import { DRZE_TERMIN, STATUS } from './status.js'
 import './rezervacije.css'
 
 const PORUKE = {
 	serverNeOdgovara: 'Rezervacije se nisu učitale, server ne odgovara. Pokušaj ponovo za minutu.',
 	opsta: 'Rezervacije se nisu učitale zbog greške na serveru. Pokušaj ponovo za minutu.',
 }
-
-const STATUS = {
-	PENDING: 'čeka potvrdu',
-	CONFIRMED: 'potvrđena',
-	REJECTED: 'odbijena',
-	EXPIRED: 'istekla, niko je nije potvrdio',
-	CANCELLED: 'otkazana',
-	COMPLETED: 'završena',
-	NO_SHOW: 'nedolazak',
-}
-
-// Samo ova dva stanja drže termin, pa samo njih ima smisla otkazati (BookingStatus.DRZE_TERMIN)
-const DRZE_TERMIN = ['PENDING', 'CONFIRMED']
 
 export function MojeRezervacije() {
 	const [stranica, setStranica] = useState(0)

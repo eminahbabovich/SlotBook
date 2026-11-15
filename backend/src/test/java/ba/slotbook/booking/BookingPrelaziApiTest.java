@@ -284,4 +284,25 @@ class BookingPrelaziApiTest {
 				.andExpect(jsonPath("$[*].toStatus", contains("PENDING", "EXPIRED")))
 				.andExpect(jsonPath("$[1].actorName").value(nullValue()));
 	}
+
+	// Raspored za providera: ko je rezervisao i u kom je stanju. Klijent ga ne vidi, jer bi vidio
+	// imena drugih studentica.
+	@Test
+	void rasporedResursaImaImeKlijentaIStatusAKlijentGaNeVidi() throws Exception {
+		UUID resurs = resurs(false);
+		rezervisi(hana, resurs).andExpect(status().isCreated());
+
+		mockMvc.perform(get("/api/resources/{id}/bookings", resurs).param("from", "2035-11-19").param("to", "2035-11-20")
+				.header("Authorization", "Bearer " + selma))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[*].clientName", contains("Hana")))
+				.andExpect(jsonPath("$[0].startTime").value("2035-11-19T08:00:00Z"))
+				.andExpect(jsonPath("$[0].status").value("PENDING"));
+		mockMvc.perform(get("/api/resources/{id}/bookings", resurs).param("from", "2035-11-20").param("to", "2035-11-21")
+				.header("Authorization", "Bearer " + selma))
+				.andExpect(jsonPath("$").isEmpty());
+		mockMvc.perform(get("/api/resources/{id}/bookings", resurs).param("from", "2035-11-19").param("to", "2035-11-20")
+				.header("Authorization", "Bearer " + lamija))
+				.andExpect(status().isForbidden());
+	}
 }

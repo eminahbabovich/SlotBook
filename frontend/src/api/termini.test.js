@@ -56,6 +56,6 @@ test('resursi organizacije dolaze s nazivom, opisom i trajanjem termina', async 
 	)
 	vi.stubGlobal('fetch', fetch)
 
-	expect(await resursiOrganizacije('o1')).toEqual([{ id: 'r1', naziv: 'Sto 4, tihi dio', opis: null, trajanjeMinuta: 60 }])
+	expect(await resursiOrganizacije('o1')).toEqual([{ id: 'r1', naziv: 'Sto 4, tihi dio', opis: null, trajanjeMinuta: 60, vodi: 'u1' }])
 	expect(fetch.mock.calls[0][0]).toBe('/api/organizations/o1/resources?size=100')
 })

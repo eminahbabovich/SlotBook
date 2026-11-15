@@ -575,3 +575,13 @@ Otkazivanje nema `Idempotency-Key`, a ni ne treba ga: drugo otkazivanje iste rez
 Prvo je pisalo "Otkazati možeš do ponedjeljak, 16. novembar". To nije bosanski, trebalo bi "do ponedjeljka". Sklanjanje naziva dana nije vrijedno koda, pa sada piše "Rok za otkazivanje: ponedjeljak, 16. novembar, 00:00.", isto kao rok za potvrdu u kalendaru.
 
 Probao sam 7 mutacija na frontendu (redoslijed, "već otkazana" kao uspjeh, otkazivanje poslije roka, fokus, osvježavanje liste, otvaranje potvrde, stranice) i svaku je uhvatio bar jedan test.
+
+## Raspored za providera: novi endpoint, po danima, uloga se provjerava i na frontendu
+
+Provider nije imao odakle pročitati ko je rezervisao njegov termin. `/slots` namjerno ne kaže čiji je zauzet termin, a `/bookings/mine` vraća samo moje. Zato postoji `GET /api/resources/{id}/bookings?from&to`, s istim `@PreAuthorize` kao uređivanje resursa (`canManage`: admin, ili provider koji vodi baš taj resurs). Vraća ime klijenta, ne i email, jer provideru ime treba da zna koga čeka. Period je isti kao kod slobodnih termina (do 31 dan, dani u zoni organizacije), pa nema stranica. Ime klijenta stiže kroz jedan `join fetch`, a ne upit po redu. Ruta je ušla u `OrganizationIsolationApiTest`, inače bi taj test pao, jer svaka ruta pod `/api/resources/{id}` mora biti u njemu. Kad sam `canManage` zamijenio sa `canView`, test je pao jer je studentica dobila `200` umjesto `403`.
+
+Na frontendu je raspored jedan dan s "Prethodni dan" i "Sljedeći dan". Za providera je bitno ko dolazi danas, a sedmica s imenima na telefonu ne stane. Link "Raspored" i sama stranica koriste isto pravilo kao `canManage`, napisano još jednom u `vodiResurs.js`. To nije sigurnost, nju čuva backend, nego da klijent ne vidi dugme koje vodi na `403`. Na adresi rasporeda klijent dobije objašnjenje i link na slobodne termine, a raspored se i ne traži.
+
+Potvrda i dolazak idu jednim klikom. Odbijanje i nedolazak se ne mogu vratiti i klijent dobije obavijest, pa traže drugi klik. Nedolazak i dolazak se nude tek kad termin počne, isto kao pravilo u `Booking.prijedi`. `409` (npr. klijent je u međuvremenu otkazao) prikaže poruku backenda u tom redu i osvježi raspored.
+
+Probao sam 7 mutacija na frontendu i svaku je uhvatio bar jedan test.

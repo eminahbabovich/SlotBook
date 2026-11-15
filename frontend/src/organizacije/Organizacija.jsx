@@ -1,3 +1,5 @@
+import { vodiResurs } from '../raspored/vodiResurs.js'
+import { useSesija } from '../sesija/sesija.js'
 import { Link, useParams } from 'react-router'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
@@ -39,6 +41,7 @@ export function Organizacija() {
 
 function Resursi({ organizacija }) {
 	const { data: resursi, isPending, isError, error, refetch } = useResursi(organizacija)
+	const { korisnik } = useSesija()
 
 	if (isPending) {
 		return <p aria-live="polite">Učitavaju se resursi</p>
@@ -57,11 +60,16 @@ function Resursi({ organizacija }) {
 	return (
 		<ul className="tabla">
 			{resursi.map((r) => (
-				<li key={r.id}>
+				<li key={r.id} className="tabla-stavka">
 					<Link to={`/o/${organizacija.slug}/r/${r.id}`} className="tabla-red">
 						<span className="tabla-naziv">{r.naziv}</span>
 						<span className="tabla-uloga">termini po {r.trajanjeMinuta} min</span>
 					</Link>
+					{vodiResurs(organizacija, r, korisnik.id) && (
+						<Link to={`/o/${organizacija.slug}/r/${r.id}/raspored`} className="tabla-raspored" aria-label={`Raspored: ${r.naziv}`}>
+							Raspored
+						</Link>
+					)}
 				</li>
 			))}
 		</ul>

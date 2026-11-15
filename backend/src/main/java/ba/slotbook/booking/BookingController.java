@@ -1,9 +1,11 @@
 package ba.slotbook.booking;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,6 +44,15 @@ public class BookingController {
 		// Ponovljen zahtjev s istim ključem vraća isti odgovor, i isti status 201
 		return bookingService.create(resourceId, UUID.fromString(token.getSubject()),
 				request.startTime().toInstant(), idempotencyKey);
+	}
+
+	// Raspored vidi samo ko vodi resurs (admin ili njegov provider): u njemu su imena klijenata
+	@GetMapping("/api/resources/{resourceId}/bookings")
+	@PreAuthorize("@resourceAccess.canManage(#resourceId, authentication)")
+	public List<ResourceBookingResponse> schedule(@PathVariable UUID resourceId,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+		return bookingService.schedule(resourceId, from, to);
 	}
 
 	// Samo svoje: ID klijenta je iz tokena, pa nema šta provjeravati osim prijave

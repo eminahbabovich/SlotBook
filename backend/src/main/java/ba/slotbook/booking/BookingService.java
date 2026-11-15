@@ -4,6 +4,8 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -176,6 +178,19 @@ public class BookingService {
 		Pageable poPocetku = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
 				Sort.by(Sort.Order.desc("startTime"), Sort.Order.asc("id")));
 		return PageResponse.from(bookings.findMine(clientId, poPocetku).map(MyBookingResponse::from));
+	}
+
+	// Raspored resursa za dane from..to u zoni organizacije, sve rezervacije bez obzira na stanje,
+	// da provider vidi i otkazane. Period je ograničen kao kod slobodnih termina, pa nema stranica.
+	@Transactional(readOnly = true)
+	public List<ResourceBookingResponse> schedule(UUID resourceId, LocalDate from, LocalDate to) {
+		SlotService.provjeri(from, to);
+		Resource resurs = resources.findById(resourceId).orElseThrow(ResourceNotFoundException::new);
+		ZoneId zona = ZoneId.of(resurs.getOrganization().getTimezone());
+		return bookings.findSchedule(resourceId, from.atStartOfDay(zona).toInstant(), to.atStartOfDay(zona).toInstant())
+				.stream()
+				.map(ResourceBookingResponse::from)
+				.toList();
 	}
 
 	// Historija jedne rezervacije je kratka (nastanak i par prelaza), pa nema stranica

@@ -269,7 +269,10 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    otkazivanja. Gotovo 15.11.2026: `GET /api/bookings/mine` dobio `cancelDeadline` i
    `organizationName`, ekran `/rezervacije` s nadolazećim i prošlim, otkazivanje uz
    potvrdu. Provjereno s lažnim backendom u Edgeu, s pravim ne.
-9. **Kalendar providera.** Potvrdi, odbij, nije došao.
+9. **Kalendar providera.** Potvrdi, odbij, nije došao. Gotovo 15.11.2026: novi
+   `GET /api/resources/{id}/bookings?from&to` (samo admin i provider resursa, s imenom
+   klijenta), ekran `/o/{slug}/r/{id}/raspored` po danima, link "Raspored" samo za one koji
+   vode resurs. Provjereno s lažnim backendom u Edgeu, s pravim ne.
 10. **Admin.** Članovi i pozivnice, resursi, radno vrijeme i izuzeci.
 11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz.
 12. **Playwright glavni tok i kraj faze.** Prijava, termin, rezervacija, otkazivanje,

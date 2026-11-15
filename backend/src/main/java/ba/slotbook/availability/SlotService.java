@@ -86,7 +86,8 @@ public class SlotService {
 				.findFirst();
 	}
 
-	static void provjeri(LocalDate from, LocalDate to) {
+	// Javno, jer isti period (do 31 dan, to se ne uključuje) prima i raspored rezervacija
+	public static void provjeri(LocalDate from, LocalDate to) {
 		if (!from.isBefore(to)) {
 			throw new InvalidFieldException("to",
 					"Datum do mora biti poslije datuma od. Za jedan dan pošalji npr. from=2026-11-16 i to=2026-11-17.");

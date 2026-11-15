@@ -31,3 +31,16 @@
 	font-size: var(--velicina-sitno);
 	color: var(--tekst-sporedni);
 }
+
+/* Red s resursom koji korisnik vodi: link na kalendar lijevo, raspored desno, oba vlastita meta */
+.tabla-stavka {
+	display: flex;
+	align-items: center;
+	gap: var(--razmak-16);
+	border-bottom: 1px solid var(--linija);
+}
+
+.tabla-stavka .tabla-red {
+	flex: 1;
+	border-bottom: 0;
+}

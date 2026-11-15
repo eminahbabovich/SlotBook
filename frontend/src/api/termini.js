@@ -7,7 +7,7 @@ export async function resursiOrganizacije(organizacijaId) {
 	const stranica = provjeriPolja(await apiFetch(putanja), ['content'], putanja)
 	return stranica.content.map((r) => {
 		provjeriPolja(r, ['id', 'name', 'slotMinutes'], putanja)
-		return { id: r.id, naziv: r.name, opis: r.description ?? null, trajanjeMinuta: r.slotMinutes }
+		return { id: r.id, naziv: r.name, opis: r.description ?? null, trajanjeMinuta: r.slotMinutes, vodi: r.providerId ?? null }
 	})
 }
 

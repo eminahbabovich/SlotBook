@@ -43,7 +43,7 @@ test('iz organizacije se bira resurs, a kalendar otvara današnji dan u zoni org
 	const fetch = backend({ ...PRIJAVLJENA, ...RESURSI, ...KALENDAR })
 	otvori('/o/citaonica-pmf')
 
-	await userEvent.setup().click(await screen.findByRole('link', { name: /Sto 4, tihi dio/ }))
+	await userEvent.setup().click(await screen.findByRole('link', { name: /^Sto 4, tihi dio/ }))
 
 	expect(await screen.findByRole('heading', { name: 'Sto 4, tihi dio' })).toBeTruthy()
 	expect(screen.getByRole('button', { name: /ponedjeljak, 19. novembar/, pressed: true })).toBeTruthy()

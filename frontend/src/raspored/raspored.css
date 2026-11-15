@@ -1,0 +1,17 @@
+/* Raspored je ista lista kao moje rezervacije, samo s imenom klijenta umjesto mjesta. */
+.raspored-nadnaslov {
+	margin: var(--razmak-16) 0 0;
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+.raspored-dani {
+	display: flex;
+	justify-content: space-between;
+	margin-top: var(--razmak-16);
+}
+
+.rezervacija .potvrda-dugmad {
+	flex-wrap: wrap;
+	align-items: center;
+}
