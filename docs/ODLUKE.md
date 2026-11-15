@@ -479,3 +479,9 @@ Frontend je React 19.3 s Viteom 8.3, u običnom JavaScriptu. Kostur je prvo bio 
 Fontovi se uvoze iz `index.css` sa `@import`, a ne iz `main.jsx`. Dok je kostur bio u TypeScriptu, uvoz iz koda je pao na dva mjesta. Paket `@fontsource-variable/big-shoulders-display` nema TypeScript deklaracije, pa `tsc` javlja `TS2882: Cannot find module or type declarations for side-effect import`. Kad sam umjesto toga uvezao `.../wght.css`, pao je Vite (`Rolldown failed to resolve import`), jer `exports` u tom paketu dodaje `.css` sam (`"./*": "./*.css"`) i traži `wght.css.css`. Drugi problem sam napravio sam, zaobilazeći prvi. U JavaScriptu bi običan uvoz paketa iz `main.jsx` trebao raditi, ali to nisam probao. `@import` sam ostavio jer su fontovi tako na istom mjestu gdje će biti i tokeni.
 
 Uvozim cijele Fontsource CSS fajlove, sa svim subsetovima. Svaki subset ima svoj `unicode-range`, pa browser skine samo onaj koji tekst stvarno treba. Za naš tekst su to `latin` i `latin-ext`, a ćirilica i vijetnamski ostanu na serveru. To sam vidio u spisku fajlova poslije builda, a nisam mjerio šta browser stvarno skine.
+
+## Stilovi: obične CSS varijable, bez Tailwinda
+
+Vrijednosti iz `docs/DIZAJN.md` su CSS varijable u jednom fajlu, `frontend/src/tokeni.css`. Tailwind nisam uzeo. Njegova podrazumijevana paleta i razmaci bi se morali isključiti da ne uđe nešto čega nema u `DIZAJN.md`, a klase u JSX-u bih morao učiti kao još jedan jezik. Za pet boja i sedam razmaka obične varijable su dovoljne. Nijedna boja se ne piše direktno van `tokeni.css`, i to provjerava test: kad sam žutu u tokenima promijenio za jednu cifru, dodao boju koje u `DIZAJN.md` nema, ili napisao `#ffffff` i `rgb(0 0 0)` u `index.css`, test je svaki put pao.
+
+Vitest je 5.1.0, jer podržava Vite 8 (`peerDependencies` kaže `^6.4.0 || ^7.0.0 || ^8.0.0`). `npm test` ga pokreće jednom, bez praćenja izmjena.

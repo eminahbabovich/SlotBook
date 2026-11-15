@@ -240,8 +240,9 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
 1. **Kostur i fontovi.** Vite + React u JavaScriptu (TypeScript ne), tri fonta preko Fontsource,
    provjera da crtaju č, ć, š, đ, ž u browseru. Gotovo 15.11.2026.
 2. **Tokeni i Vitest.** Boje, razmaci, fontovi i zaobljenja iz `DIZAJN.md` kao CSS
-   varijable na jednom mjestu, osnovni stilovi, Vitest + Testing Library postavljeni s
-   prvim testom.
+   varijable na jednom mjestu, osnovni stilovi, Vitest s prvim testom (boje u kodu su
+   tačno one iz `DIZAJN.md`). Testing Library dolazi s prvim testom komponente. Gotovo
+   15.11.2026.
 3. **API sloj.** `apiFetch`, `ApiError` iz Problem Detailsa, funkcije za prve endpointe,
    Vite proxy na backend, testovi koji čuvaju imena polja iz DTO-ova (nema TypeScripta da
    ih čuva). Odluka: TanStack Query ili vlastiti hook.

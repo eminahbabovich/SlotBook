@@ -34,6 +34,14 @@ Uski display font se ne stavlja na duge naslove i ne ide ispod 24 px, jer se na 
 
 Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48). Red termina je visok najmanje 48 px, da se lako pogodi prstom. Zaobljenje je 2 px ili nikakvo. Sjena se ne koristi, a granice prave linije od 1 px (`--tekst` na 20 % ili puna kod naslova dana).
 
+## U kodu
+
+Sve vrijednosti su u `frontend/src/tokeni.css`, kao CSS varijable. Boje se zovu kao u tabeli iznad. Fontovi su `--font-naslov`, `--font-tekst` i `--font-brojevi`, razmaci `--razmak-4` do `--razmak-48` (broj je vrijednost u px), a tu su još `--zaobljenje` (2 px), `--linija` (`--tekst` na 20 %) i `--red-min-visina` (48 px). Test `tokeni.test.js` pada kad se boje u `tokeni.css` razlikuju od tabele u ovom fajlu i kad neki drugi fajl u `frontend/src` napiše boju direktno (hex, `rgb()`, `hsl()`).
+
+Ljestvica veličina teksta i prored ovdje još nisu određeni, pa u kodu stoje vrijednosti koje browser daje sam (h1 32 px, h2 24 px).
+
+Otvoreno: žuti okvir fokusa na podlozi ima kontrast 1,61:1, a WCAG traži najmanje 3:1 za okvir fokusa. Ostale kontraste iz tabele sam izračunao po istoj formuli i slažu se. Dok se ne odluči kako izgleda fokus, ostaje okvir koji crta browser.
+
 ## Stanja termina
 
 Svako stanje se razlikuje i bez boje: po ivici, šrafuri, tekstu i oznaci.

@@ -2,9 +2,26 @@
 @import '@fontsource-variable/big-shoulders-display';
 @import '@fontsource-variable/ibm-plex-sans';
 @import '@fontsource/ibm-plex-mono/400.css';
+@import './tokeni.css';
 
-/* Boje, razmaci i fontovi kao CSS varijable dolaze u sljedećem koraku, iz docs/DIZAJN.md. */
 body {
 	margin: 0;
-	padding: 16px;
+	padding: var(--razmak-16);
+	background: var(--podloga);
+	color: var(--tekst);
+	font-family: var(--font-tekst);
+}
+
+/* Uski display font ne ide ispod 24 px. Browser daje h1 32 px i h2 24 px, pa se to
+   za sada ne dira. Ljestvica veličina još nije u DIZAJN.md. */
+h1,
+h2 {
+	font-family: var(--font-naslov);
+	font-weight: 700;
+}
+
+/* Vremena i datumi: cifre iste širine, da se 08:00 i 11:00 poravnaju kao polasci. */
+time {
+	font-family: var(--font-brojevi);
+	font-variant-numeric: tabular-nums;
 }

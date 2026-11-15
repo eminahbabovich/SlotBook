@@ -1,0 +1,26 @@
+/* Jedino mjesto s vrijednostima iz docs/DIZAJN.md. Komponente koriste samo ove varijable,
+   a nova boja, font ili razmak se prvo dopiše u DIZAJN.md. */
+:root {
+	--podloga: #f4f1ea;
+	--tekst: #16191d;
+	--tekst-sporedni: #5a6069;
+	--moje: #f2b705;
+	--greska: #b3261e;
+
+	--linija: color-mix(in srgb, var(--tekst) 20%, transparent);
+
+	--font-naslov: 'Big Shoulders Display Variable', sans-serif;
+	--font-tekst: 'IBM Plex Sans Variable', sans-serif;
+	--font-brojevi: 'IBM Plex Mono', monospace;
+
+	--razmak-4: 4px;
+	--razmak-8: 8px;
+	--razmak-12: 12px;
+	--razmak-16: 16px;
+	--razmak-24: 24px;
+	--razmak-32: 32px;
+	--razmak-48: 48px;
+
+	--zaobljenje: 2px;
+	--red-min-visina: 48px;
+}

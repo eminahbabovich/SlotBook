@@ -93,12 +93,13 @@ cd backend
 .\mvnw.cmd test
 ```
 
-Frontend traži Node (koristim 26). Za sada ima samo probnu stranicu fontova na http://localhost:5173:
+Frontend traži Node (koristim 26). Za sada ima samo probnu stranicu fontova na http://localhost:5173. Testovi (Vitest) ne traže backend:
 
 ```powershell
 cd frontend
 npm install
 npm run dev
+npm test
 ```
 
 Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada se baza spaja preko varijabli `DB_URL`, `DB_USER` i `DB_PASSWORD`, a port se uzima iz `PORT`. `JWT_SECRET` treba i tamo, i mora biti drugi ključ od lokalnog.
