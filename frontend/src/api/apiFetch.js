@@ -44,11 +44,21 @@ export async function apiFetch(putanja, { metoda = 'GET', tijelo, zaglavlja = {}
 // refresh sa već iskorištenim kolačićem backend vidio kao krađu i prekinuo sesiju.
 export function obnoviSesiju() {
 	if (obnovaUToku === null) {
-		obnovaUToku = posaljiRefresh().finally(() => {
+		obnovaUToku = uBravi(posaljiRefresh).finally(() => {
 			obnovaUToku = null
 		})
 	}
 	return obnovaUToku
+}
+
+// Tabovi dijele kolačić, ali ne i memoriju. Brava (Web Locks) pušta jedan refresh u
+// isto vrijeme kroz sve tabove, pa sljedeći tab pošalje već novi kolačić.
+// Browser bez navigator.locks radi kao prije, s ograničenjem na jedan tab.
+function uBravi(posao) {
+	if (globalThis.navigator?.locks === undefined) {
+		return posao()
+	}
+	return navigator.locks.request('slotbook-refresh', posao)
 }
 
 async function posaljiRefresh() {
