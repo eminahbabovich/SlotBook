@@ -12,21 +12,75 @@ export class ApiError extends Error {
 	}
 }
 
+// Access token je samo u memoriji, ne u localStorage, da ga XSS ne može pročitati.
+// Poslije osvježavanja stranice ga nema, pa se vraća preko refresh kolačića (obnoviSesiju).
+let accessToken = null
+let obnovaUToku = null
+let javiIstek = () => {}
+
+export function postaviToken(token) {
+	accessToken = token
+}
+
+export function naIstekSesije(funkcija) {
+	javiIstek = funkcija
+}
+
 export async function apiFetch(putanja, { metoda = 'GET', tijelo, zaglavlja = {} } = {}) {
+	const poslaniToken = accessToken
+	const odgovor = await posalji(putanja, metoda, tijelo, zaglavlja, poslaniToken)
+	if (odgovor.status !== 401 || poslaniToken === null || putanja.startsWith('/api/auth/')) {
+		return procitaj(odgovor)
+	}
+
+	// Ako je neki drugi zahtjev već obnovio token dok je ovaj čekao, dovoljno je ponoviti.
+	if (accessToken === poslaniToken && !(await obnoviSesiju())) {
+		return procitaj(odgovor)
+	}
+	return procitaj(await posalji(putanja, metoda, tijelo, zaglavlja, accessToken))
+}
+
+// Više zahtjeva može dobiti 401 u isto vrijeme. Svi čekaju isti refresh, jer bi drugi
+// refresh sa već iskorištenim kolačićem backend vidio kao krađu i prekinuo sesiju.
+export function obnoviSesiju() {
+	if (obnovaUToku === null) {
+		obnovaUToku = posaljiRefresh().finally(() => {
+			obnovaUToku = null
+		})
+	}
+	return obnovaUToku
+}
+
+async function posaljiRefresh() {
+	const odgovor = await posalji('/api/auth/refresh', 'POST', undefined, {}, null)
+	if (odgovor.status === 401) {
+		accessToken = null
+		javiIstek()
+		return false
+	}
+	const { accessToken: novi } = provjeriPolja(await procitaj(odgovor), ['accessToken'], '/api/auth/refresh')
+	accessToken = novi
+	return true
+}
+
+async function posalji(putanja, metoda, tijelo, zaglavlja, token) {
 	const headers = { Accept: 'application/json, application/problem+json', ...zaglavlja }
 	const opcije = { method: metoda, headers }
+	if (token !== null) {
+		headers.Authorization = `Bearer ${token}`
+	}
 	if (tijelo !== undefined) {
 		headers['Content-Type'] = 'application/json'
 		opcije.body = JSON.stringify(tijelo)
 	}
-
-	let odgovor
 	try {
-		odgovor = await fetch(putanja, opcije)
+		return await fetch(putanja, opcije)
 	} catch {
 		throw new ApiError(0, null)
 	}
+}
 
+async function procitaj(odgovor) {
 	if (!odgovor.ok) {
 		throw new ApiError(odgovor.status, await procitajProblem(odgovor))
 	}

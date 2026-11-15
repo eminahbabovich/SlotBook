@@ -495,3 +495,13 @@ Bez TypeScripta build ne zna kako izgleda odgovor. Zato funkcija za endpoint odm
 U dev modu Vite prosljeđuje `/api` na `http://localhost:8080`, pa su frontend i backend za browser isti sajt, i refresh kolačić sa `SameSite=Strict` može raditi. Proxy sam provjerio lažnim backendom koji vraća putanju koju je dobio: stiglo je `/api/status`, bez izmjene. Sa pravim backendom nisam provjerio, jer ga za to moram pokrenuti sa `.env`. Kako se poziva backend u produkciji odlučuje se u Fazi 12, zajedno s domenom.
 
 Odluku TanStack Query ili vlastiti hook sam pomjerio u korak 5, gdje prvi ekran stvarno učitava podatke. `apiFetch` ne zavisi od nje.
+
+## Sesija u frontendu: access token u memoriji, jedan refresh za sve
+
+Access token stoji samo u varijabli u `apiFetch.js`, ne u `localStorage`. Tamo bi ga XSS mogao pročitati. Cijena je da ga poslije osvježavanja stranice nema, pa aplikacija na početku pozove `/api/auth/refresh`. Refresh kolačić je `HttpOnly` i JavaScript ga ne vidi, pa se tako sesija vrati bez nove prijave.
+
+Kad zahtjev s tokenom dobije `401`, `apiFetch` obnovi token i ponovi zahtjev jednom. Više zahtjeva koji u isto vrijeme dobiju `401` čekaju isti promise, pa ide samo jedan refresh. Drugi refresh sa već iskorištenim kolačićem backend vidi kao krađu i poništi cijelu porodicu tokena (odluka iz Faze 2). Ako `401` stigne za zahtjev koji je poslan sa starim tokenom, a token je u međuvremenu već obnovljen, zahtjev se samo ponovi, bez novog refresha. Refresh se ne pokušava za `/api/auth/*` (pogrešna lozinka je isto `401`) ni za zahtjev koji nije imao token. Kad refresh vrati `401`, token se briše i aplikacija prelazi na prijavu. Kad server ne odgovara, sesija se ne prekida, nego zahtjev javi grešku.
+
+Testovi su u `sesija.test.js`. Kad sam privremeno isključio zajednički refresh, test s tri paralelna `401` je pao, jer su otišla tri refresha. Pala su i ostala četiri pravila kad sam ih isključio jedno po jedno. Jedan test je prvo bio slab: provjeravao je zadnji poziv, a to je s greškom bio refresh, ne zahtjev, pa mutacija nije pala. Ispravio sam ga da gleda zadnji poziv na `/api/me`.
+
+Ograničenje: zajednički refresh radi unutar jednog taba. Dva taba koja u istoj sekundi dobiju `401` i dalje mogu poslati dva refresha i odjaviti korisnika. To nisam riješio.
