@@ -4,7 +4,7 @@ import { kalendarResursa } from '../api/termini.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from '../vrijeme/vrijeme.js'
-import { opisTermina, opisTrenutka } from './opis.js'
+import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
 import { Potvrda } from './Potvrda.jsx'
 
 const PORUKE = {

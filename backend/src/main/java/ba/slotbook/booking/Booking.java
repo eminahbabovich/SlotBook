@@ -98,12 +98,16 @@ public class Booking {
 		if (!status.mozePreciU(BookingStatus.CANCELLED)) {
 			throw new BookingTransitionException(status, BookingStatus.CANCELLED);
 		}
-		int sati = resource.getCancelNoticeHours();
-		Instant rok = startTime.minus(Duration.ofHours(sati));
+		Instant rok = rokZaOtkazivanje();
 		if (sada.isAfter(rok)) {
-			throw new CancelDeadlinePassedException(rok, sati);
+			throw new CancelDeadlinePassedException(rok, resource.getCancelNoticeHours());
 		}
 		prijedi(BookingStatus.CANCELLED, sada);
+	}
+
+	// Jedno mjesto za pravilo: isti rok provjerava otkazivanje i vidi klijent u listi
+	Instant rokZaOtkazivanje() {
+		return startTime.minus(Duration.ofHours(resource.getCancelNoticeHours()));
 	}
 
 	public UUID getId() {

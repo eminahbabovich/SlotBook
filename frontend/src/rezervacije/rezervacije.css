@@ -1,0 +1,78 @@
+/* Rezervacija je red kao termin u kalendaru: vrijeme gore u brojevnom fontu, mjesto i stanje ispod. */
+.rezervacije {
+	margin: 0 0 var(--razmak-32);
+	padding: 0;
+	list-style: none;
+	border-top: 1px solid var(--tekst);
+}
+
+.rezervacija {
+	display: grid;
+	gap: var(--razmak-4);
+	padding: var(--razmak-12) 0;
+	border-bottom: 1px solid var(--linija);
+}
+
+.rezervacija time {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: var(--razmak-8);
+	align-items: baseline;
+}
+
+/* Dan običnim fontom, a samo sati u fontu za brojeve, kao u kalendaru */
+.rezervacija-dan {
+	font-family: var(--font-tekst);
+	font-weight: 600;
+}
+
+.rezervacija-sat {
+	font-family: var(--font-brojevi);
+	font-size: var(--velicina-vrijeme);
+}
+
+.rezervacija p {
+	margin: 0;
+}
+
+.rezervacija-mjesto {
+	font-weight: 600;
+}
+
+.rezervacija-status,
+.rezervacija .napomena {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+/* Stanje i bez boje: moja potvrđena ima žutu traku lijevo, kao "MOJE" u kalendaru */
+.rezervacija-confirmed {
+	padding-left: var(--razmak-12);
+	border-left: var(--razmak-4) solid var(--moje);
+}
+
+.rezervacija-pending {
+	padding-left: var(--razmak-12);
+	border-left: var(--razmak-4) dashed var(--moje);
+}
+
+.rezervacija-cancelled time,
+.rezervacija-rejected time,
+.rezervacija-expired time {
+	text-decoration: line-through;
+}
+
+.rezervacija .dugme-tekst {
+	justify-self: start;
+}
+
+.rezervacija .potvrda {
+	margin-top: var(--razmak-8);
+	padding-left: var(--razmak-16);
+	border-left: var(--razmak-4) solid var(--tekst);
+}
+
+.stranice {
+	display: flex;
+	justify-content: space-between;
+}

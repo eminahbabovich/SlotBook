@@ -4,7 +4,7 @@ import { ApiError } from '../api/apiFetch.js'
 import { rezervisi } from '../api/rezervacije.js'
 import { porukaGreske, serverNeOdgovara } from '../forma/porukaGreske.js'
 import { danUZoni } from '../vrijeme/vrijeme.js'
-import { opisTermina } from './opis.js'
+import { opisTermina } from '../vrijeme/opis.js'
 
 const PORUKE = {
 	serverNeOdgovara:

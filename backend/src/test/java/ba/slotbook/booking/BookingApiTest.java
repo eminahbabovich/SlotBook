@@ -102,12 +102,16 @@ class BookingApiTest {
 	}
 
 	private UUID sto(boolean autoConfirm) throws Exception {
+		return sto(autoConfirm, 0);
+	}
+
+	private UUID sto(boolean autoConfirm, int cancelNoticeHours) throws Exception {
 		UUID sto = idIz(mockMvc.perform(post("/api/organizations/{id}/resources", citaonica)
 				.header("Authorization", "Bearer " + amila)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-						{"name": "Sto %s", "slotMinutes": 60, "autoConfirm": %s}
-						""".formatted(UUID.randomUUID().toString().substring(0, 8), autoConfirm))));
+						{"name": "Sto %s", "slotMinutes": 60, "autoConfirm": %s, "cancelNoticeHours": %d}
+						""".formatted(UUID.randomUUID().toString().substring(0, 8), autoConfirm, cancelNoticeHours))));
 		mockMvc.perform(put("/api/resources/{id}/availability", sto)
 				.header("Authorization", "Bearer " + amila)
 				.contentType(MediaType.APPLICATION_JSON)
@@ -291,5 +295,20 @@ class BookingApiTest {
 				.andExpect(jsonPath("$.content[?(@.id == '%s')].timezone".formatted(hanina)).value("Europe/Sarajevo"))
 				.andExpect(jsonPath("$.content[?(@.id == '%s')].resourceName".formatted(hanina))
 						.value(hasItem(startsWith("Sto "))));
+	}
+
+	// Termin u 09:00 po Sarajevu (08:00 UTC), otkazivanje najkasnije 24 h prije. Frontend iz roka
+	// zna da li da ponudi otkazivanje, a iz naziva organizacije čija je sala u listi preko svih organizacija.
+	@Test
+	void mojaRezervacijaImaRokZaOtkazivanjeINazivOrganizacije() throws Exception {
+		UUID sto = sto(true, 24);
+		String hanina = idIzOdgovora(rezervisi(hana, sto, "2035-11-19T09:00:00+01:00"));
+
+		mockMvc.perform(get("/api/bookings/mine").param("size", "100")
+				.header("Authorization", "Bearer " + hana))
+				.andExpect(jsonPath("$.content[?(@.id == '%s')].cancelDeadline".formatted(hanina))
+						.value(hasItem("2035-11-18T08:00:00Z")))
+				.andExpect(jsonPath("$.content[?(@.id == '%s')].organizationName".formatted(hanina))
+						.value(hasItem("Čitaonica FIT")));
 	}
 }

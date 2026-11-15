@@ -266,7 +266,9 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    izabere, najbliži slobodan iz učitane sedmice (frontend, bez promjene backenda).
    Provjereno s lažnim backendom u Edgeu, s pravim ne.
 8. **Moje rezervacije i otkazivanje.** Rok za otkazivanje iz odgovora, potvrda prije
-   otkazivanja.
+   otkazivanja. Gotovo 15.11.2026: `GET /api/bookings/mine` dobio `cancelDeadline` i
+   `organizationName`, ekran `/rezervacije` s nadolazećim i prošlim, otkazivanje uz
+   potvrdu. Provjereno s lažnim backendom u Edgeu, s pravim ne.
 9. **Kalendar providera.** Potvrdi, odbij, nije došao.
 10. **Admin.** Članovi i pozivnice, resursi, radno vrijeme i izuzeci.
 11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz.

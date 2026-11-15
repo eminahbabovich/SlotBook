@@ -7,6 +7,7 @@ import { Organizacija } from './organizacije/Organizacija.jsx'
 import { Organizacije } from './organizacije/Organizacije.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
 import { Registracija } from './prijava/Registracija.jsx'
+import { MojeRezervacije } from './rezervacije/MojeRezervacije.jsx'
 import { Cuvar } from './sesija/Cuvar.jsx'
 import { SesijaProvider } from './sesija/SesijaProvider.jsx'
 import { Zaglavlje } from './Zaglavlje.jsx'
@@ -39,6 +40,7 @@ export default function App() {
 								<Route path="/" element={<Organizacije />} />
 								<Route path="/o/:slug" element={<Organizacija />} />
 								<Route path="/o/:slug/r/:resursId" element={<KalendarResursa />} />
+								<Route path="/rezervacije" element={<MojeRezervacije />} />
 							</Route>
 							<Route path="*" element={<NePostoji />} />
 						</Routes>

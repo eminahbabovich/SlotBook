@@ -563,3 +563,15 @@ Na `409` backend vraća samo poruku. Najbliži slobodan termin računam na front
 Potvrda nije modal, nego red ispod termina. Na telefonu se vidi odmah, a fokus i dalje ide gdje treba: na "Rezerviši" kad se potvrda otvori, nazad na termin poslije "Odustani" ili Esc, i na poruku poslije uspjeha, jer dugme nestaje zajedno s potvrdom. Native `<dialog>` bih uzeo za pravi modal, ali jsdom u testovima nema `showModal`, a modal nije ni trebao.
 
 Testovi lažnim backendom koji pamti termine provjeravaju ključ (UUID, isti poslije pada mreže, drugi za drugi termin), jedan zahtjev na dupli klik, termin zauzet odmah poslije `409` dok nova lista namjerno čeka, i fokus. Probao sam 7 mutacija i svaku je uhvatio jedan test. Jednu sam prvi put napisao tako da je pokvarila sintaksu, pa se testovi nisu ni pokrenuli. To se ne računa, i ponovio sam je ispravno.
+
+## Moje rezervacije: rok za otkazivanje stiže s rezervacijom
+
+Plan je tražio da frontend rok za otkazivanje uzme iz odgovora. `MyBookingResponse` ga nije imao, pa bi frontend za rezervaciju poslije roka saznao tek kad klikne "Otkaži" i dobije `409`. Sad ima `cancelDeadline` (početak minus `cancelNoticeHours` resursa) i `organizationName`, jer lista ide preko svih organizacija, pa "Sala 1" bez organizacije ne znači ništa. Pravilo za rok je izdvojeno u `Booking.rokZaOtkazivanje()`, i istu metodu koristi i otkazivanje. Kad sam je privremeno promijenio da vraća samo početak termina, pala su dva testa: novi u `BookingApiTest` i stari `studenticaNeMozeOtkazatiPoslijeRoka`. Polja su nova i ništa staro se nije promijenilo, a oba dolaze iz istog `join fetch` upita.
+
+Backend šalje najkasniji termin prvo. Na ekranu su nadolazeće (`PENDING` ili `CONFIRMED`, a kraj još nije prošao) poredane od najbliže, a prošle i otkazane ostaju kako ih backend šalje. Grupe se računaju samo unutar jedne stranice od 20. Ko ima više od 20 budućih rezervacija, dio će vidjeti tek na stranici "Starije". Za sada mi to nije problem, ali je ograničenje.
+
+Otkazivanje nema `Idempotency-Key`, a ni ne treba ga: drugo otkazivanje iste rezervacije backend odbije sa `409` i `trenutniStatus: CANCELLED`. Ako mreža pukne, pa ponovni pokušaj dobije baš taj odgovor, prvi zahtjev je prošao, i ekran to prikaže kao uspjeh. Ostali `409` (npr. rok je istekao dok je ekran bio otvoren) prikazuju poruku backenda i osvježe listu.
+
+Prvo je pisalo "Otkazati možeš do ponedjeljak, 16. novembar". To nije bosanski, trebalo bi "do ponedjeljka". Sklanjanje naziva dana nije vrijedno koda, pa sada piše "Rok za otkazivanje: ponedjeljak, 16. novembar, 00:00.", isto kao rok za potvrdu u kalendaru.
+
+Probao sam 7 mutacija na frontendu (redoslijed, "već otkazana" kao uspjeh, otkazivanje poslije roka, fokus, osvježavanje liste, otvaranje potvrde, stranice) i svaku je uhvatio bar jedan test.
