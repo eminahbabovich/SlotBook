@@ -99,3 +99,18 @@ Test izolacije nije pokrivao CSV. Šalje zahtjev bez `Accept`, pa uvijek pogodi 
 `EXPLAIN` na 408 hiljada redova je potvrdio sumnju: statistika jedne čitaonice za mjesec je čitala cijelu tabelu, jer je jedini indeks bio parcijalan, onaj iza `EXCLUDE`. S indeksom `(resource_id, start_time)` mjesec je pao s oko 20 na oko 2 ms, a godina se nije pomjerila. Kad sam za godinu zabranio seq scan, indeks je dotakao 20 552 stranice, a cijela tabela ih ima 7 010, pa planer bira dobro. Git Bash mi je `/migracije` u `docker exec` pretvorio u `C:/Program Files/Git/migracije`, pa je trebao `MSYS_NO_PATHCONV=1`.
 
 Pitao sam Claude-a zašto svaki korak traje par minuta. Dogovorili smo se 14.11. da mutacije idu u jednom Maven pokretanju, a on ih je pokretao svaku posebno, oko 18 puta. Cijela suite (2:28) ide sada samo prije pusha.
+
+## nedjelja, 15. novembar 2026. u 23:11
+
+Faza 7 od kostura do rasporeda za providera, devet koraka u jednom danu. TypeScript sam izbacio odmah na početku, jer ga ne znam, a ne želim kod koji ne mogu objasniti.
+
+Najgori bug je bio odjava. Hana se odjavi, Adnan se prijavi na istom računaru i završi na njenoj adresi `/o/citaonica-pmf/...`. Prvi popravak, `navigate` u zaglavlju, nije ništa promijenio, jer se `<Navigate>` iz čuvara izvršio poslije njega i opet zapamtio adresu. Prošlo je tek kad je sesija dobila posebno stanje "odjavio se", u kojem čuvar ne pamti odakle je korisnik došao.
+
+Edge 157 nema bosanske podatke u `Intl`. Umjesto "ponedjeljak, 19. novembar" ispisao je "M11 19, Mon". Nazive dana i mjeseci sad imam u svojim nizovima, a test glumi browser bez `bs`.
+
+Test za rezervaciju na čekanju sam prvo napisao tako da direktno ubaci red u bazu, i pao je na `bookings_pending_ima_rok`. Baza je bila u pravu: `PENDING` bez roka ne smije postojati. Test sad rezerviše kroz API.
+
+U browseru sam vidio "Otkazati možeš do ponedjeljak". Na bosanskom bi trebalo "do ponedjeljka", a pisati sklanjanje dana mi se ne isplati, pa sad piše "Rok za otkazivanje: ponedjeljak, ...".
+
+Kad je admin dobio link "Raspored: Sto 4, tihi dio", pao je stari test kalendara koji je link tražio regexom `/Sto 4, tihi dio/`. Kod je bio ispravan, a upit u testu preširok.
+
