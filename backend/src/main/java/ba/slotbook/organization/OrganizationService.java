@@ -2,6 +2,7 @@ package ba.slotbook.organization;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -67,6 +68,13 @@ public class OrganizationService {
 		return organizations.findBySlug(slug)
 				.map(OrganizationResponse::from)
 				.orElseThrow(() -> new OrganizationNotFoundException(slug));
+	}
+
+	// Bez stranica: korisnik je član nekoliko organizacija, a frontendu treba cijela lista
+	// da odluči kuda vodi poslije prijave.
+	@Transactional(readOnly = true)
+	public List<MyOrganizationResponse> listForUser(UUID userId) {
+		return members.findAllByUserWithOrganization(userId).stream().map(MyOrganizationResponse::from).toList();
 	}
 
 	// Kao kod resursa: redoslijed određuje server, a userId razdvaja članove koji su ušli u istoj sekundi

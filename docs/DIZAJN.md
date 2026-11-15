@@ -57,6 +57,8 @@ Isti test provjerava i veličine teksta: tabela veličina ovdje i `tokeni.css` m
 
 Polje ima punu tamnu ivicu od 1 px, jer ivica polja treba kontrast 3:1, a `--linija` ga nema. Neispravno polje dobije ivicu od 3 px u boji `--greska` i tekst greške ispod, pa se razlikuje i bez boje. Oznaka je iznad polja, nikad samo placeholder. Glavno dugme je tamno (`--tekst`) sa svijetlim tekstom (`--podloga`), a dok čeka odgovor sivo (`--tekst-sporedni`) i kaže šta radi ("Prijava u toku"). Prelaz na drugi ekran (npr. "Napravi nalog" ispod prijave) je podvučen tekst, ne dugme. Greška cijele forme je tekst s debelom crvenom linijom lijevo, bez pozadine i ikone.
 
+Lista organizacija je kao tabla s polascima: red po organizaciji, naziv lijevo, uloga desno sitnijim sivim slovima, tanka linija (`--linija`) između redova i puna tamna linija iznad prvog. Red je visok najmanje `--red-min-visina`, cijeli je link i na hover podvlači naziv. Nema kartica ni sjene.
+
 Forma je široka najviše `--sirina-forme` (400 px), da red za email na desktopu ne bude preko cijelog ekrana. Tu vrijednost sam potvrdio 15.11.2026, poslije koraka 4 Faze 7.
 
 ## Fokus

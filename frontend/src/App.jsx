@@ -1,45 +1,58 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Nalog } from './nalog/Nalog.jsx'
+import { BrowserRouter, Link, Route, Routes } from 'react-router'
+import { serverNeOdgovara } from './forma/porukaGreske.js'
+import { Organizacija } from './organizacije/Organizacija.jsx'
+import { Organizacije } from './organizacije/Organizacije.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
 import { Registracija } from './prijava/Registracija.jsx'
-import { useSesija } from './sesija/sesija.js'
+import { Cuvar } from './sesija/Cuvar.jsx'
 import { SesijaProvider } from './sesija/SesijaProvider.jsx'
+import { Zaglavlje } from './Zaglavlje.jsx'
+
+// Ponovni pokušaj ima smisla samo kad server nije odgovorio. 403 ili 404 se ponavljanjem
+// ne mijenjaju, a korisnik bi čekao grešku nekoliko sekundi.
+function napraviQueryClient() {
+	return new QueryClient({
+		defaultOptions: {
+			queries: { retry: (pokusaj, greska) => pokusaj < 1 && serverNeOdgovara(greska), retryDelay: 1000 },
+		},
+	})
+}
 
 export default function App() {
+	const [queryClient] = useState(napraviQueryClient)
+
 	return (
-		<SesijaProvider>
-			<header className="zaglavlje">
-				<p className="znak">SlotBook</p>
-			</header>
-			<main>
-				<Ekran />
-			</main>
-		</SesijaProvider>
+		<QueryClientProvider client={queryClient}>
+			<SesijaProvider>
+				<BrowserRouter>
+					<Zaglavlje />
+					<main>
+						<Routes>
+							<Route element={<Cuvar za="odjavljene" />}>
+								<Route path="/prijava" element={<Prijava />} />
+								<Route path="/registracija" element={<Registracija />} />
+							</Route>
+							<Route element={<Cuvar za="prijavljene" />}>
+								<Route path="/" element={<Organizacije />} />
+								<Route path="/o/:slug" element={<Organizacija />} />
+							</Route>
+							<Route path="*" element={<NePostoji />} />
+						</Routes>
+					</main>
+				</BrowserRouter>
+			</SesijaProvider>
+		</QueryClientProvider>
 	)
 }
 
-// Bez routera do koraka 5: ekran zavisi samo od stanja sesije.
-function Ekran() {
-	const { status, pokusajPonovo } = useSesija()
-	const [registracija, setRegistracija] = useState(false)
-
-	if (status === 'provjerava') {
-		return <p aria-live="polite">Provjerava se prijava</p>
-	}
-	if (status === 'nedostupan') {
-		return (
-			<div className="forma">
-				<p role="alert" className="greska-forme">
-					Prijava se ne može provjeriti, server ne odgovara. Pokušaj ponovo za minutu.
-				</p>
-				<button className="dugme" type="button" onClick={pokusajPonovo}>
-					Pokušaj ponovo
-				</button>
-			</div>
-		)
-	}
-	if (status === 'prijavljen') {
-		return <Nalog />
-	}
-	return registracija ? <Registracija naPrijavu={() => setRegistracija(false)} /> : <Prijava naRegistraciju={() => setRegistracija(true)} />
+function NePostoji() {
+	return (
+		<section>
+			<h1>Stranica ne postoji</h1>
+			<p>Ova adresa ne vodi nigdje u SlotBooku.</p>
+			<Link to="/">Na početak</Link>
+		</section>
+	)
 }

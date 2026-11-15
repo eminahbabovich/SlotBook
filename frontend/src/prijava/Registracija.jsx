@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { Polje } from '../forma/Polje.jsx'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
@@ -8,7 +9,7 @@ const PORUKE = {
 	opsta: 'Nalog nije napravljen zbog greške na serveru. Pokušaj ponovo za minutu.',
 }
 
-export function Registracija({ naPrijavu }) {
+export function Registracija() {
 	const { registruj } = useSesija()
 	const [ime, setIme] = useState('')
 	const [email, setEmail] = useState('')
@@ -63,9 +64,7 @@ export function Registracija({ naPrijavu }) {
 			</form>
 			<p>
 				Imaš nalog:{' '}
-				<button type="button" className="dugme-tekst" onClick={naPrijavu}>
-					Prijavi se
-				</button>
+				<Link to="/prijava">Prijavi se</Link>
 			</p>
 		</section>
 	)

@@ -1,5 +1,6 @@
 package ba.slotbook.organization;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +17,15 @@ interface OrganizationMemberRepository extends JpaRepository<OrganizationMember,
 			join fetch m.user
 			where m.id.organizationId = :organizationId""")
 	Page<OrganizationMember> findAllWithUser(UUID organizationId, Pageable pageable);
+
+	// join fetch: organizacija je LAZY, a DTO čita njen naziv, slug i zonu za svako članstvo.
+	// Uslov je samo korisnik iz tokena, pa tuđa članstva ne mogu ući u listu.
+	@Query("""
+			select m from OrganizationMember m
+			join fetch m.organization o
+			where m.id.userId = :userId
+			order by o.name, o.id""")
+	List<OrganizationMember> findAllByUserWithOrganization(UUID userId);
 
 	boolean existsByIdOrganizationIdAndUserEmail(UUID organizationId, String email);
 

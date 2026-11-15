@@ -1,0 +1,33 @@
+/* Lista kao tabla s polascima: red po organizaciji, naziv lijevo, uloga desno. */
+.tabla {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-top: 1px solid var(--tekst);
+}
+
+.tabla-red {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--razmak-4) var(--razmak-16);
+	min-height: var(--red-min-visina);
+	padding: var(--razmak-8) 0;
+	border-bottom: 1px solid var(--linija);
+	color: var(--tekst);
+	text-decoration: none;
+}
+
+.tabla-naziv {
+	font-weight: 600;
+}
+
+.tabla-red:hover .tabla-naziv {
+	text-decoration: underline;
+}
+
+.tabla-uloga {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}

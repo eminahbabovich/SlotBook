@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { Polje } from '../forma/Polje.jsx'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
@@ -8,7 +9,7 @@ const PORUKE = {
 	opsta: 'Prijava nije uspjela zbog greške na serveru. Pokušaj ponovo za minutu.',
 }
 
-export function Prijava({ naRegistraciju }) {
+export function Prijava() {
 	const { prijavi } = useSesija()
 	const [email, setEmail] = useState('')
 	const [lozinka, setLozinka] = useState('')
@@ -56,9 +57,7 @@ export function Prijava({ naRegistraciju }) {
 			</form>
 			<p>
 				Prvi put ovdje:{' '}
-				<button type="button" className="dugme-tekst" onClick={naRegistraciju}>
-					Napravi nalog
-				</button>
+				<Link to="/registracija">Napravi nalog</Link>
 			</p>
 		</section>
 	)

@@ -51,17 +51,36 @@ h1 {
 	border-bottom: 1px solid var(--tekst);
 }
 
+.zaglavlje-red {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--razmak-8) var(--razmak-16);
+	padding-bottom: var(--razmak-8);
+}
+
+.zaglavlje-nalog {
+	display: flex;
+	align-items: center;
+	gap: var(--razmak-12);
+}
+
 .znak {
-	margin: 0 0 var(--razmak-8);
+	color: var(--tekst);
+	text-decoration: none;
 	font-family: var(--font-naslov);
 	font-size: var(--velicina-naslov-3);
 	font-weight: 700;
 	text-transform: uppercase;
 }
 
-.ime-naloga {
-	margin: 0;
-	font-weight: 600;
+a {
+	color: var(--tekst);
+}
+
+.napomena-blok {
+	color: var(--tekst-sporedni);
 }
 
 /* Vremena i datumi: cifre iste širine, da se 08:00 i 11:00 poravnaju kao polasci. */

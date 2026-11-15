@@ -61,6 +61,10 @@ public class OrganizationMember {
 		this.joinedAt = joinedAt;
 	}
 
+	public Organization getOrganization() {
+		return organization;
+	}
+
 	public User getUser() {
 		return user;
 	}

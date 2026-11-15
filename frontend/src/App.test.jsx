@@ -7,21 +7,30 @@ import { postaviToken } from './api/apiFetch.js'
 
 const problem = (status, tijelo) =>
 	new Response(JSON.stringify({ status, ...tijelo }), { status, headers: { 'Content-Type': 'application/problem+json' } })
-const json = (tijelo) => new Response(JSON.stringify(tijelo), { status: 200, headers: { 'Content-Type': 'application/json' } })
+const json = (tijelo, status = 200) => new Response(JSON.stringify(tijelo), { status, headers: { 'Content-Type': 'application/json' } })
 
 const HANA = { id: 'u1', email: 'hana@primjer.ba', displayName: 'Hana Šehić', emailVerified: false }
+const CITAONICA = { id: 'o1', name: 'Čitaonica PMF', slug: 'citaonica-pmf', timezone: 'Europe/Sarajevo', role: 'ADMIN' }
+const TERETANA = { id: 'o2', name: 'Teretana Ilidža', slug: 'teretana-ilidza', timezone: 'Europe/Sarajevo', role: 'CLIENT' }
 const BEZ_SESIJE = () => problem(401, { title: 'Sesija je istekla', detail: 'Sesija je istekla ili je prekinuta. Prijavi se ponovo.' })
 const TOKEN = () => json({ accessToken: 'tok', tokenType: 'Bearer', expiresIn: 900 })
 
-// Odgovori po putanji. Funkcija dobije tijelo zahtjeva, da test može provjeriti šta je poslano.
+// Odgovori po metodi i putanji ("GET /api/me"), ili samo po putanji. Funkcija dobije tijelo
+// zahtjeva i zaglavlja, da test može provjeriti šta je poslano.
 function backend(odgovori) {
 	const fetch = vi.fn(async (putanja, opcije) => {
-		const odgovor = odgovori[putanja]
-		if (odgovor === undefined) throw new Error(`test nema odgovor za ${putanja}`)
-		return odgovor(opcije.body === undefined ? undefined : JSON.parse(opcije.body))
+		const odgovor = odgovori[`${opcije.method} ${putanja}`] ?? odgovori[putanja]
+		if (odgovor === undefined) throw new Error(`test nema odgovor za ${opcije.method} ${putanja}`)
+		return odgovor(opcije.body === undefined ? undefined : JSON.parse(opcije.body), opcije.headers)
 	})
 	vi.stubGlobal('fetch', fetch)
 	return fetch
+}
+
+const PRIJAVLJENA = {
+	'/api/auth/refresh': TOKEN,
+	'/api/me': () => json(HANA),
+	'/api/me/organizations': () => json([CITAONICA, TERETANA]),
 }
 
 async function prijaviSe(korisnik, email = 'hana@primjer.ba', lozinka = 'čitaonica1') {
@@ -30,6 +39,13 @@ async function prijaviSe(korisnik, email = 'hana@primjer.ba', lozinka = 'čitaon
 	await korisnik.click(screen.getByRole('button', { name: 'Prijavi se' }))
 }
 
+function otvori(adresa) {
+	window.history.pushState({}, '', adresa)
+	render(<App />)
+}
+
+const tijelo = (fetch, kljuc) => JSON.parse(fetch.mock.calls.findLast(([p, o]) => `${o.method} ${p}` === kljuc)[1].body)
+
 beforeEach(() => postaviToken(null))
 afterEach(() => {
 	cleanup()
@@ -37,24 +53,27 @@ afterEach(() => {
 })
 
 describe('prijava', () => {
-	test('bez sesije se prikaže prijava, a poslije prijave nalog s imenom', async () => {
-		const fetch = backend({ '/api/auth/refresh': BEZ_SESIJE, '/api/auth/login': TOKEN, '/api/me': () => json(HANA) })
-		render(<App />)
+	test('bez sesije se prikaže prijava, a poslije prijave lista organizacija s ulogom', async () => {
+		const fetch = backend({ ...PRIJAVLJENA, '/api/auth/refresh': BEZ_SESIJE, '/api/auth/login': TOKEN })
+		otvori('/')
 
 		await prijaviSe(userEvent.setup())
 
-		expect(await screen.findByText('Hana Šehić')).toBeTruthy()
+		expect(await screen.findByRole('link', { name: /Čitaonica PMF/ })).toBeTruthy()
+		expect(screen.getByRole('link', { name: /Teretana Ilidža/ }).textContent).toMatch(/rezerviše termine/)
+		expect(screen.getByText('Hana Šehić')).toBeTruthy()
 		expect(screen.getByText(/Email još nije potvrđen/)).toBeTruthy()
-		const login = fetch.mock.calls.find(([p]) => p === '/api/auth/login')
-		expect(JSON.parse(login[1].body)).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1' })
+		expect(tijelo(fetch, 'POST /api/auth/login')).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1' })
+		expect(window.location.pathname).toBe('/')
 	})
 
-	test('važeći refresh kolačić pri otvaranju vodi pravo na nalog, bez forme', async () => {
-		backend({ '/api/auth/refresh': TOKEN, '/api/me': () => json(HANA) })
-		render(<App />)
+	test('važeći refresh kolačić pri otvaranju vodi pravo na organizacije, bez forme', async () => {
+		backend(PRIJAVLJENA)
+		otvori('/prijava')
 
-		expect(await screen.findByText('Hana Šehić')).toBeTruthy()
+		expect(await screen.findByRole('link', { name: /Čitaonica PMF/ })).toBeTruthy()
 		expect(screen.queryByLabelText('Lozinka')).toBeNull()
+		expect(window.location.pathname).toBe('/')
 	})
 
 	test('pogrešna lozinka prikaže poruku backenda, a dugme se opet može kliknuti', async () => {
@@ -62,7 +81,7 @@ describe('prijava', () => {
 			'/api/auth/refresh': BEZ_SESIJE,
 			'/api/auth/login': () => problem(401, { detail: 'Email ili lozinka nisu tačni. Provjeri ih i pokušaj ponovo.' }),
 		})
-		render(<App />)
+		otvori('/')
 
 		await prijaviSe(userEvent.setup())
 
@@ -76,7 +95,7 @@ describe('prijava', () => {
 			'/api/auth/login': () =>
 				problem(400, { detail: 'Neki podaci nisu ispravni.', greske: [{ polje: 'password', poruka: 'Unesi lozinku.' }] }),
 		})
-		render(<App />)
+		otvori('/')
 		const korisnik = userEvent.setup()
 
 		await korisnik.type(await screen.findByLabelText('Email'), 'hana@primjer.ba')
@@ -91,27 +110,36 @@ describe('prijava', () => {
 	test('dok se prijava šalje, dugme je isključeno i kaže šta se dešava', async () => {
 		let pusti
 		backend({
+			...PRIJAVLJENA,
 			'/api/auth/refresh': BEZ_SESIJE,
 			'/api/auth/login': () => new Promise((resolve) => (pusti = () => resolve(TOKEN()))),
-			'/api/me': () => json(HANA),
 		})
-		render(<App />)
+		otvori('/')
 
 		await prijaviSe(userEvent.setup())
 
-		const dugme = screen.getByRole('button', { name: 'Prijava u toku' })
-		expect(dugme.disabled).toBe(true)
+		expect(screen.getByRole('button', { name: 'Prijava u toku' }).disabled).toBe(true)
 		pusti()
 		expect(await screen.findByText('Hana Šehić')).toBeTruthy()
 	})
 
 	test('kad server ne odgovara, poruka to kaže umjesto opće greške', async () => {
 		backend({ '/api/auth/refresh': BEZ_SESIJE, '/api/auth/login': () => new Response('Bad Gateway', { status: 502 }) })
-		render(<App />)
+		otvori('/')
 
 		await prijaviSe(userEvent.setup())
 
 		expect((await screen.findByRole('alert')).textContent).toMatch(/server ne odgovara/)
+	})
+
+	test('adresa otvorena bez prijave vodi na prijavu, a poslije prijave nazad na nju', async () => {
+		backend({ ...PRIJAVLJENA, '/api/auth/refresh': BEZ_SESIJE, '/api/auth/login': TOKEN })
+		otvori('/o/teretana-ilidza')
+
+		await prijaviSe(userEvent.setup())
+
+		expect(await screen.findByRole('heading', { name: 'Teretana Ilidža' })).toBeTruthy()
+		expect(window.location.pathname).toBe('/o/teretana-ilidza')
 	})
 })
 
@@ -119,18 +147,16 @@ describe('registracija', () => {
 	test('zauzet email prikaže poruku backenda, a uspješna registracija prijavi korisnika', async () => {
 		let zauzet = true
 		const fetch = backend({
+			...PRIJAVLJENA,
 			'/api/auth/refresh': BEZ_SESIJE,
 			'/api/auth/register': () =>
-				zauzet
-					? problem(409, { detail: 'Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.' })
-					: json(HANA),
+				zauzet ? problem(409, { detail: 'Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.' }) : json(HANA, 201),
 			'/api/auth/login': TOKEN,
-			'/api/me': () => json(HANA),
 		})
-		render(<App />)
+		otvori('/')
 		const korisnik = userEvent.setup()
 
-		await korisnik.click(await screen.findByRole('button', { name: 'Napravi nalog' }))
+		await korisnik.click(await screen.findByRole('link', { name: 'Napravi nalog' }))
 		await korisnik.type(screen.getByLabelText('Ime koje drugi vide'), 'Hana Šehić')
 		await korisnik.type(screen.getByLabelText('Email'), 'hana@primjer.ba')
 		await korisnik.type(screen.getByLabelText('Lozinka'), 'čitaonica1')
@@ -141,16 +167,80 @@ describe('registracija', () => {
 		await korisnik.click(screen.getByRole('button', { name: 'Napravi nalog' }))
 
 		expect(await screen.findByText('Hana Šehić')).toBeTruthy()
-		const registracija = fetch.mock.calls.findLast(([p]) => p === '/api/auth/register')
-		expect(JSON.parse(registracija[1].body)).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1', displayName: 'Hana Šehić' })
+		expect(tijelo(fetch, 'POST /api/auth/register')).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1', displayName: 'Hana Šehić' })
+	})
+})
+
+describe('organizacije', () => {
+	test('klik na organizaciju otvara njenu stranicu s ulogom i zonom', async () => {
+		backend(PRIJAVLJENA)
+		otvori('/')
+
+		await userEvent.setup().click(await screen.findByRole('link', { name: /Čitaonica PMF/ }))
+
+		expect(await screen.findByRole('heading', { name: 'Čitaonica PMF' })).toBeTruthy()
+		expect(screen.getByText(/admin/)).toBeTruthy()
+		expect(screen.getByText(/Europe\/Sarajevo/)).toBeTruthy()
+		expect(window.location.pathname).toBe('/o/citaonica-pmf')
+	})
+
+	test('organizacija koje nema na listi ne otkriva da li postoji', async () => {
+		backend(PRIJAVLJENA)
+		otvori('/o/tudja-sala')
+
+		expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Organizacija nije dostupna')
+		expect(screen.getByText(/ne postoji ili nisi njen član/)).toBeTruthy()
+	})
+
+	// Poslije pravljenja lista se učitava ponovo i to namjerno čeka. Dok čeka, korisnik
+	// ne smije vidjeti "nije dostupna" za organizaciju koju je upravo napravio.
+	test('bez organizacija se nudi nova, s adresom predloženom iz naziva', async () => {
+		let napravljena = null
+		let pustiListu
+		const fetch = backend({
+			...PRIJAVLJENA,
+			'/api/me/organizations': () =>
+				napravljena === null ? json([]) : new Promise((resolve) => (pustiListu = () => resolve(json([napravljena])))),
+			'POST /api/organizations': (podaci) => {
+				napravljena = { ...CITAONICA, name: podaci.name, slug: podaci.slug }
+				return json({ id: 'o1', name: podaci.name, slug: podaci.slug, timezone: podaci.timezone }, 201)
+			},
+		})
+		otvori('/')
+		const korisnik = userEvent.setup()
+
+		expect(await screen.findByText(/Još nisi član nijedne organizacije/)).toBeTruthy()
+		await korisnik.type(screen.getByLabelText('Naziv'), 'Čitaonica PMF')
+		expect(screen.getByLabelText('Adresa').value).toBe('citaonica-pmf')
+		await korisnik.click(screen.getByRole('button', { name: 'Napravi organizaciju' }))
+
+		await waitFor(() => expect(pustiListu).toBeDefined())
+		expect(screen.queryByText('Organizacija nije dostupna')).toBeNull()
+		expect(screen.getByRole('button', { name: 'Organizacija se pravi' })).toBeTruthy()
+		pustiListu()
+		expect(await screen.findByRole('heading', { name: 'Čitaonica PMF' })).toBeTruthy()
+		expect(window.location.pathname).toBe('/o/citaonica-pmf')
+		expect(tijelo(fetch, 'POST /api/organizations')).toEqual({ name: 'Čitaonica PMF', slug: 'citaonica-pmf', timezone: 'Europe/Sarajevo' })
+	})
+
+	test('kad se organizacije ne učitaju, piše zašto i nudi ponovni pokušaj', async () => {
+		let radi = false
+		backend({ ...PRIJAVLJENA, '/api/me/organizations': () => (radi ? json([CITAONICA]) : new Response('', { status: 502 })) })
+		otvori('/')
+
+		expect((await screen.findByRole('alert', {}, { timeout: 3000 })).textContent).toMatch(/server ne odgovara/)
+		radi = true
+		await userEvent.setup().click(screen.getByRole('button', { name: 'Pokušaj ponovo' }))
+
+		expect(await screen.findByRole('link', { name: /Čitaonica PMF/ })).toBeTruthy()
 	})
 })
 
 describe('sesija', () => {
 	test('kad server ne odgovara pri otvaranju, piše to i nudi ponovni pokušaj', async () => {
 		let radi = false
-		backend({ '/api/auth/refresh': () => (radi ? TOKEN() : new Response('', { status: 502 })), '/api/me': () => json(HANA) })
-		render(<App />)
+		backend({ ...PRIJAVLJENA, '/api/auth/refresh': () => (radi ? TOKEN() : new Response('', { status: 502 })) })
+		otvori('/')
 
 		expect((await screen.findByRole('alert')).textContent).toMatch(/server ne odgovara/)
 		radi = true
@@ -159,14 +249,13 @@ describe('sesija', () => {
 		expect(await screen.findByText('Hana Šehić')).toBeTruthy()
 	})
 
-	test('odjava vraća na prijavu, a neuspjela odjava ostavlja nalog i kaže zašto', async () => {
+	test('neuspjela odjava ostavlja sesiju i kaže zašto, a uspješna vodi na prijavu', async () => {
 		let odjavaRadi = false
 		backend({
-			'/api/auth/refresh': TOKEN,
-			'/api/me': () => json(HANA),
+			...PRIJAVLJENA,
 			'/api/auth/logout': () => (odjavaRadi ? new Response(null, { status: 204 }) : new Response('', { status: 502 })),
 		})
-		render(<App />)
+		otvori('/')
 		const korisnik = userEvent.setup()
 
 		await korisnik.click(await screen.findByRole('button', { name: 'Odjavi se' }))
@@ -176,5 +265,33 @@ describe('sesija', () => {
 		odjavaRadi = true
 		await korisnik.click(screen.getByRole('button', { name: 'Odjavi se' }))
 		expect(await screen.findByLabelText('Lozinka')).toBeTruthy()
+		expect(window.location.pathname).toBe('/prijava')
+	})
+
+	// Lista za drugu osobu namjerno čeka. Da keš nije obrisan, za to vrijeme bi se
+	// vidjela Hanina čitaonica iz keša, a ne poruka da se lista učitava. Hana se odjavljuje
+	// sa stranice čitaonice, a Tarik poslije prijave mora doći na svoju listu, ne na nju.
+	test('poslije odjave druga osoba ne vidi organizacije prethodne ni njenu adresu', async () => {
+		let pustiTarikove
+		let ko = 'hana'
+		backend({
+			...PRIJAVLJENA,
+			'/api/auth/logout': () => new Response(null, { status: 204 }),
+			'/api/auth/login': TOKEN,
+			'/api/me/organizations': () =>
+				ko === 'hana' ? json([CITAONICA]) : new Promise((resolve) => (pustiTarikove = () => resolve(json([TERETANA])))),
+		})
+		otvori('/o/citaonica-pmf')
+		const korisnik = userEvent.setup()
+
+		await korisnik.click(await screen.findByRole('button', { name: 'Odjavi se' }))
+		ko = 'tarik'
+		await prijaviSe(korisnik, 'tarik@primjer.ba')
+
+		expect(await screen.findByText('Učitavaju se tvoje organizacije')).toBeTruthy()
+		expect(screen.queryByRole('link', { name: /Čitaonica PMF/ })).toBeNull()
+		pustiTarikove()
+		expect(await screen.findByRole('link', { name: /Teretana Ilidža/ })).toBeTruthy()
+		expect(window.location.pathname).toBe('/')
 	})
 })

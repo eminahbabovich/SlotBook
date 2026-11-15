@@ -251,7 +251,11 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    refresh za više paralelnih `401` (test). Ekrani prijave, registracije i privremeni
    ekran naloga. Gotovo 15.11.2026, provjereno s lažnim backendom, s pravim ne.
 5. **Izbor organizacije i rute.** Router, zaštićene rute po ulozi, izbor organizacije.
-   Odluka: TanStack Query ili vlastiti hook za učitavanje podataka.
+   Odluka: TanStack Query ili vlastiti hook za učitavanje podataka. Gotovo 15.11.2026:
+   React Router i TanStack Query, lista organizacija s ulogom, forma za novu kad je lista
+   prazna, novi endpoint `GET /api/me/organizations`. Rute čuva prijava, a ne uloga, jer
+   još nema rute samo za admina ili providera. Čuvar po ulozi dolazi s prvom takvom rutom
+   (korak 9 ili 10). Provjereno s lažnim backendom, s pravim ne.
 6. **Kalendar slobodnih termina.** Dan i lista na telefonu, zona organizacije, dan
    prelaska na ljetno vrijeme, tastatura, stanja bez boje.
 7. **Tok rezervacije.** Potvrda, `Idempotency-Key` po namjeri, `409` s najbližim

@@ -38,7 +38,7 @@ sequenceDiagram
 
 Token nosi samo ID korisnika. Uloga se čita iz baze kod svakog zahtjeva, pa oduzeta uloga važi odmah. Svaka greška, i ona iz filtera, prolazi kroz `GlobalExceptionHandler` i vraća se kao `application/problem+json`.
 
-Rute s organizacijom u putanji (`/api/organizations/{id}/...`) provjerava `OrganizationAccess`. Rute bez nje (`/api/resources/{resourceId}`) provjerava `ResourceAccess`, koji organizaciju uzima iz resursa, a rute `/api/bookings/{bookingId}/...` provjerava `BookingAccess`, koji resurs uzima iz rezervacije.
+Rute s organizacijom u putanji (`/api/organizations/{id}/...`) provjerava `OrganizationAccess`. Rute bez nje (`/api/resources/{resourceId}`) provjerava `ResourceAccess`, koji organizaciju uzima iz resursa, a rute `/api/bookings/{bookingId}/...` provjerava `BookingAccess`, koji resurs uzima iz rezervacije. `GET /api/me/organizations` nema ID u putanji i nema `@PreAuthorize`: upit gleda samo korisnika iz tokena, pa tuđe organizacije ne mogu ući u listu.
 
 ## Tok rezervacije
 

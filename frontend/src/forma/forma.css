@@ -11,7 +11,8 @@
 }
 
 /* Puna tamna ivica: ivica polja treba kontrast 3:1, a --linija (20 %) ga nema. */
-.polje input {
+.polje input,
+.polje select {
 	box-sizing: border-box;
 	width: 100%;
 	min-height: var(--red-min-visina);

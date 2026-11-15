@@ -8,7 +8,7 @@ Ovo je moj drugi projekat nakon [RoomSplita](https://github.com/eminahbabovich/r
 
 ## Status
 
-Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost), 5 (pozadinski poslovi i email obavijesti) i 6 (statistika) su gotove. Faza 7, frontend, je u izradi: gotovi su prijava, registracija i obnova sesije (jedan refresh za više paralelnih zahtjeva), a kalendar termina još nije počet.
+Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost), 5 (pozadinski poslovi i email obavijesti) i 6 (statistika) su gotove. Faza 7, frontend, je u izradi: gotovi su prijava, registracija, obnova sesije (jedan refresh za više paralelnih zahtjeva) i lista organizacija s formom za novu, a kalendar termina još nije počet.
 
 U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 
@@ -22,7 +22,7 @@ U Fazi 5 rezervacija na ručnoj potvrdi čeka providera 24 sata, a najkasnije do
 
 Pozadinski poslovi nemaju ShedLock, jer su sigurni i kad rade na dvije instance u isto vrijeme. Test pokrene dva posla isteka tako da drugi stvarno čeka na lock prvog, i svaka rezervacija istekne jednom. Kod podsjetnika drugi padne na unique indeksu, pa ostane jedan podsjetnik. Kod slanja drugi preskoči obavijest koju prvi šalje (`SKIP LOCKED`). Test šalje i potvrdu dok je Mailpit pauziran: rezervacija nastane, prvi pokušaj padne na timeoutu, a drugi pokušaj stigne u Mailpit.
 
-Poslije registracije stiže mail s linkom za potvrdu emaila, koji važi 24 sata i može se iskoristiti jednom (`POST /api/auth/verify-email`, token u tijelu). Prijavljen korisnik može zatražiti novi link (`POST /api/me/email-verification`), a `GET /api/me` kaže da li je email potvrđen. Baza čuva samo hash tokena, a tijelo maila se briše čim je poslan. Nepotvrđen email za sada ništa ne zabranjuje. Link vodi na stranicu frontenda (`APP_URL`), koja još ne postoji.
+Poslije registracije stiže mail s linkom za potvrdu emaila, koji važi 24 sata i može se iskoristiti jednom (`POST /api/auth/verify-email`, token u tijelu). Prijavljen korisnik može zatražiti novi link (`POST /api/me/email-verification`), a `GET /api/me` kaže da li je email potvrđen. `GET /api/me/organizations` vraća organizacije prijavljenog korisnika s njegovom ulogom u svakoj (od Faze 7). Baza čuva samo hash tokena, a tijelo maila se briše čim je poslan. Nepotvrđen email za sada ništa ne zabranjuje. Link vodi na stranicu frontenda (`APP_URL`), koja još ne postoji.
 
 Ko zaboravi lozinku, traži link na `POST /api/auth/password-reset`. Odgovor je isti i za email bez naloga, da se ne može provjeriti ko je registrovan. Link važi sat vremena. Nova lozinka se postavlja na `POST /api/auth/password-reset/confirm`, a time prestaju važiti stariji linkovi za reset i sve sesije na svim uređajima.
 
@@ -93,7 +93,7 @@ cd backend
 .\mvnw.cmd test
 ```
 
-Frontend traži Node (koristim 26). Za sada ima prijavu, registraciju i odjavu na http://localhost:5173. Vite zahtjeve na `/api` prosljeđuje backendu na portu 8080, pa backend treba biti pokrenut. Testovi (Vitest) ne traže backend:
+Frontend traži Node (koristim 26). Za sada ima prijavu, registraciju, odjavu i listu organizacija na http://localhost:5173. Vite zahtjeve na `/api` prosljeđuje backendu na portu 8080, pa backend treba biti pokrenut. Testovi (Vitest) ne traže backend:
 
 ```powershell
 cd frontend
