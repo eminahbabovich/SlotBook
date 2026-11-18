@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { Polje } from '../forma/Polje.jsx'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
@@ -10,6 +10,8 @@ const PORUKE = {
 }
 
 export function Prijava() {
+	// Adresa s koje je korisnik došao (npr. link pozivnice) ide i na drugu formu, da se ne izgubi.
+	const lokacija = useLocation()
 	const { prijavi } = useSesija()
 	const [email, setEmail] = useState('')
 	const [lozinka, setLozinka] = useState('')
@@ -57,7 +59,7 @@ export function Prijava() {
 			</form>
 			<p>
 				Prvi put ovdje:{' '}
-				<Link to="/registracija">Napravi nalog</Link>
+				<Link to="/registracija" state={lokacija.state}>Napravi nalog</Link>
 			</p>
 		</section>
 	)

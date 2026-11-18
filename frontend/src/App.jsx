@@ -6,6 +6,7 @@ import { serverNeOdgovara } from './forma/porukaGreske.js'
 import { KalendarResursa } from './kalendar/KalendarResursa.jsx'
 import { Organizacija } from './organizacije/Organizacija.jsx'
 import { Organizacije } from './organizacije/Organizacije.jsx'
+import { PrihvatanjePozivnice } from './pozivnica/PrihvatanjePozivnice.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
 import { Registracija } from './prijava/Registracija.jsx'
 import { RasporedResursa } from './raspored/RasporedResursa.jsx'
@@ -45,6 +46,7 @@ export default function App() {
 								<Route path="/o/:slug/r/:resursId" element={<KalendarResursa />} />
 								<Route path="/o/:slug/r/:resursId/raspored" element={<RasporedResursa />} />
 								<Route path="/rezervacije" element={<MojeRezervacije />} />
+								<Route path="/pozivnica" element={<PrihvatanjePozivnice />} />
 							</Route>
 							<Route path="*" element={<NePostoji />} />
 						</Routes>

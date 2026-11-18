@@ -274,10 +274,11 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    klijenta), ekran `/o/{slug}/r/{id}/raspored` po danima, link "Raspored" samo za one koji
    vode resurs. Provjereno s lažnim backendom u Edgeu, s pravim ne.
 10. **Admin.** Članovi i pozivnice, resursi, radno vrijeme i izuzeci. U izradi, po dijelovima:
-    10a članovi i pozivnica gotovo 18.11.2026 (ekran `/o/{slug}/clanovi`, samo admin, lista po
+    10a članovi i pozivnica: gotovo 18.11.2026 (ekran `/o/{slug}/clanovi`, samo admin, lista po
     stranicama, pozivnica s ulogom i rokom u zoni organizacije; provjereno s lažnim backendom
-    u Edgeu, s pravim ne). Ostaje: 10b prihvatanje pozivnice (link iz maila vodi na
-    `/pozivnica#token=...`, a te stranice još nema), 10c resursi, 10d radno vrijeme, 10e izuzeci.
+    u Edgeu, s pravim ne). 10b prihvatanje pozivnice i resursi: prihvatanje gotovo 18.11.2026
+    (stranica `/pozivnica#token=...` iz maila, prihvata se tek na klik, adresa s tokenom
+    preživi prijavu i registraciju), resursi u izradi. 10c radno vrijeme i izuzeci.
 11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz.
 12. **Playwright glavni tok i kraj faze.** Prijava, termin, rezervacija, otkazivanje,
     konflikt. README, `docs/` i status.
@@ -433,6 +434,8 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Sedmična mreža kalendara na desktopu (sada je jedan dan i na telefonu i na desktopu)
 - Broj slobodnih termina ispod svakog dana u traci s danima
 - Strelice lijevo i desno kroz traku s danima (sada samo Tab)
+- Lista otvorenih pozivnica za admina, s povlačenjem pozivnice (sada admin vidi samo potvrdu odmah poslije slanja)
+- Promjena uloge člana i uklanjanje člana iz organizacije (backend za to nema endpoint)
 
 Otvoreno iz Faze 6 (dug, za pregled u Fazi 13):
 

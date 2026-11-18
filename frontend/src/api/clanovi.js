@@ -21,3 +21,11 @@ export async function posaljiPozivnicu(organizacijaId, { email, uloga }) {
 	const p = provjeriPolja(await apiFetch(putanja, { metoda: 'POST', tijelo: { email, role: uloga } }), ['email', 'role', 'expiresAt'], putanja)
 	return { email: p.email, uloga: p.role, vaziDo: p.expiresAt }
 }
+
+// AcceptInviteRequest(token) -> AcceptedInviteResponse(organizationId, slug, role). Token je
+// iz linka u mailu. Pravo daje sam token, uz email prijavljenog naloga.
+export async function prihvatiPozivnicu(token) {
+	const putanja = '/api/invites/accept'
+	const p = provjeriPolja(await apiFetch(putanja, { metoda: 'POST', tijelo: { token } }), ['slug', 'role'], putanja)
+	return { slug: p.slug, uloga: p.role }
+}

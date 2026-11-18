@@ -15,8 +15,9 @@ export function Cuvar({ za }) {
 		return <NijeUcitano poruka="Prijava se ne može provjeriti, server ne odgovara. Pokušaj ponovo za minutu." ponovo={pokusajPonovo} />
 	}
 	if (za === 'prijavljene' && status === 'odjavljen') {
-		// Adresa se pamti, da poslije prijave korisnik završi tamo gdje je krenuo.
-		return <Navigate to="/prijava" replace state={odjavioSe ? null : { odakle: lokacija.pathname }} />
+		// Adresa se pamti, da poslije prijave korisnik završi tamo gdje je krenuo. I dio iza #,
+		// jer je u njemu token pozivnice.
+		return <Navigate to="/prijava" replace state={odjavioSe ? null : { odakle: lokacija.pathname + lokacija.hash }} />
 	}
 	if (za === 'odjavljene' && status === 'prijavljen') {
 		return <Navigate to={lokacija.state?.odakle ?? '/'} replace />
