@@ -2,8 +2,8 @@ import { apiFetch, provjeriPolja } from './apiFetch.js'
 
 // MemberResponse(userId, displayName, email, role, joinedAt) iz PageResponse. joinedAt ekran ne
 // prikazuje. Backend ih slaže po datumu ulaska i sam bira sort, pa ga ovdje ne šaljemo.
-export async function clanoviOrganizacije(organizacijaId, stranica) {
-	const putanja = `/api/organizations/${organizacijaId}/members?page=${stranica}&size=50`
+export async function clanoviOrganizacije(organizacijaId, stranica, velicina = 50) {
+	const putanja = `/api/organizations/${organizacijaId}/members?page=${stranica}&size=${velicina}`
 	const odgovor = provjeriPolja(await apiFetch(putanja), ['content', 'totalPages'], putanja)
 	return {
 		clanovi: odgovor.content.map((c) => {

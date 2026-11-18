@@ -4,6 +4,11 @@
 	max-width: var(--sirina-forme);
 }
 
+/* U gridu se margine ne sabijaju, pa bi donja margina naslova došla povrh razmaka grida */
+.forma > h2 {
+	margin-bottom: 0;
+}
+
 .polje label {
 	display: block;
 	font-weight: 600;
@@ -27,6 +32,7 @@
 
 /* Neispravno polje se razlikuje i bez boje: deblja ivica i tekst greške ispod. */
 .polje input[aria-invalid='true'],
+.polje select[aria-invalid='true'],
 .polje textarea[aria-invalid='true'] {
 	border: 3px solid var(--greska);
 }

@@ -585,3 +585,19 @@ Na frontendu je raspored jedan dan s "Prethodni dan" i "Sljedeći dan". Za provi
 Potvrda i dolazak idu jednim klikom. Odbijanje i nedolazak se ne mogu vratiti i klijent dobije obavijest, pa traže drugi klik. Nedolazak i dolazak se nude tek kad termin počne, isto kao pravilo u `Booking.prijedi`. `409` (npr. klijent je u međuvremenu otkazao) prikaže poruku backenda u tom redu i osvježi raspored.
 
 Probao sam 7 mutacija na frontendu i svaku je uhvatio bar jedan test.
+
+## Pozivnica: prihvata se klikom, token preživi prijavu
+
+Link iz maila vodi na `/pozivnica#token=...`. Token je iza `#`, pa ga browser ne šalje serveru koji servira frontend i ne ulazi u `Referer`. Pozivnica se ne prihvata sama čim se stranica otvori, nego tek na dugme. Backend nema GET koji bi rekao šta se prihvata, a React u razvoju (StrictMode) pokrene efekt dvaput, pa bi drugi zahtjev dobio `409` "već iskorištena" iako je prvi prošao. Poslije uspjeha ide `navigate(..., { replace: true })`, da token ne ostane u historiji.
+
+Pozvana osoba obično nema nalog. Čuvar ruta je pamtio samo `pathname`, a prijava i registracija nisu jedna drugoj prenosile zapamćenu adresu, pa bi osoba poslije registracije završila na početnoj i bez tokena. Sada se pamti `pathname + hash`, a linkovi između prijave i registracije nose isto stanje. Oba dijela imaju test, i oba su pala kad sam ih vratio na staro.
+
+Greške `403`, `404`, `409` i `410` (drugi email, ne postoji, iskorištena, istekla) skinu dugme i ponude link na organizacije, jer bi ponovni klik dao isti odgovor. Kad server ne odgovara, dugme ostaje.
+
+Lista organizacija se osvježi prije prelaska na novu organizaciju. Test to ne može uhvatiti: link iz maila otvara aplikaciju od nule, keš je prazan i stranica organizacije ionako učita svježu listu. Probao sam usporiti lažni backend, pa je mutacija opet prošla, jer na `/pozivnica` niko ne čita listu organizacija. Ostavio sam osvježavanje za slučaj kad je lista već u kešu.
+
+## Resursi iz frontenda: PUT šalje sve, deaktivacija uz potvrdu
+
+Novi resurs i izmjena koriste istu formu. `PUT` na backendu postavlja cijeli resurs, a `autoConfirm` i `cancelNoticeHours` koji nisu poslani postanu podrazumijevani (automatska potvrda, bez roka). Zato forma šalje sva polja, i ona koja nisu dirana, i to čuva test. Prazno polje za broj ide kao `null`, a ne kao `Number('') = 0`, da backend kaže "Unesi trajanje" umjesto da napravi resurs od 0 minuta.
+
+Deaktivacija se ne može vratiti (vidi gore), pa traži drugi klik, a fokus ide na "Odustani", da Enter ne potvrdi slučajno. Rezervacije koje već postoje se ne otkazuju same, i to piše na ekranu. Osobu koja vodi resurs mijenja samo admin, i bira samo između admina i onih koji vode termine, jer bi za klijenta backend vratio `400`. Lista za izbor je prvih 100 članova, što je i najveća stranica na backendu.

@@ -154,3 +154,111 @@ describe('izmjena', () => {
 		expect(sto.textContent).not.toMatch(/deaktiviran/)
 	})
 })
+
+const clan = (id, ime, uloga) => ({ userId: id, displayName: ime, email: `${id}@primjer.ba`, role: uloga, joinedAt: '2035-09-01T08:00:00Z' })
+const CLANOVI_CITAONICE = () =>
+	json({
+		content: [clan('u1', 'Hana Šehić', 'ADMIN'), clan('u7', 'Emir Žunić', 'PROVIDER'), clan('u9', 'Đana Mujić', 'CLIENT')],
+		page: 0, size: 100, totalElements: 3, totalPages: 1,
+	})
+
+// Admin čitaonice uređuje sto koji vodi Hana. Lažni backend pamti deaktivaciju i novog voditelja.
+function sto(odgovori = {}) {
+	const r = resurs('r1', 'Sto 4, tihi dio', 'u1')
+	return organizacijeSResursima({
+		citaonica: [r],
+		odgovori: {
+			'DELETE /api/organizations/o1/resources/r1': () => {
+				r.active = false
+				return new Response(null, { status: 204 })
+			},
+			'PUT /api/organizations/o1/resources/r1/provider': (t) => {
+				r.providerId = t.providerId
+				return json(r)
+			},
+			'/api/organizations/o1/members?page=0&size=100': CLANOVI_CITAONICE,
+			...odgovori,
+		},
+	})
+}
+
+describe('deaktivacija', () => {
+	test('poslije potvrde resurs je deaktiviran, dugmeta više nema, a u listi piše deaktiviran', async () => {
+		const fetch = sto()
+		otvori('/o/citaonica-pmf/r/r1/uredi')
+		const korisnik = userEvent.setup()
+
+		await korisnik.click(await screen.findByRole('button', { name: 'Deaktiviraj resurs' }))
+		// Fokus je na odustajanju, da Enter ne potvrdi nešto što se ne može vratiti
+		expect(document.activeElement.textContent).toBe('Odustani')
+		await korisnik.click(within(screen.getByRole('group', { name: 'Potvrda deaktivacije' })).getByRole('button', { name: 'Da, deaktiviraj' }))
+
+		expect(await screen.findByRole('heading', { name: 'Resurs je deaktiviran' })).toBeTruthy()
+		expect(screen.queryByRole('button', { name: 'Deaktiviraj resurs' })).toBeNull()
+		expect(fetch.mock.calls.filter(([, o]) => o.method === 'DELETE')).toHaveLength(1)
+		await korisnik.click(screen.getByRole('link', { name: 'Čitaonica PMF' }))
+		expect(await screen.findByText(/deaktiviran, termini po 60 min/)).toBeTruthy()
+	})
+
+	test('odustajanje ne šalje ništa i vraća dugme', async () => {
+		const fetch = sto()
+		otvori('/o/citaonica-pmf/r/r1/uredi')
+		const korisnik = userEvent.setup()
+
+		await korisnik.click(await screen.findByRole('button', { name: 'Deaktiviraj resurs' }))
+		await korisnik.click(screen.getByRole('button', { name: 'Odustani' }))
+
+		expect(screen.getByRole('button', { name: 'Deaktiviraj resurs' })).toBeTruthy()
+		expect(fetch.mock.calls.some(([, o]) => o.method === 'DELETE')).toBe(false)
+	})
+
+	test('već deaktiviran resurs nema dugme za deaktivaciju', async () => {
+		organizacijeSResursima({ citaonica: [resurs('r1', 'Stara sala', 'u1', { active: false })] })
+		otvori('/o/citaonica-pmf/r/r1/uredi')
+
+		expect(await screen.findByRole('heading', { name: 'Resurs je deaktiviran' })).toBeTruthy()
+		expect(screen.queryByRole('button', { name: 'Deaktiviraj resurs' })).toBeNull()
+	})
+})
+
+describe('ko vodi resurs', () => {
+	test('admin bira samo između admina i onih koji vode termine, i resurs dobije novu osobu', async () => {
+		const fetch = sto()
+		otvori('/o/citaonica-pmf/r/r1/uredi')
+		const korisnik = userEvent.setup()
+
+		const izbor = await screen.findByLabelText('Osoba koja vodi resurs')
+		expect([...izbor.options].map((o) => o.textContent)).toEqual(['Hana Šehić (admin)', 'Emir Žunić (vodi termine)'])
+		expect(izbor.value).toBe('u1')
+		await korisnik.selectOptions(izbor, 'Emir Žunić (vodi termine)')
+		await korisnik.click(screen.getByRole('button', { name: 'Promijeni osobu' }))
+
+		expect(await screen.findByText('Resurs sada vodi Emir Žunić.')).toBeTruthy()
+		expect(tijelo(fetch, 'PUT /api/organizations/o1/resources/r1/provider')).toEqual({ providerId: 'u7' })
+	})
+
+	test('400 od servera (npr. osoba je u međuvremenu postala klijent) stoji uz izbor', async () => {
+		sto({
+			'PUT /api/organizations/o1/resources/r1/provider': () =>
+				problem(400, { detail: 'Neki podaci nisu ispravni. Ispravi označena polja i pokušaj ponovo.', greske: [{ polje: 'providerId', poruka: 'Resurs može voditi samo član organizacije s ulogom PROVIDER ili ADMIN.' }] }),
+		})
+		otvori('/o/citaonica-pmf/r/r1/uredi')
+		const korisnik = userEvent.setup()
+
+		await korisnik.selectOptions(await screen.findByLabelText('Osoba koja vodi resurs'), 'Emir Žunić (vodi termine)')
+		await korisnik.click(screen.getByRole('button', { name: 'Promijeni osobu' }))
+
+		expect(await screen.findByText('Resurs može voditi samo član organizacije s ulogom PROVIDER ili ADMIN.')).toBeTruthy()
+	})
+
+	test('provider na svom resursu ne mijenja voditelja i ne traži listu članova', async () => {
+		const fetch = organizacijeSResursima({ konsultacije: [resurs('r5', 'Termin konsultacija', 'u1')] })
+		otvori('/o/konsultacije-dulic/r/r5/uredi')
+
+		await screen.findByRole('button', { name: 'Sačuvaj promjene' })
+
+		expect(screen.queryByLabelText('Osoba koja vodi resurs')).toBeNull()
+		expect(screen.getByText(/Resurs vodiš ti/)).toBeTruthy()
+		expect(fetch.mock.calls.some(([p]) => p.includes('/members'))).toBe(false)
+	})
+})

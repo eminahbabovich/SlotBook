@@ -7,7 +7,9 @@ import { useOrganizacija, useResursi } from '../organizacije/upiti.js'
 import { vodiResurs } from '../raspored/vodiResurs.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Deaktivacija } from './Deaktivacija.jsx'
 import { ResursForma } from './ResursForma.jsx'
+import { Voditelj } from './Voditelj.jsx'
 
 const PORUKE_UCITAVANJE = {
 	serverNeOdgovara: 'Resurs se nije učitao, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -58,6 +60,12 @@ export function IzmjenaResursa() {
 			<Link to={`/o/${slug}`}>{org.organizacija.naziv}</Link>
 			<h1>Izmjena: {resurs.naziv}</h1>
 			<ResursForma pocetno={resurs} mutacija={izmjena} dugme="Sačuvaj promjene" dugmeSalje="Promjene se čuvaju" poruke={PORUKE} uspjeh="Promjene su sačuvane." />
+			{org.organizacija.uloga === 'ADMIN' ? (
+				<Voditelj organizacija={org.organizacija} resurs={resurs} />
+			) : (
+				<p>Resurs vodiš ti. Osobu koja ga vodi mijenja admin organizacije.</p>
+			)}
+			<Deaktivacija organizacija={org.organizacija} resurs={resurs} />
 		</section>
 	)
 }
