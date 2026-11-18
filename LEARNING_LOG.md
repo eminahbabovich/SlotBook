@@ -146,3 +146,18 @@ Oxlint je javio da čitam ref tokom crtanja. Ref mi je pamtio kojim redom su int
 
 U Edgeu polje za sat pokazuje `08:00 AM`, jer je browser na engleskom. Šalje i dalje `08:00`.
 
+
+## srijeda, 18. novembar 2026. u 19:28
+
+Korak 11, statistika. Biblioteku za grafove nisam uzeo, jer su svi grafovi vodoravne trake, a za to je dovoljan `<span>` sa širinom u procentima unutar obične tabele.
+
+Najviše me iznenadio CSV. Da sam fajl čitao sa `text()`, BOM bi nestao, jer `Body.text()` dekodira UTF-8 i baci ga usput. Zato `apiFetch` sad zna vratiti i `blob`. U testu je pukla druga stvar: `new Response(blob)` u jsdom-u ne prepozna jsdom Blob, nego pošalje tekst `[object Blob]`. Kod je bio dobar, test nije.
+
+Test za grešku servera je pao, jer moj lažni backend nije znao da aplikacija sama ponovi upit jednom poslije sekunde. Vratio je uspjeh baš na taj drugi pokušaj, pa se greška nije ni prikazala.
+
+Na telefonu je tabela popunjenosti bila šira od ekrana (487 px na 375). Sati su otišli u drugi red ispod naziva i ostale su dvije kolone.
+
+Jednom, poslije mutacija, palo je 6 testova, iako su fajlovi bili vraćeni bajt po bajt. U sljedeća tri pokretanja sve je prošlo. Ne znam koji su testovi pali, jer sam gledao samo broj. Sljedeći put ću sačuvati izlaz.
+
+U testu je ostao nevidljiv BOM znak u stringu, umjesto `\uFEFF`. Grep ga je našao, ali je commit prošao, jer komanda nije stala na nalazu. Ispravio sam to i dodao u isti commit prije pusha.
+
