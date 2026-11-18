@@ -128,3 +128,21 @@ Mutacija koju test nije uhvatio: izbacio sam osvježavanje liste organizacija po
 `PUT` resursa bez `autoConfirm` vrati automatsku potvrdu. To sam ja napisao u Fazi 3 i zaboravio. Forma zato šalje sva polja.
 
 Testovi su dvaput pali zbog upita, a ne zbog koda. `findByText('Hana Šehić')` je našao ime u zaglavlju prije nego što se lista članova učitala. "Nijedan POST" nije prošlo, jer je i obnova sesije POST.
+
+
+## srijeda, 18. novembar 2026. u 19:04
+
+10c, radno vrijeme i izuzeci. Ovim je korak 10 gotov.
+
+API sloj za radno vrijeme sam napisao prije testa, iako je pravilo obrnuto. Da bih vidio da testovi ipak nešto čuvaju, kasnije sam ubacio greške u kod i provjerio da padaju.
+
+Izuzetak upisujem kao dan i sat u Sarajevu, a backend hoće `+01:00` ili `+02:00`. Pomak zavisi od trenutka koji tek računam. Rješenje je probati oba pomaka, od dan prije i od dan poslije, i zadržati onaj koji se slaže sam sa sobom. Ispalo je da to usput riješi i oba rubna slučaja: 28.3.2027. u 02:30 ne prolazi nijedan pomak, a 25.10.2026. u 02:30 prolaze oba.
+
+Backend je za preklapanje intervala pisao "s intervalom rules[0]". Dok nije bilo ekrana, niko tu poruku nije pročitao.
+
+Najduže sam se zadržao na jednoj liniji. Poslije novog resursa aplikacija ide na njegovo radno vrijeme, a ta stranica traži resurs u listi. Izbacio sam osvježavanje liste i test je prošao. Napisao sam test koji pamti svaki naslov koji se pojavi, i on je pao i sa osvježavanjem i bez njega: na tren je pisalo "Radno vrijeme nije dostupno". U izvoru TanStack Query je pisalo zašto. `invalidateQueries` ponovo učitava samo upite koje neko trenutno prikazuje, a na stranici "Novi resurs" listu ne prikazuje niko. `await` se zato završio odmah. Treba `refetchType: 'all'`. Ista greška je bila i kod prihvatanja pozivnice, gdje sam prošli put zapisao da osvježavanje ostavljam "za slučaj kad je lista u kešu". Baš u tom slučaju ne bi ništa uradilo.
+
+Oxlint je javio da čitam ref tokom crtanja. Ref mi je pamtio kojim redom su intervali poslani. Mutacija to već pamti u `variables`, pa ref nije ni trebao.
+
+U Edgeu polje za sat pokazuje `08:00 AM`, jer je browser na engleskom. Šalje i dalje `08:00`.
+
