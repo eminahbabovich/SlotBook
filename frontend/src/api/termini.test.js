@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { postaviToken } from './apiFetch.js'
-import { kalendarResursa, resursiOrganizacije } from './termini.js'
+import { kalendarResursa } from './termini.js'
 
 const json = (tijelo) => new Response(JSON.stringify(tijelo), { status: 200, headers: { 'Content-Type': 'application/json' } })
 
@@ -45,17 +45,4 @@ test('kalendar bez polja taken glasno pada, umjesto da sve zauzeto prikaže kao 
 	vi.stubGlobal('fetch', vi.fn(async () => json({ timezone: 'Europe/Sarajevo', slots: [] })))
 
 	await expect(kalendarResursa('r1', '2035-11-19', '2035-11-26')).rejects.toThrow(/taken/)
-})
-
-test('resursi organizacije dolaze s nazivom, opisom i trajanjem termina', async () => {
-	const fetch = vi.fn(async () =>
-		json({
-			content: [{ id: 'r1', organizationId: 'o1', providerId: 'u1', name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: true, cancelNoticeHours: 0, active: true, hasImage: false }],
-			page: 0, size: 100, totalElements: 1, totalPages: 1,
-		}),
-	)
-	vi.stubGlobal('fetch', fetch)
-
-	expect(await resursiOrganizacije('o1')).toEqual([{ id: 'r1', naziv: 'Sto 4, tihi dio', opis: null, trajanjeMinuta: 60, vodi: 'u1' }])
-	expect(fetch.mock.calls[0][0]).toBe('/api/organizations/o1/resources?size=100')
 })

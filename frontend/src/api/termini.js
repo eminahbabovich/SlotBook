@@ -1,16 +1,5 @@
 import { apiFetch, provjeriPolja } from './apiFetch.js'
 
-// ResourceResponse iz PageResponse. Organizacija s više od 100 resursa za sada ne postoji,
-// a lista za izbor ionako ne bi bila čitljiva. Kad zatreba, ide pretraga, ne stranice.
-export async function resursiOrganizacije(organizacijaId) {
-	const putanja = `/api/organizations/${organizacijaId}/resources?size=100`
-	const stranica = provjeriPolja(await apiFetch(putanja), ['content'], putanja)
-	return stranica.content.map((r) => {
-		provjeriPolja(r, ['id', 'name', 'slotMinutes'], putanja)
-		return { id: r.id, naziv: r.name, opis: r.description ?? null, trajanjeMinuta: r.slotMinutes, vodi: r.providerId ?? null }
-	})
-}
-
 const STANJE_MOJE = { CONFIRMED: 'moje', PENDING: 'ceka' }
 
 // SlotCalendarResponse(timezone, slots, taken). od i doDana su dani u zoni organizacije,

@@ -1,4 +1,4 @@
-import { vodiResurs } from '../raspored/vodiResurs.js'
+import { mozeDodatiResurs, vodiResurs } from '../raspored/vodiResurs.js'
 import { useSesija } from '../sesija/sesija.js'
 import { Link, useParams } from 'react-router'
 import { porukaGreske } from '../forma/porukaGreske.js'
@@ -34,9 +34,10 @@ export function Organizacija() {
 			<h1>{organizacija.naziv}</h1>
 			<p>Tvoja uloga: {ULOGE[organizacija.uloga] ?? organizacija.uloga}.</p>
 			<p className="napomena-blok">Vrijeme termina je po zoni {organizacija.zona}.</p>
-			{organizacija.uloga === 'ADMIN' && (
-				<p>
-					<Link to={`/o/${organizacija.slug}/clanovi`}>Članovi i pozivnice</Link>
+			{(organizacija.uloga === 'ADMIN' || mozeDodatiResurs(organizacija)) && (
+				<p className="organizacija-veze">
+					{organizacija.uloga === 'ADMIN' && <Link to={`/o/${organizacija.slug}/clanovi`}>Članovi i pozivnice</Link>}
+					{mozeDodatiResurs(organizacija) && <Link to={`/o/${organizacija.slug}/resursi/novi`}>Novi resurs</Link>}
 				</p>
 			)}
 			<Resursi organizacija={organizacija} />
@@ -55,7 +56,9 @@ function Resursi({ organizacija }) {
 		return <NijeUcitano poruka={porukaGreske(error, PORUKE_RESURSI)} ponovo={() => refetch()} />
 	}
 	if (resursi.length === 0) {
-		return (
+		return mozeDodatiResurs(organizacija) ? (
+			<p>Ova organizacija još nema ništa za rezervaciju. Prvi resurs, npr. salu, sto ili termin konsultacija, dodaješ preko linka Novi resurs.</p>
+		) : (
 			<p>
 				Ova organizacija još nema ništa za rezervaciju. Kad admin doda salu, sto ili termin konsultacija, pojavit će se
 				ovdje.
@@ -68,12 +71,19 @@ function Resursi({ organizacija }) {
 				<li key={r.id} className="tabla-stavka">
 					<Link to={`/o/${organizacija.slug}/r/${r.id}`} className="tabla-red">
 						<span className="tabla-naziv">{r.naziv}</span>
-						<span className="tabla-uloga">termini po {r.trajanjeMinuta} min</span>
+						<span className="tabla-uloga">
+							{!r.aktivan && 'deaktiviran, '}termini po {r.trajanjeMinuta} min
+						</span>
 					</Link>
 					{vodiResurs(organizacija, r, korisnik.id) && (
-						<Link to={`/o/${organizacija.slug}/r/${r.id}/raspored`} className="tabla-raspored" aria-label={`Raspored: ${r.naziv}`}>
-							Raspored
-						</Link>
+						<>
+							<Link to={`/o/${organizacija.slug}/r/${r.id}/raspored`} className="tabla-raspored" aria-label={`Raspored: ${r.naziv}`}>
+								Raspored
+							</Link>
+							<Link to={`/o/${organizacija.slug}/r/${r.id}/uredi`} className="tabla-raspored" aria-label={`Uredi: ${r.naziv}`}>
+								Uredi
+							</Link>
+						</>
 					)}
 				</li>
 			))}

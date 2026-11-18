@@ -12,7 +12,8 @@
 
 /* Puna tamna ivica: ivica polja treba kontrast 3:1, a --linija (20 %) ga nema. */
 .polje input,
-.polje select {
+.polje select,
+.polje textarea {
 	box-sizing: border-box;
 	width: 100%;
 	min-height: var(--red-min-visina);
@@ -25,8 +26,14 @@
 }
 
 /* Neispravno polje se razlikuje i bez boje: deblja ivica i tekst greške ispod. */
-.polje input[aria-invalid='true'] {
+.polje input[aria-invalid='true'],
+.polje textarea[aria-invalid='true'] {
 	border: 3px solid var(--greska);
+}
+
+.polje textarea {
+	padding: var(--razmak-8) var(--razmak-12);
+	resize: vertical;
 }
 
 .napomena,

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { postaviToken } from '../api/apiFetch.js'
 import { PRIJAVLJENA, backend, json, otvori, problem } from '../test/lazniBackend.js'
 
-const STO = { id: 'r1', name: 'Sto 4, tihi dio', description: null, slotMinutes: 60 }
+const STO = { id: 'r1', organizationId: 'o1', providerId: 'u9', name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: true, cancelNoticeHours: 0, active: true, hasImage: false }
 const SLOTS = '/api/resources/r1/slots?from=2035-11-19&to=2035-11-26'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 

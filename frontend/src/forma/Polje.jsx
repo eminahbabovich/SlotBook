@@ -8,14 +8,17 @@ export function Polje({ oznaka, ime, tip = 'text', vrijednost, promjena, greska,
 	const napomenaId = `${id}-napomena`
 	const greskaId = `${id}-greska`
 	const opis = [napomena && napomenaId, greska && greskaId].filter(Boolean).join(' ')
+	// Duži tekst (opis resursa) dobije više redova, ostalo je obično polje
+	const Unos = tip === 'textarea' ? 'textarea' : 'input'
 
 	return (
 		<div className="polje">
 			<label htmlFor={id}>{oznaka}</label>
-			<input
+			<Unos
 				id={id}
 				name={ime}
-				type={tip}
+				type={tip === 'textarea' ? undefined : tip}
+				rows={tip === 'textarea' ? 4 : undefined}
 				value={vrijednost}
 				onChange={(dogadjaj) => promjena(dogadjaj.target.value)}
 				autoComplete={autoComplete}

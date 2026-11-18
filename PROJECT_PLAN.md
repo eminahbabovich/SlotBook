@@ -278,7 +278,9 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
     stranicama, pozivnica s ulogom i rokom u zoni organizacije; provjereno s lažnim backendom
     u Edgeu, s pravim ne). 10b prihvatanje pozivnice i resursi: prihvatanje gotovo 18.11.2026
     (stranica `/pozivnica#token=...` iz maila, prihvata se tek na klik, adresa s tokenom
-    preživi prijavu i registraciju), resursi u izradi. 10c radno vrijeme i izuzeci.
+    preživi prijavu i registraciju). Novi resurs i izmjena gotovi 18.11.2026 (jedna forma, PUT
+    šalje sva polja, admin vidi i deaktivirane). Ostaje deaktivacija i promjena osobe koja vodi
+    resurs. 10c radno vrijeme i izuzeci.
 11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz.
 12. **Playwright glavni tok i kraj faze.** Prijava, termin, rezervacija, otkazivanje,
     konflikt. README, `docs/` i status.

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { mojeOrganizacije } from '../api/organizacije.js'
-import { resursiOrganizacije } from '../api/termini.js'
+import { resursiOrganizacije } from '../api/resursi.js'
 
 // Isti ključ dijele lista i stranica organizacije, pa se lista učita jednom i čuva u kešu.
 export const KLJUC_MOJE_ORGANIZACIJE = ['mojeOrganizacije']

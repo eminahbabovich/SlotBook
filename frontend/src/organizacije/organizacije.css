@@ -44,3 +44,10 @@
 	flex: 1;
 	border-bottom: 0;
 }
+
+/* Veze za admina i providera ispod naslova, jedna do druge, a na uskom ekranu jedna ispod druge */
+.organizacija-veze {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--razmak-8) var(--razmak-24);
+}
