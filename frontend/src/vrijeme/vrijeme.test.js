@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from './vrijeme.js'
+import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, uTrenutakSPomakom, zonaUredjajaRazlicita } from './vrijeme.js'
 
 const SARAJEVO = 'Europe/Sarajevo'
 
@@ -72,5 +72,36 @@ describe('browser bez bosanskog u Intl-u', () => {
 		expect(vrijeme.nazivDana('2035-08-25', 'kratko')).toBe('sub 25.')
 		expect(vrijeme.nazivDana('2035-03-25')).toBe('nedjelja, 25. mart')
 		expect(vrijeme.satUZoni('2035-11-19T13:05:00Z', SARAJEVO)).toBe('14:05')
+	})
+})
+
+// Izuzetak (godišnji, praznik) se upisuje kao dan i sat u zoni organizacije, a backend traži
+// OffsetDateTime. Pomak zavisi od datuma: zimi +01:00, ljeti +02:00.
+describe('dan i sat u zoni u trenutak s pomakom', () => {
+	test('zimi je pomak +01:00, ljeti +02:00, za isti sat', () => {
+		expect(uTrenutakSPomakom('2026-12-24', '00:00', SARAJEVO)).toBe('2026-12-24T00:00:00+01:00')
+		expect(uTrenutakSPomakom('2027-07-01', '08:30', SARAJEVO)).toBe('2027-07-01T08:30:00+02:00')
+	})
+
+	test('pomak se uzima iz zone organizacije, ne iz zone uređaja', () => {
+		expect(uTrenutakSPomakom('2026-12-24', '00:00', 'America/New_York')).toBe('2026-12-24T00:00:00-05:00')
+	})
+
+	test('dan prelaska na ljetno: 01:30 je još zimsko, 03:00 već ljetno, a 02:30 ne postoji', () => {
+		expect(uTrenutakSPomakom('2027-03-28', '01:30', SARAJEVO)).toBe('2027-03-28T01:30:00+01:00')
+		expect(uTrenutakSPomakom('2027-03-28', '03:00', SARAJEVO)).toBe('2027-03-28T03:00:00+02:00')
+		expect(uTrenutakSPomakom('2027-03-28', '02:30', SARAJEVO)).toBeNull()
+	})
+
+	// 25.10.2026. u 03:00 sat se vrati na 02:00, pa 02:30 postoji dvaput. Uzima se prvo, da
+	// izuzetak radije počne sat ranije nego kasnije.
+	test('dan prelaska na zimsko: 02:30 postoji dvaput i uzima se prvo, ljetno', () => {
+		expect(uTrenutakSPomakom('2026-10-25', '02:30', SARAJEVO)).toBe('2026-10-25T02:30:00+02:00')
+		expect(uTrenutakSPomakom('2026-10-25', '04:00', SARAJEVO)).toBe('2026-10-25T04:00:00+01:00')
+	})
+
+	test('ponoć na kraju godine ne preskače u drugu godinu', () => {
+		expect(uTrenutakSPomakom('2026-12-31', '23:59', SARAJEVO)).toBe('2026-12-31T23:59:00+01:00')
+		expect(uTrenutakSPomakom('2027-01-01', '00:00', SARAJEVO)).toBe('2027-01-01T00:00:00+01:00')
 	})
 })

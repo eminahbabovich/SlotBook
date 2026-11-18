@@ -59,6 +59,9 @@ export function IzmjenaResursa() {
 		<section>
 			<Link to={`/o/${slug}`}>{org.organizacija.naziv}</Link>
 			<h1>Izmjena: {resurs.naziv}</h1>
+			<p>
+				<Link to={`/o/${slug}/r/${resurs.id}/radno-vrijeme`}>Radno vrijeme i izuzeci</Link>
+			</p>
 			<ResursForma pocetno={resurs} mutacija={izmjena} dugme="Sačuvaj promjene" dugmeSalje="Promjene se čuvaju" poruke={PORUKE} uspjeh="Promjene su sačuvane." />
 			{org.organizacija.uloga === 'ADMIN' ? (
 				<Voditelj organizacija={org.organizacija} resurs={resurs} />

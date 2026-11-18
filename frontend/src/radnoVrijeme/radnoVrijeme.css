@@ -1,0 +1,36 @@
+/* Dan je red u rasporedu: naziv dana, ispod njega intervali, crta između dana. */
+.dan-rada {
+	margin: 0;
+	padding: var(--razmak-12) 0 0;
+	border: 0;
+	border-top: 1px solid var(--linija);
+}
+
+.dan-rada legend {
+	padding: 0;
+	font-weight: 600;
+}
+
+/* od, do i Ukloni u jednom redu i na telefonu; greška ispod cijelog reda */
+.interval {
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	gap: var(--razmak-8);
+	align-items: end;
+	margin-bottom: var(--razmak-8);
+}
+
+.interval .polje label {
+	font-weight: 400;
+}
+
+.interval-greska {
+	grid-column: 1 / -1;
+}
+
+/* Dan i sat jedan do drugog */
+.dan-i-sat {
+	display: grid;
+	grid-template-columns: 3fr 2fr;
+	gap: var(--razmak-8);
+}

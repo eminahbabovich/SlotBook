@@ -20,6 +20,8 @@ function organizacijeSResursima({ citaonica = [], konsultacije = [], odgovori = 
 		'/api/me/organizations': () => json([CITAONICA, TERETANA, KONSULTACIJE]),
 		'/api/organizations/o1/resources?size=100': () => stranica(liste.o1),
 		'/api/organizations/o3/resources?size=100': () => stranica(liste.o3),
+		'/api/resources/r-novi/availability': () => json({ timezone: 'Europe/Sarajevo', rules: [] }),
+		'/api/resources/r-novi/time-off?size=50': () => stranica([]),
 		'POST /api/organizations/o1/resources': (t) => {
 			const novi = resurs('r-novi', t.name, 'u1', { description: t.description, slotMinutes: t.slotMinutes, autoConfirm: t.autoConfirm, cancelNoticeHours: t.cancelNoticeHours })
 			liste.o1.push(novi)
@@ -44,7 +46,7 @@ afterEach(() => {
 })
 
 describe('novi resurs', () => {
-	test('admin napravi resurs s ručnom potvrdom i rokom, i vidi ga u listi organizacije', async () => {
+	test('admin napravi resurs s ručnom potvrdom i rokom, i odmah upisuje njegovo radno vrijeme', async () => {
 		const fetch = organizacijeSResursima()
 		otvori('/o/citaonica-pmf')
 		const korisnik = userEvent.setup()
@@ -57,11 +59,17 @@ describe('novi resurs', () => {
 		await korisnik.selectOptions(screen.getByLabelText('Potvrda rezervacije'), 'ručno, potvrđuje ko vodi resurs')
 		await korisnik.clear(screen.getByLabelText('Rok za otkazivanje u satima'))
 		await korisnik.type(screen.getByLabelText('Rok za otkazivanje u satima'), '12')
+		// Bilježi svaki naslov koji se pojavi, i onaj koji odmah nestane
+		const naslovi = []
+		const posmatrac = new MutationObserver(() => document.querySelectorAll('h1').forEach((h) => naslovi.push(h.textContent)))
+		posmatrac.observe(document.body, { childList: true, subtree: true })
 		await korisnik.click(screen.getByRole('button', { name: 'Napravi resurs' }))
 
-		// Ko napravi resurs, vodi ga, pa odmah ima i Uredi
-		expect(await screen.findByRole('link', { name: 'Uredi: Grupna soba 2' })).toBeTruthy()
-		expect(window.location.pathname).toBe('/o/citaonica-pmf')
+		expect(await screen.findByRole('heading', { name: 'Radno vrijeme: Grupna soba 2' })).toBeTruthy()
+		posmatrac.disconnect()
+		// Stranica traži resurs u listi. Bez osvježene liste bi na tren pisalo da nije dostupan.
+		expect(naslovi).not.toContain('Radno vrijeme nije dostupno')
+		expect(window.location.pathname).toBe('/o/citaonica-pmf/r/r-novi/radno-vrijeme')
 		expect(tijelo(fetch, 'POST /api/organizations/o1/resources')).toEqual({
 			name: 'Grupna soba 2', description: 'Za četvoro, s tablom.', slotMinutes: 90, autoConfirm: false, cancelNoticeHours: 12,
 		})

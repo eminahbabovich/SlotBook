@@ -28,10 +28,11 @@ export function PrihvatanjePozivnice() {
 	// poslao dva zahtjeva, a drugi bi dobio 409 "već iskorištena".
 	const prihvatanje = useMutation({
 		mutationFn: () => prihvatiPozivnicu(token),
-		// Lista se osvježi prije prelaska, za slučaj da je već u kešu bez nove organizacije. Link iz
-		// maila otvara aplikaciju od nule, pa je keš prazan i test ovo ne može uhvatiti.
+		// Lista se osvježi prije prelaska, za slučaj da je već u kešu bez nove organizacije.
+		// refetchType 'all', jer je na ovoj stranici lista neaktivna i inače se ne bi učitala.
+		// Link iz maila otvara aplikaciju od nule, pa je keš prazan i test ovo ne može uhvatiti.
 		onSuccess: async ({ slug }) => {
-			await queryClient.invalidateQueries({ queryKey: KLJUC_MOJE_ORGANIZACIJE })
+			await queryClient.invalidateQueries({ queryKey: KLJUC_MOJE_ORGANIZACIJE, refetchType: 'all' })
 			// replace: token ne ostaje u historiji, pa ga dugme "nazad" ne vraća
 			navigate(`/o/${slug}`, { replace: true })
 		},

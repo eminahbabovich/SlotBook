@@ -9,6 +9,7 @@ import { Organizacije } from './organizacije/Organizacije.jsx'
 import { PrihvatanjePozivnice } from './pozivnica/PrihvatanjePozivnice.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
 import { Registracija } from './prijava/Registracija.jsx'
+import { RadnoVrijemeResursa } from './radnoVrijeme/RadnoVrijemeResursa.jsx'
 import { RasporedResursa } from './raspored/RasporedResursa.jsx'
 import { IzmjenaResursa } from './resursi/IzmjenaResursa.jsx'
 import { NoviResurs } from './resursi/NoviResurs.jsx'
@@ -47,6 +48,7 @@ export default function App() {
 								<Route path="/o/:slug/clanovi" element={<Clanovi />} />
 								<Route path="/o/:slug/resursi/novi" element={<NoviResurs />} />
 								<Route path="/o/:slug/r/:resursId/uredi" element={<IzmjenaResursa />} />
+								<Route path="/o/:slug/r/:resursId/radno-vrijeme" element={<RadnoVrijemeResursa />} />
 								<Route path="/o/:slug/r/:resursId" element={<KalendarResursa />} />
 								<Route path="/o/:slug/r/:resursId/raspored" element={<RasporedResursa />} />
 								<Route path="/rezervacije" element={<MojeRezervacije />} />

@@ -273,15 +273,13 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    `GET /api/resources/{id}/bookings?from&to` (samo admin i provider resursa, s imenom
    klijenta), ekran `/o/{slug}/r/{id}/raspored` po danima, link "Raspored" samo za one koji
    vode resurs. Provjereno s lažnim backendom u Edgeu, s pravim ne.
-10. **Admin.** Članovi i pozivnice, resursi, radno vrijeme i izuzeci. U izradi, u tri dijela:
-    10a članovi i pozivnica: gotovo 18.11.2026 (ekran `/o/{slug}/clanovi`, samo admin, lista po
-    stranicama, pozivnica s ulogom i rokom u zoni organizacije; provjereno s lažnim backendom
-    u Edgeu, s pravim ne). 10b prihvatanje pozivnice i resursi: prihvatanje gotovo 18.11.2026
-    (stranica `/pozivnica#token=...` iz maila, prihvata se tek na klik, adresa s tokenom
-    preživi prijavu i registraciju). Resursi gotovi 18.11.2026: novi i izmjena (jedna forma, PUT
-    šalje sva polja, admin vidi i deaktivirane), deaktivacija uz potvrdu, promjena osobe koja
-    vodi resurs (samo admin). Provjereno s lažnim backendom u Edgeu, s pravim ne.
-    10c radno vrijeme i izuzeci.
+10. **Admin.** Članovi i pozivnice, resursi, radno vrijeme i izuzeci. Gotovo 18.11.2026, u
+    tri dijela. 10a: lista članova i pozivnica s ulogom (samo admin). 10b: stranica za link iz
+    pozivnice (prihvata se na klik, token preživi prijavu i registraciju), novi resurs i izmjena
+    (PUT šalje sva polja), deaktivacija uz potvrdu, promjena osobe koja vodi resurs. 10c:
+    sedmično radno vrijeme jednim PUT-om s greškom ispod pravog intervala, izuzeci s pomakom
+    zone izračunatim na frontendu (sat koji ne postoji na dan prelaska na ljetno forma odbije).
+    Provjereno s lažnim backendom u Edgeu na 375 i 1280 px, s pravim ne.
 11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz.
 12. **Playwright glavni tok i kraj faze.** Prijava, termin, rezervacija, otkazivanje,
     konflikt. README, `docs/` i status.
@@ -439,6 +437,9 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Strelice lijevo i desno kroz traku s danima (sada samo Tab)
 - Lista otvorenih pozivnica za admina, s povlačenjem pozivnice (sada admin vidi samo potvrdu odmah poslije slanja)
 - Promjena uloge člana i uklanjanje člana iz organizacije (backend za to nema endpoint)
+- Vlastito polje za sat u 24-satnom obliku (ugrađeno `<input type="time">` prati jezik browsera, pa na engleskom pokazuje AM/PM)
+- Kopiranje radnog vremena jednog dana na ostale radne dane
+- Godina uz datum izuzetka kad nije tekuća
 
 Otvoreno iz Faze 6 (dug, za pregled u Fazi 13):
 

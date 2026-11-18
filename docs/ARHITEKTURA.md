@@ -1,6 +1,6 @@
 # Arhitektura
 
-Opis onoga što postoji sada (Faze 1 do 5). Frontend još ne postoji, pa ga ovdje nema.
+Opis backenda kakav je sada. Frontend (Faza 7) je u izradi u `frontend/`, a ovdje će biti opisan na kraju te faze (korak 12).
 
 ## Paketi i slojevi
 

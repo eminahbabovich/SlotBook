@@ -28,12 +28,14 @@ export function NoviResurs() {
 	const queryClient = useQueryClient()
 	const navigate = useNavigate()
 
-	// Novi resurs mora biti u listi kad se korisnik vrati na organizaciju
+	// Bez radnog vremena resurs nema termina, pa se odmah ide na njega. Lista se osvježi prije,
+	// jer stranica radnog vremena resurs traži u njoj. refetchType 'all': ovdje lista nije
+	// prikazana, a bez toga bi invalidateQueries učitao samo prikazane upite i odmah se završio.
 	const pravljenje = useMutation({
 		mutationFn: (resurs) => noviResurs(organizacija.id, resurs),
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({ queryKey: ['resursi', organizacija.id] })
-			navigate(`/o/${slug}`)
+		onSuccess: async (resurs) => {
+			await queryClient.invalidateQueries({ queryKey: ['resursi', organizacija.id], refetchType: 'all' })
+			navigate(`/o/${slug}/r/${resurs.id}/radno-vrijeme`)
 		},
 	})
 
@@ -61,8 +63,8 @@ export function NoviResurs() {
 			<Link to={`/o/${slug}`}>{organizacija.naziv}</Link>
 			<h1>Novi resurs</h1>
 			<p className="napomena-blok">
-				Resurs vodiš ti, a admin ga kasnije može dati drugoj osobi. Dok resurs nema radno vrijeme, kalendar ne nudi
-				termine.
+				Resurs vodiš ti, a admin ga kasnije može dati drugoj osobi. Poslije ovoga se upisuje radno vrijeme, jer bez
+				njega kalendar ne nudi termine.
 			</p>
 			<ResursForma pocetno={PRAZAN_RESURS} mutacija={pravljenje} dugme="Napravi resurs" dugmeSalje="Resurs se pravi" poruke={PORUKE} />
 		</section>

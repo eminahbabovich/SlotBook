@@ -58,8 +58,9 @@ public class AvailabilityService {
 				AvailabilityInterval b = intervali.get(j);
 				// Kraj je isključen: 08:00-12:00 i 12:00-16:00 se dodiruju, ali ne preklapaju
 				if (a.dayOfWeek() == b.dayOfWeek() && a.start().isBefore(b.end()) && b.start().isBefore(a.end())) {
+					// Polje kaže koji interval, a poruka je za korisnika, pa u njoj nema rules[i]
 					throw new InvalidFieldException("rules[" + j + "]",
-							"Ovaj interval se preklapa s intervalom rules[" + i + "] istog dana.");
+							"Ovaj interval se preklapa s drugim intervalom istog dana.");
 				}
 			}
 		}

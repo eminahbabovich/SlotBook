@@ -594,10 +594,22 @@ Pozvana osoba obično nema nalog. Čuvar ruta je pamtio samo `pathname`, a prija
 
 Greške `403`, `404`, `409` i `410` (drugi email, ne postoji, iskorištena, istekla) skinu dugme i ponude link na organizacije, jer bi ponovni klik dao isti odgovor. Kad server ne odgovara, dugme ostaje.
 
-Lista organizacija se osvježi prije prelaska na novu organizaciju. Test to ne može uhvatiti: link iz maila otvara aplikaciju od nule, keš je prazan i stranica organizacije ionako učita svježu listu. Probao sam usporiti lažni backend, pa je mutacija opet prošla, jer na `/pozivnica` niko ne čita listu organizacija. Ostavio sam osvježavanje za slučaj kad je lista već u kešu.
+Lista organizacija se osvježi prije prelaska na novu organizaciju. Test to ne može uhvatiti: link iz maila otvara aplikaciju od nule, keš je prazan i stranica organizacije ionako učita svježu listu. Probao sam usporiti lažni backend, pa je mutacija opet prošla, jer na `/pozivnica` niko ne čita listu organizacija. Ostavio sam osvježavanje za slučaj kad je lista već u kešu. Ispravka iz 10c: tako napisano nije ni tada ništa radilo, vidi "refetchType" ispod.
 
 ## Resursi iz frontenda: PUT šalje sve, deaktivacija uz potvrdu
 
 Novi resurs i izmjena koriste istu formu. `PUT` na backendu postavlja cijeli resurs, a `autoConfirm` i `cancelNoticeHours` koji nisu poslani postanu podrazumijevani (automatska potvrda, bez roka). Zato forma šalje sva polja, i ona koja nisu dirana, i to čuva test. Prazno polje za broj ide kao `null`, a ne kao `Number('') = 0`, da backend kaže "Unesi trajanje" umjesto da napravi resurs od 0 minuta.
 
 Deaktivacija se ne može vratiti (vidi gore), pa traži drugi klik, a fokus ide na "Odustani", da Enter ne potvrdi slučajno. Rezervacije koje već postoje se ne otkazuju same, i to piše na ekranu. Osobu koja vodi resurs mijenja samo admin, i bira samo između admina i onih koji vode termine, jer bi za klijenta backend vratio `400`. Lista za izbor je prvih 100 članova, što je i najveća stranica na backendu.
+
+## Radno vrijeme i izuzeci na frontendu
+
+Radno vrijeme je sedmica od ponedjeljka do nedjelje, a svaki dan ima svoje intervale. Šalje se cijela sedmica jednim `PUT`-om, kao što backend i očekuje. Greške stižu po indeksu (`rules[3].end`), pa forma pamti kojim redom je intervale poslala. Za to koristim `variables` iz TanStack mutacije, a ne vlastiti ref, jer se ref ne smije čitati tokom crtanja (Oxlint je to javio). Poruka backenda za preklapanje je pisala "s intervalom rules[0]", a to korisniku ništa ne znači. Sad piše "s drugim intervalom istog dana", a koji je interval pokazuje mjesto greške na ekranu.
+
+Izuzetak se upisuje kao dan i sat u zoni organizacije, a backend traži `OffsetDateTime`. Pomak zavisi od trenutka koji tek računam, pa `uTrenutakSPomakom` proba pomak od dan prije i od dan poslije i zadrži onaj koji se slaže s pomakom u dobijenom trenutku. Kad se ne slaže nijedan, sat tog dana ne postoji (28.3.2027. u 02:30) i forma to kaže prije slanja. Kad se slažu oba, sat postoji dvaput (25.10.2026. u 02:30) i uzimam raniji, da izuzetak radije počne sat ranije. Bez biblioteke, samo `Intl.DateTimeFormat`. Testovi idu preko oba prelaska i preko Nove godine, a 4 mutacije (kasniji od dva, samo jedan pomak, bez provjere, zona uređaja) padaju. Zona uređaja pada samo na testu s New Yorkom, jer je moj računar u istoj zoni kao Sarajevo.
+
+Ugrađena polja za datum i sat (`<input type="date">`, `type="time"`) prikazuju format po jeziku browsera. U headless Edgeu na engleskom piše `08:00 AM` i `03/28/2027`, a vrijednost koju šalju je i dalje `08:00` i `2027-03-28`. Vlastito polje za sat sam stavio u Dodatke.
+
+### refetchType
+
+Poslije novog resursa se ide pravo na njegovo radno vrijeme. Ta stranica traži resurs u listi resursa, pa se lista prvo osvježi. Test koji pamti svaki naslov koji se pojavi je pokazao da se i sa osvježavanjem na tren vidi "Radno vrijeme nije dostupno". Uzrok je u TanStack Query 5.107 (`queryClient.js`): `invalidateQueries` bez `refetchType` ponovo učita samo aktivne upite, a na stranici "Novi resurs" lista nije prikazana. `await` se zato završi odmah, a nova stranica nacrta stari keš. Sa `refetchType: 'all'` se čeka i nova lista. Isto sam ispravio kod prihvatanja pozivnice, gdje sam osvježavanje ostavio baš za slučaj kad je lista u kešu, a baš tada ne bi ništa učitalo.

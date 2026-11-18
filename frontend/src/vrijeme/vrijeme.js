@@ -58,3 +58,42 @@ export function nazivDana(dan, duzina = 'dugo') {
 export function zonaUredjajaRazlicita(trenuci, zona, zonaUredjaja = Intl.DateTimeFormat().resolvedOptions().timeZone) {
 	return trenuci.some((t) => satUZoni(t, zona) !== satUZoni(t, zonaUredjaja) || danUZoni(t, zona) !== danUZoni(t, zonaUredjaja))
 }
+
+// Koliko je zona u tom trenutku ispred UTC-a, u minutama (Sarajevo zimi 60, ljeti 120).
+// Intl kaže koji je sat u zoni, a razlika tog sata i trenutka je pomak.
+const formatDijelova = new Map()
+function pomakMinuta(ms, zona) {
+	const f = zaZonu(
+		formatDijelova,
+		zona,
+		() => new Intl.DateTimeFormat('en-US', { timeZone: zona, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }),
+	)
+	const d = Object.fromEntries(f.formatToParts(new Date(ms)).map((dio) => [dio.type, dio.value]))
+	return Math.round((Date.UTC(d.year, d.month - 1, d.day, d.hour, d.minute) - ms) / 60000)
+}
+
+function oznakaPomaka(minuta) {
+	const apsolutno = Math.abs(minuta)
+	const dvije = (broj) => String(broj).padStart(2, '0')
+	return `${minuta < 0 ? '-' : '+'}${dvije(Math.floor(apsolutno / 60))}:${dvije(apsolutno % 60)}`
+}
+
+// Dan i sat kako ih korisnik upiše, u zoni organizacije, kao OffsetDateTime za backend:
+// ('2026-12-24', '00:00') -> '2026-12-24T00:00:00+01:00'.
+// Pomak se ne zna unaprijed, jer zavisi od trenutka koji tražimo. Zato se probaju pomaci dan
+// prije i dan poslije (dva prelaska nikad nisu tako blizu) i zadrži onaj koji se poklapa s
+// pomakom u dobijenom trenutku. Kad ne odgovara nijedan, taj sat tog dana ne postoji (02:30
+// na dan prelaska na ljetno) i vraća se null. Kad odgovaraju oba, sat postoji dvaput (02:30
+// na dan prelaska na zimsko) i uzima se raniji trenutak.
+const DAN_MS = 24 * 60 * 60 * 1000
+export function uTrenutakSPomakom(dan, sat, zona) {
+	const [godina, mjesec, d] = dan.split('-').map(Number)
+	const [h, min] = sat.split(':').map(Number)
+	const kaoDaJeUtc = Date.UTC(godina, mjesec - 1, d, h, min)
+	const ispravni = [pomakMinuta(kaoDaJeUtc - DAN_MS, zona), pomakMinuta(kaoDaJeUtc + DAN_MS, zona)]
+		.map((pomak) => ({ pomak, trenutak: kaoDaJeUtc - pomak * 60000 }))
+		.filter(({ pomak, trenutak }) => pomakMinuta(trenutak, zona) === pomak)
+		.sort((a, b) => a.trenutak - b.trenutak)
+	if (ispravni.length === 0) return null
+	return `${dan}T${sat}:00${oznakaPomaka(ispravni[0].pomak)}`
+}
