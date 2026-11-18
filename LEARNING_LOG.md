@@ -114,3 +114,17 @@ U browseru sam vidio "Otkazati možeš do ponedjeljak". Na bosanskom bi trebalo 
 
 Kad je admin dobio link "Raspored: Sto 4, tihi dio", pao je stari test kalendara koji je link tražio regexom `/Sto 4, tihi dio/`. Kod je bio ispravan, a upit u testu preširok.
 
+
+## srijeda, 18. novembar 2026. u 18:49
+
+Admin dio Faze 7: članovi, pozivnica, prihvatanje pozivnice i resursi. Radno vrijeme i izuzeci ostaju za 10c.
+
+Dvije poruke na backendu su obećavale nešto čega nema. "Ulogu joj možeš promijeniti među članovima", a promjene uloge nema nigdje. "Pogledaj listu pozivnica", a te liste isto nema. Dok nije bilo ekrana, niko ih nije čitao. Ispravio sam tekst, a lista pozivnica i promjena uloge su otišle u Dodatke.
+
+Link iz maila za pozivnicu je od Faze 5 vodio na `/pozivnica#token=...`, a te stranice nije bilo. Kad sam je napravio, ispalo je da bi se token ionako izgubio: čuvar ruta je pamtio samo `pathname`, bez dijela iza `#`, a link "Napravi nalog" na prijavi nije nosio zapamćenu adresu dalje. Pozvana osoba skoro nikad nema nalog, pa bi se registrovala i završila na početnoj.
+
+Mutacija koju test nije uhvatio: izbacio sam osvježavanje liste organizacija poslije prihvatanja, i sve je prošlo. Probao sam usporiti lažni backend na 200 ms, opet je prošlo. Tek onda sam pogledao ko na `/pozivnica` uopšte čita tu listu. Niko, pa je keš prazan i nema šta biti zastarjelo. Trebalo je to provjeriti prije nego što sam mijenjao test.
+
+`PUT` resursa bez `autoConfirm` vrati automatsku potvrdu. To sam ja napisao u Fazi 3 i zaboravio. Forma zato šalje sva polja.
+
+Testovi su dvaput pali zbog upita, a ne zbog koda. `findByText('Hana Šehić')` je našao ime u zaglavlju prije nego što se lista članova učitala. "Nijedan POST" nije prošlo, jer je i obnova sesije POST.
