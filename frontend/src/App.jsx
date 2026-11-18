@@ -11,6 +11,7 @@ import { Prijava } from './prijava/Prijava.jsx'
 import { Registracija } from './prijava/Registracija.jsx'
 import { RadnoVrijemeResursa } from './radnoVrijeme/RadnoVrijemeResursa.jsx'
 import { RasporedResursa } from './raspored/RasporedResursa.jsx'
+import { Statistika } from './statistika/Statistika.jsx'
 import { IzmjenaResursa } from './resursi/IzmjenaResursa.jsx'
 import { NoviResurs } from './resursi/NoviResurs.jsx'
 import { MojeRezervacije } from './rezervacije/MojeRezervacije.jsx'
@@ -49,6 +50,7 @@ export default function App() {
 								<Route path="/o/:slug/resursi/novi" element={<NoviResurs />} />
 								<Route path="/o/:slug/r/:resursId/uredi" element={<IzmjenaResursa />} />
 								<Route path="/o/:slug/r/:resursId/radno-vrijeme" element={<RadnoVrijemeResursa />} />
+								<Route path="/o/:slug/statistika" element={<Statistika />} />
 								<Route path="/o/:slug/r/:resursId" element={<KalendarResursa />} />
 								<Route path="/o/:slug/r/:resursId/raspored" element={<RasporedResursa />} />
 								<Route path="/rezervacije" element={<MojeRezervacije />} />

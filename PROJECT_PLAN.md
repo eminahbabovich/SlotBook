@@ -280,7 +280,12 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
     sedmično radno vrijeme jednim PUT-om s greškom ispod pravog intervala, izuzeci s pomakom
     zone izračunatim na frontendu (sat koji ne postoji na dan prelaska na ljetno forma odbije).
     Provjereno s lažnim backendom u Edgeu na 375 i 1280 px, s pravim ne.
-11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz.
+11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz. Gotovo 18.11.2026. Stranica
+    `/o/{slug}/statistika` za admina i osobu koja vodi termine, mjesec po mjesec (mjesec je u
+    adresi i računa se u zoni organizacije). Tri tabele s trakama: rezervacije po stanju,
+    popunjenost po resursu (ukupno iz minuta, ne prosjek procenata) i pet najtraženijih termina.
+    CSV pravi backend, a frontend ga preuzima kao bajtove, da ostane BOM. Provjereno s lažnim
+    backendom u Edgeu na 375 i 1280 px, uključujući preuzet fajl. S pravim backendom nije.
 12. **Playwright glavni tok i kraj faze.** Prijava, termin, rezervacija, otkazivanje,
     konflikt. README, `docs/` i status.
 
@@ -439,6 +444,8 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Promjena uloge člana i uklanjanje člana iz organizacije (backend za to nema endpoint)
 - Vlastito polje za sat u 24-satnom obliku (ugrađeno `<input type="time">` prati jezik browsera, pa na engleskom pokazuje AM/PM)
 - Kopiranje radnog vremena jednog dana na ostale radne dane
+- Toplotna mapa dan x sat za statistiku (sada je samo pet najtraženijih termina), traži sekvencijalnu paletu koje u `docs/DIZAJN.md` nema
+- Statistika za proizvoljan period, ne samo po mjesecima (backend prima do 366 dana)
 - Godina uz datum izuzetka kad nije tekuća
 
 Otvoreno iz Faze 6 (dug, za pregled u Fazi 13):

@@ -26,18 +26,19 @@ export function naIstekSesije(funkcija) {
 	javiIstek = funkcija
 }
 
-export async function apiFetch(putanja, { metoda = 'GET', tijelo, zaglavlja = {} } = {}) {
+// oblik 'blob' je za fajlove (CSV), sve ostalo je JSON
+export async function apiFetch(putanja, { metoda = 'GET', tijelo, zaglavlja = {}, oblik = 'json' } = {}) {
 	const poslaniToken = accessToken
 	const odgovor = await posalji(putanja, metoda, tijelo, zaglavlja, poslaniToken)
 	if (odgovor.status !== 401 || poslaniToken === null || putanja.startsWith('/api/auth/')) {
-		return procitaj(odgovor)
+		return procitaj(odgovor, oblik)
 	}
 
 	// Ako je neki drugi zahtjev već obnovio token dok je ovaj čekao, dovoljno je ponoviti.
 	if (accessToken === poslaniToken && !(await obnoviSesiju())) {
-		return procitaj(odgovor)
+		return procitaj(odgovor, oblik)
 	}
-	return procitaj(await posalji(putanja, metoda, tijelo, zaglavlja, accessToken))
+	return procitaj(await posalji(putanja, metoda, tijelo, zaglavlja, accessToken), oblik)
 }
 
 // Više zahtjeva može dobiti 401 u isto vrijeme. Svi čekaju isti refresh, jer bi drugi
@@ -90,14 +91,14 @@ async function posalji(putanja, metoda, tijelo, zaglavlja, token) {
 	}
 }
 
-async function procitaj(odgovor) {
+async function procitaj(odgovor, oblik) {
 	if (!odgovor.ok) {
 		throw new ApiError(odgovor.status, await procitajProblem(odgovor))
 	}
 	if (odgovor.status === 204) {
 		return null
 	}
-	return odgovor.json()
+	return oblik === 'blob' ? odgovor.blob() : odgovor.json()
 }
 
 // Kad backend ne radi, Vite proxy ili hosting vrate HTML ili prazno tijelo, ne Problem Details.

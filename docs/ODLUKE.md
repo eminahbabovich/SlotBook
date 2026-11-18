@@ -613,3 +613,14 @@ Ugrađena polja za datum i sat (`<input type="date">`, `type="time"`) prikazuju 
 ### refetchType
 
 Poslije novog resursa se ide pravo na njegovo radno vrijeme. Ta stranica traži resurs u listi resursa, pa se lista prvo osvježi. Test koji pamti svaki naslov koji se pojavi je pokazao da se i sa osvježavanjem na tren vidi "Radno vrijeme nije dostupno". Uzrok je u TanStack Query 5.107 (`queryClient.js`): `invalidateQueries` bez `refetchType` ponovo učita samo aktivne upite, a na stranici "Novi resurs" lista nije prikazana. `await` se zato završi odmah, a nova stranica nacrta stari keš. Sa `refetchType: 'all'` se čeka i nova lista. Isto sam ispravio kod prihvatanja pozivnice, gdje sam osvježavanje ostavio baš za slučaj kad je lista u kešu, a baš tada ne bi ništa učitalo.
+
+## Statistika na frontendu
+
+Grafovi su obične HTML tabele, a uz svaki broj stoji traka. Biblioteku za grafove (npr. Recharts) nisam uzeo. Svi grafovi su vodoravne trake jedne boje, a za to je dovoljan `<span>` sa širinom u procentima. Tabela usput daje ono što bi uz SVG graf morao dodatno praviti: čitač ekrana čita red po red, a broj piše i tekstom, pa traka nosi samo sliku (`aria-hidden`). Boje su samo `--tekst` za udio i `--linija` za ostatak, pa `docs/DIZAJN.md` ostaje kakav jeste. Toplotna mapa dan x sat bi bila najbolji prikaz najtraženijih termina, ali traži paletu od svijetle do tamne, a nju bih morao prvo upisati u `DIZAJN.md`. Zato je zasad pet najtraženijih termina kao lista, a mapa je u Dodacima.
+
+Statistika ide po mjesecima, a mjesec je u adresi (`?mjesec=2026-11`), pa se link može poslati nekome. Tekući mjesec se računa u zoni organizacije: 31.12. u 23:30 po UTC-u je u Sarajevu već januar, i to provjerava test.
+
+Ukupna popunjenost je zbir zauzetih minuta kroz zbir ponuđenih, a ne prosjek procenata. Kod prosjeka bi sto koji radi dva sata vrijedio koliko sala koja radi cijeli dan. Procenat se zaokružuje isto kao u `OccupancyCsv`, da ekran i CSV pokažu isti broj.
+
+CSV ne pravim na frontendu, nego ga uzimam s backenda (`Accept: text/csv`), da pravila za Excel (tačka-zarez, BOM, apostrof ispred formule) ostanu na jednom mjestu. `apiFetch` je zato dobio `oblik: 'blob'`. Sa `text()` ne bi radilo: `Body.text()` dekodira UTF-8 i pritom baci BOM, a bez BOM-a Excel ne čita č i ć. Test provjerava da prva tri bajta ostanu `EF BB BF`, a u headless Edgeu sam provjerio i fajl koji se stvarno preuzeo. Taj CSV je došao iz lažnog backenda. Onaj s pravog sam provjerio u Fazi 6, ali preuzimanje s pravog backenda nisam probao.
+

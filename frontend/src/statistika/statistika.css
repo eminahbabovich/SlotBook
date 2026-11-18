@@ -1,0 +1,98 @@
+/* Tabela kao red vožnje: puna linija iznad, tanke između redova, brojevi desno i poravnati */
+.statistika-dio {
+	margin-top: var(--razmak-32);
+}
+
+.statistika-tabela {
+	width: 100%;
+	border-collapse: collapse;
+	border-top: 1px solid var(--tekst);
+}
+
+.statistika-tabela th,
+.statistika-tabela td {
+	padding: var(--razmak-8) 0;
+	border-bottom: 1px solid var(--linija);
+	text-align: left;
+	vertical-align: top;
+}
+
+.statistika-tabela th + td,
+.statistika-tabela td + td {
+	padding-left: var(--razmak-16);
+}
+
+.statistika-tabela thead th {
+	font-size: var(--velicina-sitno);
+	font-weight: 400;
+	color: var(--tekst-sporedni);
+}
+
+/* Prva kolona uzme sav slobodan prostor, da traka bude što duža */
+.statistika-tabela tbody th,
+.statistika-tabela tfoot th {
+	width: 100%;
+	font-weight: 400;
+}
+
+.statistika-tabela tfoot th,
+.statistika-tabela tfoot td {
+	font-weight: 600;
+	border-bottom: 1px solid var(--tekst);
+}
+
+.statistika-tabela .broj,
+.statistika-tabela thead th:not(:first-child) {
+	text-align: right;
+	white-space: nowrap;
+}
+
+.statistika-tabela .broj {
+	font-family: var(--font-brojevi);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Traka ispod naziva: siva podloga je cijela, tamni dio je udio */
+.traka {
+	display: block;
+	height: var(--razmak-8);
+	margin-top: var(--razmak-4);
+	background: var(--linija);
+	border-radius: var(--zaobljenje);
+}
+
+.traka-puna {
+	display: block;
+	height: 100%;
+	background: var(--tekst);
+	border-radius: var(--zaobljenje);
+}
+
+/* Mjesec iznad, a ispod njega prethodni lijevo i sljedeći desno. U jednom redu bi se na
+   telefonu sve troje prelomilo u po dva reda. */
+.mjesec {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: var(--razmak-8);
+	margin-top: var(--razmak-24);
+}
+
+.mjesec h2 {
+	grid-column: 1 / -1;
+	order: -1;
+	margin: 0;
+}
+
+/* Zauzeto od ponuđenog, ispod trake, sitnije */
+.statistika-sati {
+	display: block;
+	margin-top: var(--razmak-4);
+	font-family: var(--font-brojevi);
+	font-size: var(--velicina-sitno);
+	font-variant-numeric: tabular-nums;
+	color: var(--tekst-sporedni);
+}
+
+.statistika-tabela tfoot .statistika-sati {
+	font-weight: 600;
+}

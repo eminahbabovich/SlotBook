@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, uTrenutakSPomakom, zonaUredjajaRazlicita } from './vrijeme.js'
+import { danUSedmici, danUZoni, dodajDane, dodajMjesece, mjesecUZoni, nazivDana, nazivMjeseca, satUZoni, sedmicaOd, uTrenutakSPomakom, zonaUredjajaRazlicita } from './vrijeme.js'
 
 const SARAJEVO = 'Europe/Sarajevo'
 
@@ -103,5 +103,30 @@ describe('dan i sat u zoni u trenutak s pomakom', () => {
 	test('ponoć na kraju godine ne preskače u drugu godinu', () => {
 		expect(uTrenutakSPomakom('2026-12-31', '23:59', SARAJEVO)).toBe('2026-12-31T23:59:00+01:00')
 		expect(uTrenutakSPomakom('2027-01-01', '00:00', SARAJEVO)).toBe('2027-01-01T00:00:00+01:00')
+	})
+})
+
+describe('mjesec za statistiku', () => {
+	// 30.11. u 23:30 UTC je u Sarajevu već 1. decembar
+	test('mjesec se čita u zoni organizacije, ne u UTC-u', () => {
+		expect(mjesecUZoni('2026-11-30T23:30:00Z', 'Europe/Sarajevo')).toBe('2026-12')
+		expect(mjesecUZoni('2026-11-30T22:30:00Z', 'Europe/Sarajevo')).toBe('2026-11')
+	})
+
+	test('pomjeranje mjeseca prelazi granicu godine u oba smjera', () => {
+		expect(dodajMjesece('2026-11', 1)).toBe('2026-12')
+		expect(dodajMjesece('2026-12', 1)).toBe('2027-01')
+		expect(dodajMjesece('2027-01', -1)).toBe('2026-12')
+	})
+
+	test('naziv mjeseca je malim slovom, s godinom', () => {
+		expect(nazivMjeseca('2026-11')).toBe('novembar 2026')
+		expect(nazivMjeseca('2027-01')).toBe('januar 2027')
+	})
+
+	// DayHourCount.dayOfWeek po ISO-u: 1 je ponedjeljak, 7 nedjelja
+	test('dan u sedmici po ISO broju', () => {
+		expect(danUSedmici(1)).toBe('ponedjeljak')
+		expect(danUSedmici(7)).toBe('nedjelja')
 	})
 })

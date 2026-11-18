@@ -53,6 +53,26 @@ export function nazivDana(dan, duzina = 'dugo') {
 	return `${DANI[datum.getUTCDay()]}, ${redni}. ${MJESECI[datum.getUTCMonth()]}`
 }
 
+// Mjesec je "YYYY-MM", isto kao dan, bez Date objekta
+export function mjesecUZoni(trenutak, zona) {
+	return danUZoni(trenutak, zona).slice(0, 7)
+}
+
+export function dodajMjesece(mjesec, broj) {
+	const [godina, m] = mjesec.split('-').map(Number)
+	return new Date(Date.UTC(godina, m - 1 + broj, 1)).toISOString().slice(0, 7)
+}
+
+export function nazivMjeseca(mjesec) {
+	const [godina, m] = mjesec.split('-').map(Number)
+	return `${MJESECI[m - 1]} ${godina}`
+}
+
+// ISO broj dana kao java.time.DayOfWeek: 1 ponedjeljak ... 7 nedjelja, a niz DANI kreće od nedjelje
+export function danUSedmici(iso) {
+	return DANI[iso % 7]
+}
+
 // Oznaka zone ide samo kad bi sat na uređaju stvarno bio drugačiji. Ime zone nije dovoljno:
 // Europe/Zagreb i Europe/Sarajevo su različita imena za ista vremena.
 export function zonaUredjajaRazlicita(trenuci, zona, zonaUredjaja = Intl.DateTimeFormat().resolvedOptions().timeZone) {

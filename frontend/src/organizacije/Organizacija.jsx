@@ -38,6 +38,7 @@ export function Organizacija() {
 				<p className="organizacija-veze">
 					{organizacija.uloga === 'ADMIN' && <Link to={`/o/${organizacija.slug}/clanovi`}>Članovi i pozivnice</Link>}
 					{mozeDodatiResurs(organizacija) && <Link to={`/o/${organizacija.slug}/resursi/novi`}>Novi resurs</Link>}
+					{mozeDodatiResurs(organizacija) && <Link to={`/o/${organizacija.slug}/statistika`}>Statistika</Link>}
 				</p>
 			)}
 			<Resursi organizacija={organizacija} />
