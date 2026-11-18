@@ -98,3 +98,9 @@ time {
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
+
+/* Prethodna i sljedeća stranica liste (moje rezervacije, članovi) */
+.stranice {
+	display: flex;
+	justify-content: space-between;
+}

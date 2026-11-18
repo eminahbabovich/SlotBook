@@ -71,8 +71,3 @@
 	padding-left: var(--razmak-16);
 	border-left: var(--razmak-4) solid var(--tekst);
 }
-
-.stranice {
-	display: flex;
-	justify-content: space-between;
-}

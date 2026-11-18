@@ -193,7 +193,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(InviteRaceException.class)
 	ProblemDetail pozivnicaUIstomTrenutku(InviteRaceException ex) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-				"Neko je u istom trenutku poslao pozivnicu na ovaj email. Pogledaj listu pozivnica i pokušaj ponovo ako treba.");
+				"Neko je u istom trenutku poslao pozivnicu na ovaj email, pa je jedna već poslana. Druga ne treba.");
 		problem.setTitle("Pozivnica je upravo poslana");
 		return problem;
 	}
@@ -201,7 +201,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(AlreadyMemberException.class)
 	ProblemDetail vecClan(AlreadyMemberException ex) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-				"Osoba s ovim emailom je već član organizacije. Ulogu joj možeš promijeniti među članovima.");
+				"Osoba s ovim emailom je već član organizacije i nalazi se na listi članova.");
 		problem.setTitle("Već je član");
 		return problem;
 	}

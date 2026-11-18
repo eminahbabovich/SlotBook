@@ -8,7 +8,7 @@ Ovo je moj drugi projekat nakon [RoomSplita](https://github.com/eminahbabovich/r
 
 ## Status
 
-Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost), 5 (pozadinski poslovi i email obavijesti) i 6 (statistika) su gotove. Faza 7, frontend, je u izradi: gotovi su prijava, registracija, obnova sesije (jedan refresh za više paralelnih zahtjeva) lista organizacija s formom za novu, kalendar slobodnih termina po danima, rezervacija iz kalendara, lista mojih rezervacija s otkazivanjem i raspored za onoga ko vodi termin (potvrdi, odbij, dolazak, nedolazak).
+Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost), 5 (pozadinski poslovi i email obavijesti) i 6 (statistika) su gotove. Faza 7, frontend, je u izradi: gotovi su prijava, registracija, obnova sesije (jedan refresh za više paralelnih zahtjeva) lista organizacija s formom za novu, kalendar slobodnih termina po danima, rezervacija iz kalendara, lista mojih rezervacija s otkazivanjem raspored za onoga ko vodi termin (potvrdi, odbij, dolazak, nedolazak) i, za admina, lista članova s formom za pozivnicu.
 
 U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 

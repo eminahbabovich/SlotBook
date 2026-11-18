@@ -273,7 +273,11 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
    `GET /api/resources/{id}/bookings?from&to` (samo admin i provider resursa, s imenom
    klijenta), ekran `/o/{slug}/r/{id}/raspored` po danima, link "Raspored" samo za one koji
    vode resurs. Provjereno s lažnim backendom u Edgeu, s pravim ne.
-10. **Admin.** Članovi i pozivnice, resursi, radno vrijeme i izuzeci.
+10. **Admin.** Članovi i pozivnice, resursi, radno vrijeme i izuzeci. U izradi, po dijelovima:
+    10a članovi i pozivnica gotovo 18.11.2026 (ekran `/o/{slug}/clanovi`, samo admin, lista po
+    stranicama, pozivnica s ulogom i rokom u zoni organizacije; provjereno s lažnim backendom
+    u Edgeu, s pravim ne). Ostaje: 10b prihvatanje pozivnice (link iz maila vodi na
+    `/pozivnica#token=...`, a te stranice još nema), 10c resursi, 10d radno vrijeme, 10e izuzeci.
 11. **Dashboard statistike.** Grafovi iz Faze 6 i CSV izvoz.
 12. **Playwright glavni tok i kraj faze.** Prijava, termin, rezervacija, otkazivanje,
     konflikt. README, `docs/` i status.

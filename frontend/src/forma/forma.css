@@ -86,3 +86,15 @@
 	text-decoration: none;
 	cursor: default;
 }
+
+/* Uspjeh kao greška forme, samo s crtom u boji teksta. Postoji od početka, da je čitač
+   ekrana najavi kad se upiše, a prazna se ne vidi. */
+.forma [role='status'] {
+	margin: 0;
+	padding: var(--razmak-8) var(--razmak-12);
+	border-left: var(--razmak-4) solid var(--tekst);
+}
+
+.forma [role='status']:empty {
+	display: none;
+}

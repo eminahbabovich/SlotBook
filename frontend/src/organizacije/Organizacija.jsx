@@ -34,6 +34,11 @@ export function Organizacija() {
 			<h1>{organizacija.naziv}</h1>
 			<p>Tvoja uloga: {ULOGE[organizacija.uloga] ?? organizacija.uloga}.</p>
 			<p className="napomena-blok">Vrijeme termina je po zoni {organizacija.zona}.</p>
+			{organizacija.uloga === 'ADMIN' && (
+				<p>
+					<Link to={`/o/${organizacija.slug}/clanovi`}>Članovi i pozivnice</Link>
+				</p>
+			)}
 			<Resursi organizacija={organizacija} />
 		</section>
 	)
