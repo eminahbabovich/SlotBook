@@ -245,3 +245,11 @@ Test izolacije je pao na `expected: 8L but was: 9L`. Mislio sam da sam našao ru
 Redoslijed po `created_at` ne bi bio pouzdan, jer se u testu sedam radnji desi skoro u istoj milisekundi. Zato je ID redni broj, a ne UUID.
 
 Python heredoc mi je treći put pojeo `\r\n` u skripti. Ovaj put je bar `ARHITEKTURA.md` bio jedini fajl sa CRLF-om, pa je zamjena pala na `assert` umjesto da išta pokvari.
+
+## četvrtak, 19. novembar 2026. u 18:42
+
+Izvoz podataka, deset tabela u jednom JSON-u. Prvi put sam koristio `JdbcClient` umjesto JPA. Bio sam siguran da `TIMESTAMPTZ` neće sam postati `Instant`, a postao je, sa `Z` kao i ostatak API-ja.
+
+Najviše sam razmišljao šta ne smije izaći. Hash lozinke je očigledan. Tijelo maila mi nije palo na pamet dok nisam vidio da u njemu stoji link s pravim tokenom za reset.
+
+Test je prvi put pao na mojoj brojci, `expected 5 but was 4`. Brojao sam dvije sesije, a prijava je bila jedna. Dvije mutacije bi prošle da test nisam pojačao prije pokretanja: pozivnica po emailu i dnevnik bez uslova.

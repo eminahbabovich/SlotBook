@@ -144,6 +144,7 @@ class OrganizationIsolationApiTest {
 			Map.entry("GET /api/me", "samo korisnik iz tokena"),
 			Map.entry("POST /api/auth/email-verification", "javno, uvijek 204, mail ide samo vlasniku emaila"),
 			Map.entry("GET /api/me/organizations", "samo korisnik iz tokena"),
+			Map.entry("GET /api/me/export", "samo korisnik iz tokena, MyDataExportApiTest provjerava da tuđeg nema"),
 			Map.entry("GET /api/bookings/mine", "samo korisnik iz tokena"),
 			Map.entry("POST /api/organizations", "nova organizacija, kreator postaje admin"),
 			Map.entry("GET /api/organizations/{slug}", "javni profil: naziv, adresa i zona"),

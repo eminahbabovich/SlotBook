@@ -336,6 +336,8 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    transakciji kao radnja. Brisanje naloga dolazi s korakom 9. Radno vrijeme, izuzeci i slika resursa
    se ne upisuju.
 8. **Izvoz podataka.** `GET /api/me/export`: sve što aplikacija zna o korisniku, u JSON-u.
+   Gotovo 19.11.2026. Profil, članstva, rezervacije i njihova historija, resursi koje vodi, obavijesti
+   bez tijela, sesije, linkovi iz maila, pozivnice, neuspjele prijave i njegovi zapisi u dnevniku.
 9. **Brisanje naloga.** Anonimizacija umjesto brisanja redova, da statistika i rasporedi ostanu
    tačni. Refresh tokeni se gase, a budući termini otkazuju.
 10. **Frontend za Fazu 8.** Zaključan nalog, `429`, izvoz i brisanje naloga u UI-ju.
