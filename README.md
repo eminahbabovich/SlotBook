@@ -8,7 +8,7 @@ Ovo je moj drugi projekat nakon [RoomSplita](https://github.com/eminahbabovich/r
 
 ## Status
 
-Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost), 5 (pozadinski poslovi i email obavijesti) i 6 (statistika) su gotove. Faza 7, frontend, je u izradi: gotovi su prijava, registracija, obnova sesije (jedan refresh za više paralelnih zahtjeva), lista organizacija s formom za novu, kalendar slobodnih termina po danima, rezervacija iz kalendara, lista mojih rezervacija s otkazivanjem, raspored za onoga ko vodi termin (potvrdi, odbij, dolazak, nedolazak), za admina lista članova s formom za pozivnicu, stranica na koju vodi link iz pozivnice, upravljanje resursima (novi, izmjena, deaktivacija, ko ga vodi) i sedmično radno vrijeme s izuzecima. Uz to je gotova i statistika po mjesecima (rezervacije po stanju, popunjenost po resursu, najtraženiji termini) s preuzimanjem CSV-a. Ostaje Playwright test glavnog toka.
+Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost), 5 (pozadinski poslovi i email obavijesti), 6 (statistika) i 7 (frontend) su gotove. U frontendu su gotovi prijava, registracija, obnova sesije (jedan refresh za više paralelnih zahtjeva), lista organizacija s formom za novu, kalendar slobodnih termina po danima, rezervacija iz kalendara, lista mojih rezervacija s otkazivanjem, raspored za onoga ko vodi termin (potvrdi, odbij, dolazak, nedolazak), za admina lista članova s formom za pozivnicu, stranica na koju vodi link iz pozivnice, upravljanje resursima (novi, izmjena, deaktivacija, ko ga vodi) i sedmično radno vrijeme s izuzecima. Uz to je gotova i statistika po mjesecima (rezervacije po stanju, popunjenost po resursu, najtraženiji termini) s preuzimanjem CSV-a. Glavni tok (prijava, rezervacija, otkazivanje i termin koji neko uzme prije potvrde) pokriva Playwright test koji ide kroz pravi backend i pravu bazu. Ostali ekrani (raspored, admin, statistika) su provjereni samo s lažnim backendom u Vitest testovima i u browseru.
 
 U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
 
@@ -36,7 +36,7 @@ U Fazi 6 admin i provider vide statistiku organizacije za period do godinu dana 
 | 4 | Rezervacije i konkurentnost | gotovo |
 | 5 | Pozadinski poslovi i email obavijesti | gotovo |
 | 6 | Statistika | gotovo |
-| 7 | Frontend (jezgro) | u izradi |
+| 7 | Frontend (jezgro) | gotovo |
 | 8 | Sigurnost i GDPR | nije počelo |
 | 9 | Observability i performanse | nije počelo |
 | 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | nije počelo |
@@ -46,7 +46,7 @@ U Fazi 6 admin i provider vide statistiku organizacije za period do godinu dana 
 
 Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md), a mjerenja u [docs/PERFORMANSE.md](docs/PERFORMANSE.md).
 
-Trenutno ima 334 testa i svi prolaze. JaCoCo mjeri 97,1 % linija glavnog koda (1385 od 1427), izmjereno 15.11.2026. iz jednog čistog pokretanja. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
+Backend ima 342 testa i svi prolaze (zadnje pokretanje 18.11.2026.). Frontend ima 166 Vitest testova i 2 Playwright testa. JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
 
 ## Tehnologije
 
@@ -93,7 +93,7 @@ cd backend
 .\mvnw.cmd test
 ```
 
-Frontend traži Node (koristim 26). Za sada ima prijavu, registraciju, odjavu, listu organizacija, kalendar resursa, rezervaciju i moje rezervacije na http://localhost:5173. Vite zahtjeve na `/api` prosljeđuje backendu na portu 8080, pa backend treba biti pokrenut. Testovi (Vitest) ne traže backend:
+Frontend traži Node (koristim 26) i radi na http://localhost:5173. Vite zahtjeve na `/api` prosljeđuje backendu na portu 8080, pa backend treba biti pokrenut. Testovi (Vitest) ne traže backend:
 
 ```powershell
 cd frontend
@@ -102,11 +102,18 @@ npm run dev
 npm test
 ```
 
+Playwright test glavnog toka sam podigne svoju bazu i Mailpit (`frontend/e2e/compose.yml`, portovi 5434 i 8026), backend i Vite, i na kraju ugasi kontejnere. Traži Docker i Microsoft Edge, a portovi 8080 i 5173 moraju biti slobodni, pa razvojni backend i `npm run dev` prvo ugasi. Traje oko minut i po, najviše zbog starta backenda i čekanja maila s pozivnicom:
+
+```powershell
+cd frontend
+npm run e2e
+```
+
 Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada se baza spaja preko varijabli `DB_URL`, `DB_USER` i `DB_PASSWORD`, a port se uzima iz `PORT`. `JWT_SECRET` treba i tamo, i mora biti drugi ključ od lokalnog.
 
 ## Struktura
 
-`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.booking`, `ba.slotbook.resource`...), ne po sloju. `frontend/` je React aplikacija (Vite, JavaScript). Pozivi backenda su samo u `frontend/src/api/`, a boje, fontovi i razmaci samo u `frontend/src/tokeni.css`. U `docs/` su `ODLUKE.md` (odluke i zašto) i `ARHITEKTURA.md` (slojevi, tok zahtjeva i model podataka) i `PERFORMANSE.md` (mjerenja, a SQL skripte za njih su u `docs/mjerenja/`). `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
+`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.booking`, `ba.slotbook.resource`...), ne po sloju. `frontend/` je React aplikacija (Vite, JavaScript), a Playwright test je u `frontend/e2e/`. Pozivi backenda su samo u `frontend/src/api/`, a boje, fontovi i razmaci samo u `frontend/src/tokeni.css`. U `docs/` su `ODLUKE.md` (odluke i zašto) i `ARHITEKTURA.md` (slojevi, tok zahtjeva i model podataka) i `PERFORMANSE.md` (mjerenja, a SQL skripte za njih su u `docs/mjerenja/`). `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti.
 
 ## Live demo i screenshotovi
 

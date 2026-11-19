@@ -161,3 +161,15 @@ Jednom, poslije mutacija, palo je 6 testova, iako su fajlovi bili vraćeni bajt 
 
 U testu je ostao nevidljiv BOM znak u stringu, umjesto `\uFEFF`. Grep ga je našao, ali je commit prošao, jer komanda nije stala na nalazu. Ispravio sam to i dodao u isti commit prije pusha.
 
+
+## četvrtak, 19. novembar 2026. u 10:32
+
+Prvi put je frontend razgovarao s pravim backendom, i to preko Playwrighta. Oba testa su prošla iz prvog pokušaja, što mi nije bilo drago, jer nisam znao da li uopšte mogu pasti. Zato tri mutacije: sat u zoni browsera, `409` kao obična greška i otkazana rezervacija koja i dalje drži termin u `FreeSlotService`. Svaka je oborila baš onaj test koji treba. Zona browsera se vidi samo zato što je browser u testu namjerno u New Yorku, moj laptop je u istoj zoni kao Sarajevo.
+
+Prvo pokretanje je palo s `'mvnw.cmd' is not recognized as an internal or external command`. Playwright komandu pokreće kroz `cmd`, a `cmd` iz Node-a ne traži program u trenutnom folderu, pa treba `.\mvnw.cmd`. Baza je pritom ostala upaljena, jer se `globalTeardown` ne pokrene kad `webServer` ne starta.
+
+Mislio sam da ću bazu dići u `globalSetup`. U izvoru Playwrighta piše da se `webServer` pali prije `globalSetup`-a, pa bi backend krenuo bez baze. Sad je `docker compose up --wait` u istoj komandi kao backend.
+
+Za `JWT_SECRET` sam napisao rečenicu koja jasno kaže da nije tajna. Lokalni gitleaks ju je svejedno prijavio kao `generic-api-key`, kao `.env.example` u Fazi 1. Ključ se sad pravi nasumično pri svakom pokretanju.
+
+Token pozivnice ide samo mailom, pa test čeka Mailpit do 30 s. To je pola trajanja testa (oko 1,9 min ukupno).

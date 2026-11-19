@@ -58,3 +58,7 @@ graphify-out/
 
 # --- Slike iz lokalnog skladišta ---
 uploads/
+
+# Playwright: izvještaj i trace poslije pada
+test-results/
+playwright-report/

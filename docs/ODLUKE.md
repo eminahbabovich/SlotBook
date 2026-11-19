@@ -624,3 +624,15 @@ Ukupna popunjenost je zbir zauzetih minuta kroz zbir ponuđenih, a ne prosjek pr
 
 CSV ne pravim na frontendu, nego ga uzimam s backenda (`Accept: text/csv`), da pravila za Excel (tačka-zarez, BOM, apostrof ispred formule) ostanu na jednom mjestu. `apiFetch` je zato dobio `oblik: 'blob'`. Sa `text()` ne bi radilo: `Body.text()` dekodira UTF-8 i pritom baci BOM, a bez BOM-a Excel ne čita č i ć. Test provjerava da prva tri bajta ostanu `EF BB BF`, a u headless Edgeu sam provjerio i fajl koji se stvarno preuzeo. Taj CSV je došao iz lažnog backenda. Onaj s pravog sam provjerio u Fazi 6, ali preuzimanje s pravog backenda nisam probao.
 
+
+## Playwright: pravi backend i svoja baza
+
+Glavni tok (prijava, termin, rezervacija, otkazivanje, konflikt) ide kroz pravi backend i pravu bazu, a ne kroz lažni backend iz Vitest testova. Vitest već provjerava kako ekran reaguje na svaki odgovor. Ovaj test treba pokazati da frontend i backend stvarno govore istim jezikom: imena polja, refresh kolačić kroz Vite proxy, `409` koji dolazi iz `EXCLUDE` constrainta, a ne iz mog fixturea. Do ovog koraka je svaki ekran Faze 7 bio provjeren samo s lažnim backendom.
+
+Baza i Mailpit za test su u `frontend/e2e/compose.yml`, s drugim imenom projekta (`slotbook-e2e`) i na drugim portovima (5434, 8026), da test ne dira razvojnu bazu. Baza je u `tmpfs`, pa poslije testa ne ostaje volumen. Playwright pali `webServer` prije `globalSetup`-a (provjerio sam u `playwright/lib/runner/index.js`), pa se baza diže u istoj komandi kao backend, a gasi je `globalTeardown`. Kad backend ne starta, teardown se ne pokrene i kontejneri ostanu upaljeni. To mi se desilo već u prvom pokretanju. Sljedeće pokretanje ih samo preuzme, a test svaki put pravi nove naloge i novu organizaciju, pa stari podaci ne smetaju.
+
+Podatke (admin, organizacija, resurs, radno vrijeme, pozivnica) test pravi kroz API, a kroz browser ide samo ono što se testira. Token pozivnice backend šalje samo mailom, pa ga test čita iz Mailpita, i to čekanje traje do 30 s (`NotificationJob`). Mogao sam člana upisati pravo u bazu, ali onda test zavisi od šeme i zaobilazi pozivnicu.
+
+Radno vrijeme je svaki dan osim današnjeg. Kalendar se otvori na prazan dan i ponudi prvi slobodan, a to je sutra od 08:00, pa test ne zavisi od toga u koliko sati se pokrene. Browser je u zoni `America/New_York`, a sati na ekranu moraju biti sarajevski.
+
+`JWT_SECRET` za backend iz testa se pravi nasumično pri svakom pokretanju. Prvo sam upisao smislenu rečenicu kao vrijednost, a lokalni gitleaks ju je prijavio kao `generic-api-key` (entropija 3,76), isto kao `.env.example` u Fazi 1. Browser je Edge koji je već instaliran (`channel: 'msedge'`), pa Playwright ne skida svoj Chromium. Test zasad nije u CI-ju.

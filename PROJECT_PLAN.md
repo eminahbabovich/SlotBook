@@ -179,7 +179,7 @@ svaki endpoint opisan u Swaggeru.
 | 4 | Rezervacije i konkurentnost | Kreiranje rezervacije, **`EXCLUDE` constraint**, stanja i prelazi, `booking_events`, `Idempotency-Key`, pravilo otkazivanja, `@Version`, **test sa 20 niti** | PostgreSQL range tipovi, transakcije i izolacija, optimistično vs pesimistično zaključavanje, `409 Conflict`, state machine, idempotentnost | gotovo |
 | 5 | Pozadinski poslovi i obavijesti | `@Scheduled` istek `PENDING` i zatvaranje završenih, podsjetnici, `notifications` tabela (outbox), slanje emaila, `@TransactionalEventListener`, ponovni pokušaj s backoffom, verifikacija emaila, reset lozinke, slanje pozivnica, `.ics` prilog u potvrdi | Scheduling, zašto se email ne šalje unutar iste transakcije, `AFTER_COMMIT`, idempotentnost, ShedLock, sigurni tokeni za reset | gotovo |
 | 6 | Statistika | Agregatni upiti (`GROUP BY`, popunjenost, otkazivanja i no-show po periodu, najtraženiji termini dan x sat), endpointi za providera i admina, CSV izvoz | JPQL/native upiti, projekcije u DTO, indeksi i `EXPLAIN` | gotovo |
-| 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | u izradi |
+| 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | gotovo |
 | 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | ⏳ nije počelo |
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | ⏳ nije počelo |
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | ⏳ nije počelo |
@@ -287,7 +287,12 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
     CSV pravi backend, a frontend ga preuzima kao bajtove, da ostane BOM. Provjereno s lažnim
     backendom u Edgeu na 375 i 1280 px, uključujući preuzet fajl. S pravim backendom nije.
 12. **Playwright glavni tok i kraj faze.** Prijava, termin, rezervacija, otkazivanje,
-    konflikt. README, `docs/` i status.
+    konflikt. README, `docs/` i status. Gotovo 19.11.2026. Dva testa u `frontend/e2e/` idu kroz
+    pravi backend i svoju bazu u Dockeru (`npm run e2e`): klijent rezerviše i otkaže termin pa
+    ga kalendar opet nudi, i termin koji admin uzme dok klijent gleda potvrdu daje `409` s
+    najbližim slobodnim. Podaci se prave kroz API, token pozivnice se čita iz Mailpita, a browser
+    je u drugoj zoni od organizacije. Raspored, admin i statistika s pravim backendom u browseru
+    nisu provjereni. Test nije u CI-ju.
 
 ## Faza 14 po koracima
 
@@ -447,6 +452,13 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Toplotna mapa dan x sat za statistiku (sada je samo pet najtraženijih termina), traži sekvencijalnu paletu koje u `docs/DIZAJN.md` nema
 - Statistika za proizvoljan period, ne samo po mjesecima (backend prima do 366 dana)
 - Godina uz datum izuzetka kad nije tekuća
+
+Otvoreno iz Faze 7 (dug, za pregled u Fazi 13):
+
+- Raspored providera, admin ekrani (članovi, pozivnice, resursi, radno vrijeme) i statistika s CSV-om su u browseru provjereni samo s lažnim backendom. S pravim backendom ide samo glavni tok iz Playwright testa.
+- CI ne pokreće ništa iz frontenda: ni Vitest, ni Oxlint, ni Playwright.
+- Kad backend iz Playwright testa ne starta, kontejneri iz `frontend/e2e/compose.yml` ostanu upaljeni (gasi ih `docker compose -f e2e/compose.yml down`).
+- U koraku 11 je jednom, odmah poslije mutacija, palo 6 Vitest testova na fajlovima koji su bili vraćeni bajt po bajt. Uzrok nije nađen.
 
 Otvoreno iz Faze 6 (dug, za pregled u Fazi 13):
 

@@ -1,0 +1,27 @@
+# Baza i Mailpit samo za Playwright. Drugo ime projekta i drugi portovi nego u docker-compose.yml,
+# da test ne dira razvojnu bazu. Lozinka nije tajna: baza živi samo dok traje test.
+name: slotbook-e2e
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: slotbook_e2e
+      POSTGRES_USER: slotbook_e2e
+      POSTGRES_PASSWORD: slotbook_e2e
+    ports:
+      - "127.0.0.1:5434:5432"
+    # Podaci u memoriji: nema volumena koji ostaje poslije testa, a svako pokretanje kreće od prazne baze
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U slotbook_e2e -d slotbook_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  mailpit:
+    image: axllent/mailpit:v1.33
+    ports:
+      - "127.0.0.1:8026:8025"
+      - "127.0.0.1:1026:1025"
