@@ -38,6 +38,7 @@ import ba.slotbook.auth.UserTokenException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
+import ba.slotbook.ratelimit.TooManyAttemptsException;
 import ba.slotbook.resource.ImageNotFoundException;
 import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.user.EmailAlreadyUsedException;
@@ -103,6 +104,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 				"Ovaj resurs još nema sliku.");
 		problem.setTitle("Slika ne postoji");
 		return problem;
+	}
+
+	// Retry-After u sekundama, da klijent zna koliko da čeka bez čitanja teksta
+	@ExceptionHandler(TooManyAttemptsException.class)
+	ResponseEntity<ProblemDetail> previsePokusaja(TooManyAttemptsException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS,
+				"Previše pokušaja s ove adrese. Sačekaj malo pa pokušaj ponovo.");
+		problem.setTitle("Previše pokušaja");
+		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+				.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.sekundiDoSljedeceg()))
+				.body(problem);
 	}
 
 	@ExceptionHandler(EmailAlreadyUsedException.class)

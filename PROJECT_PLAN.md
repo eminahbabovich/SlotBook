@@ -307,7 +307,10 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    organizacija, tuđi sto) ništa ne mijenjaju. Čuvar gleda sve `/api` rute, a 15 koje nisu podaci
    organizacije imaju razlog u testu. Nije pronađena nijedna rupa, a 5 mutacija obori test.
 2. **Rate limiting prijave i registracije.** Bucket4j (prvo provjeriti verziju za Spring Boot 4.1),
-   `429` s `Retry-After` i Problem Details, test koji dokaže granicu.
+   `429` s `Retry-After` i Problem Details, test koji dokaže granicu. Gotovo 19.11.2026. Bucket4j 8.22.0
+   (samo core), 20 prijava u minuti i 20 registracija na sat po IP adresi, bucketi u memoriji uz
+   čišćenje punih svakih 10 minuta. Na Renderu se adresa čita iz `CF-Connecting-IP`, jer
+   `X-Forwarded-For` bira pozivalac. To na Renderu nije provjereno.
 3. **Rate limiting mailova.** Reset lozinke, novi link za potvrdu emaila i pozivnice, da se nečiji
    inbox ne može zatrpati (dug iz Faze 5).
 4. **Zaključavanje naloga.** Poslije više pogrešnih prijava nalog se zaključa na neko vrijeme, a

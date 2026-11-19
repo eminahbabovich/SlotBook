@@ -18,6 +18,7 @@
 		<springdoc.version>3.2.0</springdoc.version>
 		<jacoco.version>0.8.16</jacoco.version>
 		<awssdk.version>2.57.5</awssdk.version>
+		<bucket4j.version>8.22.0</bucket4j.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -60,6 +61,13 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>${springdoc.version}</version>
+		</dependency>
+
+		<!-- Rate limiting (token bucket). Samo core, bez zavisnosti: bucketi su u memoriji jedne instance -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j_jdk17-core</artifactId>
+			<version>${bucket4j.version}</version>
 		</dependency>
 
 		<!-- S3-kompatibilno skladište slika (Cloudflare R2 na produkciji) -->

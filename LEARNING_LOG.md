@@ -183,3 +183,13 @@ Sad istih 25 zahtjeva ide i s Lejlom (klijent) i s Damirom (vodi drugi sto). Za 
 Iznenadila me mutacija u promjeni providera. Kad servis traži resurs bez organizacije iz putanje, Bojan prođe `@PreAuthorize` sa svojom teretanom i dođe do upisa. Tamo ga zaustavi `resources_provider_clan`, a on dobije `500`. Baza je čuvala i tamo gdje sam mislio da čuva samo Java.
 
 Bash heredoc s Java kodom je opet pao s `unexpected EOF`, isto kao u koraku 11. Skriptu pišem u fajl i pokrećem je odatle.
+
+## četvrtak, 19. novembar 2026. u 11:12
+
+Rate limiting za prijavu i registraciju. Bucket4j sam našao u `maven-metadata.xml` na Maven Centralu, jer je pretraga na search.maven.org pokazivala 8.14.0 iz 2024, a zadnja je 8.22.0. Core nema nijednu zavisnost, pa se ne može posvađati sa Spring Bootom 4.1.
+
+Najviše vremena je otišlo na pitanje koja je adresa klijenta. Na Renderu je adresa konekcije Cloudflare, pa bi svi dijelili jednu granicu. `X-Forwarded-For` sam htio uzeti, dok nisam pročitao da ga Cloudflare samo dopuni, pa lijevi dio piše ko god pošalje zahtjev. Na produkciji se zato čita `CF-Connecting-IP`. Na Renderu to nisam probao.
+
+Prvi problem bi bio u testovima, a ne u kodu: svi šalju s 127.0.0.1, pa bi preko 340 testova zajedno potrošilo 20 prijava u minuti. Testovi imaju granicu 100000, a jedan test ima svoj kontekst s granicom 3.
+
+Mutacija zaokruživanja je prošla. Test je čekao pola sekunde, a za pola sekunde i naviše i naniže uz `Math.max(1, ...)` daju 1. Kad sam test popravio, vidio sam i da `toMillis()` 1 ns odsiječe na 0, pa sad računam iz nanosekundi i `Math.max` više ne treba.
