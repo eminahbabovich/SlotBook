@@ -327,7 +327,9 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    emaila, jer bi inače registracija pa prijava otkrila ko ima nalog. Izmjereno kroz MockMvc: reset
    lozinke za postojeći email je sporiji za 6 do 15 ms, to ostaje otvoreno u `docs/ODLUKE.md`.
 6. **Sigurnosna zaglavlja i CORS.** CSP, `X-Content-Type-Options`, `Referrer-Policy`, HSTS na
-   produkciji, CORS samo za adresu frontenda, test za zaglavlja.
+   produkciji, CORS samo za adresu frontenda, test za zaglavlja. Gotovo 19.11.2026. Zaglavlja su na
+   odgovorima backenda, a CSP za stranice frontenda ide s hostom frontenda u Fazi 12. HSTS se šalje
+   uvijek, jer je iza Renderovog proxyja svaki zahtjev za Spring običan HTTP. Na Renderu nije provjereno.
 7. **Audit log.** Tabela `audit_log` i upis za osjetljive radnje (uloge, pozivnice, resursi, brisanje
    naloga), a admin ga čita za svoju organizaciju.
 8. **Izvoz podataka.** `GET /api/me/export`: sve što aplikacija zna o korisniku, u JSON-u.

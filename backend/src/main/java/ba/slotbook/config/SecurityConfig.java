@@ -1,6 +1,10 @@
 package ba.slotbook.config;
 
+import java.time.Duration;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +17,14 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.AnyRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +56,22 @@ public class SecurityConfig {
 				// refresh token (SameSite=Strict, samo /api/auth), a lažni zahtjev na /refresh napadaču ništa
 				// ne daje jer odgovor ne može pročitati. Obrazloženje je u docs/ODLUKE.md.
 				.csrf(csrf -> csrf.disable())
+				// Pravila iz corsConfigurationSource ispod. Preflight (OPTIONS) nema token, pa ga CORS filter
+				// mora obraditi prije provjere prijave, inače bi dobio 401.
+				.cors(Customizer.withDefaults())
+				// nosniff, X-Frame-Options: DENY i Cache-Control Spring Security šalje sam
+				.headers(zaglavlja -> zaglavlja
+						.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))
+						// Render završava HTTPS ispred aplikacije, pa je za Spring svaki zahtjev običan HTTP i
+						// HSTS se po defaultu ne bi slao nikad. Browser HSTS preko HTTP-a ignoriše, pa lokalno
+						// ne smeta.
+						.httpStrictTransportSecurity(hsts -> hsts.requestMatcher(AnyRequestMatcher.INSTANCE))
+						// API vraća JSON i ne treba ništa učitavati. Swagger UI učitava skripte, pa ovo ide
+						// samo na /api.
+						.addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
+								PathPatternRequestMatcher.pathPattern("/api/**"),
+								new StaticHeadersWriter("Content-Security-Policy",
+										"default-src 'none'; frame-ancestors 'none'"))))
 				.sessionManagement(sesija -> sesija.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(pravila -> pravila
 						.requestMatchers(JAVNE_PUTANJE).permitAll()
@@ -71,6 +99,22 @@ public class SecurityConfig {
 			AuthenticationException izuzetak) {
 		odgovor.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
 		exceptionResolver.resolveException(zahtjev, odgovor, null, izuzetak);
+	}
+
+	// Samo adresa frontenda (ista kao u linkovima iz mailova). Kolačić s refresh tokenom ide samo uz
+	// allowCredentials, a tada "*" nije dozvoljen ni u browseru.
+	@Bean
+	CorsConfigurationSource corsConfigurationSource(@Value("${slotbook.app-url}") String frontend) {
+		CorsConfiguration pravila = new CorsConfiguration();
+		pravila.setAllowedOrigins(List.of(frontend));
+		pravila.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
+		pravila.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+		pravila.setExposedHeaders(List.of("Retry-After", "Content-Disposition", "Location"));
+		pravila.setAllowCredentials(true);
+		pravila.setMaxAge(Duration.ofHours(1));
+		UrlBasedCorsConfigurationSource izvor = new UrlBasedCorsConfigurationSource();
+		izvor.registerCorsConfiguration("/api/**", pravila);
+		return izvor;
 	}
 
 	@Bean

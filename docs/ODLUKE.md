@@ -753,3 +753,15 @@ Reset lozinke je dug iz Faze 5 i tu razlika postoji: 12 ms za nepoznat email i 2
 Frontend još radi registraciju pa prijavu (`frontend/src/api/auth.js`). Prijava sad za novi nalog vraća `401`, jer email nije potvrđen, a stranice za potvrdu emaila još nema. To popravlja korak 10.
 
 Četiri mutacije padaju na pravom testu: bez lažnog BCrypt-a, istovremena registracija daje grešku, mail "nalog postoji" bez granice, i nepotvrđen nalog dobija mail o nalogu umjesto novog linka.
+
+## Sigurnosna zaglavlja i CORS
+
+Spring Security sam šalje `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` i `Cache-Control: no-cache`. Dodao sam `Referrer-Policy: no-referrer` i, samo za `/api/**`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`. API vraća JSON, CSV i slike i ne treba ništa učitavati, pa je najstroža politika i najjednostavnija. Swagger UI učitava skripte i stilove i s tim CSP-om ne radi, zato ga nema van `/api`. Ovo su zaglavlja backenda. Stranice frontenda servira host frontenda, i njihov CSP (skripte, fontovi, `connect-src` prema backendu) ide s deployom u Fazi 12.
+
+HSTS Spring po defaultu šalje samo kad je zahtjev HTTPS. Render završava HTTPS ispred aplikacije i prosljeđuje običan HTTP, a Spring Boot Render ne prepoznaje kao platformu iza proxyja, pa bi `isSecure()` uvijek bio `false` i HSTS se ne bi slao nikad. Druga opcija je bila `server.forward-headers-strategy`, ali to mijenja i adresu klijenta i URL-ove u aplikaciji, a granica pokušaja iz koraka 2 ionako čita `CF-Connecting-IP`. Zato se HSTS šalje uvijek. Browser ga preko običnog HTTP-a ignoriše, pa lokalno ne smeta. Na Renderu nisam provjerio da stiže, provjera je `curl -I https://<backend>/api/status` poslije deploya.
+
+CORS dozvoljava samo origin iz `slotbook.app-url`, iste adrese na koju vode linkovi iz mailova, pa je adresa frontenda na jednom mjestu. Uz kolačić (`allowCredentials`) browser ionako ne prihvata `*`. Dozvoljena zaglavlja su `Authorization`, `Content-Type` i `Idempotency-Key`, a `Retry-After`, `Content-Disposition` i `Location` su izložena, jer ih JavaScript s drugog origina inače ne vidi. Preflight (`OPTIONS`) nema token, pa ga CORS filter obradi prije provjere prijave. Bez `.cors(...)` je preflight dobijao `401`. Tuđi origin dobije `403` bez `Access-Control-Allow-Origin`.
+
+Jedna stvar ostaje za Fazu 12. Refresh kolačić je `SameSite=Strict`, pa ga browser uopšte ne šalje kad su frontend (npr. na Vercelu) i backend (na Renderu) različiti sajtovi, ni s ispravnim CORS-om. Lokalno to rješava Vite proxy. Na produkciji će trebati isto: frontend prosljeđuje `/api` na backend, pa za browser ostaje isti sajt. Tada CORS za glavni tok ni ne treba, ali ostaje ispravno podešen ako se frontend ikad poziva direktno.
+
+Šest mutacija, sve padaju na pravom testu: bez `Referrer-Policy`, HSTS samo na HTTPS, CSP i na Swaggeru, bez CORS-a, svaki origin dozvoljen, i bez izloženih zaglavlja.

@@ -227,3 +227,11 @@ Usput je pao `InviteIstovremenoTest`, ali samo u cijelom pokretanju, a sam je pr
 Mjerenje vremena me iznenadilo na drugu stranu. Za registraciju sam očekivao problem i lažni BCrypt ga riješi (107 ms naspram 103). Za reset lozinke sam mislio da je sve isto, a postojeći email je sporiji, 27 ms naspram 12, jer upisuje token i mail. Prvo sam test nazvao "traje kao za nepoznat" i prošao je samo zato što je granica bila 25 ms. Preimenovao sam ga u ono što stvarno provjerava.
 
 Heredoc u bashu mi je opet pojeo `\t` i `\n` u Python skripti, pa se skripta za mutacije nije ni pokrenula. Ovaj put je bar pala sa `SyntaxError`, umjesto da javi da je sve preživjelo.
+
+## četvrtak, 19. novembar 2026. u 17:53
+
+Zaglavlja i CORS, kraće nego što sam mislio. Spring Security već šalje `nosniff` i `X-Frame-Options: DENY`, to sam vidio tek kad je test pao na `Referrer-Policy`, a prošao prve dvije provjere.
+
+HSTS me zbunio. Spring ga šalje samo za HTTPS zahtjev, a iza Renderovog proxyja aplikacija vidi običan HTTP, pa ga ne bi poslala nikad. Sad ide na svaki odgovor, browser ga na HTTP-u ionako ignoriše.
+
+Preflight je bez `.cors(...)` dobijao `401`, jer `OPTIONS` nema token. I skontao sam da CORS za glavni tok na produkciji vjerovatno neće ni trebati: refresh kolačić je `SameSite=Strict`, pa frontend na drugom sajtu ionako mora ići kroz proxy. To je za Fazu 12.
