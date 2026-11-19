@@ -294,6 +294,36 @@ Smjer je Red vožnje (`docs/DIZAJN.md`). Svaki ekran se prije "gotovo" pogleda n
     je u drugoj zoni od organizacije. Raspored, admin i statistika s pravim backendom u browseru
     nisu provjereni. Test nije u CI-ju.
 
+## Faza 8 po koracima
+
+Svaki korak je jedna stvar, bez dijelova a, b i c. Kriterij "gotovo" je broj 8 iznad. Gitleaks u
+CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom ponovne upotrebe od Faze 2.
+
+1. **Pristup po ulogama kroz sve endpointe.** Test izolacije iz Faze 2 provjerava samo admina druge
+   organizacije. Dobija i uloge iz iste organizacije (klijent, provider drugog resursa, klijent tuđe
+   rezervacije) s očekivanim ishodom za svaku rutu, a čuvar gleda sve `/api` rute, ne samo one s ID-jem
+   organizacije, resursa ili rezervacije u putanji.
+2. **Rate limiting prijave i registracije.** Bucket4j (prvo provjeriti verziju za Spring Boot 4.1),
+   `429` s `Retry-After` i Problem Details, test koji dokaže granicu.
+3. **Rate limiting mailova.** Reset lozinke, novi link za potvrdu emaila i pozivnice, da se nečiji
+   inbox ne može zatrpati (dug iz Faze 5).
+4. **Zaključavanje naloga.** Poslije više pogrešnih prijava nalog se zaključa na neko vrijeme, a
+   odgovor ne otkriva da li nalog postoji.
+5. **Enumeracija emailova.** Registracija vraća isti odgovor i kad nalog postoji, a vlasnik emaila
+   dobije mail (odluka iz Faze 2). Izmjeriti i razliku u vremenu odgovora za reset lozinke (dug iz Faze 5).
+6. **Sigurnosna zaglavlja i CORS.** CSP, `X-Content-Type-Options`, `Referrer-Policy`, HSTS na
+   produkciji, CORS samo za adresu frontenda, test za zaglavlja.
+7. **Audit log.** Tabela `audit_log` i upis za osjetljive radnje (uloge, pozivnice, resursi, brisanje
+   naloga), a admin ga čita za svoju organizaciju.
+8. **Izvoz podataka.** `GET /api/me/export`: sve što aplikacija zna o korisniku, u JSON-u.
+9. **Brisanje naloga.** Anonimizacija umjesto brisanja redova, da statistika i rasporedi ostanu
+   tačni. Refresh tokeni se gase, a budući termini otkazuju.
+10. **Frontend za Fazu 8.** Zaključan nalog, `429`, izvoz i brisanje naloga u UI-ju.
+11. **CI: CodeQL, zavisnosti i frontend.** CodeQL za Javu i JavaScript, skeniranje zavisnosti, i job
+    s Vitestom i Oxlintom (do sada CI ne pokreće ništa iz frontenda).
+12. **OWASP Top 10 i `docs/SIGURNOST.md`, kraj faze.** Za svaku stavku šta nas štiti, kojim testom je
+    dokazano i šta nije pokriveno. README i status.
+
 ## Faza 14 po koracima
 
 Svaki korak je jedna sesija ili manje. Domen ostaje naš: "alat za usluge" je kod nas
