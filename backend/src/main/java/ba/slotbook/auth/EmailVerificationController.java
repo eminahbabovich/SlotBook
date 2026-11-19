@@ -1,10 +1,6 @@
 package ba.slotbook.auth;
 
-import java.util.UUID;
-
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -28,11 +24,11 @@ public class EmailVerificationController {
 		verification.verify(request.token());
 	}
 
-	// Samo za sebe: ID je iz tokena. Već potvrđen email ne dobija novi mail, a odgovor je isti.
-	@PostMapping("/api/me/email-verification")
+	// Uvijek 204, da se po odgovoru ne vidi ima li email nalog i je li potvrđen
+	@PostMapping("/api/auth/email-verification")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void resend(@AuthenticationPrincipal Jwt token) {
-		verification.resend(UUID.fromString(token.getSubject()));
+	public void resend(@Valid @RequestBody NewVerificationLinkRequest request) {
+		verification.resend(request.email());
 	}
 
 }

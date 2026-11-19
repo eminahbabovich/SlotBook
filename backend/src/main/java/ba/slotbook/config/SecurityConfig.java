@@ -48,7 +48,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(pravila -> pravila
 						.requestMatchers(JAVNE_PUTANJE).permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
-								"/api/auth/refresh", "/api/auth/logout", "/api/auth/verify-email",
+								"/api/auth/refresh", "/api/auth/logout", "/api/auth/verify-email", "/api/auth/email-verification",
 								"/api/auth/password-reset", "/api/auth/password-reset/confirm").permitAll()
 						// Javni profil organizacije: klijent treba vidjeti gdje rezerviše prije nego što se prijavi
 						.requestMatchers(HttpMethod.GET, "/api/organizations/*").permitAll()

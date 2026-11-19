@@ -117,6 +117,7 @@ class BookingIstovremenoApiTest {
 	}
 
 	private String prijava(String email) throws Exception {
+		jdbc.update("update users set email_verified_at = now() where email = lower(?)", email);
 		HttpResponse<String> odgovor = http.send(post("/api/auth/login", null, """
 				{"email": "%s", "password": "%s"}
 				""".formatted(email, LOZINKA)), HttpResponse.BodyHandlers.ofString());

@@ -2,7 +2,6 @@ package ba.slotbook.auth;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ba.slotbook.notification.EmailContent;
 import ba.slotbook.notification.NotificationService;
 import ba.slotbook.notification.NotificationType;
-import ba.slotbook.ratelimit.TooManyAttemptsException;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
 import ba.slotbook.user.UserResponse;
@@ -47,17 +45,15 @@ public class EmailVerificationService {
 		return novi;
 	}
 
-	// Kad prvi mail ne stigne ili link istekne. Stari linkovi i dalje važe do svog roka.
+	// Kad prvi mail ne stigne ili link istekne. Stari linkovi i dalje važe do svog roka. Bez prijave,
+	// jer se nepotvrđen nalog ne može prijaviti, pa kontroler uvijek vraća 204: za nepoznat email,
+	// potvrđen email i preko granice mailova se samo ništa ne pošalje.
 	@Transactional
-	public void resend(UUID userId) {
-		User user = users.findById(userId).orElseThrow();
-		if (!user.isEmailVerified()) {
-			Duration cekanje = notifications.waitBeforeNext(userId, NotificationType.EMAIL_VERIFICATION);
-			if (!cekanje.isZero()) {
-				throw new TooManyAttemptsException(TooManyAttemptsException.Razlog.LINK_ZA_POTVRDU, cekanje);
-			}
-			posaljiLink(user);
-		}
+	public void resend(String email) {
+		users.findByEmail(User.normalizeEmail(email))
+				.filter(user -> !user.isEmailVerified())
+				.filter(user -> notifications.waitBeforeNext(user.getId(), NotificationType.EMAIL_VERIFICATION).isZero())
+				.ifPresent(this::posaljiLink);
 	}
 
 	@Transactional

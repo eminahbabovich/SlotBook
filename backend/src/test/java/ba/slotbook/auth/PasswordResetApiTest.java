@@ -82,6 +82,11 @@ class PasswordResetApiTest {
 						""".formatted(token, lozinka)));
 	}
 
+	// Za testove koji se prijavljuju starom lozinkom: nepotvrđen email se ne može prijaviti
+	private void potvrdiEmail() {
+		jdbc.update("update users set email_verified_at = now() where id = ?", korisnik);
+	}
+
 	private ResultActions prijava(String lozinka) throws Exception {
 		return mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
 				.content("""
@@ -129,6 +134,7 @@ class PasswordResetApiTest {
 
 	@Test
 	void novaLozinkaOdjavljujeSveUredjaje() throws Exception {
+		potvrdiEmail();
 		String refresh = prijava(STARA).andReturn().getResponse().getCookie(AuthController.REFRESH_KOLACIC).getValue();
 
 		postavi(noviLink(), NOVA).andExpect(status().isNoContent());
@@ -151,6 +157,7 @@ class PasswordResetApiTest {
 
 	@Test
 	void linkZaPotvrduEmailaNeMozePostavitiLozinku() throws Exception {
+		potvrdiEmail();
 		postavi(tokenIzMaila("EMAIL_VERIFICATION", "potvrda-emaila"), NOVA).andExpect(status().isNotFound());
 
 		prijava(STARA).andExpect(status().isOk());
@@ -158,6 +165,7 @@ class PasswordResetApiTest {
 
 	@Test
 	void istekaoLinkVraca410ILozinkaOstajeIsta() throws Exception {
+		potvrdiEmail();
 		String token = noviLink();
 		jdbc.update("update user_tokens set created_at = now() - interval '2 hours', expires_at = now() - interval "
 				+ "'1 second' where user_id = ? and type = 'PASSWORD_RESET'", korisnik);

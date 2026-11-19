@@ -46,6 +46,7 @@ class LoginLockApiTest {
 		mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "%s", "password": "%s", "displayName": "Haris"}
 				""".formatted(email, LOZINKA))).andExpect(status().isCreated());
+		jdbc.update("update users set email_verified_at = now() where email = ?", email);
 	}
 
 	private ResultActions prijava(String email, String lozinka) throws Exception {
@@ -89,6 +90,18 @@ class LoginLockApiTest {
 				.andExpect(content().json(postoji));
 	}
 
+	// Nepotvrđen nalog s tačnom lozinkom dobije isti 401, pa se mora i brojati isto. Inače bi se
+	// izmišljen nalog (napravljen registracijom) zaključao drugačije od postojećeg.
+	@Test
+	void tacnaLozinkaNepotvrdjenogNalogaSeBrojiKaoGreska() throws Exception {
+		jdbc.update("update users set email_verified_at = null where email = ?", email);
+		for (int i = 0; i < 5; i++) {
+			prijava(email, LOZINKA).andExpect(status().isUnauthorized());
+		}
+
+		prijava(email, LOZINKA).andExpect(status().isTooManyRequests());
+	}
+
 	@Test
 	void uspjesnaPrijavaBriseRanijeGreske() throws Exception {
 		pogresna(email, 4);
@@ -106,6 +119,7 @@ class LoginLockApiTest {
 		mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "%s", "password": "%s", "displayName": "Lejla"}
 				""".formatted(drugi, LOZINKA))).andExpect(status().isCreated());
+		jdbc.update("update users set email_verified_at = now() where email = ?", drugi);
 
 		prijava(email, LOZINKA).andExpect(status().isTooManyRequests());
 		prijava(drugi, LOZINKA).andExpect(status().isOk());

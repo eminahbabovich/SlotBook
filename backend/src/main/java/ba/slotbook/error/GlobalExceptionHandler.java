@@ -114,14 +114,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			// Isti tekst i za email bez naloga, da se po poruci ne vidi ko ima nalog
 			case NALOG -> "Za ovaj email je bilo previše pogrešnih lozinki, pa je prijava zaključana na 15 minuta. "
 					+ "Pokušaj ponovo kasnije.";
-			case LINK_ZA_POTVRDU -> "Link za potvrdu je u zadnjih sat vremena poslan tri puta. Pogledaj i spam, "
-					+ "a novi link možeš tražiti kasnije.";
 			case POZIVNICA -> "Na ovaj email su u zadnjih sat vremena poslane tri pozivnice. Pokušaj ponovo kasnije.";
 		});
 		problem.setTitle(switch (ex.getRazlog()) {
 			case ADRESA -> "Previše pokušaja";
 			case NALOG -> "Prijava privremeno zaključana";
-			case LINK_ZA_POTVRDU, POZIVNICA -> "Previše mailova";
+			case POZIVNICA -> "Previše mailova";
 		});
 		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
 				.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.sekundiDoSljedeceg()))
@@ -250,8 +248,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		return switch (ex.getType()) {
 			case EMAIL_VERIFY -> linkNeVazi(ex.getReason(), "Link za potvrdu ne važi",
 					"Link za potvrdu emaila ne postoji. Provjeri da li je kopiran cijeli link iz maila.",
-					"Ovaj link je već iskorišten. Ako email još nije potvrđen, zatraži novi link u profilu.",
-					"Link za potvrdu emaila je istekao. Zatraži novi link u profilu.");
+					"Ovaj link je već iskorišten. Ako email još nije potvrđen, zatraži novi link na stranici za prijavu.",
+					"Link za potvrdu emaila je istekao. Zatraži novi link na stranici za prijavu.");
 			// Iskorišten je i kad je lozinka promijenjena drugim, novijim linkom
 			case PASSWORD_RESET -> linkNeVazi(ex.getReason(), "Link za novu lozinku ne važi",
 					"Link za novu lozinku ne postoji. Provjeri da li je kopiran cijeli link iz maila.",

@@ -141,7 +141,7 @@ class OrganizationIsolationApiTest {
 			Map.entry("POST /api/auth/password-reset", "javno, isti odgovor za svaki email"),
 			Map.entry("POST /api/auth/password-reset/confirm", "javno, pravo daje token iz maila"),
 			Map.entry("GET /api/me", "samo korisnik iz tokena"),
-			Map.entry("POST /api/me/email-verification", "samo korisnik iz tokena"),
+			Map.entry("POST /api/auth/email-verification", "javno, uvijek 204, mail ide samo vlasniku emaila"),
 			Map.entry("GET /api/me/organizations", "samo korisnik iz tokena"),
 			Map.entry("GET /api/bookings/mine", "samo korisnik iz tokena"),
 			Map.entry("POST /api/organizations", "nova organizacija, kreator postaje admin"),
@@ -308,6 +308,7 @@ class OrganizationIsolationApiTest {
 			mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
 					{"email": "%s", "password": "%s", "displayName": "%s"}
 					""".formatted(email, LOZINKA, ime))).andExpect(status().isCreated());
+			jdbc.update("update users set email_verified_at = now() where email = lower(?)", email);
 		}
 		String tijelo = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "%s", "password": "%s"}

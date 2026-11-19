@@ -104,7 +104,7 @@ class EmailVerificationApiTest {
 				+ "where user_id = ?", korisnik);
 
 		potvrdi(token).andExpect(status().isGone())
-				.andExpect(jsonPath("$.detail").value("Link za potvrdu emaila je istekao. Zatraži novi link u profilu."));
+				.andExpect(jsonPath("$.detail").value("Link za potvrdu emaila je istekao. Zatraži novi link na stranici za prijavu."));
 		assertThat(jdbc.queryForObject("select email_verified_at from users where id = ?", Object.class, korisnik))
 				.isNull();
 	}
@@ -123,26 +123,29 @@ class EmailVerificationApiTest {
 				.isEqualTo(RandomToken.sha256(token)).isNotEqualTo(token);
 	}
 
-	@Test
-	void noviLinkStizeSamoDokEmailNijePotvrdjen() throws Exception {
-		String pristup = prijava();
-		mockMvc.perform(post("/api/me/email-verification").header("Authorization", "Bearer " + pristup))
-				.andExpect(status().isNoContent());
-		potvrdi(tokenIzMaila()).andExpect(status().isNoContent());
-		mockMvc.perform(post("/api/me/email-verification").header("Authorization", "Bearer " + pristup))
-				.andExpect(status().isNoContent());
-
-		assertThat(jdbc.queryForObject("select count(*) from notifications where user_id = ? and type = "
-				+ "'EMAIL_VERIFICATION'", Long.class, korisnik)).isEqualTo(2);
+	private ResultActions prijava(String lozinka) throws Exception {
+		return mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+				{"email": "%s", "password": "%s"}
+				""".formatted(email, lozinka)));
 	}
 
+	// Inače bi registracija tuđim emailom pa prijava svojom lozinkom otkrila ko već ima nalog: za novi
+	// nalog prijava prođe, a za postojeći dobije 401
 	@Test
-	void noviLinkTraziPrijavu() throws Exception {
-		mockMvc.perform(post("/api/me/email-verification")).andExpect(status().isUnauthorized());
+	void nepotvrdjenEmailSeNeMozePrijavitiIOdgovorJeIstiKaoZaPogresnuLozinku() throws Exception {
+		String pogresna = prijava("pogresna-lozinka").andExpect(status().isUnauthorized())
+				.andReturn().getResponse().getContentAsString();
+
+		prijava("jajce-vodopad-1461").andExpect(status().isUnauthorized())
+				.andExpect(content().json(pogresna))
+				.andExpect(jsonPath("$.accessToken").doesNotExist());
 	}
 
-	private ResultActions noviLink(String pristup) throws Exception {
-		return mockMvc.perform(post("/api/me/email-verification").header("Authorization", "Bearer " + pristup));
+	private ResultActions noviLink(String email) throws Exception {
+		return mockMvc.perform(post("/api/auth/email-verification").contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email": "%s"}
+						""".formatted(email)));
 	}
 
 	private long mailova() {
@@ -150,40 +153,50 @@ class EmailVerificationApiTest {
 				+ "'EMAIL_VERIFICATION'", Long.class, korisnik);
 	}
 
-	// Prvi mail je od registracije, pa ostaju još dva nova linka u satu
+	// Bez prijave, jer se nepotvrđen nalog ne može prijaviti. Isti 204 i za nepoznat i za potvrđen
+	// email, da se po odgovoru ne vidi ništa o nalogu.
 	@Test
-	void cetvrtiLinkUSatuDobija429IMailNeNastaje() throws Exception {
-		String pristup = prijava();
-		noviLink(pristup).andExpect(status().isNoContent());
-		noviLink(pristup).andExpect(status().isNoContent());
+	void noviLinkStizeSamoNepotvrdjenomNalogu() throws Exception {
+		noviLink(email.toUpperCase()).andExpect(status().isNoContent());
+		noviLink("niko.nepoznat@example.com").andExpect(status().isNoContent());
+		assertThat(mailova()).isEqualTo(2);
 
-		String cekanje = noviLink(pristup)
-				.andExpect(status().isTooManyRequests())
-				.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-				.andExpect(jsonPath("$.title").value("Previše mailova"))
-				.andReturn().getResponse().getHeader("Retry-After");
+		potvrdi(tokenIzMaila()).andExpect(status().isNoContent());
+		noviLink(email).andExpect(status().isNoContent());
+		assertThat(mailova()).isEqualTo(2);
+	}
 
-		assertThat(Long.parseLong(cekanje)).isBetween(3500L, 3600L);
+	// Prvi mail je od registracije. Preko granice je odgovor isti 204, samo mail ne nastane: 429 bi
+	// dobio samo email koji ima nalog.
+	@Test
+	void cetvrtiLinkUSatuNeNastajeAOdgovorJeIsti() throws Exception {
+		for (int i = 0; i < 3; i++) {
+			noviLink(email).andExpect(status().isNoContent());
+		}
+
 		assertThat(mailova()).isEqualTo(3);
 	}
 
-	// Čeka se dok najstariji od tri maila ne izađe iz sata. Mail od registracije je star 59 minuta, a
-	// druga dva su nova: čeka se još minuta, a ne sat od najnovijeg.
+	// Čeka se dok najstariji od tri maila ne izađe iz sata. Mail od registracije je star 61 minutu, a
+	// druga dva su nova: mjesto za jedan novi je slobodno.
 	@Test
-	void cekanjeTrajeDokNajstarijiMailNeIzadjeIzSata() throws Exception {
-		jdbc.update("update notifications set created_at = created_at - interval '59 minutes' where user_id = ?",
+	void mjestoSeOslobadjaKadNajstarijiMailIzadjeIzSata() throws Exception {
+		jdbc.update("update notifications set created_at = created_at - interval '61 minutes' where user_id = ?",
 				korisnik);
-		String pristup = prijava();
-		noviLink(pristup).andExpect(status().isNoContent());
-		noviLink(pristup).andExpect(status().isNoContent());
+		noviLink(email).andExpect(status().isNoContent());
+		noviLink(email).andExpect(status().isNoContent());
 
-		String cekanje = noviLink(pristup).andExpect(status().isTooManyRequests())
-				.andReturn().getResponse().getHeader("Retry-After");
-		assertThat(Long.parseLong(cekanje)).isBetween(1L, 60L);
+		noviLink(email).andExpect(status().isNoContent());
+		assertThat(mailova()).isEqualTo(4);
 
-		jdbc.update("update notifications set created_at = created_at - interval '2 minutes' where user_id = ?",
-				korisnik);
-		noviLink(pristup).andExpect(status().isNoContent());
+		noviLink(email).andExpect(status().isNoContent());
 		assertThat(mailova()).isEqualTo(4);
 	}
+
+	@Test
+	void neispravanEmailZaNoviLinkVraca400() throws Exception {
+		noviLink("nije-email").andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("email"));
+	}
+
 }

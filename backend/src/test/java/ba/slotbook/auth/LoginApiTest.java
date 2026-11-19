@@ -21,6 +21,7 @@ import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -41,6 +42,9 @@ class LoginApiTest {
 	MockMvc mockMvc;
 
 	@Autowired
+	JdbcTemplate jdbc;
+
+	@Autowired
 	UserRepository users;
 
 	@Autowired
@@ -55,6 +59,7 @@ class LoginApiTest {
 							{"email": "%s", "password": "%s", "displayName": "Nermin"}
 							""".formatted(EMAIL, LOZINKA)))
 					.andExpect(status().isCreated());
+			jdbc.update("update users set email_verified_at = now() where email = lower(?)", EMAIL);
 		}
 	}
 

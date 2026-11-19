@@ -33,19 +33,21 @@ async function posalji(metoda, putanja, { token, tijelo } = {}) {
 	return odgovor.status() === 204 ? null : odgovor.json()
 }
 
+// Prijava radi tek kad je email potvrđen, pa se link čeka u Mailpitu kao i pozivnica
 async function noviNalog(email, ime) {
 	await posalji('POST', '/api/auth/register', { tijelo: { email, password: LOZINKA, displayName: ime } })
+	await posalji('POST', '/api/auth/verify-email', { tijelo: { token: await tokenIzMaila(email, 'Potvrdi email') } })
 	return (await posalji('POST', '/api/auth/login', { tijelo: { email, password: LOZINKA } })).accessToken
 }
 
-// Token pozivnice ide samo mailom, a mail šalje NotificationJob svakih 30 s
-async function tokenPozivnice(email) {
+// Tokeni idu samo mailom, a mail šalje NotificationJob svakih 30 s
+async function tokenIzMaila(email, naslov) {
 	let poruka
 	await expect
 		.poll(
 			async () => {
 				const { messages } = await (await api.get(`${MAILPIT}/api/v1/messages`)).json()
-				poruka = messages.find((m) => m.Subject.startsWith('Pozivnica') && m.To.some((t) => t.Address === email))
+				poruka = messages.find((m) => m.Subject.startsWith(naslov) && m.To.some((t) => t.Address === email))
 				return poruka !== undefined
 			},
 			{ timeout: 60_000, intervals: [1000] },
@@ -58,6 +60,8 @@ async function tokenPozivnice(email) {
 // Radno vrijeme je svaki dan osim današnjeg. Kalendar se otvori na prazan dan, a prvi slobodan
 // je sutra od 08:00, pa test ne zavisi od toga u koliko sati se pokrene.
 test.beforeAll(async ({ playwright }) => {
+	// Tri maila (dvije potvrde i pozivnica), a NotificationJob šalje svakih 30 s
+	test.setTimeout(180_000)
 	api = await playwright.request.newContext()
 	const admin = await noviNalog(ADMIN, 'Edin Mujkić')
 	slug = `citaonica-pmf-${run}`
@@ -74,7 +78,7 @@ test.beforeAll(async ({ playwright }) => {
 	})
 	await posalji('POST', `/api/organizations/${org.id}/invites`, { token: admin, tijelo: { email: KLIJENT, role: 'CLIENT' } })
 	const klijent = await noviNalog(KLIJENT, 'Hana Šehić')
-	await posalji('POST', '/api/invites/accept', { token: klijent, tijelo: { token: await tokenPozivnice(KLIJENT) } })
+	await posalji('POST', '/api/invites/accept', { token: klijent, tijelo: { token: await tokenIzMaila(KLIJENT, 'Pozivnica') } })
 })
 
 test.afterAll(async () => {

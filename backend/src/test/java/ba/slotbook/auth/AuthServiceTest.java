@@ -58,6 +58,8 @@ class AuthServiceTest {
 
 	private User postojeciKorisnik(String email, String lozinka) {
 		User user = new User(email, passwordEncoder.encode(lozinka), "Amra", SADA);
+		// Nepotvrđen email se ne može prijaviti (EmailVerificationApiTest)
+		user.verifyEmail(SADA);
 		ReflectionTestUtils.setField(user, "id", UUID.fromString("0f8fad5b-d9cb-469f-a165-70867728950e"));
 		when(users.findByEmail(email)).thenReturn(Optional.of(user));
 		return user;

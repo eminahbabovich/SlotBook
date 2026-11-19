@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -36,6 +37,9 @@ class MyOrganizationsApiTest {
 
 	@Autowired
 	MockMvc mockMvc;
+
+	@Autowired
+	JdbcTemplate jdbc;
 
 	@Autowired
 	UserRepository users;
@@ -72,6 +76,7 @@ class MyOrganizationsApiTest {
 			mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
 					{"email": "%s", "password": "%s", "displayName": "%s"}
 					""".formatted(email, LOZINKA, ime))).andExpect(status().isCreated());
+			jdbc.update("update users set email_verified_at = now() where email = lower(?)", email);
 		}
 		String tijelo = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "%s", "password": "%s"}

@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
@@ -38,6 +39,9 @@ class AuthRateLimitApiTest {
 	MockMvc mockMvc;
 
 	@Autowired
+	JdbcTemplate jdbc;
+
+	@Autowired
 	UserRepository users;
 
 	@BeforeEach
@@ -45,6 +49,7 @@ class AuthRateLimitApiTest {
 		if (users.findByEmail(EMAIL).isEmpty()) {
 			mockMvc.perform(registracija(EMAIL).header("CF-Connecting-IP", "198.51.100.1"))
 					.andExpect(status().isCreated());
+			jdbc.update("update users set email_verified_at = now() where email = lower(?)", EMAIL);
 		}
 	}
 

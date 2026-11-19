@@ -59,7 +59,9 @@ public class AuthService {
 		String hash = user != null ? user.getPasswordHash() : hashZaNepostojeciEmail;
 		boolean lozinkaTacna = passwordEncoder.matches(password, hash);
 
-		if (user == null || !lozinkaTacna) {
+		// Nepotvrđen email dobije isti odgovor kao pogrešna lozinka i broji se isto. Inače bi registracija
+		// tuđim emailom pa prijava svojom lozinkom otkrila da li je nalog već postojao.
+		if (user == null || !lozinkaTacna || !user.isEmailVerified()) {
 			zakljucavanje.recordFailure(email);
 			throw new BadCredentialsException("Pogrešan email ili lozinka");
 		}
