@@ -117,9 +117,11 @@ public class SecurityConfig {
 		return izvor;
 	}
 
+	// Snaga je u application.properties (10). Testovi koriste 4, jer ne testiraju BCrypt nego tok,
+	// osim VrijemeOdgovoraTest koji mjeri baš njega.
 	@Bean
-	PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
+	PasswordEncoder passwordEncoder(@Value("${slotbook.bcrypt-strength}") int snaga) {
+		return new BCryptPasswordEncoder(snaga);
 	}
 
 }

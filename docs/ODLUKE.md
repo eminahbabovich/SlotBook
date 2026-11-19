@@ -781,3 +781,9 @@ Email pozvane osobe ne ide u dnevnik, samo uloga. Ta osoba možda nikad ne napra
 Dnevnik baza ne čuva od izmjene. Aplikacija nema `UPDATE` ni `DELETE` nad njim, ali `UPDATE` ili `DELETE` iz SQL konzole bi prošao.
 
 Sedam mutacija. Šest padaju na pravom testu: zapis i bez transakcije radnje, prihvatanje pozivnice bez zapisa, upit bez uslova organizacije, najstarije prvo, dnevnik dostupan i provideru, i odgovor bez provjere za obrisan nalog. Sedma je zapis premješten prije provjere novog providera. Ona preživi, i to je bio cilj: provjera baci `400`, rollback odnese i zapis, pa `odbijenaRadnjaNeOstavljaZapis` i dalje vidi isti broj redova.
+
+## BCrypt snage 4 u testovima
+
+Cijela suita je trajala oko 2:50, a mutacije za jedan korak i po 20 minuta. Najviše je trošio BCrypt: skoro svaki test pravi korisnike kroz pravu registraciju i prijavu, a svaki hash snage 10 traje oko 100 ms. Snaga je sad u `slotbook.bcrypt-strength`: 10 u `application.properties`, 4 u testnom `application-default.properties`. Poslije promjene suita traje 2:11, `AuditLogApiTest` 20 s umjesto 74 s, a test izolacije ispod 4 s umjesto 65 s. Ostatak vremena su Maven, Docker i Spring kontekst.
+
+`VrijemeOdgovoraTest` vraća snagu 10, jer mjeri baš BCrypt. Sa 4 bi lažni BCrypt u registraciji bio u šumu, i mutacija koja ga briše ne bi pala. Provjerio sam: sa snagom 10 i dalje pada. `BcryptSnagaTest` čita `application.properties` i pada ako neko spusti i produkciju, jer nijedan drugi test to ne bi primijetio. Testcontainers reuse nisam uključio. Baza bi tada preživjela između pokretanja, a testovi već računaju na dijeljenu bazu samo unutar jednog pokretanja.

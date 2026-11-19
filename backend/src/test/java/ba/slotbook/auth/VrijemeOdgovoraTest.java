@@ -24,7 +24,8 @@ import ba.slotbook.TestcontainersConfiguration;
 // grubu razliku (preskočen BCrypt, sinhrono slanje maila), a nije dokaz da razlike nema: za reset lozinke
 // postojeći email radi više upisa i sporiji je za desetak milisekundi (docs/ODLUKE.md).
 @Import(TestcontainersConfiguration.class)
-@SpringBootTest
+// Prava snaga BCrypt-a: test mjeri da obje grane troše isto, a sa snagom 4 bi razlika bila u šumu
+@SpringBootTest(properties = "slotbook.bcrypt-strength=10")
 @AutoConfigureMockMvc
 class VrijemeOdgovoraTest {
 
