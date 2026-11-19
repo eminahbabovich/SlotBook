@@ -54,19 +54,21 @@ public class OrganizationInviteService {
 		if (!cekanje.isZero()) {
 			throw new TooManyAttemptsException(TooManyAttemptsException.Razlog.POZIVNICA, cekanje);
 		}
-		notifications.dropPendingInvite(organizationId, normalizovan);
-		invites.deleteOpen(organizationId, normalizovan);
-
 		String token = RandomToken.generate();
 		Instant sada = clock.instant();
 		Organization organizacija = organizations.getReferenceById(organizationId);
 		OrganizationInvite invite;
 		try {
+			notifications.dropPendingInvite(organizationId, normalizovan);
+			invites.deleteOpen(organizationId, normalizovan);
 			invite = invites.saveAndFlush(new OrganizationInvite(organizacija, normalizovan, role,
 					RandomToken.sha256(token), sada, sada.plus(TRAJE)));
 		} catch (DataIntegrityViolationException e) {
-			// Dva admina u istom trenutku: oba obrišu staru, oba upisuju, a indeks pusti samo prvog
-			if (e.getMostSpecificCause().getMessage().contains("organization_invites_jedna_otvorena")) {
+			// Dva admina u istom trenutku: oba obrišu staru, oba upisuju, a indeks pusti samo prvog.
+			// Ili drugi commita novu pozivnicu između brisanja maila i brisanja pozivnice, pa njen mail
+			// koji čeka ostane bez pozivnice i notifications_primalac odbije brisanje.
+			String uzrok = e.getMostSpecificCause().getMessage();
+			if (uzrok.contains("organization_invites_jedna_otvorena") || uzrok.contains("notifications_primalac")) {
 				throw new InviteRaceException();
 			}
 			throw e;
