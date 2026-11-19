@@ -50,7 +50,7 @@ class RefreshApiTest {
 					.content("""
 							{"email": "%s", "password": "%s", "displayName": "Aida"}
 							""".formatted(EMAIL, LOZINKA)))
-					.andExpect(status().isCreated());
+					.andExpect(status().isAccepted());
 			jdbc.update("update users set email_verified_at = now() where email = lower(?)", EMAIL);
 		}
 	}

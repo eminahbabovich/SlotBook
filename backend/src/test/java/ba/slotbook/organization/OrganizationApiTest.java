@@ -56,7 +56,7 @@ class OrganizationApiTest {
 					.content("""
 							{"email": "%s", "password": "%s", "displayName": "Sabina"}
 							""".formatted(EMAIL, LOZINKA)))
-					.andExpect(status().isCreated());
+					.andExpect(status().isAccepted());
 			jdbc.update("update users set email_verified_at = now() where email = lower(?)", EMAIL);
 		}
 		String tijelo = mockMvc.perform(post("/api/auth/login")

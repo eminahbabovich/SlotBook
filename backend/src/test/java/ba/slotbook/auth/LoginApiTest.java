@@ -58,7 +58,7 @@ class LoginApiTest {
 					.content("""
 							{"email": "%s", "password": "%s", "displayName": "Nermin"}
 							""".formatted(EMAIL, LOZINKA)))
-					.andExpect(status().isCreated());
+					.andExpect(status().isAccepted());
 			jdbc.update("update users set email_verified_at = now() where email = lower(?)", EMAIL);
 		}
 	}

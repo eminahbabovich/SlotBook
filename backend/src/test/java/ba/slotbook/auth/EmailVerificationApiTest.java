@@ -47,14 +47,13 @@ class EmailVerificationApiTest {
 	@BeforeEach
 	void registracija() throws Exception {
 		email = "selma." + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
-		String odgovor = mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
 				.content("""
 						{"email": "%s", "password": "jajce-vodopad-1461", "displayName": "Selma"}
 						""".formatted(email)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.emailVerified").value(false))
-				.andReturn().getResponse().getContentAsString();
-		korisnik = UUID.fromString(JsonPath.read(odgovor, "$.id"));
+				.andExpect(status().isAccepted());
+		// Registracija ne vraća korisnika, pa se ID čita iz baze
+		korisnik = jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
 	}
 
 	private String tokenIzMaila() {

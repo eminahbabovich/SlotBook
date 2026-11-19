@@ -739,3 +739,17 @@ Posljedica je da novi link za potvrdu više ne može tražiti prijavljen korisni
 Cijena: 19 test klasa je u pripremi registrovalo korisnika i odmah se prijavljivalo. Sad potvrđuju email direktno u bazi (`update users set email_verified_at = now()`), osim `PasswordResetApiTest`, gdje se potvrđuje samo u testovima kojima treba prijava starom lozinkom, jer jedan test dokazuje da nova lozinka potvrđuje email. Playwright test potvrđuje email preko linka iz Mailpita. Frontend još nema stranicu na koju link vodi, pa registracija kroz frontend do koraka 10 ne vodi do prijave.
 
 Četiri mutacije padaju na pravom testu: nepotvrđen nalog se prijavljuje, link ide i potvrđenom emailu, link bez granice, i endpoint nije javan.
+
+## Registracija s istim odgovorom i vrijeme odgovora
+
+Registracija sad uvijek vraća `202` bez tijela. Ranije je vraćala `201` s korisnikom, ali tijelo s ID-jem ne može izgledati isto za nov i za postojeći nalog, pa ga više nema. Šta se desilo, saznaje samo vlasnik emaila. Za nov email nastaje nalog i ide link za potvrdu. Za postojeći nepotvrđen ide novi link, jer je to vjerovatno isti čovjek koji prvi mail nije našao. Za postojeći potvrđen ide mail da je neko pokušao napraviti nalog s tim emailom, s linkom za prijavu. Postojeći nalog se ne mijenja, lozinka i ime iz drugog pokušaja ne ulaze. Oba maila imaju granicu od tri na sat.
+
+Dvije registracije za isti nov email u istom trenutku obje vide da naloga nema, a `UNIQUE` pusti samo jednu. Druga je ranije dobijala `409`, a sad kontroler i taj `EmailAlreadyUsedException` pretvara u isti `202`. `RegistracijaIstovremenoTest` šalje 6 niti u 10 krugova i traži samo `202` i jedan nalog po krugu. Handler za `409` sam obrisao, jer do njega više ništa ne dolazi.
+
+Grana za postojeći email ne pravi nalog, pa ne bi trošila BCrypt i bila bi brža za njegovo trajanje. Zato i ona pozove `passwordEncoder.encode` nad lozinkom iz zahtjeva, kao `AuthService.login` za nepoznat email. `VrijemeOdgovoraTest` mjeri medijanu od 30 zahtjeva kroz MockMvc, bez mreže, naizmjenično za obje grupe. Dva pokretanja na mom laptopu: registracija 229 ms za nov email i 223 ms za postojeći, pa 107 i 103 ms. Bez lažnog BCrypt-a test pada.
+
+Reset lozinke je dug iz Faze 5 i tu razlika postoji: 12 ms za nepoznat email i 27 ms za postojeći, u drugom pokretanju 4 i 10 ms. Postojeći email upisuje token i mail, a nepoznat samo pročita da naloga nema. Preko interneta je to u šumu jednog zahtjeva, ali s mnogo zahtjeva bi se moglo izdvojiti. Test zato ne tvrdi da razlike nema, samo da nije veća od 50 ms (toliko bi dodalo sinhrono slanje maila ili BCrypt). Popravak bi bio da se posao za postojeći email radi poslije odgovora, ili da odgovor nikad ne stigne prije nekog fiksnog vremena. Nisam ga uradio, ostaje otvoreno. Mjerenje kroz pravi HTTP na Renderu nisam radio.
+
+Frontend još radi registraciju pa prijavu (`frontend/src/api/auth.js`). Prijava sad za novi nalog vraća `401`, jer email nije potvrđen, a stranice za potvrdu emaila još nema. To popravlja korak 10.
+
+Četiri mutacije padaju na pravom testu: bez lažnog BCrypt-a, istovremena registracija daje grešku, mail "nalog postoji" bez granice, i nepotvrđen nalog dobija mail o nalogu umjesto novog linka.

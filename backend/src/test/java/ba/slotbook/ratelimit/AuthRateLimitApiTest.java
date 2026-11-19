@@ -48,7 +48,7 @@ class AuthRateLimitApiTest {
 	void selmaImaNalog() throws Exception {
 		if (users.findByEmail(EMAIL).isEmpty()) {
 			mockMvc.perform(registracija(EMAIL).header("CF-Connecting-IP", "198.51.100.1"))
-					.andExpect(status().isCreated());
+					.andExpect(status().isAccepted());
 			jdbc.update("update users set email_verified_at = now() where email = lower(?)", EMAIL);
 		}
 	}
@@ -122,9 +122,9 @@ class AuthRateLimitApiTest {
 	@Test
 	void trecaRegistracijaSIsteAdreseDobija429INalogNeNastaje() throws Exception {
 		mockMvc.perform(registracija("amar.granica1@example.com").header("CF-Connecting-IP", "203.0.113.30"))
-				.andExpect(status().isCreated());
+				.andExpect(status().isAccepted());
 		mockMvc.perform(registracija("amar.granica2@example.com").header("CF-Connecting-IP", "203.0.113.30"))
-				.andExpect(status().isCreated());
+				.andExpect(status().isAccepted());
 
 		mockMvc.perform(registracija("amar.granica3@example.com").header("CF-Connecting-IP", "203.0.113.30"))
 				.andExpect(status().isTooManyRequests())
@@ -141,7 +141,7 @@ class AuthRateLimitApiTest {
 		}
 
 		mockMvc.perform(registracija("amar.granica4@example.com").header("CF-Connecting-IP", "203.0.113.40"))
-				.andExpect(status().isCreated());
+				.andExpect(status().isAccepted());
 	}
 
 }

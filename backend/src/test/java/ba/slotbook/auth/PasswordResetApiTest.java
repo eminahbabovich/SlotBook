@@ -20,7 +20,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-import com.jayway.jsonpath.JsonPath;
 
 import ba.slotbook.TestcontainersConfiguration;
 import jakarta.servlet.http.Cookie;
@@ -45,13 +44,13 @@ class PasswordResetApiTest {
 	@BeforeEach
 	void registracija() throws Exception {
 		email = "dzenana." + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
-		String odgovor = mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
 				.content("""
 						{"email": "%s", "password": "%s", "displayName": "Dženana"}
 						""".formatted(email, STARA)))
-				.andExpect(status().isCreated())
-				.andReturn().getResponse().getContentAsString();
-		korisnik = UUID.fromString(JsonPath.read(odgovor, "$.id"));
+				.andExpect(status().isAccepted());
+		// Registracija ne vraća korisnika, pa se ID čita iz baze
+		korisnik = jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
 	}
 
 	private void trazi(String email) throws Exception {

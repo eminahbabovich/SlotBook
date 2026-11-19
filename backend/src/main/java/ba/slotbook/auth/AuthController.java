@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ba.slotbook.user.UserResponse;
+import ba.slotbook.user.EmailAlreadyUsedException;
 import jakarta.validation.Valid;
 
 @RestController
@@ -30,10 +30,17 @@ public class AuthController {
 		this.authService = authService;
 	}
 
+	// Uvijek 202 bez tijela, i kad email već ima nalog: šta se desilo, saznaje samo vlasnik emaila iz
+	// maila. EmailAlreadyUsedException stigne samo kad dvije registracije za isti novi email idu u istom
+	// trenutku, pa UNIQUE odbije drugu, a i tada je odgovor isti.
 	@PostMapping("/register")
-	@ResponseStatus(HttpStatus.CREATED)
-	public UserResponse register(@Valid @RequestBody RegisterRequest request) {
-		return verification.register(request.email(), request.password(), request.displayName());
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void register(@Valid @RequestBody RegisterRequest request) {
+		try {
+			verification.register(request.email(), request.password(), request.displayName());
+		} catch (EmailAlreadyUsedException e) {
+			// Nalog je upravo napravila druga registracija, i link za potvrdu ide s njom
+		}
 	}
 
 	@PostMapping("/login")

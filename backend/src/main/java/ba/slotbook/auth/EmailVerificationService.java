@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,25 +25,47 @@ public class EmailVerificationService {
 	private final UserRepository users;
 	private final UserTokenService tokens;
 	private final NotificationService notifications;
+	private final PasswordEncoder passwordEncoder;
 	private final Clock clock;
 	private final String appUrl;
 
 	public EmailVerificationService(UserService userService, UserRepository users, UserTokenService tokens,
-			NotificationService notifications, Clock clock, @Value("${slotbook.app-url}") String appUrl) {
+			NotificationService notifications, PasswordEncoder passwordEncoder, Clock clock,
+			@Value("${slotbook.app-url}") String appUrl) {
 		this.userService = userService;
 		this.users = users;
 		this.tokens = tokens;
 		this.notifications = notifications;
+		this.passwordEncoder = passwordEncoder;
 		this.clock = clock;
 		this.appUrl = appUrl;
 	}
 
-	// Nalog i mail za potvrdu u istoj transakciji: nema naloga kojem link nikad nije ni krenuo
+	// Kontroler uvijek vraća isti odgovor, pa se po njemu ne vidi da li je nalog već postojao. Šta se
+	// desilo, saznaje samo vlasnik emaila iz maila. Nalog i mail za potvrdu su u istoj transakciji:
+	// nema naloga kojem link nikad nije ni krenuo.
 	@Transactional
-	public UserResponse register(String email, String password, String displayName) {
-		UserResponse novi = userService.register(email, password, displayName);
-		posaljiLink(users.getReferenceById(novi.id()));
-		return novi;
+	public void register(String email, String password, String displayName) {
+		User postojeci = users.findByEmail(User.normalizeEmail(email)).orElse(null);
+		if (postojeci == null) {
+			UserResponse novi = userService.register(email, password, displayName);
+			posaljiLink(users.getReferenceById(novi.id()));
+			return;
+		}
+		// Novi nalog troši BCrypt, pa ga troši i ova grana. Bez toga bi odgovor za postojeći email bio
+		// brži za trajanje BCrypt-a i mjerenjem bi se saznalo ko ima nalog (VrijemeOdgovoraTest).
+		passwordEncoder.encode(password);
+		if (!postojeci.isEmailVerified()) {
+			resend(email);
+		} else if (notifications.waitBeforeNext(postojeci.getId(), NotificationType.ACCOUNT_EXISTS).isZero()) {
+			notifications.enqueue(postojeci.getId(), NotificationType.ACCOUNT_EXISTS, new EmailContent(
+					"Neko je pokušao napraviti nalog s tvojim emailom",
+					"Zdravo " + postojeci.getDisplayName() + ",\n\nneko je upravo pokušao napraviti nalog na "
+							+ "SlotBooku s ovim emailom. Nalog već imaš, pa novi nije napravljen i tvoj se nije "
+							+ "promijenio.\n\nAko si to ti, prijavi se: " + appUrl + "/prijava\nAko se ne "
+							+ "sjećaš lozinke, novu možeš postaviti sa stranice za prijavu. Ako to nisi ti, "
+							+ "zanemari ovaj mail."));
+		}
 	}
 
 	// Kad prvi mail ne stigne ili link istekne. Stari linkovi i dalje važe do svog roka. Bez prijave,

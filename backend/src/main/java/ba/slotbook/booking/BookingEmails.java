@@ -39,7 +39,7 @@ final class BookingEmails {
 			case BOOKING_REMINDER -> new EmailContent("Podsjetnik: " + resurs, "Podsjetnik za termin " + termin
 					+ " (" + resurs + "). Ako ne možeš doći, otkaži ga u aplikaciji, da ga može uzeti neko drugi.");
 			// Bez default grane, da novi tip obavijesti o rezervaciji ne prođe kompajler bez teksta
-			case EMAIL_VERIFICATION, PASSWORD_RESET, ORGANIZATION_INVITE -> throw new IllegalArgumentException("Nije obavijest o rezervaciji: " + tip);
+			case EMAIL_VERIFICATION, PASSWORD_RESET, ORGANIZATION_INVITE, ACCOUNT_EXISTS -> throw new IllegalArgumentException("Nije obavijest o rezervaciji: " + tip);
 		};
 	}
 

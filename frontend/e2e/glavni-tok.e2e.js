@@ -30,7 +30,9 @@ async function posalji(metoda, putanja, { token, tijelo } = {}) {
 	if (!odgovor.ok()) {
 		throw new Error(`${metoda} ${putanja}: ${odgovor.status()} ${await odgovor.text()}`)
 	}
-	return odgovor.status() === 204 ? null : odgovor.json()
+	// 204 i 202 (registracija) nemaju tijelo
+	const tekst = await odgovor.text()
+	return tekst ? JSON.parse(tekst) : null
 }
 
 // Prijava radi tek kad je email potvrđen, pa se link čeka u Mailpitu kao i pozivnica

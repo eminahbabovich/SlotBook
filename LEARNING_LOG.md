@@ -217,3 +217,13 @@ Zaključavanje prijave. Najvažnija odluka je bila da se broji po emailu iz zaht
 Napisao sam vraćanje brojača na nulu poslije zaključavanja, pa skontao da ne radi ništa: prozor kreće od prve greške i traje koliko i zaključavanje, pa je uvijek istekao kad zaključavanje prođe. Izbacio sam te dvije linije prije mutacija, jer bi mutacija koja ih briše preživjela.
 
 Ostaje ružna strana: ko zna nečiji email, može ga držati zaključanim pet pogrešnih lozinki svakih 15 minuta.
+
+## četvrtak, 19. novembar 2026. u 17:24
+
+Enumeracija. Plan je bio jednostavan: registracija vraća isti odgovor i kad nalog postoji. Kad sam krenuo, skontao sam da to ništa ne sakriva dok se nepotvrđen nalog može prijaviti. Registrujem tuđi email svojom lozinkom i odmah se prijavim: prođe, nalog nije postojao, `401`, postojao je. Naš frontend tačno to radi. Zato se sad prijavljuje tek poslije potvrde, a to je značilo 19 test klasa koje su registrovale pa se prijavljivale. Sad potvrđuju email direktno u bazi.
+
+Usput je pao `InviteIstovremenoTest`, ali samo u cijelom pokretanju, a sam je prošao tri puta. Greška iz koraka 3: između brisanja maila koji čeka i brisanja pozivnice druga nit commita novu pozivnicu, pa `SET NULL` udari u `notifications_primalac`. Prvo sam to dokazao privremenim testom s dvije JDBC konekcije, pa tek onda popravljao. Mutacija za taj popravak preživi, jer se niti ne poklope svaki put.
+
+Mjerenje vremena me iznenadilo na drugu stranu. Za registraciju sam očekivao problem i lažni BCrypt ga riješi (107 ms naspram 103). Za reset lozinke sam mislio da je sve isto, a postojeći email je sporiji, 27 ms naspram 12, jer upisuje token i mail. Prvo sam test nazvao "traje kao za nepoznat" i prošao je samo zato što je granica bila 25 ms. Preimenovao sam ga u ono što stvarno provjerava.
+
+Heredoc u bashu mi je opet pojeo `\t` i `\n` u Python skripti, pa se skripta za mutacije nije ni pokrenula. Ovaj put je bar pala sa `SyntaxError`, umjesto da javi da je sve preživjelo.

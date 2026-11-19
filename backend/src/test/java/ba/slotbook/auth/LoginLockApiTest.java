@@ -45,7 +45,7 @@ class LoginLockApiTest {
 		email = "haris." + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
 		mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "%s", "password": "%s", "displayName": "Haris"}
-				""".formatted(email, LOZINKA))).andExpect(status().isCreated());
+				""".formatted(email, LOZINKA))).andExpect(status().isAccepted());
 		jdbc.update("update users set email_verified_at = now() where email = ?", email);
 	}
 
@@ -118,7 +118,7 @@ class LoginLockApiTest {
 		String drugi = "lejla." + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
 		mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
 				{"email": "%s", "password": "%s", "displayName": "Lejla"}
-				""".formatted(drugi, LOZINKA))).andExpect(status().isCreated());
+				""".formatted(drugi, LOZINKA))).andExpect(status().isAccepted());
 		jdbc.update("update users set email_verified_at = now() where email = ?", drugi);
 
 		prijava(email, LOZINKA).andExpect(status().isTooManyRequests());

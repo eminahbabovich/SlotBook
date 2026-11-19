@@ -2,6 +2,7 @@ package ba.slotbook.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -30,6 +32,9 @@ class RegisterApiTest {
 	@Autowired
 	UserRepository users;
 
+	@Autowired
+	JdbcTemplate jdbc;
+
 	private ResultActions registruj(String email, String lozinka, String ime) throws Exception {
 		return mockMvc.perform(post("/api/auth/register")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -38,32 +43,72 @@ class RegisterApiTest {
 						""".formatted(email, lozinka, ime)));
 	}
 
+	private long mailova(String email, String vrsta) {
+		return jdbc.queryForObject("select count(*) from notifications n join users u on u.id = n.user_id "
+				+ "where u.email = ? and n.type = ?", Long.class, email, vrsta);
+	}
+
+	// Bez tijela: odgovor ne smije zavisiti od toga da li je nalog već postojao
 	@Test
-	void registracijaBezPrijaveVraca201IKorisnikaBezLozinke() throws Exception {
+	void registracijaVraca202BezTijelaIPraviNalogSLinkomZaPotvrdu() throws Exception {
 		registruj("Lejla.Begic@Example.com", "mostarskiMost1", "Lejla Begić")
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.id").isNotEmpty())
-				.andExpect(jsonPath("$.email").value("lejla.begic@example.com"))
-				.andExpect(jsonPath("$.displayName").value("Lejla Begić"))
-				.andExpect(jsonPath("$.password").doesNotExist())
-				.andExpect(jsonPath("$.passwordHash").doesNotExist());
+				.andExpect(status().isAccepted())
+				.andExpect(content().string(""));
+
+		User user = users.findByEmail("lejla.begic@example.com").orElseThrow();
+		assertThat(user.getDisplayName()).isEqualTo("Lejla Begić");
+		assertThat(user.isEmailVerified()).isFalse();
+		assertThat(mailova("lejla.begic@example.com", "EMAIL_VERIFICATION")).isEqualTo(1);
 	}
 
 	@Test
 	void lozinkaSeUBaziCuvaKaoBcryptHash() throws Exception {
-		registruj("haris@example.com", "bascarsija99", "Haris").andExpect(status().isCreated());
+		registruj("haris@example.com", "bascarsija99", "Haris").andExpect(status().isAccepted());
 
 		User user = users.findByEmail("haris@example.com").orElseThrow();
 		assertThat(user.getPasswordHash()).startsWith("$2a$").doesNotContain("bascarsija99");
 	}
 
+	// Isti odgovor kao za novi nalog, a vlasnik dobije mail da je neko pokušao. Postojeći nalog se ne
+	// mijenja: ni lozinka ni ime iz drugog pokušaja ne ulaze.
 	@Test
-	void istiEmailDrugiPutVraca409() throws Exception {
-		registruj("selma@example.com", "trebevic123", "Selma").andExpect(status().isCreated());
+	void postojeciEmailDobijaIstiOdgovorAVlasnikMail() throws Exception {
+		registruj("selma@example.com", "trebevic123", "Selma").andExpect(status().isAccepted());
+		jdbc.update("update users set email_verified_at = now() where email = 'selma@example.com'");
+		String hash = users.findByEmail("selma@example.com").orElseThrow().getPasswordHash();
 
 		registruj("SELMA@example.com", "drugaLozinka1", "Selma druga")
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.title").value("Email je već registrovan"));
+				.andExpect(status().isAccepted())
+				.andExpect(content().string(""));
+
+		User selma = users.findByEmail("selma@example.com").orElseThrow();
+		assertThat(selma.getPasswordHash()).isEqualTo(hash);
+		assertThat(selma.getDisplayName()).isEqualTo("Selma");
+		assertThat(mailova("selma@example.com", "ACCOUNT_EXISTS")).isEqualTo(1);
+		assertThat(mailova("selma@example.com", "EMAIL_VERIFICATION")).isEqualTo(1);
+	}
+
+	// Ko se registrovao pa nije potvrdio email, drugi put dobije novi link umjesto maila "nalog postoji"
+	@Test
+	void postojeciNepotvrdjenEmailDobijaNoviLink() throws Exception {
+		registruj("irma@example.com", "vrelo-bosne1", "Irma").andExpect(status().isAccepted());
+
+		registruj("irma@example.com", "vrelo-bosne1", "Irma").andExpect(status().isAccepted());
+
+		assertThat(mailova("irma@example.com", "EMAIL_VERIFICATION")).isEqualTo(2);
+		assertThat(mailova("irma@example.com", "ACCOUNT_EXISTS")).isZero();
+	}
+
+	@Test
+	void mailONalogKojiPostojiImaGranicuOdTriNaSat() throws Exception {
+		registruj("kenan@example.com", "igman-zimi1984", "Kenan").andExpect(status().isAccepted());
+		jdbc.update("update users set email_verified_at = now() where email = 'kenan@example.com'");
+
+		for (int i = 0; i < 4; i++) {
+			registruj("kenan@example.com", "nesto-drugo-1", "Neko").andExpect(status().isAccepted());
+		}
+
+		assertThat(mailova("kenan@example.com", "ACCOUNT_EXISTS")).isEqualTo(3);
 	}
 
 	@Test

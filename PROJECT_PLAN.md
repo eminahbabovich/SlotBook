@@ -323,6 +323,9 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    tuđi email može tu osobu držati zaključanom, zapisano u `docs/ODLUKE.md`.
 5. **Enumeracija emailova.** Registracija vraća isti odgovor i kad nalog postoji, a vlasnik emaila
    dobije mail (odluka iz Faze 2). Izmjeriti i razliku u vremenu odgovora za reset lozinke (dug iz Faze 5).
+   Gotovo 19.11.2026. Registracija uvijek vraća `202` bez tijela, a prijava radi tek poslije potvrde
+   emaila, jer bi inače registracija pa prijava otkrila ko ima nalog. Izmjereno kroz MockMvc: reset
+   lozinke za postojeći email je sporiji za 6 do 15 ms, to ostaje otvoreno u `docs/ODLUKE.md`.
 6. **Sigurnosna zaglavlja i CORS.** CSP, `X-Content-Type-Options`, `Referrer-Policy`, HSTS na
    produkciji, CORS samo za adresu frontenda, test za zaglavlja.
 7. **Audit log.** Tabela `audit_log` i upis za osjetljive radnje (uloge, pozivnice, resursi, brisanje

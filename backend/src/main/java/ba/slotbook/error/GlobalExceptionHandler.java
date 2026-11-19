@@ -41,7 +41,6 @@ import ba.slotbook.organization.SlugAlreadyUsedException;
 import ba.slotbook.ratelimit.TooManyAttemptsException;
 import ba.slotbook.resource.ImageNotFoundException;
 import ba.slotbook.resource.ResourceNotFoundException;
-import ba.slotbook.user.EmailAlreadyUsedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -124,14 +123,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
 				.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.sekundiDoSljedeceg()))
 				.body(problem);
-	}
-
-	@ExceptionHandler(EmailAlreadyUsedException.class)
-	ProblemDetail emailZauzet(EmailAlreadyUsedException ex) {
-		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-				"Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.");
-		problem.setTitle("Email je već registrovan");
-		return problem;
 	}
 
 	@ExceptionHandler(SlotTakenException.class)

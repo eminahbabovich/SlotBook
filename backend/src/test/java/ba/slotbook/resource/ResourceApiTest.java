@@ -67,7 +67,7 @@ class ResourceApiTest {
 		if (users.findByEmail(email).isEmpty()) {
 			mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
 					{"email": "%s", "password": "%s", "displayName": "%s"}
-					""".formatted(email, LOZINKA, ime))).andExpect(status().isCreated());
+					""".formatted(email, LOZINKA, ime))).andExpect(status().isAccepted());
 			jdbc.update("update users set email_verified_at = now() where email = lower(?)", email);
 		}
 		String tijelo = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
