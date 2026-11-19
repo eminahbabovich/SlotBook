@@ -695,3 +695,33 @@ zatvorio, ali za sad nisam, jer je posljedica nekoliko mailova više, a ne preuz
 ni izmjerio.
 
 Osam mutacija, sve padaju na pravom testu: reset bez granice, novi link bez granice, čekanje od najnovijeg maila umjesto od najstarijeg, granica 4 umjesto 3, prozor od 2 sata, servis ne briše mail koji čeka, kaskada iz V24 ostaje, i pogrešan naslov greške. Čekanje od najnovijeg bi prošlo kroz prvu verziju testa, jer je test pomjerao sva tri maila zajedno. Sad je star samo mail od registracije. Kad servis ne obriše mail koji čeka, pozivnica vrati `500` s `violates check constraint "notifications_primalac"`, dakle baza stvarno čuva to pravilo.
+
+## Zaključavanje prijave: po emailu iz zahtjeva, u bazi
+
+Granica po IP adresi ne štiti nalog od napadača koji pogađa lozinku s više adresa. Zato se pogrešne
+lozinke broje i po emailu: 5 u prozoru od 15 minuta zaključa prijavu za taj email na 15 minuta.
+Dok je zaključano, ni tačna lozinka ne pomaže, a odgovor je `429` s `Retry-After` i naslovom
+"Prijava privremeno zaključana".
+
+Broji se po emailu iz zahtjeva, a ne po nalogu. Tabela `login_failures` nema strani ključ na
+`users`, pa se nepoznat email zaključa potpuno isto kao postojeći. Da se broji samo za postojeće
+naloge, peti pokušaj za izmišljen email bi i dalje davao `401`, a za pravi `429`, i tako bi se
+saznalo ko ima nalog. Test šalje po 5 pogrešnih za oba i traži isto tijelo odgovora. Provjera
+zaključavanja ide prije BCrypt-a, pa je zaključan odgovor brži od običnog, ali jednako brz za
+postojeći i nepostojeći email.
+
+Tabela, a ne mapa u memoriji kao za IP granicu, jer zaključavanje treba preživjeti restart, i jer
+je za jedan email bitan tačan broj, a ne približna brzina. Prvi upis ide kroz `INSERT ... ON
+CONFLICT DO NOTHING`, da dvije istovremene prve greške ne padnu na duplom ključu, a onda se red
+čita sa `FOR UPDATE` i mijenja u Javi (`LoginFailure.recordFailure`). Bez zaključavanja reda bi dvije
+istovremene greške pročitale isti broj i jedna bi se izgubila. `LoginLockIstovremenoTest` to
+provjerava s 4 niti u 15 krugova. Upis je svoja kratka transakcija, red je zaključan samo dok traje
+upis, a ne dok traje BCrypt. Uspješna prijava briše red, a posao svaki sat briše redove koji nisu
+zaključani i čiji je prozor istekao, inače bi tabela rasla sa svakim izmišljenim emailom.
+
+Ograničenje koje ostaje: ko zna nečiji email, može mu svakih 15 minuta poslati 5 pogrešnih lozinki
+i držati ga zaključanim. To je cijena zaključavanja po nalogu. Brojanje po paru email i adresa bi
+to spriječilo, ali bi napadač s više adresa opet imao više pokušaja. Reset lozinke
+zaključavanje za sada ne skida, pa vlasnik i s novom lozinkom čeka do isteka.
+
+Osam mutacija, sve padaju na pravom testu: bez provjere zaključavanja prije BCrypt-a, nepoznat email se ne broji, uspješna prijava ne briše greške, bez `FOR UPDATE`, bez `ON CONFLICT`, prozor nikad ne ističe, greška dok je zaključano produžava zaključavanje, i čišćenje briše i red u otvorenom prozoru. Bez `FOR UPDATE` je od 4 istovremene greške u prvom krugu izbrojano 2. Bez `ON CONFLICT` je izbrojana samo jedna, a ostale tri niti nisu ništa upisale. Test je pao na broju prije provjere izuzetaka, pa koji je izuzetak bio nisam vidio.

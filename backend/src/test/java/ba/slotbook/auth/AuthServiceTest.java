@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -43,9 +44,17 @@ class AuthServiceTest {
 	// Snaga 4 umjesto 10, jer ovdje ne testiramo BCrypt nego tok prijave
 	private final PasswordEncoder passwordEncoder = spy(new BCryptPasswordEncoder(4));
 	private final RefreshTokenService refreshTokens = mock(RefreshTokenService.class);
+	// Zaključavanje ima svoje testove (LoginFailureTest, LoginLockApiTest), ovdje je uvijek otključano
+	private final LoginLockService zakljucavanje = otkljucano();
 	private final AuthService service = new AuthService(users, passwordEncoder,
 			NimbusJwtEncoder.withSecretKey(KLJUC).algorithm(MacAlgorithm.HS256).build(),
-			refreshTokens, Clock.fixed(SADA, ZoneOffset.UTC));
+			refreshTokens, zakljucavanje, Clock.fixed(SADA, ZoneOffset.UTC));
+
+	private static LoginLockService otkljucano() {
+		LoginLockService zakljucavanje = mock(LoginLockService.class);
+		when(zakljucavanje.lockedFor(anyString())).thenReturn(Duration.ZERO);
+		return zakljucavanje;
+	}
 
 	private User postojeciKorisnik(String email, String lozinka) {
 		User user = new User(email, passwordEncoder.encode(lozinka), "Amra", SADA);

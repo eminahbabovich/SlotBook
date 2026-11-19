@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
+import ba.slotbook.ratelimit.TooManyAttemptsException;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
 
@@ -26,15 +27,17 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtEncoder jwtEncoder;
 	private final RefreshTokenService refreshTokens;
+	private final LoginLockService zakljucavanje;
 	private final Clock clock;
 	private final String hashZaNepostojeciEmail;
 
 	public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
-			RefreshTokenService refreshTokens, Clock clock) {
+			RefreshTokenService refreshTokens, LoginLockService zakljucavanje, Clock clock) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtEncoder = jwtEncoder;
 		this.refreshTokens = refreshTokens;
+		this.zakljucavanje = zakljucavanje;
 		this.clock = clock;
 		this.hashZaNepostojeciEmail = passwordEncoder.encode("lozinka-koja-se-nikad-ne-poklapa");
 	}
@@ -44,6 +47,11 @@ public class AuthService {
 	}
 
 	public Tokens login(String email, String password) {
+		// Prije BCrypt-a: dok je zaključano, ni tačna lozinka ne pomaže, pa je ne treba ni provjeravati
+		Duration zakljucano = zakljucavanje.lockedFor(email);
+		if (!zakljucano.isZero()) {
+			throw new TooManyAttemptsException(TooManyAttemptsException.Razlog.NALOG, zakljucano);
+		}
 		User user = users.findByEmail(User.normalizeEmail(email)).orElse(null);
 
 		// BCrypt traje ~100 ms. Kad bismo za nepoznat email odmah vratili grešku, odgovor bi bio
@@ -52,8 +60,10 @@ public class AuthService {
 		boolean lozinkaTacna = passwordEncoder.matches(password, hash);
 
 		if (user == null || !lozinkaTacna) {
+			zakljucavanje.recordFailure(email);
 			throw new BadCredentialsException("Pogrešan email ili lozinka");
 		}
+		zakljucavanje.clear(email);
 		return new Tokens(accessToken(user.getId()), refreshTokens.issueNewFamily(user.getId()));
 	}
 

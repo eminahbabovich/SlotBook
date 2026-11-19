@@ -4,9 +4,10 @@ import java.time.Duration;
 
 public class TooManyAttemptsException extends RuntimeException {
 
-	// Šta je potrošeno: pokušaji s jedne adrese ili mailovi jednom primaocu. Od toga zavisi poruka.
+	// Šta je potrošeno: pokušaji s jedne adrese, pogrešne lozinke za jedan email ili mailovi jednom
+	// primaocu. Od toga zavisi poruka.
 	public enum Razlog {
-		ADRESA, LINK_ZA_POTVRDU, POZIVNICA
+		ADRESA, NALOG, LINK_ZA_POTVRDU, POZIVNICA
 	}
 
 	private final Razlog razlog;

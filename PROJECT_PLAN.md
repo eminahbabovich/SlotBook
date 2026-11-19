@@ -317,7 +317,10 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    mail, novi link i pozivnica vraćaju `429`. Istovremeni zahtjevi mogu proći granicu (nema
    zaključavanja), to je zapisano u `docs/ODLUKE.md`.
 4. **Zaključavanje naloga.** Poslije više pogrešnih prijava nalog se zaključa na neko vrijeme, a
-   odgovor ne otkriva da li nalog postoji.
+   odgovor ne otkriva da li nalog postoji. Gotovo 19.11.2026. 5 pogrešnih lozinki u 15 minuta
+   zaključa prijavu za taj email na 15 minuta (`429` s `Retry-After`), i za email bez naloga.
+   Brojanje je u tabeli `login_failures`, upis greške pod `FOR UPDATE`. Ograničenje: neko ko zna
+   tuđi email može tu osobu držati zaključanom, zapisano u `docs/ODLUKE.md`.
 5. **Enumeracija emailova.** Registracija vraća isti odgovor i kad nalog postoji, a vlasnik emaila
    dobije mail (odluka iz Faze 2). Izmjeriti i razliku u vremenu odgovora za reset lozinke (dug iz Faze 5).
 6. **Sigurnosna zaglavlja i CORS.** CSP, `X-Content-Type-Options`, `Referrer-Policy`, HSTS na

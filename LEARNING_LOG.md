@@ -205,3 +205,15 @@ Test za pozivnice je pao s `Status expected:<429> but was:<201>` i prvo nisam zn
 Prvi krug mutacija je javio da je svih osam preživjelo, što je bilo sumnjivo. Maven se nije ni pokrenuo (`'mvnw.cmd' is not recognized`, ista greška kao kod Playwrighta), a skripta je "nema izvještaja" brojala kao "nijedan test nije pao". Sad skripta stane ako nema izvještaja.
 
 Još jedna: test čekanja je pomjerao sva tri maila zajedno, pa ne bi primijetio da kod računa od najnovijeg umjesto od najstarijeg.
+
+## četvrtak, 19. novembar 2026. u 14:34
+
+Zaključavanje prijave. Najvažnija odluka je bila da se broji po emailu iz zahtjeva, a ne po nalogu. Da brojim samo za postojeće naloge, izmišljen email bi peti put dobio `401`, a pravi `429`, i eto liste ko ima nalog. Tabela `login_failures` zato nema strani ključ na `users`.
+
+`INSERT ... ON CONFLICT DO NOTHING` mi je bio nov. Prva greška za email mora napraviti red, a dvije niti mogu to pokušati u istom trenutku. S `ON CONFLICT` druga tiho preskoči, pa onda obje čitaju red sa `FOR UPDATE`. Kad sam u mutaciji izbacio `FOR UPDATE`, od četiri istovremene greške izbrojane su dvije.
+
+`AuthRateLimitApiTest` šalje 13 pogrešnih lozinki za istu Selmu, pa bi je novo zaključavanje zaključalo i pokvarilo test granice po adresi. Taj test sad ima `slotbook.login-lock.failures=1000`.
+
+Napisao sam vraćanje brojača na nulu poslije zaključavanja, pa skontao da ne radi ništa: prozor kreće od prve greške i traje koliko i zaključavanje, pa je uvijek istekao kad zaključavanje prođe. Izbacio sam te dvije linije prije mutacija, jer bi mutacija koja ih briše preživjela.
+
+Ostaje ružna strana: ko zna nečiji email, može ga držati zaključanim pet pogrešnih lozinki svakih 15 minuta.

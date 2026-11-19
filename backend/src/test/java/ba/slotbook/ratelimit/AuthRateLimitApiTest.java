@@ -25,7 +25,9 @@ import ba.slotbook.user.UserRepository;
 @SpringBootTest(properties = {
 		"slotbook.rate-limit.login-per-minute=3",
 		"slotbook.rate-limit.register-per-hour=2",
-		"slotbook.rate-limit.client-ip-header=CF-Connecting-IP" })
+		"slotbook.rate-limit.client-ip-header=CF-Connecting-IP",
+		// Ovi testovi šalju pogrešne lozinke za istu Selmu, a ovdje se provjerava samo granica po adresi
+		"slotbook.login-lock.failures=1000" })
 @AutoConfigureMockMvc
 class AuthRateLimitApiTest {
 
