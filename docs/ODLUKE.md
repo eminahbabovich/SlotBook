@@ -663,3 +663,35 @@ Svi ostali testovi šalju s `127.0.0.1` i zajedno bi potrošili granicu, pa u te
 
 Osam mutacija: zaglavlje se ignoriše, `X-Forwarded-For` ima prednost, prijava i registracija dijele bucket, čišćenje baca sve, Bucket4j sam čita sistemski sat, registracija nije pod granicom, nema `Retry-After`, i zaokruživanje naniže. Prvih sedam padaju na pravom testu. Zaokruživanje naniže je prvo prošlo, jer je test čekao 0,5 s, a tada `Math.max(1, ...)` i naniže i naviše daju 1. Test sad čeka i 1,5 s i traži 2. Usput se pokazalo da `toMillis()` čekanje kraće od milisekunde odsiječe na 0, pa se naviše računa iz nanosekundi.
 
+## Granica mailova: brojanje u tabeli obavijesti, po primaocu
+
+Granica iz prethodnog koraka je po IP adresi, a ovdje to ne pomaže. Ko hoće nekome zatrpati inbox
+zahtjevima za reset lozinke, može slati s više adresa. Zato se broji po primaocu: najviše 3 maila
+iste vrste istom korisniku (ili emailu, za pozivnice) u zadnjih sat vremena.
+
+Brojim mailove koji su već u tabeli `notifications`, a ne u Bucket4j-u. Svaki mail ionako prolazi
+kroz outbox, pa je zapis tu, preživi restart i ne treba nova mapa u memoriji. Upit uzme vremena
+zadnja tri maila te vrste (`createdForUserSince`, `LIMIT 3` preko `Pageable`), i ako su tri unutar
+sata, čeka se dok najstariji od njih ne izađe iz sata. Za to su u V28 dva indeksa, jer je zahtjev
+za reset lozinke javan i bez indeksa bi svaki čitao cijelu tabelu.
+
+Odgovor se razlikuje po toku. Reset lozinke preko granice vrati isti `204` i ne pošalje mail, jer
+bi `429` otkrio da nalog postoji (nepoznat email nikad ne dobije `429`). Vlasniku to ne smeta, jer
+linkovi iz prva tri maila i dalje važe. Novi link za potvrdu traži prijavu, pa tu nema šta otkriti
+i vraća `429` s `Retry-After`. Pozivnica isto vraća `429`, a broji se po emailu preko svih
+organizacija, jer bi inače neko napravio deset organizacija i iz svake poslao po tri.
+
+Kod pozivnica je prvi test pao iz razloga koji nisam očekivao. Kad nova pozivnica zamijeni staru,
+V24 je kaskadom brisao i mail stare pozivnice, pa granica nije vidjela da je mail otišao, i admin
+je mogao slati beskonačno. V28 mijenja FK u `ON DELETE SET NULL`, a servis prije zamjene briše
+samo mail koji još čeka slanje. Takav mail nije stigao u inbox i ne treba se brojati. Poslan mail
+ostaje bez pozivnice i broji se. Constraint `notifications_primalac` sad traži da mail pozivnice
+koji čeka ima pozivnicu, pa ako servis zaboravi obrisati takav mail, baza odbije brisanje
+pozivnice umjesto da kasnije ode link koji vraća 404.
+
+Ograničenje: provjera i upis nisu zaključani. Deset istovremenih zahtjeva za reset istog naloga
+mogu svi vidjeti manje od tri maila i svi proći. `SELECT ... FOR UPDATE` nad korisnikom bi to
+zatvorio, ali za sad nisam, jer je posljedica nekoliko mailova više, a ne preuzet nalog. Nisam to
+ni izmjerio.
+
+Osam mutacija, sve padaju na pravom testu: reset bez granice, novi link bez granice, čekanje od najnovijeg maila umjesto od najstarijeg, granica 4 umjesto 3, prozor od 2 sata, servis ne briše mail koji čeka, kaskada iz V24 ostaje, i pogrešan naslov greške. Čekanje od najnovijeg bi prošlo kroz prvu verziju testa, jer je test pomjerao sva tri maila zajedno. Sad je star samo mail od registracije. Kad servis ne obriše mail koji čeka, pozivnica vrati `500` s `violates check constraint "notifications_primalac"`, dakle baza stvarno čuva to pravilo.

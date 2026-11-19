@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ba.slotbook.notification.EmailContent;
 import ba.slotbook.notification.NotificationService;
 import ba.slotbook.notification.NotificationType;
+import ba.slotbook.ratelimit.TooManyAttemptsException;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
 import ba.slotbook.user.UserResponse;
@@ -51,6 +52,10 @@ public class EmailVerificationService {
 	public void resend(UUID userId) {
 		User user = users.findById(userId).orElseThrow();
 		if (!user.isEmailVerified()) {
+			Duration cekanje = notifications.waitBeforeNext(userId, NotificationType.EMAIL_VERIFICATION);
+			if (!cekanje.isZero()) {
+				throw new TooManyAttemptsException(TooManyAttemptsException.Razlog.LINK_ZA_POTVRDU, cekanje);
+			}
 			posaljiLink(user);
 		}
 	}

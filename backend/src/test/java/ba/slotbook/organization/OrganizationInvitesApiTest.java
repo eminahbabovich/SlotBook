@@ -183,4 +183,53 @@ class OrganizationInvitesApiTest {
 				.andExpect(jsonPath("$.greske[0].polje").value("email"));
 	}
 
+	// Kao da je sender poslao sve što čeka: poslan mail nema tijelo, jer je u njemu bio token
+	private void posalji(String email) {
+		jdbc.update("update notifications set status = 'SENT', sent_at = now(), body = null, ics = null "
+				+ "where email = ? and status = 'PENDING'",
+				email);
+	}
+
+	// Granica je po primaocu, preko svih organizacija: inače bi napadač napravio deset organizacija i iz
+	// svake poslao po tri. Odbijena pozivnica ništa ne mijenja: otvorena ostaje ona s ulogom CLIENT.
+	@Test
+	void cetvrtaPozivnicaIstojOsobiUSatuDobija429IIzDrugeOrganizacije() throws Exception {
+		for (int i = 0; i < 3; i++) {
+			pozovi(dino, "zana.poziv@example.com", "CLIENT").andExpect(status().isCreated());
+			posalji("zana.poziv@example.com");
+		}
+
+		mockMvc.perform(post("/api/organizations/{id}/invites", organizacija(kenan, "sala-kenan"))
+				.header("Authorization", "Bearer " + kenan)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email": "zana.poziv@example.com", "role": "CLIENT"}
+						"""))
+				.andExpect(status().isTooManyRequests())
+				.andExpect(jsonPath("$.title").value("Previše mailova"));
+		pozovi(dino, "Zana.Poziv@Example.com", "ADMIN").andExpect(status().isTooManyRequests());
+
+		assertThat(jdbc.queryForObject("select count(*) from notifications where email = ?", Long.class,
+				"zana.poziv@example.com")).isEqualTo(3);
+		assertThat(jdbc.queryForObject("select role from organization_invites where email = ? and "
+				+ "organization_id = ? and accepted_at is null", String.class, "zana.poziv@example.com",
+				konsultacije)).isEqualTo("CLIENT");
+	}
+
+	// Mail zamijenjene pozivnice koji nije otišao nije ni stigao u inbox, pa se ne broji. Poslani mail
+	// ostaje i kad se pozivnica zamijeni, inače bi zamjena brisala trag i granica ne bi radila.
+	@Test
+	void zamijenjenaPozivnicaBrojiSeSamoAkoJeMailOtisao() throws Exception {
+		for (int i = 0; i < 4; i++) {
+			pozovi(dino, "tarik.poziv@example.com", "CLIENT").andExpect(status().isCreated());
+		}
+		assertThat(jdbc.queryForObject("select count(*) from notifications where email = ?", Long.class,
+				"tarik.poziv@example.com")).isEqualTo(1);
+
+		posalji("tarik.poziv@example.com");
+		pozovi(dino, "tarik.poziv@example.com", "PROVIDER").andExpect(status().isCreated());
+
+		assertThat(jdbc.queryForList("select status from notifications where email = ? order by created_at",
+				String.class, "tarik.poziv@example.com")).containsExactly("SENT", "PENDING");
+	}
 }

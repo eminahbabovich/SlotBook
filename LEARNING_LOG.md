@@ -193,3 +193,15 @@ Najviše vremena je otišlo na pitanje koja je adresa klijenta. Na Renderu je ad
 Prvi problem bi bio u testovima, a ne u kodu: svi šalju s 127.0.0.1, pa bi preko 340 testova zajedno potrošilo 20 prijava u minuti. Testovi imaju granicu 100000, a jedan test ima svoj kontekst s granicom 3.
 
 Mutacija zaokruživanja je prošla. Test je čekao pola sekunde, a za pola sekunde i naviše i naniže uz `Math.max(1, ...)` daju 1. Kad sam test popravio, vidio sam i da `toMillis()` 1 ns odsiječe na 0, pa sad računam iz nanosekundi i `Math.max` više ne treba.
+
+## četvrtak, 19. novembar 2026. u 13:55
+
+Granica mailova. Prva ideja je bila Bucket4j kao za prijavu, ali svaki mail ionako završi u tabeli `notifications`, pa sam brojao tamo: zadnja tri maila iste vrste istom primaocu, i ako su sva tri unutar sata, čeka se dok najstariji ne izađe.
+
+Reset lozinke ne smije vratiti `429`. Za nepoznat email nikad ne bi bilo `429`, pa bi se po tome vidjelo ko ima nalog. Zato četvrti zahtjev dobije isti `204`, samo mail ne nastane.
+
+Test za pozivnice je pao s `Status expected:<429> but was:<201>` i prvo nisam znao zašto. Kad nova pozivnica zamijeni staru, V24 kaskadom briše i njen mail, pa je u tabeli uvijek bio samo jedan i granica nikad nije došla do tri. Admin je mogao zvati istu osobu do mile volje. Sad FK ide na `SET NULL`, servis briše samo mail koji još čeka, a constraint ne da da mail koji čeka ostane bez pozivnice. Kad sam u mutaciji izbacio to brisanje, baza je stvarno odbila s `violates check constraint "notifications_primalac"`.
+
+Prvi krug mutacija je javio da je svih osam preživjelo, što je bilo sumnjivo. Maven se nije ni pokrenuo (`'mvnw.cmd' is not recognized`, ista greška kao kod Playwrighta), a skripta je "nema izvještaja" brojala kao "nijedan test nije pao". Sad skripta stane ako nema izvještaja.
+
+Još jedna: test čekanja je pomjerao sva tri maila zajedno, pa ne bi primijetio da kod računa od najnovijeg umjesto od najstarijeg.

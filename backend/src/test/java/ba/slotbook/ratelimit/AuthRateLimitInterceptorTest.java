@@ -86,7 +86,7 @@ class AuthRateLimitInterceptorTest {
 
 	@Test
 	void cekanjeOdJedneNanosekundeJeJednaSekunda() {
-		assertThat(new TooManyAttemptsException(Duration.ofNanos(1)).sekundiDoSljedeceg()).isEqualTo(1);
+		assertThat(new TooManyAttemptsException(TooManyAttemptsException.Razlog.ADRESA, Duration.ofNanos(1)).sekundiDoSljedeceg()).isEqualTo(1);
 	}
 
 	@Test

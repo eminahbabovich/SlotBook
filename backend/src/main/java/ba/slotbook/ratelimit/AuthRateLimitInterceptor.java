@@ -59,7 +59,8 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
 				: registracije.computeIfAbsent(adresa(request), a -> novi(registracijaNaSat, Duration.ofHours(1)));
 		ConsumptionProbe pokusaj = bucket.tryConsumeAndReturnRemaining(1);
 		if (!pokusaj.isConsumed()) {
-			throw new TooManyAttemptsException(Duration.ofNanos(pokusaj.getNanosToWaitForRefill()));
+			throw new TooManyAttemptsException(TooManyAttemptsException.Razlog.ADRESA,
+					Duration.ofNanos(pokusaj.getNanosToWaitForRefill()));
 		}
 		return true;
 	}

@@ -3,6 +3,7 @@ package ba.slotbook.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -140,4 +141,49 @@ class EmailVerificationApiTest {
 		mockMvc.perform(post("/api/me/email-verification")).andExpect(status().isUnauthorized());
 	}
 
+	private ResultActions noviLink(String pristup) throws Exception {
+		return mockMvc.perform(post("/api/me/email-verification").header("Authorization", "Bearer " + pristup));
+	}
+
+	private long mailova() {
+		return jdbc.queryForObject("select count(*) from notifications where user_id = ? and type = "
+				+ "'EMAIL_VERIFICATION'", Long.class, korisnik);
+	}
+
+	// Prvi mail je od registracije, pa ostaju još dva nova linka u satu
+	@Test
+	void cetvrtiLinkUSatuDobija429IMailNeNastaje() throws Exception {
+		String pristup = prijava();
+		noviLink(pristup).andExpect(status().isNoContent());
+		noviLink(pristup).andExpect(status().isNoContent());
+
+		String cekanje = noviLink(pristup)
+				.andExpect(status().isTooManyRequests())
+				.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+				.andExpect(jsonPath("$.title").value("Previše mailova"))
+				.andReturn().getResponse().getHeader("Retry-After");
+
+		assertThat(Long.parseLong(cekanje)).isBetween(3500L, 3600L);
+		assertThat(mailova()).isEqualTo(3);
+	}
+
+	// Čeka se dok najstariji od tri maila ne izađe iz sata. Mail od registracije je star 59 minuta, a
+	// druga dva su nova: čeka se još minuta, a ne sat od najnovijeg.
+	@Test
+	void cekanjeTrajeDokNajstarijiMailNeIzadjeIzSata() throws Exception {
+		jdbc.update("update notifications set created_at = created_at - interval '59 minutes' where user_id = ?",
+				korisnik);
+		String pristup = prijava();
+		noviLink(pristup).andExpect(status().isNoContent());
+		noviLink(pristup).andExpect(status().isNoContent());
+
+		String cekanje = noviLink(pristup).andExpect(status().isTooManyRequests())
+				.andReturn().getResponse().getHeader("Retry-After");
+		assertThat(Long.parseLong(cekanje)).isBetween(1L, 60L);
+
+		jdbc.update("update notifications set created_at = created_at - interval '2 minutes' where user_id = ?",
+				korisnik);
+		noviLink(pristup).andExpect(status().isNoContent());
+		assertThat(mailova()).isEqualTo(4);
+	}
 }

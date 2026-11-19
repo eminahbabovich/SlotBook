@@ -183,4 +183,17 @@ class PasswordResetApiTest {
 				+ "where user_id = ? and type = 'PASSWORD_RESET'", Double.class, korisnik)).isEqualTo(3600.0);
 	}
 
+	// Najviše 3 maila za reset na sat. Četvrti zahtjev dobije isti odgovor, da se po razlici ne vidi ko ima
+	// nalog, a mail ne nastaje. Vlasnik nalog ne gubi: linkovi iz prva tri maila i dalje važe.
+	@Test
+	void cetvrtiZahtjevUSatuDobijaIstiOdgovorAliNovogMailaNema() throws Exception {
+		for (int i = 0; i < 4; i++) {
+			trazi(email);
+		}
+
+		assertThat(jdbc.queryForObject("select count(*) from notifications where user_id = ? and type = "
+				+ "'PASSWORD_RESET'", Long.class, korisnik)).isEqualTo(3);
+		assertThat(jdbc.queryForObject("select count(*) from user_tokens where user_id = ? and type = "
+				+ "'PASSWORD_RESET'", Long.class, korisnik)).isEqualTo(3);
+	}
 }

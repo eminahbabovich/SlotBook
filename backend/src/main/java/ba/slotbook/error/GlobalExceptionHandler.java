@@ -109,9 +109,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	// Retry-After u sekundama, da klijent zna koliko da čeka bez čitanja teksta
 	@ExceptionHandler(TooManyAttemptsException.class)
 	ResponseEntity<ProblemDetail> previsePokusaja(TooManyAttemptsException ex) {
-		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS,
-				"Previše pokušaja s ove adrese. Sačekaj malo pa pokušaj ponovo.");
-		problem.setTitle("Previše pokušaja");
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, switch (ex.getRazlog()) {
+			case ADRESA -> "Previše pokušaja s ove adrese. Sačekaj malo pa pokušaj ponovo.";
+			case LINK_ZA_POTVRDU -> "Link za potvrdu je u zadnjih sat vremena poslan tri puta. Pogledaj i spam, "
+					+ "a novi link možeš tražiti kasnije.";
+			case POZIVNICA -> "Na ovaj email su u zadnjih sat vremena poslane tri pozivnice. Pokušaj ponovo kasnije.";
+		});
+		problem.setTitle(ex.getRazlog() == TooManyAttemptsException.Razlog.ADRESA ? "Previše pokušaja"
+				: "Previše mailova");
 		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
 				.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.sekundiDoSljedeceg()))
 				.body(problem);

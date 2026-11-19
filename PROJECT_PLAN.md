@@ -312,7 +312,10 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    čišćenje punih svakih 10 minuta. Na Renderu se adresa čita iz `CF-Connecting-IP`, jer
    `X-Forwarded-For` bira pozivalac. To na Renderu nije provjereno.
 3. **Rate limiting mailova.** Reset lozinke, novi link za potvrdu emaila i pozivnice, da se nečiji
-   inbox ne može zatrpati (dug iz Faze 5).
+   inbox ne može zatrpati (dug iz Faze 5). Gotovo 19.11.2026. Najviše 3 maila iste vrste istom
+   primaocu na sat, brojano iz tabele `notifications`. Reset lozinke preko granice tiho ne pošalje
+   mail, novi link i pozivnica vraćaju `429`. Istovremeni zahtjevi mogu proći granicu (nema
+   zaključavanja), to je zapisano u `docs/ODLUKE.md`.
 4. **Zaključavanje naloga.** Poslije više pogrešnih prijava nalog se zaključa na neko vrijeme, a
    odgovor ne otkriva da li nalog postoji.
 5. **Enumeracija emailova.** Registracija vraća isti odgovor i kad nalog postoji, a vlasnik emaila

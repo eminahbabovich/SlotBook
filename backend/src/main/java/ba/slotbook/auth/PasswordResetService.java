@@ -40,10 +40,15 @@ public class PasswordResetService {
 		this.appUrl = appUrl;
 	}
 
-	// Za nepoznat email se ništa ne desi, a kontroler vraća isti odgovor, da se ne vidi ko ima nalog
+	// Za nepoznat email se ništa ne desi, a kontroler vraća isti odgovor, da se ne vidi ko ima nalog.
+	// Preko granice mailova je isto: nema maila ni greške. Vlasniku to ne smeta, jer linkovi iz
+	// prethodnih mailova i dalje važe.
 	@Transactional
 	public void request(String email) {
 		users.findByEmail(User.normalizeEmail(email)).ifPresent(user -> {
+			if (!notifications.waitBeforeNext(user.getId(), NotificationType.PASSWORD_RESET).isZero()) {
+				return;
+			}
 			String link = appUrl + "/nova-lozinka#token=" + tokens.issue(user, UserTokenType.PASSWORD_RESET, LINK_TRAJE);
 			notifications.enqueue(user.getId(), NotificationType.PASSWORD_RESET, new EmailContent(
 					"Nova lozinka za SlotBook",

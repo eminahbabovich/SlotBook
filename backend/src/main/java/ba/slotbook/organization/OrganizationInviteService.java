@@ -14,6 +14,7 @@ import ba.slotbook.auth.RandomToken;
 import ba.slotbook.notification.EmailContent;
 import ba.slotbook.notification.NotificationService;
 import ba.slotbook.organization.InviteNotUsableException.Reason;
+import ba.slotbook.ratelimit.TooManyAttemptsException;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
 
@@ -49,6 +50,11 @@ public class OrganizationInviteService {
 		if (members.existsByIdOrganizationIdAndUserEmail(organizationId, normalizovan)) {
 			throw new AlreadyMemberException();
 		}
+		Duration cekanje = notifications.waitBeforeNextInvite(normalizovan);
+		if (!cekanje.isZero()) {
+			throw new TooManyAttemptsException(TooManyAttemptsException.Razlog.POZIVNICA, cekanje);
+		}
+		notifications.dropPendingInvite(organizationId, normalizovan);
 		invites.deleteOpen(organizationId, normalizovan);
 
 		String token = RandomToken.generate();
