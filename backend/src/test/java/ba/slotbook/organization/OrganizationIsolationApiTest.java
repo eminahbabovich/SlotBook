@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -106,6 +108,46 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaDolazak}/check-in", null),
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaNedolazak}/no-show", null));
 
+	// Šta smije klijent čitaonice: vidi aktivan resurs, radno vrijeme, termine i sliku, i rezerviše.
+	// Rezervacije u testu su Almine, pa njihovu historiju i otkazivanje ne smije. Sve ostalo je 403.
+	private static final Set<String> KLIJENT_SMIJE = Set.of(
+			"GET /api/organizations/{id}/resources",
+			"GET /api/resources/{resourceId}",
+			"GET /api/resources/{resourceId}/availability",
+			"GET /api/resources/{resourceId}/slots",
+			"GET /api/resources/{resourceId}/image",
+			"POST /api/resources/{resourceId}/bookings");
+
+	// Provider drugog stola uz to pravi svoj resurs i vidi statistiku (samo svojih resursa, to dokazuje
+	// StatsApiTest). Tuđi sto ne uređuje i tuđe rezervacije ne vodi, iako je u istoj organizaciji.
+	private static final Set<String> PROVIDER_DRUGOG_SMIJE = Set.of(
+			"GET /api/organizations/{id}/resources",
+			"GET /api/resources/{resourceId}",
+			"GET /api/resources/{resourceId}/availability",
+			"GET /api/resources/{resourceId}/slots",
+			"GET /api/resources/{resourceId}/image",
+			"POST /api/resources/{resourceId}/bookings",
+			"POST /api/organizations/{id}/resources",
+			"GET /api/organizations/{id}/stats");
+
+	// Rute koje nisu podaci jedne organizacije, i zašto. Nova ruta mora ući u ZAHTJEVI ili ovdje.
+	private static final Map<String, String> NISU_PODACI_ORGANIZACIJE = Map.ofEntries(
+			Map.entry("GET /api/status", "javno, bez podataka"),
+			Map.entry("POST /api/auth/register", "javno"),
+			Map.entry("POST /api/auth/login", "javno"),
+			Map.entry("POST /api/auth/refresh", "javno, nosi refresh kolačić"),
+			Map.entry("POST /api/auth/logout", "javno, nosi refresh kolačić"),
+			Map.entry("POST /api/auth/verify-email", "javno, pravo daje token iz maila"),
+			Map.entry("POST /api/auth/password-reset", "javno, isti odgovor za svaki email"),
+			Map.entry("POST /api/auth/password-reset/confirm", "javno, pravo daje token iz maila"),
+			Map.entry("GET /api/me", "samo korisnik iz tokena"),
+			Map.entry("POST /api/me/email-verification", "samo korisnik iz tokena"),
+			Map.entry("GET /api/me/organizations", "samo korisnik iz tokena"),
+			Map.entry("GET /api/bookings/mine", "samo korisnik iz tokena"),
+			Map.entry("POST /api/organizations", "nova organizacija, kreator postaje admin"),
+			Map.entry("GET /api/organizations/{slug}", "javni profil: naziv, adresa i zona"),
+			Map.entry("POST /api/invites/accept", "pravo daju token i email iz pozivnice"));
+
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 13 };
 
 	@Autowired
@@ -126,18 +168,27 @@ class OrganizationIsolationApiTest {
 
 	private String alma;
 	private String bojan;
+	private String lejla;
+	private String damir;
 	private UUID citaonica;
+	private UUID teretana;
 	private UUID stoCitaonice;
 	private UUID odmorStola;
 	private Map<String, UUID> rezervacije;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
+	// Lejla je klijent čitaonice, a Damir u čitaonici vodi drugi sto.
 	@BeforeEach
 	void almaJeAdminCitaoniceBojanAdminTeretane() throws Exception {
 		alma = token("alma.izolacija@example.com", "Alma");
 		bojan = token("bojan.izolacija@example.com", "Bojan");
+		lejla = token("lejla.izolacija@example.com", "Lejla Čolić");
+		damir = token("damir.izolacija@example.com", "Damir Đonko");
 		citaonica = organizacija(alma, "citaonica-izolacija");
-		organizacija(bojan, "teretana-izolacija");
+		teretana = organizacija(bojan, "teretana-izolacija");
+		clan(citaonica, "lejla.izolacija@example.com", "CLIENT");
+		clan(citaonica, "damir.izolacija@example.com", "PROVIDER");
+		drugiSto();
 		stoCitaonice = stoCitaonice();
 		odmorStola = odmorStola();
 		ponedjeljkomOtvoreno();
@@ -168,6 +219,45 @@ class OrganizationIsolationApiTest {
 				+ "expires_at) values (?, ?, ?, ?::timestamptz, ?::timestamptz + interval '1 hour', ?, now(), "
 				+ "?::timestamptz)", id, stoCitaonice, klijent, pocetak, pocetak, status, pocetak);
 		return id;
+	}
+
+	// Članstvo ide pravo u bazu: pozivnicu dokazuju njeni testovi, a ovdje je samo priprema
+	private void clan(UUID organizacija, String email, String uloga) {
+		jdbc.update("insert into organization_members select ?, id, ?, now() from users where email = ? "
+				+ "on conflict do nothing", organizacija, uloga, email);
+	}
+
+	private void drugiSto() throws Exception {
+		if (jdbc.queryForObject("select count(*) from resources where organization_id = ? and name = 'Sto 9'",
+				Long.class, citaonica) == 0) {
+			mockMvc.perform(post("/api/organizations/{id}/resources", citaonica)
+					.header("Authorization", "Bearer " + damir)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{"name": "Sto 9", "slotMinutes": 60}
+							"""))
+					.andExpect(status().isCreated());
+		}
+	}
+
+	// GET slike za klijenta traži sliku, a u tom prolazu POST slike nije dozvoljen
+	private void slikaPostoji() throws Exception {
+		if (kljucSlike() == null) {
+			mockMvc.perform(multipart("/api/resources/{id}/image", stoCitaonice)
+					.file(new MockMultipartFile("file", "sto.png", "image/png", PNG))
+					.header("Authorization", "Bearer " + alma))
+					.andExpect(status().is2xxSuccessful());
+		}
+	}
+
+	private String statusiPripremljenih() {
+		return jdbc.queryForObject("select string_agg(status, ',' order by start_time) from bookings where id in "
+				+ "(?, ?, ?, ?, ?)", String.class, rezervacije.values().toArray());
+	}
+
+	private String providerStola() {
+		return jdbc.queryForObject("select u.email from resources r join users u on u.id = r.provider_id "
+				+ "where r.id = ?", String.class, stoCitaonice);
 	}
 
 	private String statusiRezervacija() {
@@ -252,8 +342,10 @@ class OrganizationIsolationApiTest {
 					.header("Authorization", "Bearer " + token))
 					.andReturn().getResponse().getStatus();
 		}
-		MockHttpServletRequestBuilder builder = request(zahtjev.metoda(), adresa)
-				.header("Authorization", "Bearer " + token);
+		MockHttpServletRequestBuilder builder = request(zahtjev.metoda(), adresa);
+		if (token != null) {
+			builder.header("Authorization", "Bearer " + token);
+		}
 		if (zahtjev.tijelo() != null) {
 			String almaId = users.findByEmail("alma.izolacija@example.com").orElseThrow().getId().toString();
 			builder.contentType(MediaType.APPLICATION_JSON).content(zahtjev.tijelo().replace("{almaId}", almaId));
@@ -321,15 +413,102 @@ class OrganizationIsolationApiTest {
 		}
 	}
 
-	// Čuvar: novi endpoint pod /api/organizations/{id}/..., /api/resources/{id} ili /api/bookings/{id}
-	// ne može proći mimo ovog testa. Resurs i rezervacija pripadaju organizaciji i kad je nema u putanji.
+	// Klijent i provider iz iste organizacije: svaka ruta je ili dozvoljena (2xx) ili 403, tačno po listi
+	@ParameterizedTest
+	@ValueSource(strings = { "klijent", "provider drugog stola" })
+	void clanIsteOrganizacijeSmijeSamoOnoStoNjegovaUlogaDaje(String uloga) throws Exception {
+		Set<String> smije = uloga.equals("klijent") ? KLIJENT_SMIJE : PROVIDER_DRUGOG_SMIJE;
+		String token = uloga.equals("klijent") ? lejla : damir;
+		slikaPostoji();
+		long clanovaPrije = brojRedova("organization_members");
+		long pozivnicaPrije = brojRedova("organization_invites");
+		long pravilaPrije = brojPravila();
+		long izuzetakaPrije = brojIzuzetaka();
+		String slikaPrije = kljucSlike();
+		String statusiPrije = statusiPripremljenih();
+
+		for (Zahtjev zahtjev : ZAHTJEVI) {
+			int status = posalji(zahtjev, token);
+			if (smije.contains(zahtjev.ruta())) {
+				assertThat(status).as(uloga + ": " + zahtjev.ruta()).isBetween(200, 299);
+			} else {
+				assertThat(status).as(uloga + ": " + zahtjev.ruta()).isEqualTo(403);
+			}
+		}
+
+		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
+		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);
+		assertThat(jdbc.queryForObject("select slot_minutes from resources where id = ?", Integer.class,
+				stoCitaonice)).isEqualTo(120);
+		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class,
+				stoCitaonice)).isTrue();
+		assertThat(providerStola()).isEqualTo("alma.izolacija@example.com");
+		assertThat(brojPravila()).isEqualTo(pravilaPrije);
+		assertThat(brojIzuzetaka()).isEqualTo(izuzetakaPrije);
+		assertThat(kljucSlike()).isEqualTo(slikaPrije);
+		assertThat(statusiPripremljenih()).isEqualTo(statusiPrije);
+	}
+
+	// Lista uloga mora imenovati rute koje postoje, inače bi greška u kucanju tiho postala 403
 	@Test
-	void svakaRutaNadPodacimaOrganizacijeJeUOvomTestu() {
+	void listeUlogaImenujuRuteIzTesta() {
+		Set<String> uTestu = ZAHTJEVI.stream().map(Zahtjev::ruta).collect(Collectors.toSet());
+
+		assertThat(uTestu).containsAll(KLIJENT_SMIJE).containsAll(PROVIDER_DRUGOG_SMIJE);
+	}
+
+	@Test
+	void bezTokenaSvakaRutaVraca401() throws Exception {
+		for (Zahtjev zahtjev : ZAHTJEVI) {
+			assertThat(posalji(zahtjev, null)).as(zahtjev.ruta()).isEqualTo(401);
+		}
+	}
+
+	// Bojan je admin teretane, pa @PreAuthorize za PUT .../provider s ID-jem teretane prođe. Sto čitaonice
+	// u istoj putanji i dalje ne smije postati njegov, jer servis traži resurs unutar organizacije iz putanje.
+	@Test
+	void adminSaSvojomOrganizacijomITudjimResursomUPutanjiNistaNeMijenja() throws Exception {
+		String bojanId = users.findByEmail("bojan.izolacija@example.com").orElseThrow().getId().toString();
+
+		int noviProvider = mockMvc.perform(request(HttpMethod.PUT, "/api/organizations/{id}/resources/{r}/provider",
+				teretana, stoCitaonice)
+				.header("Authorization", "Bearer " + bojan)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"providerId": "%s"}
+						""".formatted(bojanId)))
+				.andReturn().getResponse().getStatus();
+		int izmjena = mockMvc.perform(request(HttpMethod.PUT, "/api/organizations/{id}/resources/{r}", teretana,
+				stoCitaonice)
+				.header("Authorization", "Bearer " + bojan)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"name": "Sto za izolaciju", "slotMinutes": 30}
+						"""))
+				.andReturn().getResponse().getStatus();
+		int deaktivacija = mockMvc.perform(request(HttpMethod.DELETE, "/api/organizations/{id}/resources/{r}",
+				teretana, stoCitaonice)
+				.header("Authorization", "Bearer " + bojan))
+				.andReturn().getResponse().getStatus();
+
+		assertThat(noviProvider).isEqualTo(404);
+		assertThat(izmjena).isEqualTo(403);
+		assertThat(deaktivacija).isEqualTo(403);
+		assertThat(providerStola()).isEqualTo("alma.izolacija@example.com");
+		assertThat(jdbc.queryForObject("select slot_minutes from resources where id = ?", Integer.class,
+				stoCitaonice)).isEqualTo(120);
+		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class,
+				stoCitaonice)).isTrue();
+	}
+
+	// Čuvar: nova /api ruta ne može proći mimo ovog testa. Ili je u ZAHTJEVI, pa prolazi kroz sve uloge,
+	// ili je u NISU_PODACI_ORGANIZACIJE s razlogom. Po obliku putanje se to ne može prepoznati: resurs i
+	// rezervacija pripadaju organizaciji i kad je nema u putanji.
+	@Test
+	void svakaApiRutaJeUTestuIliImaRazlogZastoNije() {
 		Set<String> uAplikaciji = new TreeSet<>();
 		rute.getHandlerMethods().keySet().forEach(info -> info.getPatternValues().stream()
-				.filter(putanja -> putanja.matches("/api/organizations/\\{[^}]+}/.+")
-						|| putanja.matches("/api/resources/\\{[^}]+}.*")
-						|| putanja.matches("/api/bookings/\\{[^}]+}.*"))
+				.filter(putanja -> putanja.startsWith("/api/"))
 				.forEach(putanja -> {
 					var metode = info.getMethodsCondition().getMethods();
 					// Mapiranje bez metode prima svaku metodu, a skup mu je prazan, pa bi ga forEach preskočio
@@ -340,6 +519,7 @@ class OrganizationIsolationApiTest {
 				}));
 
 		Set<String> uTestu = ZAHTJEVI.stream().map(Zahtjev::ruta).collect(Collectors.toCollection(TreeSet::new));
+		uTestu.addAll(NISU_PODACI_ORGANIZACIJE.keySet());
 
 		assertThat(uAplikaciji).isNotEmpty().isEqualTo(uTestu);
 	}

@@ -173,3 +173,13 @@ Mislio sam da ću bazu dići u `globalSetup`. U izvoru Playwrighta piše da se `
 Za `JWT_SECRET` sam napisao rečenicu koja jasno kaže da nije tajna. Lokalni gitleaks ju je svejedno prijavio kao `generic-api-key`, kao `.env.example` u Fazi 1. Ključ se sad pravi nasumično pri svakom pokretanju.
 
 Token pozivnice ide samo mailom, pa test čeka Mailpit do 30 s. To je pola trajanja testa (oko 1,9 min ukupno).
+
+## četvrtak, 19. novembar 2026. u 10:56
+
+Pushao sam sve od 18.11. i krenuo u Fazu 8. Mislio sam da "test kroz sve endpointe s tuđim tokenom" tek treba napisati, a postoji od Faze 2. Gledao je samo admina druge organizacije. Klijent iz iste čitaonice koji čita članove ne bi pao nigdje osim u testu članova, a provider koji uređuje tuđi sto samo na nekim rutama.
+
+Sad istih 25 zahtjeva ide i s Lejlom (klijent) i s Damirom (vodi drugi sto). Za svakog sam rukom napisao šta smije. Sve je prošlo iz prve, pa nisam znao da li test išta vidi. Tek kad sam klijentu dao pravo na članove, test je pao s `[klijent: GET /api/organizations/{id}/members] expected: 403 but was: 200`.
+
+Iznenadila me mutacija u promjeni providera. Kad servis traži resurs bez organizacije iz putanje, Bojan prođe `@PreAuthorize` sa svojom teretanom i dođe do upisa. Tamo ga zaustavi `resources_provider_clan`, a on dobije `500`. Baza je čuvala i tamo gdje sam mislio da čuva samo Java.
+
+Bash heredoc s Java kodom je opet pao s `unexpected EOF`, isto kao u koraku 11. Skriptu pišem u fajl i pokrećem je odatle.
