@@ -86,6 +86,8 @@ erDiagram
     users ||--o{ user_tokens : "linkovi iz maila"
     bookings ||--o{ notifications : "o čemu"
     organization_invites ||--o| notifications : "mail pozivnice"
+    organizations ||--o{ audit_log : "dnevnik"
+    users ||--o{ audit_log : "uradio"
 
     users {
         uuid id PK
@@ -177,7 +179,7 @@ erDiagram
         uuid id PK
         uuid user_id FK "prazno samo za pozivnicu"
         varchar email "samo za pozivnicu"
-        uuid invite_id FK "ON DELETE CASCADE"
+        uuid invite_id FK "ON DELETE SET NULL"
         varchar type "BOOKING_CONFIRMED..."
         uuid booking_id FK
         varchar status "PENDING, SENT, FAILED"
@@ -189,6 +191,21 @@ erDiagram
         text body
         text ics "prilog uz potvrdu"
         varchar last_error
+    }
+    audit_log {
+        bigint id PK "redni broj, daje redoslijed"
+        uuid organization_id FK
+        uuid actor_id FK "ON DELETE SET NULL"
+        varchar action "CHECK: ORGANIZATION_CREATED..."
+        uuid target_id "bez FK, zapis ostaje"
+        varchar detail "uloga ili naziv resursa"
+        timestamptz created_at
+    }
+    login_failures {
+        varchar email PK "iz zahtjeva, bez FK na users"
+        int failures
+        timestamptz window_start
+        timestamptz locked_until
     }
     booking_events {
         uuid id PK

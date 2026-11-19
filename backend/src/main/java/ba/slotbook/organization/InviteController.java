@@ -26,8 +26,9 @@ public class InviteController {
 	@PostMapping("/api/organizations/{id}/invites")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN')")
-	public InviteResponse invite(@PathVariable UUID id, @Valid @RequestBody CreateInviteRequest request) {
-		return inviteService.invite(id, request.email(), request.role());
+	public InviteResponse invite(@PathVariable UUID id, @AuthenticationPrincipal Jwt token,
+			@Valid @RequestBody CreateInviteRequest request) {
+		return inviteService.invite(id, UUID.fromString(token.getSubject()), request.email(), request.role());
 	}
 
 	// Bez @PreAuthorize: osoba još nije član, a pravo daje sam token i email iz pozivnice

@@ -47,7 +47,8 @@ class InviteAcceptIstovremenoTest {
 		Organization sala = organizations.save(new Organization("Sala za sastanke ETF", "sala-istovremeno",
 				"Europe/Sarajevo", sada));
 		User amina = users.save(new User("amina.istovremeno@example.com", "hash", "Amina", sada));
-		service.invite(sala.getId(), amina.getEmail(), OrganizationRole.CLIENT);
+		User admin = users.save(new User("emir.admin-prihvat@example.com", "hash", "Emir", sada));
+		service.invite(sala.getId(), admin.getId(), amina.getEmail(), OrganizationRole.CLIENT);
 		Matcher link = Pattern.compile("#token=([A-Za-z0-9_-]+)").matcher(jdbc.queryForObject(
 				"select body from notifications where email = ? and type = 'ORGANIZATION_INVITE'", String.class,
 				amina.getEmail()));

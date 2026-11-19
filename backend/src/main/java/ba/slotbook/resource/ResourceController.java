@@ -42,8 +42,8 @@ public class ResourceController {
 	@PutMapping("/api/organizations/{id}/resources/{resourceId}")
 	@PreAuthorize("@resourceAccess.canManage(#resourceId, authentication)")
 	public ResourceResponse update(@PathVariable UUID id, @PathVariable UUID resourceId,
-			@Valid @RequestBody ResourceRequest request) {
-		return resourceService.update(id, resourceId, request.name(), request.description(), request.slotMinutes(),
+			@AuthenticationPrincipal Jwt token, @Valid @RequestBody ResourceRequest request) {
+		return resourceService.update(id, UUID.fromString(token.getSubject()), resourceId, request.name(), request.description(), request.slotMinutes(),
 				request.autoConfirm(), request.cancelNoticeHours());
 	}
 
@@ -51,16 +51,17 @@ public class ResourceController {
 	@PutMapping("/api/organizations/{id}/resources/{resourceId}/provider")
 	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN')")
 	public ResourceResponse changeProvider(@PathVariable UUID id, @PathVariable UUID resourceId,
-			@Valid @RequestBody ChangeProviderRequest request) {
-		return resourceService.changeProvider(id, resourceId, request.providerId());
+			@AuthenticationPrincipal Jwt token, @Valid @RequestBody ChangeProviderRequest request) {
+		return resourceService.changeProvider(id, UUID.fromString(token.getSubject()), resourceId,
+				request.providerId());
 	}
 
 	// DELETE ne briše red nego deaktivira resurs, vidi ResourceService.deactivate
 	@DeleteMapping("/api/organizations/{id}/resources/{resourceId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@PreAuthorize("@resourceAccess.canManage(#resourceId, authentication)")
-	public void deactivate(@PathVariable UUID id, @PathVariable UUID resourceId) {
-		resourceService.deactivate(id, resourceId);
+	public void deactivate(@PathVariable UUID id, @PathVariable UUID resourceId, @AuthenticationPrincipal Jwt token) {
+		resourceService.deactivate(id, UUID.fromString(token.getSubject()), resourceId);
 	}
 
 	// Organizacije nema u putanji, pa canView do nje dolazi preko resursa

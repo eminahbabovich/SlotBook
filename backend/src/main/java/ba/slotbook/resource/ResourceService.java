@@ -10,6 +10,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ba.slotbook.audit.AuditAction;
+import ba.slotbook.audit.AuditLogService;
 import ba.slotbook.error.InvalidFieldException;
 import ba.slotbook.organization.OrganizationRole;
 import ba.slotbook.organization.OrganizationService;
@@ -22,13 +24,15 @@ public class ResourceService {
 	private final ResourceRepository resources;
 	private final OrganizationService organizationService;
 	private final UserRepository users;
+	private final AuditLogService auditLog;
 	private final Clock clock;
 
 	public ResourceService(ResourceRepository resources, OrganizationService organizationService,
-			UserRepository users, Clock clock) {
+			UserRepository users, AuditLogService auditLog, Clock clock) {
 		this.resources = resources;
 		this.organizationService = organizationService;
 		this.users = users;
+		this.auditLog = auditLog;
 		this.clock = clock;
 	}
 
@@ -40,17 +44,19 @@ public class ResourceService {
 		Resource resource = resources.save(new Resource(organizationService.getReference(organizationId),
 				users.getReferenceById(providerId), name, description, slotMinutes, autoConfirm, cancelNoticeHours,
 				clock.instant()));
+		auditLog.record(organizationId, providerId, AuditAction.RESOURCE_CREATED, resource.getId(), name);
 		return ResourceResponse.from(resource);
 	}
 
 	// Traži se po paru (resurs, organizacija iz putanje): resurs druge organizacije je ovdje 404,
 	// i kad ga korisnik smije uređivati tamo. Izmjenu u bazu upiše Hibernate pri commitu (dirty checking).
 	@Transactional
-	public ResourceResponse update(UUID organizationId, UUID resourceId, String name, String description,
+	public ResourceResponse update(UUID organizationId, UUID actorId, UUID resourceId, String name, String description,
 			int slotMinutes, boolean autoConfirm, int cancelNoticeHours) {
 		Resource resource = resources.findByIdAndOrganizationId(resourceId, organizationId)
 				.orElseThrow(ResourceNotFoundException::new);
 		resource.update(name, description, slotMinutes, autoConfirm, cancelNoticeHours);
+		auditLog.record(organizationId, actorId, AuditAction.RESOURCE_UPDATED, resourceId, name);
 		return ResourceResponse.from(resource);
 	}
 
@@ -65,7 +71,7 @@ public class ResourceService {
 	// Novi provider mora voditi resurse u ovoj organizaciji. Da je član, čuva i baza
 	// (resources_provider_clan), ali uloga CLIENT bi tamo prošla, pa se provjerava ovdje.
 	@Transactional
-	public ResourceResponse changeProvider(UUID organizationId, UUID resourceId, UUID providerId) {
+	public ResourceResponse changeProvider(UUID organizationId, UUID adminId, UUID resourceId, UUID providerId) {
 		Resource resource = resources.findByIdAndOrganizationId(resourceId, organizationId)
 				.orElseThrow(ResourceNotFoundException::new);
 		boolean mozeVoditi = organizationService.findRole(organizationId, providerId)
@@ -76,15 +82,18 @@ public class ResourceService {
 					"Resurs može voditi samo član organizacije s ulogom PROVIDER ili ADMIN.");
 		}
 		resource.changeProvider(users.getReferenceById(providerId));
+		auditLog.record(organizationId, adminId, AuditAction.RESOURCE_PROVIDER_CHANGED, resourceId,
+				providerId.toString());
 		return ResourceResponse.from(resource);
 	}
 
 	// Već deaktiviran resurs ostaje deaktiviran, pa ponovljen DELETE ne pravi grešku
 	@Transactional
-	public void deactivate(UUID organizationId, UUID resourceId) {
-		resources.findByIdAndOrganizationId(resourceId, organizationId)
-				.orElseThrow(ResourceNotFoundException::new)
-				.deactivate();
+	public void deactivate(UUID organizationId, UUID actorId, UUID resourceId) {
+		Resource resource = resources.findByIdAndOrganizationId(resourceId, organizationId)
+				.orElseThrow(ResourceNotFoundException::new);
+		resource.deactivate();
+		auditLog.record(organizationId, actorId, AuditAction.RESOURCE_DEACTIVATED, resourceId, resource.getName());
 	}
 
 	// Redoslijed određuje server, a sort iz zahtjeva se ignoriše: ?sort=provider.passwordHash bi

@@ -13,6 +13,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ba.slotbook.audit.AuditAction;
+import ba.slotbook.audit.AuditLogService;
 import ba.slotbook.paging.PageResponse;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
@@ -23,13 +25,15 @@ public class OrganizationService {
 	private final OrganizationRepository organizations;
 	private final OrganizationMemberRepository members;
 	private final UserRepository users;
+	private final AuditLogService auditLog;
 	private final Clock clock;
 
 	public OrganizationService(OrganizationRepository organizations, OrganizationMemberRepository members,
-			UserRepository users, Clock clock) {
+			UserRepository users, AuditLogService auditLog, Clock clock) {
 		this.organizations = organizations;
 		this.members = members;
 		this.users = users;
+		this.auditLog = auditLog;
 		this.clock = clock;
 	}
 
@@ -47,6 +51,7 @@ public class OrganizationService {
 		// Referenca bez SELECT-a: za upis članstva treba samo ID korisnika, ne cijeli red iz baze
 		User creator = users.getReferenceById(creatorId);
 		members.save(new OrganizationMember(organization, creator, OrganizationRole.ADMIN, sada));
+		auditLog.record(organization.getId(), creatorId, AuditAction.ORGANIZATION_CREATED, organization.getId(), null);
 
 		return OrganizationResponse.from(organization);
 	}

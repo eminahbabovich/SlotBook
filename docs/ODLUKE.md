@@ -765,3 +765,19 @@ CORS dozvoljava samo origin iz `slotbook.app-url`, iste adrese na koju vode link
 Jedna stvar ostaje za Fazu 12. Refresh kolačić je `SameSite=Strict`, pa ga browser uopšte ne šalje kad su frontend (npr. na Vercelu) i backend (na Renderu) različiti sajtovi, ni s ispravnim CORS-om. Lokalno to rješava Vite proxy. Na produkciji će trebati isto: frontend prosljeđuje `/api` na backend, pa za browser ostaje isti sajt. Tada CORS za glavni tok ni ne treba, ali ostaje ispravno podešen ako se frontend ikad poziva direktno.
 
 Šest mutacija, sve padaju na pravom testu: bez `Referrer-Policy`, HSTS samo na HTTPS, CSP i na Swaggeru, bez CORS-a, svaki origin dozvoljen, i bez izloženih zaglavlja.
+
+## Dnevnik osjetljivih radnji (audit log)
+
+U dnevnik ide ono od čega zavisi ko šta smije u organizaciji: nova organizacija (osnivač postaje admin), poslana pozivnica, prihvaćena pozivnica (neko postaje član s ulogom), i nov, izmijenjen, prebačen na drugog providera ili deaktiviran resurs. Promjene uloge postojećeg člana i uklanjanja člana nema, jer tih radnji još nema u aplikaciji. Brisanje naloga dolazi s korakom 9. Radno vrijeme, izuzeci i slika resursa se ne upisuju. Rezervacije imaju svoju historiju u `booking_events`.
+
+Zapis se piše u istoj transakciji kao radnja. `AuditLogService.record` ima `@Transactional(propagation = MANDATORY)`, pa poziv van transakcije baci `IllegalTransactionStateException` umjesto da tiho otvori svoju. Ako radnja padne poslije zapisa, rollback vrati i zapis, pa u dnevniku nema radnje koja se nije desila. Obrnuto isto važi: radnja ne može proći bez zapisa, osim ako se poziv zaboravi, a to hvata test. Druga opcija je bila događaj (`ApplicationEvent`) i listener, ali onda zapis zavisi od faze listenera, a direktan poziv je jedna linija koju vidim u servisu.
+
+Plan je imao `entity_type`, `entity_id` i `details JSONB`. Uzeo sam jednostavnije: `target_id` bez stranog ključa (zapis ostaje i kad se pozivnica zamijeni novom) i `detail` kao kratak tekst, jer se iz `action` već vidi šta je meta. JSONB bi imao smisla kad bih čuvao staru i novu vrijednost svakog polja, a to admin sad ne čita. ID je redni broj (`GENERATED ALWAYS AS IDENTITY`), ne UUID. U testu se više radnji desi u istoj milisekundi, pa sortiranje po `created_at` ne bi dalo pouzdan redoslijed.
+
+Email pozvane osobe ne ide u dnevnik, samo uloga. Ta osoba možda nikad ne napravi nalog, a zapis iz dnevnika se ne briše. Ko je postao član, vidi se iz prihvaćene pozivnice, gdje je izvršilac sam novi član, s imenom. `actor_id` ima `ON DELETE SET NULL`: kad se nalog obriše, zapis o radnji ostaje bez imena.
+
+Čita samo admin te organizacije, najnovije prvo, po stranicama. `@PreAuthorize` odbije tuđeg admina, a upis je uz to ograničen na organizaciju iz putanje. Ruta je u `OrganizationIsolationApiTest`. Taj test sad provjerava i da zahtjev s tuđim tokenom ne ostavi zapis, a za člana bez prava da u dnevniku ostane samo ono što je njegova uloga smjela (provider pravi svoj resurs, klijent ništa).
+
+Dnevnik baza ne čuva od izmjene. Aplikacija nema `UPDATE` ni `DELETE` nad njim, ali `UPDATE` ili `DELETE` iz SQL konzole bi prošao.
+
+Sedam mutacija. Šest padaju na pravom testu: zapis i bez transakcije radnje, prihvatanje pozivnice bez zapisa, upit bez uslova organizacije, najstarije prvo, dnevnik dostupan i provideru, i odgovor bez provjere za obrisan nalog. Sedma je zapis premješten prije provjere novog providera. Ona preživi, i to je bio cilj: provjera baci `400`, rollback odnese i zapis, pa `odbijenaRadnjaNeOstavljaZapis` i dalje vidi isti broj redova.

@@ -123,8 +123,8 @@ Sva ostala kretanja su zabranjena i vraćaju `409`. Termin zauzimaju samo `PENDI
   created_at, sent_at). Umjesto `payload JSONB` za sada `booking_id`, vidi odluke.
 - `payments` (id, booking_id, provider_ref, amount, currency, status, created_at)
 - `processed_webhook_events` (event_id PK, received_at)
-- `audit_log` (id, organization_id, actor_id, action, entity_type, entity_id, details JSONB,
-  created_at)
+- `audit_log` (id, organization_id, actor_id, action, target_id, detail, created_at). Bez
+  `entity_type` i JSONB-a, razlog je u `docs/ODLUKE.md`.
 - `shedlock`: ne koristimo, poslovi su sigurni i na dvije instance (vidi `docs/ODLUKE.md`)
 
 Invarijante:
@@ -331,7 +331,10 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    odgovorima backenda, a CSP za stranice frontenda ide s hostom frontenda u Fazi 12. HSTS se šalje
    uvijek, jer je iza Renderovog proxyja svaki zahtjev za Spring običan HTTP. Na Renderu nije provjereno.
 7. **Audit log.** Tabela `audit_log` i upis za osjetljive radnje (uloge, pozivnice, resursi, brisanje
-   naloga), a admin ga čita za svoju organizaciju.
+   naloga), a admin ga čita za svoju organizaciju. Gotovo 19.11.2026. Upisuju se nova organizacija,
+   poslana i prihvaćena pozivnica, i nov, izmijenjen, prebačen ili deaktiviran resurs, u istoj
+   transakciji kao radnja. Brisanje naloga dolazi s korakom 9. Radno vrijeme, izuzeci i slika resursa
+   se ne upisuju.
 8. **Izvoz podataka.** `GET /api/me/export`: sve što aplikacija zna o korisniku, u JSON-u.
 9. **Brisanje naloga.** Anonimizacija umjesto brisanja redova, da statistika i rasporedi ostanu
    tačni. Refresh tokeni se gase, a budući termini otkazuju.

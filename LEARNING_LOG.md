@@ -235,3 +235,13 @@ Zaglavlja i CORS, kraće nego što sam mislio. Spring Security već šalje `nosn
 HSTS me zbunio. Spring ga šalje samo za HTTPS zahtjev, a iza Renderovog proxyja aplikacija vidi običan HTTP, pa ga ne bi poslala nikad. Sad ide na svaki odgovor, browser ga na HTTP-u ionako ignoriše.
 
 Preflight je bez `.cors(...)` dobijao `401`, jer `OPTIONS` nema token. I skontao sam da CORS za glavni tok na produkciji vjerovatno neće ni trebati: refresh kolačić je `SameSite=Strict`, pa frontend na drugom sajtu ionako mora ići kroz proxy. To je za Fazu 12.
+
+## četvrtak, 19. novembar 2026. u 18:18
+
+Audit log. Prvi put sam napisao mutaciju za koju sam htio da preživi: zapis o promjeni providera premješten prije provjere da je novi provider član. Provjera baci `400`, rollback odnese i zapis, i test ne primijeti ništa. Tek tada mi je postalo jasno šta `MANDATORY` stvarno daje. Zapis ne može otići u svoju transakciju i ostati kad radnja padne.
+
+Test izolacije je pao na `expected: 8L but was: 9L`. Mislio sam da sam našao rupu, a u stvari provider po pravilima smije napraviti svoj resurs, i to je legitiman zapis. Pogriješio je test, pa sad provjerava koje su radnje upisane, ne koliko ih ima.
+
+Redoslijed po `created_at` ne bi bio pouzdan, jer se u testu sedam radnji desi skoro u istoj milisekundi. Zato je ID redni broj, a ne UUID.
+
+Python heredoc mi je treći put pojeo `\r\n` u skripti. Ovaj put je bar `ARHITEKTURA.md` bio jedini fajl sa CRLF-om, pa je zamjena pala na `assert` umjesto da išta pokvari.

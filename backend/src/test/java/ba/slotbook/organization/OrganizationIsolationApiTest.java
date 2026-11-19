@@ -66,6 +66,7 @@ class OrganizationIsolationApiTest {
 
 	private static final List<Zahtjev> ZAHTJEVI = List.of(
 			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/members", null),
+			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/audit-log", null),
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/invites", """
 					{"email": "upad.izolacija@example.com", "role": "ADMIN"}
 					"""),
@@ -363,6 +364,7 @@ class OrganizationIsolationApiTest {
 	void adminDrugeOrganizacijeDobija403NaSvakomEndpointuINistaSeNeMijenja() throws Exception {
 		long clanovaPrije = brojRedova("organization_members");
 		long pozivnicaPrije = brojRedova("organization_invites");
+		long zapisaPrije = brojRedova("audit_log");
 		long resursaPrije = brojRedova("resources");
 		long pravilaPrije = brojPravila();
 		long izuzetakaPrije = brojIzuzetaka();
@@ -376,6 +378,7 @@ class OrganizationIsolationApiTest {
 
 		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
 		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);
+		assertThat(brojRedova("audit_log")).isEqualTo(zapisaPrije);
 		assertThat(brojRedova("resources")).isEqualTo(resursaPrije);
 		assertThat(jdbc.queryForObject("select slot_minutes from resources where id = ?", Integer.class,
 				stoCitaonice)).isEqualTo(120);
@@ -423,6 +426,7 @@ class OrganizationIsolationApiTest {
 		slikaPostoji();
 		long clanovaPrije = brojRedova("organization_members");
 		long pozivnicaPrije = brojRedova("organization_invites");
+		long zadnjiZapis = jdbc.queryForObject("select coalesce(max(id), 0) from audit_log", Long.class);
 		long pravilaPrije = brojPravila();
 		long izuzetakaPrije = brojIzuzetaka();
 		String slikaPrije = kljucSlike();
@@ -439,6 +443,9 @@ class OrganizationIsolationApiTest {
 
 		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
 		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);
+		// U dnevniku je samo ono što je uloga smjela: provider je napravio svoj resurs, klijent ništa
+		assertThat(jdbc.queryForList("select action from audit_log where id > ? order by id", String.class,
+				zadnjiZapis)).isEqualTo(uloga.equals("klijent") ? List.of() : List.of("RESOURCE_CREATED"));
 		assertThat(jdbc.queryForObject("select slot_minutes from resources where id = ?", Integer.class,
 				stoCitaonice)).isEqualTo(120);
 		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class,
