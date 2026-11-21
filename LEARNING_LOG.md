@@ -263,3 +263,13 @@ Prvo pokretanje je dalo `500` na svakom uspješnom brisanju: `Can't infer the SQ
 Onda je pao `login_failures`, `expected 0 but was 1`. Opet sam pogriješio u testu: poslije brisanja se prijavim starim emailom da vidim `401`, a ta prijava upiše novi red. Tako je i namjerno još od koraka 4.
 
 Test s dva admina koji brišu nalog u isto vrijeme je pao čim sam izbacio zaključavanje. To mi je bio prvi `FOR NO KEY UPDATE`, a razliku od `FOR UPDATE` sam našao tek u tabeli konflikata u dokumentaciji.
+
+## subota, 21. novembar 2026. u 12:16
+
+Frontend za Fazu 8. Prvi test za `202` je pao sa `SyntaxError: Unexpected end of JSON input` i tek tad mi je bilo jasno da registracija kroz formu ne radi još od koraka 5. Backend je imao svoje testove, frontend svoje s lažnim `201`, i oboje je bilo zeleno.
+
+Stari test pozivnice je pao jer registracija više ne prijavljuje. Ispod toga je bio pravi problem: link iz maila otvori nov tab i adresa pozivnice se izgubi. Sad link "Na prijavu" nosi adresu, i test to provjerava.
+
+Skripta za screenshotove nije učitala aplikaciju. `page.route('**/api/**')` je hvatao i Viteove module iz `/src/api/`, pa nije stizao JavaScript. Morao sam gledati samo putanje koje počinju sa `/api/`.
+
+Na screenshotu sam vidio "Pokušaj ponovo kasnije. Ponovo možeš pokušati u 12:27." Testovi su to pustili jer su provjeravali samo moj dio rečenice.

@@ -33,7 +33,8 @@ export function Zaglavlje() {
 				{status === 'prijavljen' && (
 					<div className="zaglavlje-nalog">
 						<Link to="/rezervacije">Moje rezervacije</Link>
-						<span>{korisnik.ime}</span>
+						{/* Ime je ujedno link na nalog: četiri stavke se na telefonu lome u dva reda */}
+						<Link to="/nalog">{korisnik.ime}</Link>
 						<button className="dugme-tekst" type="button" onClick={odjaviSe} disabled={salje}>
 							{salje ? 'Odjava u toku' : 'Odjavi se'}
 						</button>

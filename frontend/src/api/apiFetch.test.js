@@ -95,4 +95,29 @@ describe('apiFetch', () => {
 		expect(greska.status).toBe(0)
 		expect(greska.problem).toBeNull()
 	})
+
+	// Registracija vraća 202 bez tijela (Faza 8, korak 5), a ne 204
+	test('prazan uspješan odgovor koji nije 204 vraća null umjesto greške', async () => {
+		odgovori(202, null)
+
+		expect(await apiFetch('/api/auth/register', { metoda: 'POST', tijelo: {} })).toBeNull()
+	})
+
+	test('429 nosi Retry-After u sekundama, da UI može reći kad je sljedeći pokušaj', async () => {
+		vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ status: 429, detail: 'Previše pokušaja.' }), {
+			status: 429,
+			headers: { 'Content-Type': 'application/problem+json', 'Retry-After': '720' },
+		})))
+
+		const greska = await greskaIz(apiFetch('/api/auth/login', { metoda: 'POST', tijelo: {} }))
+
+		expect(greska.status).toBe(429)
+		expect(greska.retryAfter).toBe(720)
+	})
+
+	test('greška bez Retry-After nema ni retryAfter', async () => {
+		odgovori(409, JSON.stringify({ status: 409, detail: 'Zauzeto.' }), 'application/problem+json')
+
+		expect((await greskaIz(apiFetch('/api/x'))).retryAfter).toBeNull()
+	})
 })

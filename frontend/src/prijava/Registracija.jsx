@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
+import { registracija } from '../api/auth.js'
 import { Polje } from '../forma/Polje.jsx'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
-import { useSesija } from '../sesija/sesija.js'
+import { NoviLinkZaPotvrdu } from './NoviLinkZaPotvrdu.jsx'
 
 const PORUKE = {
 	serverNeOdgovara: 'Nalog nije napravljen, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -12,12 +13,13 @@ const PORUKE = {
 export function Registracija() {
 	// Adresa s koje je korisnik došao (npr. link pozivnice) ide i na drugu formu, da se ne izgubi.
 	const lokacija = useLocation()
-	const { registruj } = useSesija()
 	const [ime, setIme] = useState('')
 	const [email, setEmail] = useState('')
 	const [lozinka, setLozinka] = useState('')
 	const [salje, setSalje] = useState(false)
 	const [greska, setGreska] = useState(null)
+	// Email na koji je otišao link. Sesija ostaje odjavljena, jer prijava radi tek poslije potvrde.
+	const [poslano, setPoslano] = useState(null)
 	const poPoljima = greskePoPoljima(greska)
 
 	async function posalji(dogadjaj) {
@@ -25,11 +27,31 @@ export function Registracija() {
 		setSalje(true)
 		setGreska(null)
 		try {
-			await registruj(ime, email, lozinka)
+			await registracija(ime, email, lozinka)
+			setPoslano(email)
 		} catch (g) {
 			setGreska(g)
-			setSalje(false)
 		}
+		setSalje(false)
+	}
+
+	// Isti 202 i za email koji već ima nalog. Tada stigne mail koji to kaže, pa tekst pokriva oba slučaja.
+	if (poslano) {
+		return (
+			<section>
+				<h1>Pogledaj inbox</h1>
+				<p>
+					Na {poslano} je poslan mail s linkom za potvrdu. Link važi 24 sata, a prijava radi tek kad potvrdiš email.
+				</p>
+				<p>Ako ovaj email već ima nalog, mail to kaže. Tada se prijavi postojećom lozinkom.</p>
+				<NoviLinkZaPotvrdu poznatEmail={poslano} />
+				<p>
+					<Link to="/prijava" state={lokacija.state}>
+						Na prijavu
+					</Link>
+				</p>
+			</section>
+		)
 	}
 
 	return (

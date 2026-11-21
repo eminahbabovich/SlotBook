@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { postaviToken } from '../api/apiFetch.js'
-import { BEZ_SESIJE, CITAONICA, HANA, PRIJAVLJENA, TERETANA, TOKEN, backend, json, otvori, problem, tijelo } from '../test/lazniBackend.js'
+import { BEZ_SESIJE, CITAONICA, PRIJAVLJENA, TERETANA, TOKEN, backend, json, otvori, problem, tijelo } from '../test/lazniBackend.js'
 
 const KONSULTACIJE = { id: 'o3', name: 'Konsultacije, prof. Đulić', slug: 'konsultacije-dulic', timezone: 'Europe/Sarajevo', role: 'CLIENT' }
 const PRIHVATI = 'POST /api/invites/accept'
@@ -57,8 +57,10 @@ describe('prihvatanje', () => {
 		expect(fetch.mock.calls.some(([p]) => p === '/api/invites/accept')).toBe(false)
 	})
 
-	test('osoba bez naloga ide preko prijave na registraciju i vraća se na pozivnicu s tokenom', async () => {
-		const fetch = sPozivnicom(PRIHVACENA, { ...NEPRIJAVLJENA, '/api/auth/register': () => json(HANA, 201) })
+	// Email se potvrdi u drugom tabu (link iz maila), a u ovom adresa pozivnice ostaje zapamćena
+	// do prijave. Bez state na linku "Na prijavu" bi osoba završila na listi organizacija.
+	test('osoba bez naloga se registruje, potvrdi email, prijavi i vrati na pozivnicu s tokenom', async () => {
+		const fetch = sPozivnicom(PRIHVACENA, { ...NEPRIJAVLJENA, '/api/auth/register': () => new Response(null, { status: 202 }) })
 		otvori(LINK)
 		const korisnik = userEvent.setup()
 
@@ -67,6 +69,10 @@ describe('prihvatanje', () => {
 		await korisnik.type(screen.getByLabelText('Email'), 'hana@primjer.ba')
 		await korisnik.type(screen.getByLabelText('Lozinka'), 'čitaonica1')
 		await korisnik.click(screen.getByRole('button', { name: 'Napravi nalog' }))
+		await korisnik.click(await screen.findByRole('link', { name: 'Na prijavu' }))
+		await korisnik.type(await screen.findByLabelText('Email'), 'hana@primjer.ba')
+		await korisnik.type(screen.getByLabelText('Lozinka'), 'čitaonica1')
+		await korisnik.click(screen.getByRole('button', { name: 'Prijavi se' }))
 		await korisnik.click(await screen.findByRole('button', { name: 'Prihvati pozivnicu' }))
 
 		expect(await screen.findByRole('heading', { name: 'Konsultacije, prof. Đulić' })).toBeTruthy()

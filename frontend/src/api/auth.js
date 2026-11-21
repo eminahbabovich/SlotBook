@@ -7,10 +7,20 @@ export async function prijava(email, lozinka) {
 	postaviToken(provjeriPolja(odgovor, ['accessToken'], '/api/auth/login').accessToken)
 }
 
-// Registracija vraća korisnika, ali ne i tokene, pa poslije nje ide obična prijava.
+// 202 bez tijela, isto za nov i postojeći email, da se po odgovoru ne vidi ko ima nalog.
+// Prijava ide tek poslije potvrde emaila iz maila.
 export async function registracija(ime, email, lozinka) {
 	await apiFetch('/api/auth/register', { metoda: 'POST', tijelo: { email, password: lozinka, displayName: ime } })
-	await prijava(email, lozinka)
+}
+
+// Token iz linka /potvrda-emaila#token=... (VerifyEmailRequest)
+export async function potvrdiEmail(token) {
+	await apiFetch('/api/auth/verify-email', { metoda: 'POST', tijelo: { token } })
+}
+
+// Uvijek 204, i kad nalog ne postoji ili je već potvrđen, pa UI ne smije reći da je mail sigurno poslan
+export async function noviLinkZaPotvrdu(email) {
+	await apiFetch('/api/auth/email-verification', { metoda: 'POST', tijelo: { email } })
 }
 
 // Token se briše tek kad server potvrdi odjavu. Refresh kolačić briše samo server, pa bi

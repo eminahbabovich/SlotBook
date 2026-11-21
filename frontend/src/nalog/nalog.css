@@ -1,0 +1,13 @@
+/* Oznaka i vrijednost kao oznaka polja u formi, bez uvlačenja koje browser daje za <dd> */
+.podaci-naloga dt {
+	font-weight: 600;
+}
+
+.podaci-naloga dd {
+	margin: 0 0 var(--razmak-12);
+}
+
+/* Izvoz i brisanje su odvojene radnje, pa ih dijeli isti razmak kao dijelove statistike */
+.nalog-dio {
+	margin-top: var(--razmak-32);
+}

@@ -819,3 +819,25 @@ Dva admina iste organizacije mogu brisati nalog u istom trenutku. Oba bi vidjela
 Šta nisam riješio. Access token obrisanog naloga važi još do 15 minuta. Članstava više nema, pa ne može ništa u organizacijama, ali bi mogao napraviti novu organizaciju. Provjera `deleted_at` na svakom zahtjevu bi to zatvorila, uz jedan upit više po zahtjevu. Provideri ne dobijaju mail za termine otkazane brisanjem naloga, samo im se termin oslobodi. Ako se u istom trenutku pravi resurs s tim korisnikom kao providerom, jedno od dvoje padne na stranom ključu sa `500`. To nisam testirao.
 
 Deset mutacija, sve padaju: bez zaključavanja organizacije (pada test s dva admina), bez provjere jedinog admina, samo aktivni resursi, otkazivanje i prošlih termina, sesije ostaju, ime ostaje (pada na `users_obrisan_anoniman`, `500`), pozivnice ostaju, pogrešna lozinka se ne broji, bez transakcije (`AuditLogService.record` je `MANDATORY` i odbije zapis) i bez zapisa u dnevniku. Za otkazivanje prošlih termina test je prvo imao prošlu rezervaciju `COMPLETED`, pa mutacija ne bi pala. Sad je prošla `CONFIRMED`, onakva kakva je dok je `BookingJob` ne zatvori.
+
+## Frontend za Fazu 8
+
+Registracija u frontendu od koraka 5 nije radila, a nijedan test to nije vidio. Backend sad vraća `202` bez tijela, a `apiFetch` je na svaki uspješan odgovor osim `204` zvao `json()`, pa je pao sa `SyntaxError: Unexpected end of JSON input`. Vitest testovi su i dalje glumili stari backend (`201` s korisnikom), a Playwright pravi naloge preko API-ja, ne kroz formu. Sad `apiFetch` pročita tekst i za prazno tijelo vrati `null`.
+
+Poslije registracije nema više prijave. Ekran "Pogledaj inbox" kaže na koji email je otišao link i da važi 24 sata. Tekst je isti i kad email već ima nalog, jer i tada stigne mail (koji to kaže), a backend ionako ne otkriva razliku. Novi link se traži dugmetom na istom ekranu. Poruka poslije njega ne tvrdi da je mail poslan, jer backend vrati `204` i kad ništa ne pošalje (nepoznat email, već potvrđen, preko tri maila na sat).
+
+`/potvrda-emaila` je van čuvara ruta, jer je otvara neko ko se još ne može prijaviti. Potvrda ide tek na klik, iz istog razloga kao kod pozivnice: StrictMode bi pri otvaranju poslao dva zahtjeva, a drugi bi dobio `409`. Kad link ne važi (`404`, `409`, `410`), dugme za potvrdu nestane i ostane forma za novi link.
+
+Prijava na `401` dobija još jedan red: nov nalog radi tek poslije potvrde emaila, s linkom na novi link. Backend namjerno daje isti `401` za pogrešnu lozinku i nepotvrđen email, pa frontend ne može znati koji je slučaj i spomene oba.
+
+Kod `429` se iz `Retry-After` doda sat sljedećeg pokušaja ("Sljedeći pokušaj je moguć u 12:27."). Sat, a ne "za 12 minuta", jer uz broj ne treba padež. Sat je u zoni browsera, ne organizacije: zaključana je prijava, a ne termin, i na ekranu prijave organizacije ni nema. Prvi tekst je bio "Ponovo možeš pokušati u...", odmah iza backendovog "Pokušaj ponovo kasnije", pa je "ponovo" stajalo dvaput. Vidio sam to tek na screenshotu.
+
+Osoba koja dođe preko pozivnice ranije se poslije registracije odmah vraćala na pozivnicu. Sad mora prvo potvrditi email, a link iz maila se otvara u novom tabu. Link "Na prijavu" na ekranu inboxa zato nosi zapamćenu adresu pozivnice, pa kad se osoba vrati u stari tab i prijavi, završi na pozivnici. Ako stari tab zatvori, mora ponovo otvoriti link pozivnice iz maila. Ovo pokriva Vitest test s lažnim backendom, ne Playwright.
+
+Na `/nalog` su izvoz i brisanje. Izvoz je fajl `slotbook-moji-podaci-<datum>.json`, jer backend ne šalje `Content-Disposition`. Brisanje traži lozinku i drugi klik, a fokus poslije prvog klika ide na "Odustani", da Enter ne obriše nalog. Kod `409` se ispod poruke nabroje organizacije i resursi iz odgovora. Poslije uspjeha `api/nalog.js` zaboravi token (kao odjava), keš se obriše, a prijava kaže "Nalog je obrisan.".
+
+Link na nalog je ime u zaglavlju, a ne posebna stavka "Moj nalog". Sa četiri stavke se zaglavlje na 375 px lomilo u dva reda.
+
+Četrnaest mutacija, sve padaju: `json()` na praznom tijelu, `Retry-After` se ne čita, `429` bez sata, registracija opet prijavljuje, token ostaje poslije brisanja, bez fokusa na "Odustani", brisanje na prvi klik, "Na prijavu" bez adrese pozivnice, potvrda iza čuvara, prijava bez poruke o brisanju, `401` bez podsjetnika, istekao link bez forme za novi, `409` bez spiskova, pogrešna lozinka nije na polju.
+
+Šta nisam provjerio. Ekrane sam gledao na 375 i 1280 px s lažnim backendom (Playwright `route`), ne s pravim. Playwright glavni tok prolazi, ali ne ide kroz nove ekrane. Preuzimanje JSON-a u pravom browseru nisam probao, samo da se fajl preda kroz `<a download>`, kao CSV.

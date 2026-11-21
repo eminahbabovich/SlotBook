@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { postaviToken } from './apiFetch.js'
-import { mojNalog, odjava, prijava, registracija } from './auth.js'
+import { mojNalog, noviLinkZaPotvrdu, odjava, potvrdiEmail, prijava, registracija } from './auth.js'
 
 const json = (status, tijelo) => new Response(JSON.stringify(tijelo), { status, headers: { 'Content-Type': 'application/json' } })
 
@@ -8,7 +8,8 @@ const KORISNIK = { id: 'u1', email: 'hana@primjer.ba', displayName: 'Hana Šehi�
 
 function backend() {
 	const fetch = vi.fn(async (putanja) => {
-		if (putanja === '/api/auth/register') return json(201, KORISNIK)
+		if (putanja === '/api/auth/register') return new Response(null, { status: 202 })
+		if (putanja === '/api/auth/verify-email' || putanja === '/api/auth/email-verification') return new Response(null, { status: 204 })
 		if (putanja === '/api/auth/login') return json(200, { accessToken: 'tok', tokenType: 'Bearer', expiresIn: 900 })
 		if (putanja === '/api/auth/logout') return new Response(null, { status: 204 })
 		return json(200, KORISNIK)
@@ -33,13 +34,24 @@ describe('auth', () => {
 		expect(fetch.mock.calls.at(-1)[1].headers.Authorization).toBe('Bearer tok')
 	})
 
-	test('registracija šalje displayName, pa prijavi korisnika istim podacima', async () => {
+	// Od Faze 8 prijava radi tek poslije potvrde emaila, pa registracija ne prijavljuje
+	test('registracija šalje displayName i ne pokušava prijavu', async () => {
 		const fetch = backend()
 
 		await registracija('Hana Šehić', 'hana@primjer.ba', 'čitaonica1')
 
 		expect(tijelo(fetch, '/api/auth/register')).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1', displayName: 'Hana Šehić' })
-		expect(tijelo(fetch, '/api/auth/login')).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1' })
+		expect(fetch.mock.calls.map(([p]) => p)).toEqual(['/api/auth/register'])
+	})
+
+	test('potvrda emaila šalje token iz linka, a novi link samo email', async () => {
+		const fetch = backend()
+
+		await potvrdiEmail('tok-iz-maila')
+		await noviLinkZaPotvrdu('hana@primjer.ba')
+
+		expect(tijelo(fetch, '/api/auth/verify-email')).toEqual({ token: 'tok-iz-maila' })
+		expect(tijelo(fetch, '/api/auth/email-verification')).toEqual({ email: 'hana@primjer.ba' })
 	})
 
 	test('odjava briše token kad je server potvrdi', async () => {

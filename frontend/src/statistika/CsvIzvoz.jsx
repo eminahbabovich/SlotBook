@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { csvStatistike } from '../api/statistika.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
+import { sacuvajFajl } from '../sacuvajFajl.js'
 
 const PORUKE = {
 	serverNeOdgovara: 'Fajl nije preuzet, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -9,22 +10,11 @@ const PORUKE = {
 
 // Fajl pravi backend (tačka-zarez, BOM, zaštita od formula), a ovdje se samo preda browseru.
 // Ime je isto kao u Content-Disposition, da fajl ne zavisi od toga da li browser čita zaglavlje.
-function sacuvaj(fajl, ime) {
-	const adresa = URL.createObjectURL(fajl)
-	const veza = document.createElement('a')
-	veza.href = adresa
-	veza.download = ime
-	document.body.append(veza)
-	veza.click()
-	veza.remove()
-	// Odmah poslije klika neki browseri još čitaju fajl, pa se adresa pusti tek u sljedećem krugu
-	setTimeout(() => URL.revokeObjectURL(adresa), 0)
-}
 
 export function CsvIzvoz({ orgId, od, doDana }) {
 	const preuzimanje = useMutation({
 		mutationFn: () => csvStatistike(orgId, od, doDana),
-		onSuccess: (fajl) => sacuvaj(fajl, `popunjenost-${od}-${doDana}.csv`),
+		onSuccess: (fajl) => sacuvajFajl(fajl, `popunjenost-${od}-${doDana}.csv`),
 	})
 
 	return (

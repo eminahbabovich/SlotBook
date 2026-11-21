@@ -2,13 +2,15 @@
 // a svaka greška stiže kao ApiError, pa UI ima jedan način da je pročita.
 
 export class ApiError extends Error {
-	constructor(status, problem) {
+	constructor(status, problem, retryAfter = null) {
 		super(problem?.detail ?? `HTTP ${status}`)
 		this.name = 'ApiError'
 		// Status iz HTTP odgovora. 0 znači da odgovora nije ni bilo (server ne radi, nema mreže).
 		this.status = status
 		// Problem Details iz tijela (title, detail, greske...) ili null kad tijelo nije JSON.
 		this.problem = problem
+		// Sekunde iz Retry-After (429): koliko još traje zaključavanje ili granica pokušaja
+		this.retryAfter = retryAfter
 	}
 }
 
@@ -93,12 +95,23 @@ async function posalji(putanja, metoda, tijelo, zaglavlja, token) {
 
 async function procitaj(odgovor, oblik) {
 	if (!odgovor.ok) {
-		throw new ApiError(odgovor.status, await procitajProblem(odgovor))
+		throw new ApiError(odgovor.status, await procitajProblem(odgovor), sekundeCekanja(odgovor))
 	}
 	if (odgovor.status === 204) {
 		return null
 	}
-	return oblik === 'blob' ? odgovor.blob() : odgovor.json()
+	if (oblik === 'blob') {
+		return odgovor.blob()
+	}
+	// 202 od registracije nema tijela, a json() na praznom tijelu baci SyntaxError
+	const tekst = await odgovor.text()
+	return tekst === '' ? null : JSON.parse(tekst)
+}
+
+// Backend šalje Retry-After kao broj sekundi. Datum (drugi oblik iz HTTP standarda) ne šalje.
+function sekundeCekanja(odgovor) {
+	const sekunde = Number.parseInt(odgovor.headers.get('Retry-After') ?? '', 10)
+	return Number.isNaN(sekunde) ? null : sekunde
 }
 
 // Kad backend ne radi, Vite proxy ili hosting vrate HTML ili prazno tijelo, ne Problem Details.

@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { naIstekSesije, obnoviSesiju } from '../api/apiFetch.js'
-import { mojNalog, odjava, prijava, registracija } from '../api/auth.js'
+import { mojNalog, odjava, prijava } from '../api/auth.js'
+import { obrisiNalog as obrisi } from '../api/nalog.js'
 import { SesijaContext } from './sesija.js'
 
 const PROVJERAVA = { status: 'provjerava', korisnik: null }
@@ -9,6 +10,8 @@ const ODJAVLJEN = { status: 'odjavljen', korisnik: null }
 // Odjava na zahtjev korisnika: sljedeća osoba za istim računarom počinje od svoje liste,
 // a ne od adrese na kojoj je prethodna stala.
 const ODJAVIO_SE = { ...ODJAVLJEN, odjavioSe: true }
+// Prijava poslije brisanja kaže šta se desilo, da prazna forma ne izgleda kao istekla sesija
+const OBRISAN = { ...ODJAVIO_SE, obrisan: true }
 const NEDOSTUPAN = { status: 'nedostupan', korisnik: null }
 
 // Pri otvaranju stranice token u memoriji ne postoji, pa se sesija vraća preko kolačića.
@@ -49,14 +52,14 @@ export function SesijaProvider({ children }) {
 		setStanje({ status: 'prijavljen', korisnik: await mojNalog() })
 	}
 
-	async function registruj(ime, email, lozinka) {
-		await registracija(ime, email, lozinka)
-		setStanje({ status: 'prijavljen', korisnik: await mojNalog() })
-	}
-
 	async function odjavi() {
 		await odjava()
 		zavrsiSesiju(ODJAVIO_SE)
+	}
+
+	async function obrisiNalog(lozinka) {
+		await obrisi(lozinka)
+		zavrsiSesiju(OBRISAN)
 	}
 
 	function pokusajPonovo() {
@@ -65,6 +68,6 @@ export function SesijaProvider({ children }) {
 	}
 
 	return (
-		<SesijaContext.Provider value={{ ...stanje, prijavi, registruj, odjavi, pokusajPonovo }}>{children}</SesijaContext.Provider>
+		<SesijaContext.Provider value={{ ...stanje, prijavi, odjavi, obrisiNalog, pokusajPonovo }}>{children}</SesijaContext.Provider>
 	)
 }

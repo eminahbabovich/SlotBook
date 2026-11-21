@@ -3,7 +3,7 @@ import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { postaviToken } from './api/apiFetch.js'
-import { BEZ_SESIJE, CITAONICA, HANA, PRIJAVLJENA, TERETANA, TOKEN, backend, json, otvori, problem, tijelo } from './test/lazniBackend.js'
+import { BEZ_SESIJE, CITAONICA, PRIJAVLJENA, TERETANA, TOKEN, backend, json, otvori, problem, tijelo } from './test/lazniBackend.js'
 
 async function prijaviSe(korisnik, email = 'hana@primjer.ba', lozinka = 'čitaonica1') {
 	await korisnik.type(await screen.findByLabelText('Email'), email)
@@ -109,14 +109,15 @@ describe('prijava', () => {
 })
 
 describe('registracija', () => {
-	test('zauzet email prikaže poruku backenda, a uspješna registracija prijavi korisnika', async () => {
-		let zauzet = true
+	// Zauzet email više ne daje 409 (Faza 8, korak 5), pa je jedina greška forme neispravno polje
+	test('kratka lozinka je greška na polju, a ispravljena forma vodi na inbox bez prijave', async () => {
+		let kratka = true
 		const fetch = backend({
-			...PRIJAVLJENA,
 			'/api/auth/refresh': BEZ_SESIJE,
 			'/api/auth/register': () =>
-				zauzet ? problem(409, { detail: 'Nalog s ovim emailom već postoji. Prijavi se ili koristi drugi email.' }) : json(HANA, 201),
-			'/api/auth/login': TOKEN,
+				kratka
+					? problem(400, { detail: 'Neki podaci nisu ispravni.', greske: [{ polje: 'password', poruka: 'Lozinka mora imati najmanje 8 znakova.' }] })
+					: new Response(null, { status: 202 }),
 		})
 		otvori('/')
 		const korisnik = userEvent.setup()
@@ -124,14 +125,15 @@ describe('registracija', () => {
 		await korisnik.click(await screen.findByRole('link', { name: 'Napravi nalog' }))
 		await korisnik.type(screen.getByLabelText('Ime koje drugi vide'), 'Hana Šehić')
 		await korisnik.type(screen.getByLabelText('Email'), 'hana@primjer.ba')
-		await korisnik.type(screen.getByLabelText('Lozinka'), 'čitaonica1')
+		await korisnik.type(screen.getByLabelText('Lozinka'), 'čitaonica')
 		await korisnik.click(screen.getByRole('button', { name: 'Napravi nalog' }))
-		expect((await screen.findByRole('alert')).textContent).toMatch(/već postoji/)
+		expect(await screen.findByText('Lozinka mora imati najmanje 8 znakova.')).toBeTruthy()
 
-		zauzet = false
+		kratka = false
+		await korisnik.type(screen.getByLabelText('Lozinka'), '1')
 		await korisnik.click(screen.getByRole('button', { name: 'Napravi nalog' }))
 
-		expect(await screen.findByText('Hana Šehić')).toBeTruthy()
+		expect(await screen.findByRole('heading', { name: 'Pogledaj inbox' })).toBeTruthy()
 		expect(tijelo(fetch, 'POST /api/auth/register')).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1', displayName: 'Hana Šehić' })
 	})
 })

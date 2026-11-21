@@ -342,7 +342,10 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    tačni. Refresh tokeni se gase, a budući termini otkazuju. Gotovo 21.11.2026. `DELETE /api/me` traži
    lozinku. Jedini admin organizacije i provider koji vodi resurs (i neaktivan) dobijaju `409` s
    nazivima. Access token obrisanog naloga važi još do 15 minuta, to je zapisano u `docs/ODLUKE.md`.
-10. **Frontend za Fazu 8.** Zaključan nalog, `429`, izvoz i brisanje naloga u UI-ju.
+10. **Frontend za Fazu 8.** Zaključan nalog, `429`, izvoz i brisanje naloga u UI-ju. Gotovo 21.11.2026.
+   Registracija vodi na ekran "pogledaj inbox" umjesto u aplikaciju, link iz maila otvara
+   `/potvrda-emaila`, `429` kaže u koliko sati je sljedeći pokušaj, a `/nalog` ima izvoz i brisanje s
+   lozinkom i drugim klikom. Usput nađena greška: `202` bez tijela je rušio `apiFetch`.
 11. **CI: CodeQL, zavisnosti i frontend.** CodeQL za Javu i JavaScript, skeniranje zavisnosti, i job
     s Vitestom i Oxlintom (do sada CI ne pokreće ništa iz frontenda).
 12. **OWASP Top 10 i `docs/SIGURNOST.md`, kraj faze.** Za svaku stavku šta nas štiti, kojim testom je

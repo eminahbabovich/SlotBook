@@ -1,4 +1,5 @@
 import { ApiError } from '../api/apiFetch.js'
+import { satUZoni } from '../vrijeme/vrijeme.js'
 
 // 0: odgovora nije bilo. 502-504: proxy ili hosting kažu da backend ne odgovara.
 export function serverNeOdgovara(greska) {
@@ -7,9 +8,17 @@ export function serverNeOdgovara(greska) {
 
 // Backend već piše poruke za korisnika (detail, na bosanskom), pa se one prikazuju.
 // Vlastiti tekst ide samo kad backend nije odgovorio ili nije poslao poruku.
-export function porukaGreske(greska, poruke) {
+// Kod 429 se doda i kad je sljedeći pokušaj, po satu korisnika, a ne organizacije: zaključana je
+// prijava, ne termin. Sat, a ne "za 12 minuta", jer ne treba padež uz broj.
+export function porukaGreske(greska, poruke, zona = Intl.DateTimeFormat().resolvedOptions().timeZone) {
 	if (serverNeOdgovara(greska)) return poruke.serverNeOdgovara
-	if (greska instanceof ApiError && typeof greska.problem?.detail === 'string') return greska.problem.detail
+	if (greska instanceof ApiError && typeof greska.problem?.detail === 'string') {
+		if (greska.status === 429 && greska.retryAfter !== null) {
+			const sat = satUZoni(Date.now() + greska.retryAfter * 1000, zona)
+			return `${greska.problem.detail} Sljedeći pokušaj je moguć u ${sat}.`
+		}
+		return greska.problem.detail
+	}
 	return poruke.opsta
 }
 

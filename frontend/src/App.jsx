@@ -2,11 +2,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { BrowserRouter, Link, Route, Routes } from 'react-router'
 import { Clanovi } from './clanovi/Clanovi.jsx'
+import { Nalog } from './nalog/Nalog.jsx'
 import { serverNeOdgovara } from './forma/porukaGreske.js'
 import { KalendarResursa } from './kalendar/KalendarResursa.jsx'
 import { Organizacija } from './organizacije/Organizacija.jsx'
 import { Organizacije } from './organizacije/Organizacije.jsx'
 import { PrihvatanjePozivnice } from './pozivnica/PrihvatanjePozivnice.jsx'
+import { PotvrdaEmaila } from './prijava/PotvrdaEmaila.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
 import { Registracija } from './prijava/Registracija.jsx'
 import { RadnoVrijemeResursa } from './radnoVrijeme/RadnoVrijemeResursa.jsx'
@@ -55,7 +57,10 @@ export default function App() {
 								<Route path="/o/:slug/r/:resursId/raspored" element={<RasporedResursa />} />
 								<Route path="/rezervacije" element={<MojeRezervacije />} />
 								<Route path="/pozivnica" element={<PrihvatanjePozivnice />} />
+								<Route path="/nalog" element={<Nalog />} />
 							</Route>
+							{/* Van čuvara: link iz maila otvara neko ko se još ne može prijaviti */}
+							<Route path="/potvrda-emaila" element={<PotvrdaEmaila />} />
 							<Route path="*" element={<NePostoji />} />
 						</Routes>
 					</main>

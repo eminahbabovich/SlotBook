@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
+import { ApiError } from '../api/apiFetch.js'
 import { Polje } from '../forma/Polje.jsx'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
@@ -12,7 +13,7 @@ const PORUKE = {
 export function Prijava() {
 	// Adresa s koje je korisnik došao (npr. link pozivnice) ide i na drugu formu, da se ne izgubi.
 	const lokacija = useLocation()
-	const { prijavi } = useSesija()
+	const { prijavi, obrisan } = useSesija()
 	const [email, setEmail] = useState('')
 	const [lozinka, setLozinka] = useState('')
 	const [salje, setSalje] = useState(false)
@@ -38,9 +39,16 @@ export function Prijava() {
 		<section>
 			<h1>Prijava</h1>
 			<form className="forma" onSubmit={posalji} noValidate>
+				<p role="status">{obrisan && 'Nalog je obrisan.'}</p>
 				{greska && (
 					<p role="alert" className="greska-forme">
 						{porukaGreske(greska, PORUKE)}
+					</p>
+				)}
+				{/* Backend daje isti 401 i za nepotvrđen email, da se ne vidi ko ima nalog */}
+				{greska instanceof ApiError && greska.status === 401 && (
+					<p>
+						Nov nalog radi tek kad potvrdiš email iz maila. <Link to="/potvrda-emaila">Pošalji novi link za potvrdu</Link>
 					</p>
 				)}
 				<Polje oznaka="Email" ime="email" tip="email" autoComplete="email" vrijednost={email} promjena={setEmail} greska={poPoljima.email} />
