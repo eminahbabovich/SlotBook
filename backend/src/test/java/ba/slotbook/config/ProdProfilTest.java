@@ -42,6 +42,12 @@ class ProdProfilTest {
 		assertThat(env.getProperty("spring.datasource.password")).isEqualTo("lozinka");
 	}
 
+	// Format sam (s requestId u JSON-u) provjerava RequestIdApiTest, ovdje samo da ga prod profil uključuje
+	@Test
+	void uProdukcijiJeLogJson() {
+		assertThat(env.getProperty("logging.structured.format.console")).isEqualTo("ecs");
+	}
+
 	@Test
 	void portDolaziIzVarijableOkruzenja() {
 		assertThat(env.getProperty("server.port")).isEqualTo("9090");

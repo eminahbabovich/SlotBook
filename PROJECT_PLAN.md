@@ -181,7 +181,7 @@ svaki endpoint opisan u Swaggeru.
 | 6 | Statistika | Agregatni upiti (`GROUP BY`, popunjenost, otkazivanja i no-show po periodu, najtraženiji termini dan x sat), endpointi za providera i admina, CSV izvoz | JPQL/native upiti, projekcije u DTO, indeksi i `EXPLAIN` | gotovo |
 | 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | gotovo |
 | 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | gotovo |
-| 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | ⏳ nije počelo |
+| 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | u izradi |
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | ⏳ nije počelo |
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | ⏳ nije počelo |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | ⏳ nije počelo |
@@ -353,6 +353,27 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
     uključen i default setup, koji odbija rezultate iz workflowa.
 12. **OWASP Top 10 i `docs/SIGURNOST.md`, kraj faze.** Za svaku stavku šta nas štiti, kojim testom je
     dokazano i šta nije pokriveno. README i status. Gotovo 22.11.2026, po listi OWASP Top 10:2025.
+
+## Faza 9 po koracima
+
+Kriterij "gotovo" je gore (tačka 9): health i metrike rade, svaki zahtjev ima ID u logu, k6 rezultati
+su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
+
+1. **ID zahtjeva u logu i JSON logovi.** Filter daje svakom zahtjevu ID (`X-Request-Id`, MDC
+   `requestId`), lokalno u običnom logu, a u prod profilu je log JSON (ECS). Gotovo 22.11.2026.
+2. **Health i readiness.** `/actuator/health/liveness` i `/readiness`, baza u readiness, Render gleda
+   readiness.
+3. **Metrike.** Micrometer brojači za napravljene rezervacije, sudare (`409`) i neuspjele mailove.
+   Endpoint metrika nije javan.
+4. **Praćenje grešaka.** Neočekivane greške idu u Sentry (free plan) s ID-jem zahtjeva. Bez DSN-a ne
+   šalje ništa, pa lokalno i u testovima ostaje ugašen.
+5. **N+1 i spori upiti.** Broj SQL upita po zahtjevu za glavne liste mjeren u testu, popravka gdje
+   raste s brojem redova, `EXPLAIN` za upite koji to traže.
+6. **k6 load test.** Skripta za slobodne termine, rezervaciju i sudar na istom terminu, lokalno. Brojke,
+   mašina i pul konekcija u `docs/PERFORMANSE.md`.
+7. **Backup i `docs/RUNBOOK.md`.** `pg_dump`, vraćanje u praznu bazu i provjera broja redova, pa isti
+   postupak za Neon.
+8. **Kraj faze.** README, status, ODLUKE.
 
 ## Faza 14 po koracima
 

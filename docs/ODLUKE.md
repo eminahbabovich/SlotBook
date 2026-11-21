@@ -859,3 +859,15 @@ Frontend job pokreće Oxlint, Vitest i build na Node 26, istom kao lokalno. Prij
 Plan je tražio "OWASP Top 10 prolaz", bez godine. Uzeo sam listu iz 2025 (top10.owasp.org/2025), jer je novija i ima dvije stavke koje se ovdje stvarno tiču projekta: lanac zavisnosti (A03) i rukovanje greškama (A10). Prolaz je u `docs/SIGURNOST.md`, i za svaku stavku su navedeni testovi po imenu, a ne opis. Tvrdnje koje sam pisao napamet sam provjerio u kodu prije commita, i četiri su bile netačne (koja granica važi za prijavu, a koja za registraciju, actionlint u CI-ju, broj PR-ova kroz Dependency Review, broj upita).
 
 Prvi CodeQL na javnom repou je pao: "CodeQL analyses from advanced configurations cannot be processed when the default setup is enabled". U postavkama je bio uključen i GitHubov default setup. Poslije "Switch to advanced" i ponovnog pokretanja su obje analize zelene.
+
+## ID zahtjeva u logu i JSON logovi
+
+Svaki zahtjev dobije ID (UUID) u `RequestIdFilter`. ID ide u MDC pod `requestId`, pa ga ima svaka linija loga koja nastane dok zahtjev traje, i u zaglavlje odgovora `X-Request-Id`. Kad neko javi grešku s tim ID-jem, u logu se nađu sve linije tog zahtjeva. Filter je prije Spring Securityja (`Ordered.HIGHEST_PRECEDENCE`), pa ID ima i odbijen zahtjev s `401`. MDC je vezan za nit, a niti se vraćaju u pul, pa se ID briše u `finally`, i kad kontroler baci izuzetak. Bez toga bi sljedeći zahtjev na istoj niti u logu nosio tuđi ID.
+
+ID se uvijek pravi na serveru. Onaj iz zahtjeva ne prihvatam, jer bi klijent mogao poslati novi red i lažnu liniju loga. Ako jednom bude proxy koji daje svoj ID, prihvatio bih ga samo ako izgleda kao UUID.
+
+Lokalno je log običan tekst, s ID-jem u uglastim zagradama (`logging.pattern.correlation`). U prod profilu je JSON u ECS formatu (`logging.structured.format.console=ecs`), koji Spring Boot ima ugrađen od verzije 3.4, pa ne treba logstash encoder ni `logback.xml`. MDC u JSON ulazi sam, kao polje `requestId`. Oba svojstva sam provjerio u metapodacima jara `spring-boot-4.1.2`, jer je dokumentacija na webu već za 4.2. Oblik JSON-a sam vidio u izlazu testa: `requestId` je polje na vrhu, a nivo je ugniježđen (`"log":{"level":"ERROR"}`).
+
+Da JSON linija nosi `requestId` nijedan test ne provjerava. Probao sam: test s JSON logom je prolazio sam, a u cijeloj suiti pao, jer Spring podesi Logback iznova kad krene svaki novi kontekst, pa keširani kontekst tog testa loguje u formatu konteksta koji je krenuo poslije njega. `RequestIdApiTest` zato provjerava samo da linija greške nosi ID iz odgovora, a `ProdProfilTest` da prod profil uključuje ECS.
+
+Šest mutacija, sve padaju na pravom testu: filter nije bean, ID ostaje na niti, filter poslije Securityja, ID iz zahtjeva se prihvata, ID nije u MDC-u, prod profil bez JSON-a. Kod je ovaj put napisan prije nego što sam vidio testove crvene, pa mutacije zamjenjuju taj korak.

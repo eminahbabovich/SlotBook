@@ -291,3 +291,13 @@ Dependabot je za par minuta otvorio sedam PR-ova. Nisam ih mergao, prvo ih treba
 Za OWASP prolaz sam pazio da uz svaku stavku stoji ime testa. Najviše mi je smetao A09: audit log postoji, ali alarma nema nikakvog, i zaključane prijave vidi samo log na Renderu koji niko ne čita.
 
 Faza 8 je gotova.
+
+## nedjelja, 22. novembar 2026. u 00:31
+
+Počela Faza 9, prvi korak je ID zahtjeva u logu. Mislio sam da za JSON logove treba logstash encoder i `logback.xml`, a Spring Boot to ima ugrađeno, jedno svojstvo.
+
+Prvo pokretanje mutacija je reklo da je svih šest preživjelo. Testovi nisu bili krivi: skripta je zvala `mvnw.cmd` bez putanje, cmd ga nije našao (`'mvnw.cmd' is not recognized`), i ništa se nije pokrenulo. Skripta je "nema pada" čitala kao "test nije uhvatio".
+
+U testu sam čitao `log.level` kao jedan ključ, a Spring ga piše ugniježđeno, `"log":{"level":"ERROR"}`. Taj test je onda sam prolazio, a u cijeloj suiti pao sa `Unexpected character ('-' (code 45)): Expected space separating root-level values`. Linija nije bila JSON nego običan tekst koji počinje datumom. Spring podesi Logback iznova kad krene svaki kontekst, a moj kontekst je bio keširan i ponovo korišten poslije drugih. Test sada ne provjerava format, samo ID u liniji.
+
+Prije toga sam podigao zavisnosti iz sedam Dependabot PR-ova i pustio obje suite: 404 i 188, sve prolazi.

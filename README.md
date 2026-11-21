@@ -38,7 +38,7 @@ U Fazi 6 admin i provider vide statistiku organizacije za period do godinu dana 
 | 6 | Statistika | gotovo |
 | 7 | Frontend (jezgro) | gotovo |
 | 8 | Sigurnost i GDPR | gotovo |
-| 9 | Observability i performanse | nije počelo |
+| 9 | Observability i performanse | u izradi |
 | 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | nije počelo |
 | 11 | Plaćanje (Stripe, test mode) | nije počelo |
 | 12 | Deploy i prezentacija | nije počelo |
@@ -46,7 +46,7 @@ U Fazi 6 admin i provider vide statistiku organizacije za period do godinu dana 
 
 Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md), mjerenja u [docs/PERFORMANSE.md](docs/PERFORMANSE.md), a prolaz kroz OWASP Top 10 (šta nas štiti, kojim testom i šta nije pokriveno) u [docs/SIGURNOST.md](docs/SIGURNOST.md).
 
-Backend ima 404 testa i svi prolaze (zadnje pokretanje 19.11.2026.). Frontend ima 188 Vitest testova i 2 Playwright testa (zadnje pokretanje 21.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
+Backend ima 410 testova i svi prolaze (zadnje pokretanje 22.11.2026.). Frontend ima 188 Vitest testova i 2 Playwright testa (zadnje pokretanje 21.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
 
 ## Tehnologije
 

@@ -4,7 +4,7 @@ Opis backenda kakav je sada. Frontend (Faza 7) je u izradi u `frontend/`, a ovdj
 
 ## Paketi i slojevi
 
-Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, `stats`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike) i `status`.
+Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, `stats`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike), `observability` (ID zahtjeva u logu) i `status`.
 
 Unutar paketa je uvijek isti red: kontroler prima zahtjev i provjerava pristup, servis drži pravila i transakciju, repozitorij priča s bazom. Kontroler vraća samo DTO (`record`), nikad entitet. Repozitorij organizacija je vidljiv samo u paketu `organization`, pa paket `resource` do organizacije dolazi preko `OrganizationService`. Isto važi za rezervacije: `BookingRepository` vidi samo paket `booking`.
 
@@ -17,13 +17,15 @@ Primjer: trener mijenja svoj resurs.
 ```mermaid
 sequenceDiagram
     participant K as Klijent
+    participant R as RequestIdFilter
     participant F as Security filter chain
     participant C as ResourceController
     participant A as ResourceAccess
     participant S as ResourceService
     participant DB as PostgreSQL
 
-    K->>F: PUT /api/organizations/{id}/resources/{resourceId} + Bearer token
+    K->>R: PUT /api/organizations/{id}/resources/{resourceId} + Bearer token
+    R->>F: novi ID zahtjeva u MDC i u X-Request-Id
     F->>F: provjeri potpis i rok JWT-a (bez sesije)
     F->>C: zahtjev s JwtAuthenticationToken
     C->>C: @Valid nad tijelom (400 ako ne valja)
