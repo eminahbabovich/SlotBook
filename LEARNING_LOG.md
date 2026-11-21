@@ -301,3 +301,5 @@ Prvo pokretanje mutacija je reklo da je svih šest preživjelo. Testovi nisu bil
 U testu sam čitao `log.level` kao jedan ključ, a Spring ga piše ugniježđeno, `"log":{"level":"ERROR"}`. Taj test je onda sam prolazio, a u cijeloj suiti pao sa `Unexpected character ('-' (code 45)): Expected space separating root-level values`. Linija nije bila JSON nego običan tekst koji počinje datumom. Spring podesi Logback iznova kad krene svaki kontekst, a moj kontekst je bio keširan i ponovo korišten poslije drugih. Test sada ne provjerava format, samo ID u liniji.
 
 Prije toga sam podigao zavisnosti iz sedam Dependabot PR-ova i pustio obje suite: 404 i 188, sve prolazi.
+
+Na kraju je ID ušao i u tijelo greške `500` i u CORS `exposedHeaders`. Oba testa sam prvo vidio crvena: `No results for path: $['requestId']` i `Expected: a string containing "X-Request-Id"`.

@@ -16,6 +16,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import com.jayway.jsonpath.JsonPath;
 
 import ba.slotbook.TestcontainersConfiguration;
 import ba.slotbook.error.ProbniKontroler;
@@ -48,6 +51,18 @@ class RequestIdApiTest {
 
 		assertThat(izlaz.getOut().lines().filter(l -> l.contains("Neočekivana greška"))).singleElement()
 				.asString().contains(id);
+	}
+
+	// Korisnik koji javi grešku pošalje ID iz poruke, a po njemu se u logu nađe stack trace
+	@Test
+	@WithMockUser
+	void neocekivanaGreskaVracaIdZahtjevaUTijelu() throws Exception {
+		MvcResult rezultat = mockMvc.perform(get("/probno/greska"))
+				.andExpect(status().isInternalServerError())
+				.andReturn();
+
+		assertThat(JsonPath.<String>read(rezultat.getResponse().getContentAsString(), "$.requestId"))
+				.isEqualTo(rezultat.getResponse().getHeader("X-Request-Id"));
 	}
 
 }

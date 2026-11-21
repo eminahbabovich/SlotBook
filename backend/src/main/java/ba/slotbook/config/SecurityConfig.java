@@ -109,7 +109,7 @@ public class SecurityConfig {
 		pravila.setAllowedOrigins(List.of(frontend));
 		pravila.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
 		pravila.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
-		pravila.setExposedHeaders(List.of("Retry-After", "Content-Disposition", "Location"));
+		pravila.setExposedHeaders(List.of("Retry-After", "Content-Disposition", "Location", "X-Request-Id"));
 		pravila.setAllowCredentials(true);
 		pravila.setMaxAge(Duration.ofHours(1));
 		UrlBasedCorsConfigurationSource izvor = new UrlBasedCorsConfigurationSource();

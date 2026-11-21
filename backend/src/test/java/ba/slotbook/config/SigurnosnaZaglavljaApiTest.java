@@ -76,14 +76,15 @@ class SigurnosnaZaglavljaApiTest {
 				.andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
 	}
 
-	// Bez Access-Control-Expose-Headers JavaScript na drugom originu ne vidi Retry-After ni ime CSV fajla
+	// Bez Access-Control-Expose-Headers JavaScript na drugom originu ne vidi Retry-After, ime CSV fajla ni ID zahtjeva
 	@Test
-	void frontendVidiRetryAfterIImeFajla() throws Exception {
+	void frontendVidiRetryAfterImeFajlaIIdZahtjeva() throws Exception {
 		mockMvc.perform(get("/api/status").header("Origin", FRONTEND))
 				.andExpect(status().isOk())
 				.andExpect(header().string("Access-Control-Allow-Origin", FRONTEND))
 				.andExpect(header().string("Access-Control-Expose-Headers", containsString("Retry-After")))
-				.andExpect(header().string("Access-Control-Expose-Headers", containsString("Content-Disposition")));
+				.andExpect(header().string("Access-Control-Expose-Headers", containsString("Content-Disposition")))
+				.andExpect(header().string("Access-Control-Expose-Headers", containsString("X-Request-Id")));
 	}
 
 }

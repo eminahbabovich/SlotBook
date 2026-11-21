@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class RequestIdFilter extends OncePerRequestFilter {
 
 	static final String ZAGLAVLJE = "X-Request-Id";
-	static final String MDC_KLJUC = "requestId";
+	public static final String MDC_KLJUC = "requestId";
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)

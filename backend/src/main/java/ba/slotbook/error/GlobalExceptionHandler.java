@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,7 @@ import ba.slotbook.auth.UserTokenException;
 import ba.slotbook.organization.InviteNotUsableException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
+import ba.slotbook.observability.RequestIdFilter;
 import ba.slotbook.ratelimit.TooManyAttemptsException;
 import ba.slotbook.resource.ImageNotFoundException;
 import ba.slotbook.resource.ResourceNotFoundException;
@@ -353,6 +355,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
 				"Nešto je pošlo po zlu na našoj strani. Pokušaj ponovo, a ako se ponovi, javi nam.");
 		problem.setTitle("Greška na serveru");
+		// Isti ID je u liniji loga sa stack traceom, pa prijava greške vodi pravo do nje
+		String requestId = MDC.get(RequestIdFilter.MDC_KLJUC);
+		if (requestId != null) {
+			problem.setProperty("requestId", requestId);
+		}
 		return problem;
 	}
 

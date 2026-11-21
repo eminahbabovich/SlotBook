@@ -360,7 +360,8 @@ Kriterij "gotovo" je gore (tačka 9): health i metrike rade, svaki zahtjev ima I
 su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
 
 1. **ID zahtjeva u logu i JSON logovi.** Filter daje svakom zahtjevu ID (`X-Request-Id`, MDC
-   `requestId`), lokalno u običnom logu, a u prod profilu je log JSON (ECS). Gotovo 22.11.2026.
+   `requestId`), lokalno u običnom logu, a u prod profilu je log JSON (ECS). Isti ID je i u tijelu
+   greške `500`. Gotovo 22.11.2026.
 2. **Health i readiness.** `/actuator/health/liveness` i `/readiness`, baza u readiness, Render gleda
    readiness.
 3. **Metrike.** Micrometer brojači za napravljene rezervacije, sudare (`409`) i neuspjele mailove.
@@ -533,6 +534,7 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Toplotna mapa dan x sat za statistiku (sada je samo pet najtraženijih termina), traži sekvencijalnu paletu koje u `docs/DIZAJN.md` nema
 - Statistika za proizvoljan period, ne samo po mjesecima (backend prima do 366 dana)
 - Godina uz datum izuzetka kad nije tekuća
+- ID zahtjeva u poruci frontenda za grešku `500` ("javi nam i navedi broj ..."), backend ga već šalje u tijelu i u `X-Request-Id`
 
 Otvoreno iz Faze 8 (dug, za pregled u Fazi 13):
 
