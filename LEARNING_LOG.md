@@ -281,3 +281,13 @@ CI za Fazu 8. Mislio sam da je CodeQL samo još jedan workflow, a na privatnom r
 Iznenadilo me da Dependabot frontend nikad nije ni gledao. U dependabot.yml je od Faze 1 bio samo Maven.
 
 Prije pusha sam Vitest pustio sa TZ=UTC, jer CI nije u Sarajevu. Prošlo je, ali bez toga ne bih znao da li testovi zavise od zone mog računara.
+
+## nedjelja, 22. novembar 2026. u 00:15
+
+Repo je javan. CodeQL je odmah pao, ali ne zbog koda nego zbog postavki: uključio sam default setup, a on ne prima rezultate iz našeg workflowa. Poruka je bila jasna, samo sam je morao naći u anotacijama joba.
+
+Dependabot je za par minuta otvorio sedam PR-ova. Nisam ih mergao, prvo ih treba proći s testovima.
+
+Za OWASP prolaz sam pazio da uz svaku stavku stoji ime testa. Najviše mi je smetao A09: audit log postoji, ali alarma nema nikakvog, i zaključane prijave vidi samo log na Renderu koji niko ne čita.
+
+Faza 8 je gotova.

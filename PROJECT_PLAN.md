@@ -180,7 +180,7 @@ svaki endpoint opisan u Swaggeru.
 | 5 | Pozadinski poslovi i obavijesti | `@Scheduled` istek `PENDING` i zatvaranje završenih, podsjetnici, `notifications` tabela (outbox), slanje emaila, `@TransactionalEventListener`, ponovni pokušaj s backoffom, verifikacija emaila, reset lozinke, slanje pozivnica, `.ics` prilog u potvrdi | Scheduling, zašto se email ne šalje unutar iste transakcije, `AFTER_COMMIT`, idempotentnost, ShedLock, sigurni tokeni za reset | gotovo |
 | 6 | Statistika | Agregatni upiti (`GROUP BY`, popunjenost, otkazivanja i no-show po periodu, najtraženiji termini dan x sat), endpointi za providera i admina, CSV izvoz | JPQL/native upiti, projekcije u DTO, indeksi i `EXPLAIN` | gotovo |
 | 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | gotovo |
-| 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | u izradi |
+| 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | gotovo |
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | ⏳ nije počelo |
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | ⏳ nije počelo |
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | ⏳ nije počelo |
@@ -347,11 +347,12 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    `/potvrda-emaila`, `429` kaže u koliko sati je sljedeći pokušaj, a `/nalog` ima izvoz i brisanje s
    lozinkom i drugim klikom. Usput nađena greška: `202` bez tijela je rušio `apiFetch`.
 11. **CI: CodeQL, zavisnosti i frontend.** CodeQL za Javu i JavaScript, skeniranje zavisnosti, i job
-    s Vitestom i Oxlintom (do sada CI ne pokreće ništa iz frontenda). Workflowi napisani 21.11.2026,
-    a repo postaje javan, jer CodeQL na privatnom repou traži plaćenu licencu. Gotovo tek kad CI
-    prođe na javnom repou.
+    s Vitestom i Oxlintom (do sada CI ne pokreće ništa iz frontenda). Gotovo 22.11.2026. Repo je
+    postao javan, jer CodeQL na privatnom repou traži plaćenu licencu. CI (backend, frontend, tajne) i
+    CodeQL za Javu i JavaScript su zeleni za `2051da1`. Prvi CodeQL je pao jer je u postavkama bio
+    uključen i default setup, koji odbija rezultate iz workflowa.
 12. **OWASP Top 10 i `docs/SIGURNOST.md`, kraj faze.** Za svaku stavku šta nas štiti, kojim testom je
-    dokazano i šta nije pokriveno. README i status.
+    dokazano i šta nije pokriveno. README i status. Gotovo 22.11.2026, po listi OWASP Top 10:2025.
 
 ## Faza 14 po koracima
 
@@ -512,10 +513,20 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Statistika za proizvoljan period, ne samo po mjesecima (backend prima do 366 dana)
 - Godina uz datum izuzetka kad nije tekuća
 
+Otvoreno iz Faze 8 (dug, za pregled u Fazi 13):
+
+- Access token važi 15 minuta i ne opoziva se, ni poslije brisanja naloga ni poslije nove lozinke.
+- Reset lozinke za postojeći email je sporiji 6 do 15 ms (MockMvc), granica od tri maila na sat se broji bez zaključavanja.
+- Ništa od zaglavlja, HSTS-a, CORS-a i IP adrese iz `CF-Connecting-IP` nije provjereno na Renderu.
+- Akcije u workflowima su na glavnoj verziji (`@v7`), ne na SHA commita.
+- Nema alarma za zaključane prijave, `429` i ponovljen refresh token, vide se samo u logu.
+- Kod ne provjerava dužinu `JWT_SECRET` pri startu.
+- Broj CodeQL nalaza iz prve analize nije upisan u `docs/SIGURNOST.md`.
+
 Otvoreno iz Faze 7 (dug, za pregled u Fazi 13):
 
 - Raspored providera, admin ekrani (članovi, pozivnice, resursi, radno vrijeme) i statistika s CSV-om su u browseru provjereni samo s lažnim backendom. S pravim backendom ide samo glavni tok iz Playwright testa.
-- CI ne pokreće ništa iz frontenda: ni Vitest, ni Oxlint, ni Playwright.
+- CI ne pokreće Playwright (Vitest, Oxlint i build pokreće od Faze 8).
 - Kad backend iz Playwright testa ne starta, kontejneri iz `frontend/e2e/compose.yml` ostanu upaljeni (gasi ih `docker compose -f e2e/compose.yml down`).
 - U koraku 11 je jednom, odmah poslije mutacija, palo 6 Vitest testova na fajlovima koji su bili vraćeni bajt po bajt. Uzrok nije nađen.
 

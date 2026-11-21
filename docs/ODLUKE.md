@@ -853,3 +853,9 @@ Dependency Review radi samo na pull requestu, jer poredi zavisnosti grane s `mai
 Frontend job pokreće Oxlint, Vitest i build na Node 26, istom kao lokalno. Prije toga sam lokalno pustio Vitest sa `TZ=UTC`, jer CI radi u UTC-u, a moj računar u `Europe/Sarajevo`. Prošlo je 188/188. Provjerio sam i da svaki relativni import ima tačna velika i mala slova, jer Windows tu grešku oprosti, a Linux ne. Playwright ostaje lokalni (`npm run e2e`), jer traži backend, bazu i Mailpit.
 
 Šta nije provjereno. Workflowi su prošli samo `actionlint` (1.7.7), a `npm ci` iz lockfile-a na čistom folderu. Prvi pravi rezultat će biti tek CI na javnom repou.
+
+## OWASP Top 10:2025, a ne 2021
+
+Plan je tražio "OWASP Top 10 prolaz", bez godine. Uzeo sam listu iz 2025 (top10.owasp.org/2025), jer je novija i ima dvije stavke koje se ovdje stvarno tiču projekta: lanac zavisnosti (A03) i rukovanje greškama (A10). Prolaz je u `docs/SIGURNOST.md`, i za svaku stavku su navedeni testovi po imenu, a ne opis. Tvrdnje koje sam pisao napamet sam provjerio u kodu prije commita, i četiri su bile netačne (koja granica važi za prijavu, a koja za registraciju, actionlint u CI-ju, broj PR-ova kroz Dependency Review, broj upita).
+
+Prvi CodeQL na javnom repou je pao: "CodeQL analyses from advanced configurations cannot be processed when the default setup is enabled". U postavkama je bio uključen i GitHubov default setup. Poslije "Switch to advanced" i ponovnog pokretanja su obje analize zelene.
