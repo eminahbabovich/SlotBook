@@ -273,3 +273,11 @@ Stari test pozivnice je pao jer registracija više ne prijavljuje. Ispod toga je
 Skripta za screenshotove nije učitala aplikaciju. `page.route('**/api/**')` je hvatao i Viteove module iz `/src/api/`, pa nije stizao JavaScript. Morao sam gledati samo putanje koje počinju sa `/api/`.
 
 Na screenshotu sam vidio "Pokušaj ponovo kasnije. Ponovo možeš pokušati u 12:27." Testovi su to pustili jer su provjeravali samo moj dio rečenice.
+
+## subota, 21. novembar 2026. u 23:59
+
+CI za Fazu 8. Mislio sam da je CodeQL samo još jedan workflow, a na privatnom repou ne radi bez plaćene licence. Licenca za CodeQL CLI ne dozvoljava ni da ga pokrenem sam nad zatvorenim kodom. Repo zato postaje javan, malo prije nego što sam planirao.
+
+Iznenadilo me da Dependabot frontend nikad nije ni gledao. U dependabot.yml je od Faze 1 bio samo Maven.
+
+Prije pusha sam Vitest pustio sa TZ=UTC, jer CI nije u Sarajevu. Prošlo je, ali bez toga ne bih znao da li testovi zavise od zone mog računara.

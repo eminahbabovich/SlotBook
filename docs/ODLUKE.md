@@ -841,3 +841,15 @@ Link na nalog je ime u zaglavlju, a ne posebna stavka "Moj nalog". Sa četiri st
 Četrnaest mutacija, sve padaju: `json()` na praznom tijelu, `Retry-After` se ne čita, `429` bez sata, registracija opet prijavljuje, token ostaje poslije brisanja, bez fokusa na "Odustani", brisanje na prvi klik, "Na prijavu" bez adrese pozivnice, potvrda iza čuvara, prijava bez poruke o brisanju, `401` bez podsjetnika, istekao link bez forme za novi, `409` bez spiskova, pogrešna lozinka nije na polju.
 
 Šta nisam provjerio. Ekrane sam gledao na 375 i 1280 px s lažnim backendom (Playwright `route`), ne s pravim. Playwright glavni tok prolazi, ali ne ide kroz nove ekrane. Preuzimanje JSON-a u pravom browseru nisam probao, samo da se fajl preda kroz `<a download>`, kao CSV.
+
+## CodeQL i javni repo
+
+Plan je tražio CodeQL u CI-ju, a repo je bio privatan. Na privatnom repou code scanning traži licencu za GitHub Code Security ("If you want to use code scanning on private repositories, you need a GitHub Code Security license", docs.github.com, About code scanning). Isto važi za Dependency Review. CodeQL CLI se ne može ni pokrenuti ručno u Actionsu bez slanja rezultata, jer licenca dozvoljava analizu samo open source koda (LICENSE.md u `github/codeql-cli-binaries`). Birao sam između javnog repoa, zamjene (Semgrep i osv-scanner) i toga da statičke analize nema. Izabrao sam javni repo, jer projekat ionako ide javno kao portfolio u Fazi 12, a tada su CodeQL, Dependency Review i GitHubovo skeniranje tajni besplatni. Gitleaks preko cijele historije je prije toga bio čist.
+
+CodeQL radi za `java-kotlin` i `javascript-typescript`, s `build-mode: none`. Java se tako analizira bez Mavena. GitHub tačnost tog načina ocjenjuje kao "Good", a ručni build kao "Best". Za ovaj projekat je to dovoljno, jer nema Kotlina ni koda koji se generiše pri buildu. Pravila su `security-extended`, kojih je više od podrazumijevanih, pa ima i više lažnih uzbuna. CodeQL ne obara push na `main`, nego nalaze stavlja u Security > Code scanning. Na pull requestu se vide kao provjera.
+
+Dependency Review radi samo na pull requestu, jer poredi zavisnosti grane s `main`. Ja guram direktno na `main`, pa ga u praksi pokreću samo PR-ovi od Dependabota. Za ono što je već na `main` ostaju Dependabot upozorenja. Dependabot do sada uopšte nije gledao frontend (u `dependabot.yml` je bio samo Maven), pa je dodan `npm`.
+
+Frontend job pokreće Oxlint, Vitest i build na Node 26, istom kao lokalno. Prije toga sam lokalno pustio Vitest sa `TZ=UTC`, jer CI radi u UTC-u, a moj računar u `Europe/Sarajevo`. Prošlo je 188/188. Provjerio sam i da svaki relativni import ima tačna velika i mala slova, jer Windows tu grešku oprosti, a Linux ne. Playwright ostaje lokalni (`npm run e2e`), jer traži backend, bazu i Mailpit.
+
+Šta nije provjereno. Workflowi su prošli samo `actionlint` (1.7.7), a `npm ci` iz lockfile-a na čistom folderu. Prvi pravi rezultat će biti tek CI na javnom repou.

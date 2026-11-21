@@ -347,7 +347,9 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    `/potvrda-emaila`, `429` kaže u koliko sati je sljedeći pokušaj, a `/nalog` ima izvoz i brisanje s
    lozinkom i drugim klikom. Usput nađena greška: `202` bez tijela je rušio `apiFetch`.
 11. **CI: CodeQL, zavisnosti i frontend.** CodeQL za Javu i JavaScript, skeniranje zavisnosti, i job
-    s Vitestom i Oxlintom (do sada CI ne pokreće ništa iz frontenda).
+    s Vitestom i Oxlintom (do sada CI ne pokreće ništa iz frontenda). Workflowi napisani 21.11.2026,
+    a repo postaje javan, jer CodeQL na privatnom repou traži plaćenu licencu. Gotovo tek kad CI
+    prođe na javnom repou.
 12. **OWASP Top 10 i `docs/SIGURNOST.md`, kraj faze.** Za svaku stavku šta nas štiti, kojim testom je
     dokazano i šta nije pokriveno. README i status.
 
