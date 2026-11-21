@@ -85,4 +85,3 @@ Od 22.11.2026 CodeQL (`security-extended`) analizira Javu i JavaScript na svaki 
 - Ništa od ovoga nije provjereno na produkcijskoj adresi. Zaglavlja, HSTS, CORS i IP iz `CF-Connecting-IP` su testirani kroz MockMvc i lokalno.
 - Nema pentesta ni automatskog skeniranja žive aplikacije (npr. OWASP ZAP).
 - Frontend nema svoj CSP dok ne dobije host (Faza 12). Produkcija za refresh kolačić (`SameSite=Strict`) traži da frontend i `/api` budu na istom sajtu.
-- Repo nema licencu, pa iako je javan, kod formalno nije open source.

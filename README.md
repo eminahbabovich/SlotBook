@@ -121,4 +121,6 @@ Backend radi na https://slotbook-dxvs.onrender.com. Za sada ima samo [`/api/stat
 
 Pravog demoa još nema: demo računi stižu u Fazi 12, a screenshotovi kad bude frontenda. Free plan na Renderu uspavljuje servis poslije 15 minuta bez saobraćaja, pa prvi zahtjev poslije pauze traje oko minutu.
 
-Repo je za sada privatan, pa CI značka iznad vjerovatno neće biti vidljiva nikome osim meni.
+## Licenca
+
+MIT, vidi [LICENSE](LICENSE).
