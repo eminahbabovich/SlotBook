@@ -253,3 +253,13 @@ Izvoz podataka, deset tabela u jednom JSON-u. Prvi put sam koristio `JdbcClient`
 Najviše sam razmišljao šta ne smije izaći. Hash lozinke je očigledan. Tijelo maila mi nije palo na pamet dok nisam vidio da u njemu stoji link s pravim tokenom za reset.
 
 Test je prvi put pao na mojoj brojci, `expected 5 but was 4`. Brojao sam dvije sesije, a prijava je bila jedna. Dvije mutacije bi prošle da test nisam pojačao prije pokretanja: pozivnica po emailu i dnevnik bez uslova.
+
+## subota, 21. novembar 2026. u 11:58
+
+Brisanje naloga. Red iz `users` se ne briše nego anonimizira, i to čuva `CHECK` u bazi, pa obrisan red ne može imati pravi email ni kad ga neko mijenja ručno.
+
+Prvo pokretanje je dalo `500` na svakom uspješnom brisanju: `Can't infer the SQL type to use for an instance of java.time.Instant`. Kod izvoza je `JdbcClient` čitao `Instant` bez problema, pa sam mislio da i šalje. Ne šalje, pa sad ide `OffsetDateTime` u UTC-u.
+
+Onda je pao `login_failures`, `expected 0 but was 1`. Opet sam pogriješio u testu: poslije brisanja se prijavim starim emailom da vidim `401`, a ta prijava upiše novi red. Tako je i namjerno još od koraka 4.
+
+Test s dva admina koji brišu nalog u isto vrijeme je pao čim sam izbacio zaključavanje. To mi je bio prvi `FOR NO KEY UPDATE`, a razliku od `FOR UPDATE` sam našao tek u tabeli konflikata u dokumentaciji.

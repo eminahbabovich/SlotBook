@@ -339,7 +339,9 @@ CI-ju i Dependabot postoje od Faze 1, a rotacija refresh tokena s detekcijom pon
    Gotovo 19.11.2026. Profil, članstva, rezervacije i njihova historija, resursi koje vodi, obavijesti
    bez tijela, sesije, linkovi iz maila, pozivnice, neuspjele prijave i njegovi zapisi u dnevniku.
 9. **Brisanje naloga.** Anonimizacija umjesto brisanja redova, da statistika i rasporedi ostanu
-   tačni. Refresh tokeni se gase, a budući termini otkazuju.
+   tačni. Refresh tokeni se gase, a budući termini otkazuju. Gotovo 21.11.2026. `DELETE /api/me` traži
+   lozinku. Jedini admin organizacije i provider koji vodi resurs (i neaktivan) dobijaju `409` s
+   nazivima. Access token obrisanog naloga važi još do 15 minuta, to je zapisano u `docs/ODLUKE.md`.
 10. **Frontend za Fazu 8.** Zaključan nalog, `429`, izvoz i brisanje naloga u UI-ju.
 11. **CI: CodeQL, zavisnosti i frontend.** CodeQL za Javu i JavaScript, skeniranje zavisnosti, i job
     s Vitestom i Oxlintom (do sada CI ne pokreće ništa iz frontenda).

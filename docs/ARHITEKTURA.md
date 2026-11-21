@@ -96,6 +96,7 @@ erDiagram
         varchar display_name
         timestamptz created_at
         timestamptz email_verified_at
+        timestamptz deleted_at "CHECK: obrisan red je anoniman"
     }
     user_tokens {
         uuid id PK
@@ -196,7 +197,7 @@ erDiagram
         bigint id PK "redni broj, daje redoslijed"
         uuid organization_id FK
         uuid actor_id FK "ON DELETE SET NULL"
-        varchar action "CHECK: ORGANIZATION_CREATED..."
+        varchar action "CHECK: ORGANIZATION_CREATED... ACCOUNT_DELETED"
         uuid target_id "bez FK, zapis ostaje"
         varchar detail "uloga ili naziv resursa"
         timestamptz created_at

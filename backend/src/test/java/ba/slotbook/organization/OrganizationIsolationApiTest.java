@@ -142,6 +142,7 @@ class OrganizationIsolationApiTest {
 			Map.entry("POST /api/auth/password-reset", "javno, isti odgovor za svaki email"),
 			Map.entry("POST /api/auth/password-reset/confirm", "javno, pravo daje token iz maila"),
 			Map.entry("GET /api/me", "samo korisnik iz tokena"),
+			Map.entry("DELETE /api/me", "samo korisnik iz tokena, AccountDeletionApiTest"),
 			Map.entry("POST /api/auth/email-verification", "javno, uvijek 204, mail ide samo vlasniku emaila"),
 			Map.entry("GET /api/me/organizations", "samo korisnik iz tokena"),
 			Map.entry("GET /api/me/export", "samo korisnik iz tokena, MyDataExportApiTest provjerava da tuđeg nema"),

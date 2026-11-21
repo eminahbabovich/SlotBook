@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import ba.slotbook.account.AccountDeletionBlockedException;
 import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
 import ba.slotbook.booking.BookingStatus;
@@ -123,6 +124,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
 				.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.sekundiDoSljedeceg()))
 				.body(problem);
+	}
+
+	// Liste idu kao polja, da frontend može nabrojati šta korisnik treba prvo riješiti
+	@ExceptionHandler(AccountDeletionBlockedException.class)
+	ProblemDetail brisanjeBlokirano(AccountDeletionBlockedException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Prije brisanja naloga predaj ulogu admina drugom članu i zamoli admina da tvoje resurse "
+						+ "prebaci na nekog drugog.");
+		problem.setTitle("Nalog se još ne može obrisati");
+		problem.setProperty("organizacije", ex.getOrganizacije());
+		problem.setProperty("resursi", ex.getResursi());
+		return problem;
 	}
 
 	@ExceptionHandler(SlotTakenException.class)
