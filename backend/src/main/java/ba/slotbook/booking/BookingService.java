@@ -9,7 +9,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,7 +41,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 @Service
 public class BookingService {
 
-	// SQLSTATE za prekršen EXCLUDE constraint. Jedini takav na bookings je bookings_bez_preklapanja.
+	// SQLSTATE za prekršen EXCLUDE constraint: isto mjesto ili ista osoba dvaput u istom vremenu (V37)
 	private static final String EXCLUSION_VIOLATION = "23P01";
 	// Prekršen UNIQUE. Na bookings je to samo (client_id, idempotency_key), jer UUID ključ generiše Hibernate.
 	private static final String UNIQUE_VIOLATION = "23505";
@@ -79,7 +83,7 @@ public class BookingService {
 		this.napravljene = Counter.builder("slotbook.bookings.created")
 				.description("Rezervacije upisane u bazu, i PENDING i CONFIRMED").register(metrike);
 		this.sudari = Counter.builder("slotbook.bookings.conflicts")
-				.description("Zahtjevi koje je EXCLUDE odbio jer je termin zauzet (409)").register(metrike);
+				.description("Zahtjevi odbijeni jer je termin pun ili zauzet (409)").register(metrike);
 	}
 
 	// Ko smije rezervisati provjerava @PreAuthorize u kontroleru. Klijent šalje samo početak, a kraj
@@ -139,7 +143,7 @@ public class BookingService {
 		for (int i = 0; i < sedmica; i++) {
 			Instant pocetak = prva.plusWeeks(i).toInstant();
 			slotService.offered(resourceId, pocetak)
-					.filter(termin -> slobodan(resourceId, termin, clientId, sada))
+					.filter(termin -> slobodan(resurs, termin, clientId, sada))
 					.ifPresentOrElse(termini::add, () -> nisuSlobodni.add(pocetak));
 		}
 		if (!nisuSlobodni.isEmpty()) {
@@ -156,20 +160,43 @@ public class BookingService {
 		return new BookingSeriesResponse(serija, napravljeneSerije);
 	}
 
-	private boolean slobodan(UUID resourceId, TimeRange termin, UUID clientId, Instant sada) {
-		return bookings.findByResourceIdAndStatusInAndStartTimeBeforeAndEndTimeAfter(resourceId,
-				BookingStatus.DRZE_TERMIN, termin.end(), termin.start()).isEmpty()
-				&& !waitlist.isOfferedToOther(resourceId, termin.start(), termin.end(), clientId, sada);
+	private boolean slobodan(Resource resurs, TimeRange termin, UUID clientId, Instant sada) {
+		List<Booking> drze = drze(resurs.getId(), termin);
+		return drze.stream().noneMatch(b -> b.getClient().getId().equals(clientId))
+				&& prvoSlobodnoMjesto(drze, resurs.getCapacity()).isPresent()
+				&& !waitlist.isOfferedToOther(resurs.getId(), termin.start(), termin.end(), clientId, sada);
 	}
 
-	// Upis jedne rezervacije, i sam i u seriji. Zauzetost na kraju čuva EXCLUDE.
+	private List<Booking> drze(UUID resourceId, TimeRange termin) {
+		return bookings.findByResourceIdAndStatusInAndStartTimeBeforeAndEndTimeAfter(resourceId,
+				BookingStatus.DRZE_TERMIN, termin.end(), termin.start());
+	}
+
+	// Najniže mjesto koje nijedna rezervacija u ovom vremenu ne drži. Tačno je jer niko drugi ne upisuje
+	// dok držimo lock resursa, a da i nije, EXCLUDE ne pusti dvije rezervacije na isto mjesto.
+	private static Optional<Integer> prvoSlobodnoMjesto(List<Booking> drze, int kapacitet) {
+		Set<Integer> zauzeta = drze.stream().map(Booking::getSeat).collect(Collectors.toSet());
+		return IntStream.rangeClosed(1, kapacitet).boxed().filter(m -> !zauzeta.contains(m)).findFirst();
+	}
+
+	// Upis jedne rezervacije, i sam i u seriji. Pod lockom resursa bira mjesto, a zauzetost na kraju čuva EXCLUDE.
 	private Booking upisi(Resource resurs, UUID clientId, TimeRange termin, Instant sada, String idempotencyKey,
 			UUID serija) {
+		List<Booking> drze = drze(resurs.getId(), termin);
+		if (drze.stream().anyMatch(b -> b.getClient().getId().equals(clientId))) {
+			throw new AlreadyInSlotException();
+		}
+		Optional<Integer> mjesto = prvoSlobodnoMjesto(drze, resurs.getCapacity());
+		if (mjesto.isEmpty()) {
+			sudari.increment();
+			throw new SlotTakenException();
+		}
 		BookingStatus status = resurs.isAutoConfirm() ? BookingStatus.CONFIRMED : BookingStatus.PENDING;
 		User klijent = users.getReferenceById(clientId);
 		Booking nova = new Booking(resurs, klijent, termin.start(), termin.end(), status, sada, idempotencyKey,
 				rokZaPotvrdu);
 		nova.uSeriju(serija);
+		nova.naMjesto(mjesto.get());
 		Booking rezervacija;
 		try {
 			rezervacija = bookings.saveAndFlush(nova);

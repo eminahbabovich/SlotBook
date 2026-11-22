@@ -120,7 +120,24 @@ class ResourceApiTest {
 				.andExpect(jsonPath("$.slotMinutes").value(60))
 				.andExpect(jsonPath("$.autoConfirm").value(true))
 				.andExpect(jsonPath("$.cancelNoticeHours").value(0))
+				.andExpect(jsonPath("$.capacity").value(1))
 				.andExpect(jsonPath("$.active").value(true));
+	}
+
+	@Test
+	void grupniTreningImaPetMjestaANulaIStoJedanNisuDozvoljeni() throws Exception {
+		napravi(emina, """
+				{"name": "Grupni trening, ponedjeljak", "slotMinutes": 60, "capacity": 5}
+				""")
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.capacity").value(5));
+		for (int kapacitet : new int[] { 0, 101 }) {
+			napravi(emina, """
+					{"name": "Grupni trening, utorak", "slotMinutes": 60, "capacity": %d}
+					""".formatted(kapacitet))
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.greske[0].polje").value("capacity"));
+		}
 	}
 
 	@Test

@@ -71,7 +71,7 @@ class BookingJobIstovremenoTest {
 				Instant.parse("2035-11-01T10:00:00Z"))).getId();
 		UUID citaonica = organizationService.create(profesorica, "Čitaonica PMF", "citaonica-" + oznaka,
 				"Europe/Sarajevo").id();
-		sto = resourceService.create(citaonica, profesorica, "Sto br. 7", null, 60, true, 0).id();
+		sto = resourceService.create(citaonica, profesorica, "Sto br. 7", null, 60, true, 0, 1).id();
 	}
 
 	private UUID upisi(String status, Instant pocetak, Instant rok) {

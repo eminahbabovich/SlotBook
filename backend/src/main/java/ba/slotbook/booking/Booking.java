@@ -62,6 +62,10 @@ public class Booking {
 	@Column(name = "series_id", updatable = false)
 	private UUID seriesId;
 
+	// Mjesto u grupnom terminu, od 1 do kapaciteta resursa. Običan resurs ima samo mjesto 1.
+	@Column(nullable = false, updatable = false)
+	private int seat = 1;
+
 	// Provider potvrđuje dok klijent otkazuje: bez ovoga oba pročitaju PENDING, oba prođu i
 	// pobijedi ko zadnji upiše, a historija ima dva prelaza iz PENDING. Sa @Version drugi padne.
 	@Version
@@ -89,6 +93,11 @@ public class Booking {
 	// Samo prije prvog upisa: series_id se poslije ne mijenja
 	void uSeriju(UUID serija) {
 		this.seriesId = serija;
+	}
+
+	// Samo prije prvog upisa, kao serija
+	void naMjesto(int mjesto) {
+		this.seat = mjesto;
 	}
 
 	// Pravilo prelaza je u entitetu, pa ga ne može zaobići nijedan servis koji mijenja status
@@ -147,6 +156,10 @@ public class Booking {
 
 	public Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	public int getSeat() {
+		return seat;
 	}
 
 	public UUID getSeriesId() {

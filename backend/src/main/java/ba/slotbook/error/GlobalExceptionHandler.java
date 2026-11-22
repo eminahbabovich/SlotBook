@@ -28,6 +28,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import ba.slotbook.account.AccountDeletionBlockedException;
 import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
+import ba.slotbook.booking.AlreadyInSlotException;
 import ba.slotbook.booking.BookingStatus;
 import ba.slotbook.booking.BookingTransitionException;
 import ba.slotbook.booking.CalendarFeedNotFoundException;
@@ -183,6 +184,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 				"Nijedna rezervacija nije napravljena, jer neke sedmice nisu slobodne. Izaberi manje sedmica ili drugi termin.");
 		problem.setTitle("Neki termini iz serije nisu slobodni");
 		problem.setProperty("zauzetiTermini", ex.getNisuSlobodni());
+		return problem;
+	}
+
+	@ExceptionHandler(AlreadyInSlotException.class)
+	ProblemDetail vecImaMjesto(AlreadyInSlotException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Već imaš rezervaciju u ovom terminu. Jedna osoba može zauzeti samo jedno mjesto.");
+		problem.setTitle("Već imaš ovaj termin");
 		return problem;
 	}
 

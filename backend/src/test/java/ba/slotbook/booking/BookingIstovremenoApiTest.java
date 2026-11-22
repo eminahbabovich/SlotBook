@@ -77,7 +77,7 @@ class BookingIstovremenoApiTest {
 		UUID profesor = userService.register("edin.istovremeno@example.com", LOZINKA, "Edin").id();
 		UUID katedra = organizationService.create(profesor, "Katedra za softversko inženjerstvo",
 				"katedra-istovremeno", "Europe/Sarajevo").id();
-		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Algoritmi", null, 30, true, 0).id();
+		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Algoritmi", null, 30, true, 0, 1).id();
 		availabilityService.replace(konsultacije,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(12, 0))));
 
@@ -104,6 +104,34 @@ class BookingIstovremenoApiTest {
 				+ "where b.resource_id = ?", Long.class, konsultacije)).isEqualTo(4);
 		assertThat(metrike.counter("slotbook.bookings.created").count() - napravljenePrije).isEqualTo(4);
 		assertThat(metrike.counter("slotbook.bookings.conflicts").count() - sudariPrije).isEqualTo(4 * (NITI - 1));
+	}
+
+	// Kriterij "gotovo" za kapacitet: grupni trening s 5 mjesta, 20 članova u istom trenutku, prođe
+	// tačno 5 i svako dobije svoje mjesto. Tri runde, iz istog razloga kao gore.
+	@Test
+	void dvadesetClanovaNaPetMjestaProlaziTacnoPet() throws Exception {
+		UUID trener = userService.register("amar.kapacitet@example.com", LOZINKA, "Amar").id();
+		UUID teretana = organizationService.create(trener, "Teretana Grbavica", "teretana-kapacitet",
+				"Europe/Sarajevo").id();
+		UUID trening = resourceService.create(teretana, trener, "Grupni trening, kružni", null, 60, true, 0, 5).id();
+		availabilityService.replace(trening,
+				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(17, 0), LocalTime.of(20, 0))));
+		List<String> tokeni = new ArrayList<>();
+		for (int i = 1; i <= NITI; i++) {
+			String email = "clan" + i + ".kapacitet@example.com";
+			UUID clan = userService.register(email, LOZINKA, "Član " + i).id();
+			jdbc.update("insert into organization_members values (?, ?, 'CLIENT', now())", teretana, clan);
+			tokeni.add(prijava(email));
+		}
+
+		for (String pocetak : List.of("17:00", "18:00", "19:00")) {
+			assertThat(runda(tokeni, trening, "2035-11-19T" + pocetak + ":00+01:00")).as(pocetak)
+					.containsOnly(Map.entry(201, 5L), Map.entry(409, (long) NITI - 5));
+		}
+		// Po terminu pet rezervacija na mjestima 1 do 5, svaka na svom
+		assertThat(jdbc.queryForList("select string_agg(seat::text, ',' order by seat) from bookings "
+				+ "where resource_id = ? group by start_time", String.class, trening))
+				.containsExactly("1,2,3,4,5", "1,2,3,4,5", "1,2,3,4,5");
 	}
 
 	// Broj odgovora po HTTP statusu kad svi studenti u istom trenutku traže isti termin
@@ -170,7 +198,7 @@ class BookingIstovremenoApiTest {
 		UUID profesor = userService.register("lejla.kljuc@example.com", LOZINKA, "Lejla").id();
 		UUID katedra = organizationService.create(profesor, "Katedra za matematiku", "katedra-kljuc",
 				"Europe/Sarajevo").id();
-		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Analiza", null, 30, true, 0).id();
+		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Analiza", null, 30, true, 0, 1).id();
 		availabilityService.replace(konsultacije,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(12, 0))));
 		UUID student = userService.register("tarik.kljuc@example.com", LOZINKA, "Tarik").id();

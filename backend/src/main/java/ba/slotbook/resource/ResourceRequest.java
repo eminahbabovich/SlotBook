@@ -26,11 +26,17 @@ public record ResourceRequest(
 		// Bez polja nema roka, klijent otkazuje do početka termina
 		@Min(value = 0, message = "Rok za otkazivanje ne može biti negativan. Za otkazivanje bez roka pošalji 0.")
 		@Max(value = 168, message = "Rok za otkazivanje može biti najviše 168 sati (sedmica).")
-		Integer cancelNoticeHours) {
+		Integer cancelNoticeHours,
+
+		// Bez polja je jedno mjesto, kao običan resurs. Gornja granica je ista kao CHECK u V37.
+		@Min(value = 1, message = "Termin ima najmanje jedno mjesto.")
+		@Max(value = 100, message = "Termin može imati najviše 100 mjesta.")
+		Integer capacity) {
 
 	public ResourceRequest {
 		autoConfirm = autoConfirm == null ? Boolean.TRUE : autoConfirm;
 		cancelNoticeHours = cancelNoticeHours == null ? 0 : cancelNoticeHours;
+		capacity = capacity == null ? 1 : capacity;
 	}
 
 }

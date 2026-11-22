@@ -82,10 +82,42 @@ class BookingServiceTest {
 	}
 
 	private UUID resurs(String naziv, int minuta, boolean autoConfirm) {
-		UUID id = resourceService.create(citaonica, profesorica, naziv, null, minuta, autoConfirm, 0).id();
+		UUID id = resourceService.create(citaonica, profesorica, naziv, null, minuta, autoConfirm, 0, 1).id();
 		availabilityService.replace(id,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0))));
 		return id;
+	}
+
+	// Grupna soba za učenje s tri mjesta: tri osobe dobiju mjesta 1, 2 i 3, a četvrta 409
+	@Test
+	void grupnaSobaPrimaTriOsobeNaRazlicitaMjestaIOdbijaCetvrtu() {
+		UUID soba = resourceService.create(citaonica, profesorica, "Grupna soba 2", null, 60, true, 0, 3).id();
+		availabilityService.replace(soba,
+				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0))));
+
+		for (String ime : List.of("Edina", "Kenan", "Jasmina")) {
+			service.create(soba, korisnik(ime.toLowerCase() + "." + UUID.randomUUID() + "@example.com", ime),
+					PONEDJELJAK_09, null);
+		}
+
+		assertThatThrownBy(() -> service.create(soba, studentica, PONEDJELJAK_09, null))
+				.isInstanceOf(SlotTakenException.class);
+		assertThat(jdbc.queryForList("select seat from bookings where resource_id = ? order by seat", Integer.class,
+				soba)).containsExactly(1, 2, 3);
+	}
+
+	// Još ima mjesta, ali ista osoba ne može uzeti drugo
+	@Test
+	void istaOsobaNeMozeUzetiDrugoMjestoUIstomTerminu() {
+		UUID soba = resourceService.create(citaonica, profesorica, "Grupna soba 3", null, 60, true, 0, 3).id();
+		availabilityService.replace(soba,
+				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0))));
+		service.create(soba, studentica, PONEDJELJAK_09, null);
+
+		assertThatThrownBy(() -> service.create(soba, studentica, PONEDJELJAK_09, null))
+				.isInstanceOf(AlreadyInSlotException.class);
+		assertThat(jdbc.queryForObject("select count(*) from bookings where resource_id = ?", Long.class, soba))
+				.isEqualTo(1);
 	}
 
 	@Test

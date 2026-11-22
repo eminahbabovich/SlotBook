@@ -84,7 +84,7 @@ class WaitlistApiTest {
 		hana = korisnik("hana", "Hana Kovačević");
 		UUID teretana = organizationService.create(mirza, "Teretana Koševo", "teretana-kosevo-" + oznaka,
 				"Europe/Sarajevo").id();
-		sala = resourceService.create(teretana, mirza, "Sala za grupni trening", null, 60, true, 0).id();
+		sala = resourceService.create(teretana, mirza, "Sala za grupni trening", null, 60, true, 0, 1).id();
 		availabilityService.replace(sala,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(20, 0))));
 		for (String ime : List.of("hana", "lejla", "selma")) {

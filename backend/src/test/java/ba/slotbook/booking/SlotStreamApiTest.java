@@ -186,7 +186,7 @@ class SlotStreamApiTest {
 	}
 
 	private UUID sala(UUID teretana, UUID mirza, String naziv) {
-		UUID sala = resourceService.create(teretana, mirza, naziv, null, 60, true, 0).id();
+		UUID sala = resourceService.create(teretana, mirza, naziv, null, 60, true, 0, 1).id();
 		availabilityService.replace(sala,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(20, 0))));
 		return sala;

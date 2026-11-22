@@ -95,7 +95,7 @@ class NotificationSenderMailpitTest {
 		studentica = korisnik(email, "Dženana");
 		UUID citaonica = organizationService.create(profesorica, "Čitaonica FIT", "citaonica-" + oznaka,
 				"Europe/Sarajevo").id();
-		sto = resourceService.create(citaonica, profesorica, "Sto br. 3 u čitaonici", null, 60, true, 0).id();
+		sto = resourceService.create(citaonica, profesorica, "Sto br. 3 u čitaonici", null, 60, true, 0, 1).id();
 		availabilityService.replace(sto,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0))));
 	}

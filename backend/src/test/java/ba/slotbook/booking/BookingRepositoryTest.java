@@ -79,7 +79,41 @@ class BookingRepositoryTest {
 		assertThatThrownBy(
 				() -> rezervacija(stoBr1, dzenan, "2035-11-19 09:30+01", "2035-11-19 10:30+01", "PENDING"))
 				.isInstanceOf(DataIntegrityViolationException.class)
-				.hasMessageContaining("bookings_bez_preklapanja");
+				.hasMessageContaining("bookings_mjesto_bez_preklapanja");
+	}
+
+	private void naMjestu(UUID resurs, UUID klijent, int mjesto) {
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at, seat) "
+				+ "values (gen_random_uuid(), ?, ?, '2035-11-19 09:00+01', '2035-11-19 10:00+01', 'CONFIRMED', now(), ?)",
+				resurs, klijent, mjesto);
+	}
+
+	// Grupni termin: isti sat, različita mjesta prolaze, a isto mjesto dvaput ne
+	@Test
+	void istiTerminNaDrugomMjestuProlaziANaIstomMjestuNe() {
+		naMjestu(stoBr1, emina, 1);
+		naMjestu(stoBr1, dzenan, 2);
+
+		assertThatThrownBy(() -> naMjestu(stoBr1, korisnik("lamija@example.com", "Lamija"), 2))
+				.isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("bookings_mjesto_bez_preklapanja");
+	}
+
+	// Ni na drugom mjestu ista osoba ne može uzeti isti termin dvaput
+	@Test
+	void istaOsobaNeDrziDvaMjestaUIstomTerminu() {
+		naMjestu(stoBr1, emina, 1);
+
+		assertThatThrownBy(() -> naMjestu(stoBr1, emina, 2))
+				.isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("bookings_klijent_jednom");
+	}
+
+	@Test
+	void mjestoNulaNePostoji() {
+		assertThatThrownBy(() -> naMjestu(stoBr1, emina, 0))
+				.isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("bookings_mjesto");
 	}
 
 	@Test
@@ -98,7 +132,7 @@ class BookingRepositoryTest {
 
 		assertThatThrownBy(
 				() -> rezervacija(stoBr1, dzenan, "2035-11-19 08:30+00", "2035-11-19 09:30+00", "PENDING"))
-				.hasMessageContaining("bookings_bez_preklapanja");
+				.hasMessageContaining("bookings_mjesto_bez_preklapanja");
 	}
 
 	@Test
@@ -200,7 +234,7 @@ class BookingRepositoryTest {
 		assertThatThrownBy(
 				() -> bookings.saveAndFlush(nova(stoBr1, dzenan, "2035-11-19T08:30:00Z", "2035-11-19T09:30:00Z")))
 				.isInstanceOf(DataIntegrityViolationException.class)
-				.hasMessageContaining("bookings_bez_preklapanja");
+				.hasMessageContaining("bookings_mjesto_bez_preklapanja");
 	}
 
 	private void rezervacijaSRokom(String status, String rok) {
