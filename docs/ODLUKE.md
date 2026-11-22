@@ -921,3 +921,7 @@ Druga mogućnost je bila indeks `(resource_id, end_time)`. On bi za tekuću sedm
 Ispravka ranijeg zapisa: gore sam napisao da upit za zauzete termine ne koristi gist indeks iz `EXCLUDE`. Koristi ga, po `resource_id` i uz isti `WHERE status IN (...)` kao parcijalni indeks. Raspon iz indeksa ne koristi.
 
 Dokaz: `BookingRepositoryTest` provjerava da baza odbija rezervaciju od 8 sati i jedne minute, a prima onu od tačno 8. Provjerava i da raspored za 19. novembar vidi noćnu rezervaciju od 20 do 04, a ne vidi onu koja završi tačno u ponoć. Mutacije: granica bez 8 sati (`from` umjesto `from.minus(...)`) obori test noćne rezervacije, a `CHECK` na 9 sati test trajanja. Na Neon-u `V33` nisam probao. Flyway je primijeni pri sljedećem deployu. Kad bi tamo postojala rezervacija duža od 8 sati, migracija bi pala i deploy ne bi prošao, ali takva ne može nastati kroz API.
+
+## Faza 9 na produkciji
+
+22.11.2026. je na Renderu Health Check Path promijenjen na `/actuator/health/readiness`, a `SENTRY_DSN` postavljen. Poslije pusha `17738e1..be963f0` deploy je prošao i Render ga je pustio preko readiness provjere. Readiness i liveness s Rendera vraćaju `UP`, a odgovor nosi `x-request-id`. `V33` je primijenjena na Neon-u. U logu to nisam čitao, ali da je Flyway pao, aplikacija ne bi startala i deploy ne bi bio Live. Da Sentry prima događaje s produkcije još nije viđeno, jer od tada nije bilo greške `500`. `/actuator/health` pokazuje imena grupa (`liveness`, `readiness`), a to ne otkriva ništa o bazi ni o verzijama.

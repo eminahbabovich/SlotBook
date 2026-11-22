@@ -542,10 +542,8 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 
 Otvoreno iz Faze 9 (ručni koraci i dug):
 
-- Render: Health Check Path na `/actuator/health/readiness`, i `SENTRY_DSN` kad se napravi projekat u Sentryju (EU region). Dok se to ne uradi, Sentry na produkciji ništa ne šalje.
-- `.env.example`: dodati `SENTRY_DSN=` (prazno), da se vidi da varijabla postoji.
+- Sentry je povezan (`SENTRY_DSN` na Renderu od 22.11.2026), ali prvi pravi događaj s produkcije još nije stigao, pa slanje tamo nije viđeno. Region organizacije nisam potvrdio.
 - Backup s Neon-a po `docs/RUNBOOK.md`, vraćen lokalno i s upoređenim brojem redova. Lokalno je postupak provjeren, na Neon-u nije.
-- `V33` (rezervacija najviše 8 sati) nije probana na Neon-u, primijeni se pri sljedećem deployu.
 - k6 je mjeren samo na laptopu, ne na Renderu i Neon-u.
 
 Otvoreno iz Faze 8 (dug, za pregled u Fazi 13):

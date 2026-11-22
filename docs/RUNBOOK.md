@@ -10,7 +10,7 @@
 curl.exe https://slotbook-dxvs.onrender.com/actuator/health/readiness
 ```
 
-`{"status":"UP"}` je dobro. `503` s `"status":"DOWN"` znači da baza ne odgovara. Tada prvo pogledati Neon konzolu (da li je projekat suspendovan ili prekoračio limit), pa log na Renderu. Prvi zahtjev poslije spavanja traje i do minute. To je hladni start besplatnog plana, nije kvar.
+`{"status":"UP"}` je dobro. Provjereno na produkciji 22.11.2026. poslije deploya `be963f0`: readiness i liveness vraćaju `UP`, `/api/status` ima zaglavlje `x-request-id`, a `/actuator/metrics` bez prijave vraća `401`. `503` s `"status":"DOWN"` znači da baza ne odgovara. Tada prvo pogledati Neon konzolu (da li je projekat suspendovan ili prekoračio limit), pa log na Renderu. Prvi zahtjev poslije spavanja traje i do minute. To je hladni start besplatnog plana, nije kvar.
 
 ## Korisnik javi grešku s brojem
 
