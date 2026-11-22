@@ -334,3 +334,17 @@ E2e test je prvi put pao poslije 90 sekundi: `waiting for getByRole('button', { 
 Mutacije su ovaj put uhvatile obje stvari: bez provjere koda pada test s kodom druge rezervacije, a `canView` umjesto `canManage` pada test u kojem studentica sama sebe skenira. Test izolacije tu drugu mutaciju nije uhvatio, i to je u redu, jer Lejla i Damir ni s `canView` ne vide Alminu rezervaciju.
 
 Da stvarna kamera pročita kod s ekrana nisam provjerio. Telefon ne može otvoriti `localhost`, pa to čeka Vercel.
+
+## nedjelja, 22. novembar 2026. u 17:02
+
+Kapacitet veći od 1, i s tim kraj Faze 10.
+
+U planu je pisalo da `EXCLUDE` za grupni termin ne vrijedi i da broj mjesta čuva Java. Izabrao sam drugi put: svaka rezervacija dobije broj mjesta, a constraint kaže da se isto mjesto ne preklapa. Za običan resurs se ništa ne mijenja, jer su sve njegove rezervacije na mjestu 1. Ono što baza i dalje ne zna je da mjesto ne smije biti veće od kapaciteta. To sam vidio na mutaciji: kad sam Javi dozvolio deset mjesta više, test sa 20 niti je umjesto 5 pustio 15, i baza nije rekla ništa.
+
+Prvo pokretanje je palo na svim testovima odjednom: `Schema validation: wrong column type encountered in column [seat] in table [bookings]; found [int2 (Types#SMALLINT)], but expecting [integer (Types#INTEGER)]`. Stavio sam `SMALLINT` jer je broj mali, a Hibernate za Java `int` traži `INTEGER`. Migracija nije bila izvršena nigdje osim u Testcontainers, pa sam je smio ispraviti.
+
+Najviše posla nije bilo u rezervaciji, nego u svemu što je podrazumijevalo da je termin ili slobodan ili zauzet: kalendar, lista čekanja, posao koji nudi oslobođen termin, serije, pa i statistika. Popunjenost bi za punu salu s 5 mjesta pokazala 500 %. To nijedan test nije tražio, vidio sam to tek kad sam tražio ko još koristi ponuđene minute.
+
+Kod mutacija sam jednom zaključio prebrzo. Dvije mutacije u istom pokretanju su oborile isti test, pa nisam znao koja ga je oborila. Drugu sam pustio samu i tek onda je bilo jasno da i SQL uslov u poslu ima test.
+
+E2e za grupnu sobu ne pokazuje "popunjeno", jer u testu postoje samo dvije osobe, admin i klijent, a za pun termin s dva mjesta treba treća koja nije ni jedna od njih. To pokrivaju Vitest i backend.

@@ -151,6 +151,7 @@ erDiagram
         varchar image_key "ključ u skladištu, ne slika"
         boolean auto_confirm "false: rezervacija čeka potvrdu"
         int cancel_notice_hours "rok za otkazivanje, 0 do 168"
+        int capacity "mjesta u terminu, 1 do 100"
     }
     availability_rules {
         uuid id PK
@@ -169,8 +170,9 @@ erDiagram
     }
     bookings {
         uuid id PK
-        uuid resource_id FK "EXCLUDE: bez preklapanja aktivnih"
-        uuid client_id FK
+        uuid resource_id FK "EXCLUDE: isto mjesto se ne preklapa"
+        uuid client_id FK "EXCLUDE: jedna osoba, jedno mjesto u terminu"
+        int seat "1 do kapaciteta, bira Java pod lockom"
         timestamptz start_time
         timestamptz end_time "CHECK: poslije početka"
         varchar status "PENDING i CONFIRMED drže termin"

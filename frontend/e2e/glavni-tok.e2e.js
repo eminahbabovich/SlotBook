@@ -274,3 +274,38 @@ test('klijent pokaže QR kod, admin otvori link iz njega i upiše dolazak, a rez
 	await page.reload()
 	await expect(page.getByRole('list', { name: 'Prošle i otkazane' }).getByRole('listitem').filter({ hasText: '13:00 do 14:00' })).toContainText('završena')
 })
+
+// Grupna soba s dva mjesta: admin uzme jedno, klijent vidi da je ostalo još jedno i uzme ga.
+// Da je soba tada puna, dokazuju BookingIstovremenoApiTest i Vitest test kalendara.
+test('u grupnoj sobi s dva mjesta klijent vidi da je ostalo jedno mjesto i rezerviše ga', async ({ page }) => {
+	const admin = (await posalji('POST', '/api/auth/login', { tijelo: { email: ADMIN, password: LOZINKA } })).accessToken
+	const [org] = await posalji('GET', '/api/me/organizations', { token: admin })
+	const soba = await posalji('POST', `/api/organizations/${org.id}/resources`, {
+		token: admin,
+		tijelo: { name: 'Grupna soba 2', slotMinutes: 60, autoConfirm: true, capacity: 2 },
+	})
+	const danas = new Intl.DateTimeFormat('en-US', { timeZone: ZONA, weekday: 'long' }).format(new Date()).toUpperCase()
+	await posalji('PUT', `/api/resources/${soba.id}/availability`, {
+		token: admin,
+		tijelo: { rules: DANI.filter((d) => d !== danas).map((dayOfWeek) => ({ dayOfWeek, start: '08:00', end: '10:00' })) },
+	})
+	const sutra = danUZoni(Date.now() + 24 * 3600_000)
+	const { slots } = await posalji('GET', `/api/resources/${soba.id}/slots?from=${danUZoni(Date.now())}&to=${danUZoni(Date.now() + 8 * 24 * 3600_000)}`, { token: admin })
+	const osam = slots.find((s) => danUZoni(new Date(s.start)) === sutra && satUZoni(new Date(s.start)) === '08:00')
+	await posalji('POST', `/api/resources/${soba.id}/bookings`, { token: admin, tijelo: { startTime: osam.start } })
+
+	await page.goto('/prijava')
+	await page.getByLabel('Email').fill(KLIJENT)
+	await page.getByLabel('Lozinka').fill(LOZINKA)
+	await page.getByRole('button', { name: 'Prijavi se' }).click()
+	await page.getByRole('link', { name: new RegExp(ORGANIZACIJA) }).click()
+	await page.getByRole('link', { name: /Grupna soba 2/ }).click()
+	await page.getByRole('button', { name: /^Prvi slobodan:/ }).click()
+	await expect(termin(page, '08:00 do 09:00', 'slobodno, još 1 mjesto')).toBeVisible()
+	await expect(termin(page, '09:00 do 10:00', 'slobodno, još 2 mjesta')).toBeVisible()
+
+	await termin(page, '08:00 do 09:00', 'slobodno, još 1 mjesto').click()
+	await page.getByRole('button', { name: 'Rezerviši' }).click()
+	await expect(page.getByText(/^Termin je tvoj: .*08:00 do 09:00\.$/)).toBeVisible()
+	await expect(page.getByRole('list', { name: /Termini/ }).getByRole('listitem').filter({ hasText: '08:00–09:00' })).toContainText('moje')
+})

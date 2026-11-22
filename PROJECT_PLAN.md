@@ -183,7 +183,7 @@ svaki endpoint opisan u Swaggeru.
 | 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | gotovo |
 | 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | gotovo |
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | gotovo |
-| 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | u izradi |
+| 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | gotovo |
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | ⏳ nije počelo |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | ⏳ nije počelo |
 | 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | ⏳ nije počelo |
@@ -402,9 +402,11 @@ test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati 
    transakciji, a `409` kaže koji datumi su zauzeti. UI: izbor broja sedmica pri rezervaciji.
 6. ✅ **QR check-in** (22.11.2026). Rezervacija ima QR kod s potpisanim tokenom. Provider ga skenira ili otvori link i
    rezervacija prelazi u `COMPLETED`. Bez tokena ili za tuđi resurs nema prelaza.
-7. **Kapacitet veći od 1.** Grupni trening s N mjesta. `EXCLUDE` tu ne vrijedi, pa broj mjesta čuva
-   lock resursa i brojanje, a dokaz je test sa 20 niti na 5 mjesta (prođe tačno 5).
-8. **Kraj faze.** README, status, ODLUKE, a šta nije stiglo ide u Dodatke.
+7. ✅ **Kapacitet veći od 1** (22.11.2026). Grupni trening s N mjesta. Plan je bio lock resursa i brojanje,
+   a urađeno je drugačije: svaka rezervacija dobija broj mjesta i `EXCLUDE` važi po mjestu (`docs/ODLUKE.md`).
+   Dokaz je test sa 20 niti na 5 mjesta (prođe tačno 5). Urađeno u četiri dijela: 7a baza i rezervacija,
+   7b kalendar, lista čekanja i serije, 7c UI, 7d e2e i pregled ekrana.
+8. ✅ **Kraj faze** (22.11.2026). README, status, ODLUKE. Sve iz plana je stiglo, a ono što je ostalo otvoreno je u Dodacima.
 
 ## Faza 14 po koracima
 
@@ -567,6 +569,15 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - ID zahtjeva u poruci frontenda za grešku `500` ("javi nam i navedi broj ..."), backend ga već šalje u tijelu i u `X-Request-Id`
 - Manje buke u logu kod sudara: svaki `409` ostavi dvije WARN linije Hibernatea (`23P01`), 1 140 linija u jednom k6 pokretanju
 - Metrike na produkciji: registry koji šalje brojače van (npr. OTLP prema besplatnom Grafana Cloudu), jer je `/actuator/metrics` na Renderu namjerno zatvoren
+
+Otvoreno iz Faze 10:
+
+- Da mjesto nije veće od kapaciteta čuva samo Java pod lockom resursa. Baza bi to mogla čuvati tabelom `resource_seats (resource_id, seat)` sa složenim FK s rezervacije. Cijena: promjena kapaciteta dodaje i briše redove, a staro mjesto u historiji treba riješiti.
+- Kad se u grupnom terminu istovremeno oslobode dva mjesta, drugo se nudi s liste čekanja minutu kasnije (jedna ponuda po terminu po prolazu posla).
+- Raspored providera ne pokazuje broj mjesta, samo više klijenata u istom terminu. "Popunjeno" u kalendaru pokrivaju Vitest i backend testovi, e2e ne.
+- QR kod nije skeniran stvarnom kamerom telefona (čeka frontend na Vercelu).
+- Otkazivanje cijele serije odjednom i jedan email za cijelu seriju (sada se otkazuje sedmica po sedmica, a serija od 12 sedmica pošalje 12 emailova).
+- SSE veze su u memoriji jedne instance. Za više instanci treba Postgres `LISTEN/NOTIFY` ili Redis.
 
 Otvoreno iz Faze 9 (ručni koraci i dug):
 
