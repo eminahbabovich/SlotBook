@@ -218,7 +218,8 @@ describe('QR kod za dolazak', () => {
 
 		await userEvent.setup().click(within(await waitFor(() => redSa('Sto 4'))).getByRole('button', { name: 'QR kod za dolazak' }))
 
-		expect((await screen.findByRole('alert')).textContent).toBe('QR kod se nije učitao, server ne odgovara. Pokušaj ponovo za minutu.')
+		// Na 503 se upit ponovi jednom poslije 1000 ms (App.jsx), pa poruka ne stiže u podrazumijevanoj sekundi
+		expect((await screen.findByRole('alert', {}, { timeout: 3000 })).textContent).toBe('QR kod se nije učitao, server ne odgovara. Pokušaj ponovo za minutu.')
 		expect(screen.getByRole('button', { name: 'Pokušaj ponovo' })).toBeTruthy()
 	})
 })
