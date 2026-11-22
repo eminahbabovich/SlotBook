@@ -41,6 +41,7 @@ public class BookingService {
 	private static final int NAJDUZI_KLJUC = 100;
 
 	private final BookingRepository bookings;
+	private final WaitlistEntryRepository waitlist;
 	private final BookingEventRepository events;
 	private final ResourceRepository resources;
 	private final UserRepository users;
@@ -53,12 +54,14 @@ public class BookingService {
 	private final Counter napravljene;
 	private final Counter sudari;
 
-	public BookingService(BookingRepository bookings, BookingEventRepository events, ResourceRepository resources,
-			UserRepository users, SlotService slotService, NotificationService notifications, Clock clock,
+	public BookingService(BookingRepository bookings, WaitlistEntryRepository waitlist, BookingEventRepository events,
+			ResourceRepository resources, UserRepository users, SlotService slotService,
+			NotificationService notifications, Clock clock,
 			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu,
 			@Value("${slotbook.booking.complete-after-hours}") int satiDoZatvaranja,
 			@Value("${slotbook.booking.reminder-hours}") int satiDoPodsjetnika, MeterRegistry metrike) {
 		this.bookings = bookings;
+		this.waitlist = waitlist;
 		this.events = events;
 		this.resources = resources;
 		this.users = users;
@@ -100,6 +103,11 @@ public class BookingService {
 		TimeRange termin = slotService.offered(resourceId, start)
 				.orElseThrow(() -> new InvalidFieldException("startTime",
 						"Ovaj termin se ne nudi. Izaberi jedan od slobodnih termina u kalendaru."));
+		// Prednost prvog s liste čekanja čuva Java pod lockom resursa, a ne baza: ponuda nije rezervacija
+		// i ne ulazi u EXCLUDE. Svaka rezervacija ovog resursa prolazi kroz isti lock, pa provjera vrijedi.
+		if (waitlist.isOfferedToOther(resourceId, termin.start(), termin.end(), clientId, sada)) {
+			throw new SlotOfferedException();
+		}
 		BookingStatus status = resurs.isAutoConfirm() ? BookingStatus.CONFIRMED : BookingStatus.PENDING;
 		User klijent = users.getReferenceById(clientId);
 		Booking rezervacija;
@@ -123,6 +131,7 @@ public class BookingService {
 		}
 		// Nastanak je prvi prelaz stanja. Ista transakcija: ako ovaj upis padne, nema ni rezervacije.
 		events.save(new BookingEvent(rezervacija, null, status, klijent, sada));
+		waitlist.markBooked(resourceId, clientId, termin.start());
 		obavijesti(rezervacija, clientId);
 		napravljene.increment();
 		return BookingResponse.from(rezervacija);

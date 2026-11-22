@@ -15,9 +15,11 @@ class BookingJob {
 	private static final Logger log = LoggerFactory.getLogger(BookingJob.class);
 
 	private final BookingService bookingService;
+	private final WaitlistService waitlistService;
 
-	BookingJob(BookingService bookingService) {
+	BookingJob(BookingService bookingService, WaitlistService waitlistService) {
 		this.bookingService = bookingService;
+		this.waitlistService = waitlistService;
 	}
 
 	// fixedDelay: sljedeće pokretanje kreće minutu poslije kraja prethodnog, pa se dva ne preklope
@@ -27,9 +29,10 @@ class BookingJob {
 		int istekle = bookingService.expireOverdue();
 		int zatvorene = bookingService.completeEnded();
 		int podsjetnici = bookingService.sendReminders();
-		if (istekle + zatvorene + podsjetnici > 0) {
-			log.info("Isteklo {} nepotvrđenih rezervacija, zatvoreno {} završenih, {} podsjetnika", istekle,
-					zatvorene, podsjetnici);
+		int ponude = waitlistService.offerFreed();
+		if (istekle + zatvorene + podsjetnici + ponude > 0) {
+			log.info("Isteklo {} nepotvrđenih rezervacija, zatvoreno {} završenih, {} podsjetnika, {} ponuda s "
+					+ "liste čekanja", istekle, zatvorene, podsjetnici, ponude);
 		}
 	}
 

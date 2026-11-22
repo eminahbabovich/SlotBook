@@ -118,7 +118,7 @@ Sva ostala kretanja su zabranjena i vraćaju `409`. Termin zauzimaju samo `PENDI
 - `booking_events` (id, booking_id, from_status, to_status, actor_id, created_at, details)
 - `booking_series` (id, resource_id, client_id, rule, created_at)
 - `waitlist_entries` (id, resource_id, client_id, start_time, end_time, status,
-  notified_at, created_at)
+  offered_until, created_at)
 - `notifications` (id, user_id, type, booking_id, status, attempts, next_attempt_at,
   created_at, sent_at). Umjesto `payload JSONB` za sada `booking_id`, vidi odluke.
 - `payments` (id, booking_id, provider_ref, amount, currency, status, created_at)
@@ -157,7 +157,8 @@ Invarijante:
 | GET | /api/bookings/mine | moje rezervacije (s paginacijom) |
 | GET | /api/bookings/{id}/events | historija statusa |
 | POST | /api/bookings/{id}/confirm, /reject, /cancel, /check-in, /no-show | prelazi stanja |
-| POST/DELETE | /api/resources/{id}/waitlist | lista čekanja |
+| POST | /api/resources/{id}/waitlist | upis na listu čekanja za zauzet termin |
+| DELETE | /api/waitlist/{id} | ispis sa liste (samo svoj upis) |
 | GET | /api/me/calendar.ics?token= | iCal pretplata |
 | GET | /api/organizations/{id}/events | SSE tok promjena termina |
 | POST | /api/bookings/{id}/pay, /api/webhooks/stripe | plaćanje i webhook |
@@ -182,7 +183,7 @@ svaki endpoint opisan u Swaggeru.
 | 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | gotovo |
 | 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | gotovo |
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | gotovo |
-| 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | ⏳ nije počelo |
+| 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | u izradi |
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | ⏳ nije počelo |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | ⏳ nije počelo |
 | 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | ⏳ nije počelo |
@@ -377,6 +378,33 @@ su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
 7. **Backup i `docs/RUNBOOK.md`.** `pg_dump`, vraćanje u praznu bazu i provjera broja redova, pa isti
    postupak za Neon. Gotovo 22.11.2026, lokalno i s Neon-a.
 8. **Kraj faze.** README, status, ODLUKE. Gotovo 22.11.2026.
+
+## Faza 10 po koracima
+
+Kriterij "gotovo" je gore (tačka 10): svaka napredna funkcija ima test i radi u UI-ju, kapacitet > 1 ima
+test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati ako vrijeme stisne
+(tada ide u Dodatke, a Faza 12 ide prije).
+
+1. ✅ **Lista čekanja, backend** (22.11.2026). Klijent se upiše na zauzet termin (`POST /api/resources/{id}/waitlist`) i
+   ispiše (`DELETE /api/waitlist/{id}`). Kad se termin oslobodi (otkazivanje, odbijanje, istek), posao ponudi termin prvom
+   na listi: mail i 30 minuta prednosti, a za to vrijeme drugi ne mogu rezervisati (`409`). Ako ga ne
+   uzme, ponuda istekne i ide sljedeći. Preklapanje i dalje čuva `EXCLUDE`, a prednost Java pod
+   lockom resursa.
+2. **Lista čekanja, UI.** Na zauzetom terminu dugme "Javi mi ako se oslobodi", moje liste čekanja,
+   ponuđen termin istaknut u kalendaru. Za to backend još treba: `GET` mojih upisa i u `/slots`
+   oznaku da je termin ponuđen meni ili nekom drugom (sad ga kalendar prikaže kao slobodan, a
+   rezervacija vrati `409`). Uz to lista čekanja ide u izvoz podataka (`/api/me/export`).
+3. **iCal pretplata.** Tajni link po korisniku (`.ics` bez prijave, token se može promijeniti), moje
+   rezervacije u Google/Apple kalendaru. Dugme za kopiranje linka u UI-ju.
+4. **Live kalendar (SSE).** Kad neko rezerviše ili otkaže, otvoreni kalendari istog resursa se
+   osvježe bez reloada. Događaj ide poslije commita, a tok vidi samo član organizacije.
+5. **Ponavljajuće rezervacije.** Isti termin svake sedmice, N puta (najviše 12). Sve ili ništa u jednoj
+   transakciji, a `409` kaže koji datumi su zauzeti. UI: izbor broja sedmica pri rezervaciji.
+6. **QR check-in.** Rezervacija ima QR kod s potpisanim tokenom. Provider ga skenira ili otvori link i
+   rezervacija prelazi u `COMPLETED`. Bez tokena ili za tuđi resurs nema prelaza.
+7. **Kapacitet veći od 1.** Grupni trening s N mjesta. `EXCLUDE` tu ne vrijedi, pa broj mjesta čuva
+   lock resursa i brojanje, a dokaz je test sa 20 niti na 5 mjesta (prođe tačno 5).
+8. **Kraj faze.** README, status, ODLUKE, a šta nije stiglo ide u Dodatke.
 
 ## Faza 14 po koracima
 

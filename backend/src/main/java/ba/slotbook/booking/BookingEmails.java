@@ -39,8 +39,20 @@ final class BookingEmails {
 			case BOOKING_REMINDER -> new EmailContent("Podsjetnik: " + resurs, "Podsjetnik za termin " + termin
 					+ " (" + resurs + "). Ako ne možeš doći, otkaži ga u aplikaciji, da ga može uzeti neko drugi.");
 			// Bez default grane, da novi tip obavijesti o rezervaciji ne prođe kompajler bez teksta
-			case EMAIL_VERIFICATION, PASSWORD_RESET, ORGANIZATION_INVITE, ACCOUNT_EXISTS -> throw new IllegalArgumentException("Nije obavijest o rezervaciji: " + tip);
+			case EMAIL_VERIFICATION, PASSWORD_RESET, ORGANIZATION_INVITE, ACCOUNT_EXISTS, WAITLIST_OFFER -> throw new IllegalArgumentException("Nije obavijest o rezervaciji: " + tip);
 		};
+	}
+
+	// Link vodi pravo na kalendar resursa, gdje je ponuđeni termin slobodan samo za ovog klijenta
+	static EmailContent ponuda(WaitlistEntry upis, Instant rok, String appUrl) {
+		var organizacija = upis.getResource().getOrganization();
+		ZoneId zona = ZoneId.of(organizacija.getTimezone());
+		String resurs = upis.getResource().getName();
+		String link = appUrl + "/o/" + organizacija.getSlug() + "/r/" + upis.getResource().getId();
+		return new EmailContent("Termin se oslobodio: " + resurs, "Termin " + kad(upis.getStartTime(), zona) + " ("
+				+ resurs + ") se oslobodio, a ti si prvi na listi čekanja. Do " + kad(rok, zona)
+				+ " ga niko drugi ne može rezervisati.\n\nRezerviši ga ovdje: " + link
+				+ "\n\nAko ga do tada ne rezervišeš, termin se nudi sljedećem na listi.");
 	}
 
 	private static String kad(Instant trenutak, ZoneId zona) {

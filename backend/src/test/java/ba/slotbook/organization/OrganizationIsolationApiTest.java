@@ -81,6 +81,11 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/bookings", """
 					{"startTime": "2035-08-06T08:00:00+02:00"}
 					"""),
+			// 14:00 drži Selmina rezervacija. Termin postoji i s 90 i sa 120 minuta trajanja.
+			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/waitlist", """
+					{"startTime": "2036-01-07T14:00:00+01:00"}
+					"""),
+			new Zahtjev(HttpMethod.DELETE, "/api/waitlist/{waitlistId}", null),
 			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/resources/{resourceId}", null),
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/resources/{resourceId}/provider", """
 					{"providerId": "{almaId}"}
@@ -117,7 +122,8 @@ class OrganizationIsolationApiTest {
 			"GET /api/resources/{resourceId}/availability",
 			"GET /api/resources/{resourceId}/slots",
 			"GET /api/resources/{resourceId}/image",
-			"POST /api/resources/{resourceId}/bookings");
+			"POST /api/resources/{resourceId}/bookings",
+			"POST /api/resources/{resourceId}/waitlist");
 
 	// Provider drugog stola uz to pravi svoj resurs i vidi statistiku (samo svojih resursa, to dokazuje
 	// StatsApiTest). Tuđi sto ne uređuje i tuđe rezervacije ne vodi, iako je u istoj organizaciji.
@@ -128,6 +134,7 @@ class OrganizationIsolationApiTest {
 			"GET /api/resources/{resourceId}/slots",
 			"GET /api/resources/{resourceId}/image",
 			"POST /api/resources/{resourceId}/bookings",
+			"POST /api/resources/{resourceId}/waitlist",
 			"POST /api/organizations/{id}/resources",
 			"GET /api/organizations/{id}/stats");
 
@@ -178,6 +185,7 @@ class OrganizationIsolationApiTest {
 	private UUID stoCitaonice;
 	private UUID odmorStola;
 	private Map<String, UUID> rezervacije;
+	private UUID alminUpis;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
 	// Lejla je klijent čitaonice, a Damir u čitaonici vodi drugi sto.
@@ -196,12 +204,14 @@ class OrganizationIsolationApiTest {
 		odmorStola = odmorStola();
 		ponedjeljkomOtvoreno();
 		rezervacije = rezervacijeZaPrelaze();
+		alminUpis = selmaDrziTerminAAlmaCeka();
 	}
 
 	// Almin prelaz ih promijeni, pa se prije svakog testa prave nove. Klijent je Alma, admin čitaonice.
 	// Nedolazak traži termin koji je počeo, zato je on prije dva sata. Ne ranije: BookingJob potvrđene
 	// zatvara dan poslije kraja, pa bi stara rezervacija usred testa postala COMPLETED.
 	private Map<String, UUID> rezervacijeZaPrelaze() {
+		jdbc.update("delete from waitlist_entries where resource_id = ?", stoCitaonice);
 		jdbc.update("delete from booking_events where booking_id in (select id from bookings where resource_id = ?)",
 				stoCitaonice);
 		jdbc.update("delete from notifications where booking_id in (select id from bookings where resource_id = ?)",
@@ -214,6 +224,23 @@ class OrganizationIsolationApiTest {
 				"zaOtkazivanje", rezervacija(almaId, "2036-01-07 10:00+01", "CONFIRMED"),
 				"zaDolazak", rezervacija(almaId, "2036-01-07 11:00+01", "CONFIRMED"),
 				"zaNedolazak", rezervacija(almaId, OffsetDateTime.now().minusHours(2).toString(), "CONFIRMED"));
+	}
+
+	// Alma se ispisuje sa svog upisa, a ostali ga ne smiju dirati. Selma nije ni u jednoj organizaciji,
+	// samo drži termin, jer se na svoj termin niko ne upisuje na listu.
+	private UUID selmaDrziTerminAAlmaCeka() throws Exception {
+		token("selma.izolacija@example.com", "Selma Šabić");
+		rezervacija(users.findByEmail("selma.izolacija@example.com").orElseThrow().getId(), "2036-01-07 14:00+01",
+				"CONFIRMED");
+		UUID id = UUID.randomUUID();
+		jdbc.update("insert into waitlist_entries (id, resource_id, client_id, start_time, end_time, status, "
+				+ "created_at) values (?, ?, ?, '2036-01-07 14:00+01', '2036-01-07 16:00+01', 'WAITING', now())", id,
+				stoCitaonice, users.findByEmail("alma.izolacija@example.com").orElseThrow().getId());
+		return id;
+	}
+
+	private String statusAlminogUpisa() {
+		return jdbc.queryForObject("select status from waitlist_entries where id = ?", String.class, alminUpis);
 	}
 
 	private UUID rezervacija(UUID klijent, String pocetak, String status) {
@@ -338,7 +365,8 @@ class OrganizationIsolationApiTest {
 	private int posalji(Zahtjev zahtjev, String token) throws Exception {
 		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
 		Map<String, Object> varijable = new HashMap<>(rezervacije);
-		varijable.putAll(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola));
+		varijable.putAll(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola, "waitlistId",
+				alminUpis));
 		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja()).buildAndExpand(varijable).toUri();
 		if (Zahtjev.SLIKA.equals(zahtjev.tijelo())) {
 			return mockMvc.perform(multipart(zahtjev.metoda(), adresa)
@@ -391,6 +419,7 @@ class OrganizationIsolationApiTest {
 		assertThat(kljucSlike()).isEqualTo(slikaPrije);
 		assertThat(brojRezervacija()).isEqualTo(rezervacijaPrije);
 		assertThat(statusiRezervacija()).isEqualTo(statusiPrije);
+		assertThat(statusAlminogUpisa()).isEqualTo("WAITING");
 	}
 
 	private long brojRezervacija() {
@@ -457,6 +486,7 @@ class OrganizationIsolationApiTest {
 		assertThat(brojIzuzetaka()).isEqualTo(izuzetakaPrije);
 		assertThat(kljucSlike()).isEqualTo(slikaPrije);
 		assertThat(statusiPripremljenih()).isEqualTo(statusiPrije);
+		assertThat(statusAlminogUpisa()).isEqualTo("WAITING");
 	}
 
 	// Lista uloga mora imenovati rute koje postoje, inače bi greška u kucanju tiho postala 403

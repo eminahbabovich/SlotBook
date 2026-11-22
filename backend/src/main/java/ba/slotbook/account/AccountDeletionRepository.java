@@ -9,7 +9,7 @@ import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-// SQL preko JdbcClient, kao izvoz: brisanje dira deset tabela iz osam paketa
+// SQL preko JdbcClient, kao izvoz: brisanje dira više od deset tabela iz osam paketa
 @Repository
 class AccountDeletionRepository {
 
@@ -79,6 +79,7 @@ class AccountDeletionRepository {
 
 	void deletePersonalRows(UUID userId, String email) {
 		jdbc.sql("delete from user_tokens where user_id = ?").param(userId).update();
+		jdbc.sql("delete from waitlist_entries where client_id = ?").param(userId).update();
 		jdbc.sql("delete from notifications where user_id = ? or email = ?").param(userId).param(email).update();
 		jdbc.sql("delete from organization_invites where email = ?").param(email).update();
 		jdbc.sql("delete from login_failures where email = ?").param(email).update();

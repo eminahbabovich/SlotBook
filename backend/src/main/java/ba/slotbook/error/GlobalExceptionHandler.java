@@ -33,7 +33,9 @@ import ba.slotbook.booking.BookingTransitionException;
 import ba.slotbook.booking.CancelDeadlinePassedException;
 import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.NoShowTooEarlyException;
+import ba.slotbook.booking.SlotOfferedException;
 import ba.slotbook.booking.SlotTakenException;
+import ba.slotbook.booking.WaitlistNotNeededException;
 import ba.slotbook.organization.AlreadyMemberException;
 import ba.slotbook.organization.InviteRaceException;
 import ba.slotbook.auth.UserTokenException;
@@ -137,6 +139,29 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		problem.setTitle("Nalog se još ne može obrisati");
 		problem.setProperty("organizacije", ex.getOrganizacije());
 		problem.setProperty("resursi", ex.getResursi());
+		return problem;
+	}
+
+	@ExceptionHandler(SlotOfferedException.class)
+	ProblemDetail terminPonudjen(SlotOfferedException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ovaj termin se oslobodio i sada je ponuđen prvom s liste čekanja. Upiši se na listu ili izaberi drugi termin.");
+		problem.setTitle("Termin je ponuđen drugome");
+		return problem;
+	}
+
+	// razlog ide kao polje, da frontend umjesto liste čekanja ponudi rezervaciju ili ne ponudi ništa
+	@ExceptionHandler(WaitlistNotNeededException.class)
+	ProblemDetail listaNeTreba(WaitlistNotNeededException ex) {
+		ProblemDetail problem = switch (ex.getRazlog()) {
+			case SLOBODAN -> ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+					"Ovaj termin je slobodan, pa lista čekanja ne treba. Rezerviši ga direktno.");
+			case TVOJ -> ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+					"Ovaj termin je već tvoj. Vidiš ga u svojim rezervacijama.");
+		};
+		problem.setTitle(ex.getRazlog() == WaitlistNotNeededException.Razlog.SLOBODAN ? "Termin je slobodan"
+				: "Termin je već tvoj");
+		problem.setProperty("razlog", ex.getRazlog());
 		return problem;
 	}
 

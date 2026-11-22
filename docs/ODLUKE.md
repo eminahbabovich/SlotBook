@@ -934,3 +934,15 @@ Popravka je u `docs/RUNBOOK.md`: dump se s `pg_restore -f` pretvori u SQL, `sed`
 
 Ovo se ne bi vidjelo da sam samo napravio dump. Zato u RUNBOOK-u piše da backup nije dokazan dok nije vraćen i dok se ne poklopi broj redova.
 
+## Lista čekanja: ponuda iz posla, prednost pod lockom resursa
+
+Klijent se upiše na zauzet termin. Kad se termin oslobodi, prvi na listi dobije mail i 30 minuta za koje termin niko drugi ne može rezervisati. Ako ga ne uzme, ponuda istekne i ide sljedećem.
+
+Termin ne nudi otkazivanje, nego `BookingJob`, svake minute. Razmišljao sam o ponudi u istoj transakciji s otkazivanjem, jer bi bila odmah. Ali termin oslobađaju i SQL naredbe koje ne prolaze kroz `BookingService`: istek rezervacija na čekanju i brisanje naloga. Posao gleda stanje u bazi (slobodan termin, neko čeka, niko nema ponudu), pa ga ne zanima ko je termin oslobodio. Cijena je do minute kašnjenja, a za termin koji se čeka satima to je u redu.
+
+Dvije invarijante čuva baza, parcijalnim `UNIQUE` indeksom. Jedan klijent je najviše jednom na listi za isti termin (`waitlist_jednom_po_terminu`), a termin je ponuđen najviše jednoj osobi (`waitlist_jedna_ponuda`). Prednost ponuđenog ne može čuvati `EXCLUDE`, jer ponuda nije rezervacija. Zato je čuva Java: `BookingService.create` pod lockom resursa provjeri da termin nije ponuđen nekom drugom i vrati `409`. Posao uzima isti lock prije ponude i tek onda provjeri da je termin i dalje slobodan, pa rezervacija koja stigne u istom trenutku ili bude prije ponude, ili poslije nje vidi ponudu. Ovaj sudar nisam testirao s nitima kao kod `EXCLUDE`. Oslanjam se na to da obje strane uzimaju isti `FOR UPDATE` lock, isti kao kod kreiranja rezervacija.
+
+Istekla ponuda ne drži termin ni prije nego što je posao obradi, jer provjera gleda `offered_until > sada`. Ispis sa liste ide na `DELETE /api/waitlist/{id}` i smije ga samo vlasnik upisa. Admin ne briše tuđe upise, jer redoslijed je pravilo, a ne odluka admina.
+
+Testovi su u `WaitlistApiTest`: prvi dobije ponudu, drugi za to vrijeme dobije `409`, istekla ponuda prelazi na sljedećeg, na slobodan ili svoj termin se ne upisuje, a ispisani ne dobije mail. Kad sam izbacio provjeru ponude iz `BookingService`, pao je test u kojem Selma dobije `201` umjesto `409`. Kad je `WaitlistAccess` puštao svakoga, pao je test ispisa (`204` umjesto `403`).
+
