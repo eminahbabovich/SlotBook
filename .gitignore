@@ -6,6 +6,9 @@ application-local.yml
 application-local.yaml
 application-local.properties
 application-secret*.*
+# Backup baze nosi emailove i hasheve lozinki
+*.dump
+backup/
 *.pem
 *.key
 *.jks

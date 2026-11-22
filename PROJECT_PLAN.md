@@ -375,7 +375,7 @@ su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
 6. **k6 load test.** Skripta za slobodne termine, rezervaciju i sudar na istom terminu, lokalno. Brojke,
    mašina i pul konekcija u `docs/PERFORMANSE.md`. Gotovo 22.11.2026.
 7. **Backup i `docs/RUNBOOK.md`.** `pg_dump`, vraćanje u praznu bazu i provjera broja redova, pa isti
-   postupak za Neon.
+   postupak za Neon. Lokalno gotovo i provjereno 22.11.2026, Neon čeka (ručni korak, komande u RUNBOOK-u).
 8. **Kraj faze.** README, status, ODLUKE.
 
 ## Faza 14 po koracima
