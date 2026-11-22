@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -58,6 +60,28 @@ interface WaitlistEntryRepository extends JpaRepository<WaitlistEntry, UUID> {
 			update waitlist_entries set status = 'OFFERED', offered_until = :rok
 			where id = :id and status = 'WAITING'""")
 	int offer(UUID id, Instant rok);
+
+	// Ponude koje još traju, i tuđe: za kalendar, da termin ponuđen drugom ne izgleda slobodan
+	@Query("""
+			select w from WaitlistEntry w
+			where w.resource.id = :resourceId and w.status = ba.slotbook.booking.WaitlistStatus.OFFERED
+			and w.offeredUntil > :sada and w.startTime < :to and w.endTime > :from""")
+	List<WaitlistEntry> findActiveOffers(UUID resourceId, Instant from, Instant to, Instant sada);
+
+	@Query("""
+			select w from WaitlistEntry w
+			where w.resource.id = :resourceId and w.client.id = :clientId and w.status in :statusi
+			and w.startTime < :to and w.endTime > :from""")
+	List<WaitlistEntry> findLiveForClient(UUID resourceId, UUID clientId, Instant from, Instant to,
+			Set<WaitlistStatus> statusi);
+
+	// join fetch kao kod mojih rezervacija: naziv resursa, slug i zona u istom upitu (bez N+1).
+	// countQuery bez fetcha, jer Hibernate ne zna brojati redove upita s join fetch.
+	@Query(value = """
+			select w from WaitlistEntry w join fetch w.resource r join fetch r.organization
+			where w.client.id = :clientId and w.status in :statusi""", countQuery = """
+			select count(w) from WaitlistEntry w where w.client.id = :clientId and w.status in :statusi""")
+	Page<WaitlistEntry> findMine(UUID clientId, Set<WaitlistStatus> statusi, Pageable pageable);
 
 	@Query("""
 			select w from WaitlistEntry w join fetch w.resource r join fetch r.organization

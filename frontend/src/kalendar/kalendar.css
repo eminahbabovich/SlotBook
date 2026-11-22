@@ -65,18 +65,34 @@
 
 .termin time {
 	font-size: var(--velicina-vrijeme);
+	/* Vrijeme se nikad ne lomi. Kad je oznaka duga (rok ponude), ona ide u dva reda. */
+	white-space: nowrap;
 }
 
 .termin-oznaka {
 	font-size: var(--velicina-sitno);
+	text-align: right;
 }
 
-.termin-slobodno button {
+.termin-slobodno button,
+.termin-ponudjen button,
+.termin-zauzeto button {
 	cursor: pointer;
 }
 
-.termin-slobodno button:hover time {
+.termin-slobodno button:hover time,
+.termin-ponudjen button:hover time {
 	text-decoration: underline;
+}
+
+/* Zauzet termin se otvara (lista čekanja), pa hover podvlači oznaku, jer je vrijeme već precrtano */
+.termin-zauzeto button:hover .termin-oznaka {
+	text-decoration: underline;
+}
+
+/* Ponuđen s liste čekanja: termin je moj samo do roka, pa puna žuta traka lijevo, a ne cijeli red žut */
+.termin-ponudjen .termin-red {
+	border-left: var(--razmak-4) solid var(--moje);
 }
 
 .termin-zauzeto .termin-red {
@@ -97,7 +113,8 @@
 }
 
 .termin-moje .termin-oznaka,
-.termin-ceka .termin-oznaka {
+.termin-ceka .termin-oznaka,
+.termin-ponudjen .termin-oznaka {
 	font-weight: 700;
 	text-transform: uppercase;
 }

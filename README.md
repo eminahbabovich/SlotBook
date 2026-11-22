@@ -41,7 +41,7 @@ U Fazi 9 svaki zahtjev dobija ID (`X-Request-Id`), koji je u svakoj liniji loga 
 | 7 | Frontend (jezgro) | gotovo |
 | 8 | Sigurnost i GDPR | gotovo |
 | 9 | Observability i performanse | gotovo |
-| 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | u izradi: lista čekanja na backendu |
+| 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | u izradi: lista čekanja gotova (backend i UI) |
 | 11 | Plaćanje (Stripe, test mode) | nije počelo |
 | 12 | Deploy i prezentacija | nije počelo |
 | 13 | Završni pregled i dodaci | nije počelo |

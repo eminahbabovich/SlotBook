@@ -35,6 +35,7 @@ import ba.slotbook.TestcontainersConfiguration;
 import ba.slotbook.availability.AvailabilityInterval;
 import ba.slotbook.availability.AvailabilityService;
 import ba.slotbook.booking.BookingService;
+import ba.slotbook.booking.WaitlistService;
 import ba.slotbook.organization.OrganizationService;
 import ba.slotbook.resource.ResourceService;
 import ba.slotbook.user.UserService;
@@ -73,6 +74,9 @@ class UpitiPoZahtjevuApiTest {
 	@Autowired
 	BookingService bookingService;
 
+	@Autowired
+	WaitlistService waitlistService;
+
 	private UUID mirza;
 	private UUID lejla;
 	private UUID teretana;
@@ -99,7 +103,8 @@ class UpitiPoZahtjevuApiTest {
 	}
 
 	// Svaki krug doda po jedan red u svaku listu: člana, salu, Lejlinu rezervaciju, rezervaciju u
-	// rasporedu prve sale (drugi klijent, pa drugo ime) i organizaciju u kojoj je Lejla članica
+	// rasporedu prve sale (drugi klijent, pa drugo ime), Lejlin upis na listu čekanja za taj termin
+	// i organizaciju u kojoj je Lejla članica
 	private void dodaj(int i) {
 		UUID klijent = korisnik("klijent" + i, "Klijent " + i);
 		clan(teretana, klijent);
@@ -111,6 +116,7 @@ class UpitiPoZahtjevuApiTest {
 		}
 		bookingService.create(sala, lejla, pocetak(8), null);
 		bookingService.create(salaJedan, klijent, pocetak(9 + i), null);
+		waitlistService.join(salaJedan, lejla, pocetak(9 + i));
 		UUID druga = organizationService.create(mirza, "Teretana " + i, "teretana-" + i + "-" + SUFIKS, ZONA).id();
 		clan(druga, lejla);
 	}
@@ -124,6 +130,7 @@ class UpitiPoZahtjevuApiTest {
 				.param("from", PONEDJELJAK).param("to", UTORAK), mirzinToken));
 		broj.put("slobodniTermini", upiti(get("/api/resources/{id}/slots", salaJedan)
 				.param("from", PONEDJELJAK).param("to", UTORAK), lejlinToken));
+		broj.put("mojaListaCekanja", upiti(get("/api/waitlist/mine"), lejlinToken));
 		broj.put("mojeOrganizacije", upiti(get("/api/me/organizations"), lejlinToken));
 		broj.put("dnevnik", upiti(get("/api/organizations/{id}/audit-log", teretana), mirzinToken));
 		return broj;

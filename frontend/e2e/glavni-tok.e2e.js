@@ -139,9 +139,42 @@ test('kad neko drugi uzme termin prije potvrde, klijent dobije poruku i najbliž
 	await page.getByRole('button', { name: 'Rezerviši' }).click()
 
 	await expect(page.getByRole('alert')).toHaveText('Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.')
-	// Zauzet termin nije dugme, nego red s oznakom
-	await expect(page.getByRole('listitem').filter({ hasText: '11:00–12:00' })).toContainText('zauzeto')
+	// Zauzet termin se više ne rezerviše, nego se otvara lista čekanja
+	await expect(termin(page, '11:00 do 12:00', 'zauzeto')).toBeVisible()
 	await page.getByRole('button', { name: 'Najbliži slobodan: 12:00 do 13:00' }).click()
 	await page.getByRole('button', { name: 'Rezerviši' }).click()
 	await expect(page.getByText(/^Termin je tvoj: .*12:00 do 13:00\.$/)).toBeVisible()
+})
+
+// Ponudu pravi BookingJob, koji radi svake minute, pa test čeka do dvije minute
+test('klijent se upiše na listu čekanja, a kad admin otkaže, termin je ponuđen klijentu i ona ga rezerviše', async ({ page }) => {
+	test.setTimeout(180_000)
+	const admin = (await posalji('POST', '/api/auth/login', { tijelo: { email: ADMIN, password: LOZINKA } })).accessToken
+	const sutra = danUZoni(Date.now() + 24 * 3600_000)
+	const { slots } = await posalji('GET', `/api/resources/${resursId}/slots?from=${danUZoni(Date.now())}&to=${danUZoni(Date.now() + 8 * 24 * 3600_000)}`, { token: admin })
+	const cetrnaest = slots.find((s) => danUZoni(new Date(s.start)) === sutra && satUZoni(new Date(s.start)) === '14:00')
+	const adminova = await posalji('POST', `/api/resources/${resursId}/bookings`, { token: admin, tijelo: { startTime: cetrnaest.start } })
+
+	await prijaviKlijenta(page)
+	await termin(page, '14:00 do 15:00', 'zauzeto').click()
+	await page.getByRole('button', { name: 'Javi mi ako se oslobodi' }).click()
+	await expect(page.getByText(/^Na listi čekanja si za .*14:00 do 15:00\./)).toBeVisible()
+	await expect(termin(page, '14:00 do 15:00', 'zauzeto, na listi si')).toBeVisible()
+
+	await page.getByRole('link', { name: 'Moje rezervacije' }).click()
+	const lista = page.getByRole('list', { name: 'Lista čekanja' })
+	await expect(lista.getByRole('listitem')).toContainText('čekaš da se termin oslobodi')
+
+	await posalji('POST', `/api/bookings/${adminova.id}/cancel`, { token: admin })
+	await expect(async () => {
+		await page.reload()
+		await expect(page.getByRole('list', { name: 'Lista čekanja' }).getByRole('listitem')).toContainText('Rok za rezervaciju', { timeout: 2000 })
+	}).toPass({ timeout: 120_000, intervals: [5000] })
+
+	await page.getByRole('link', { name: 'Rezerviši u kalendaru' }).click()
+	await page.getByRole('button', { name: /^Prvi slobodan:/ }).click()
+	await termin(page, '14:00 do 15:00', String.raw`ponuđen tebi (danas|sutra) do \d\d:\d\d`).click()
+	await expect(page.getByText(/ponuđen je tebi s liste čekanja (danas|sutra) do \d\d:\d\d/)).toBeVisible()
+	await page.getByRole('button', { name: 'Rezerviši' }).click()
+	await expect(page.getByText(/^Termin je tvoj: .*14:00 do 15:00\.$/)).toBeVisible()
 })

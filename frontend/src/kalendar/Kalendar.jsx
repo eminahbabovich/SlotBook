@@ -4,7 +4,8 @@ import { kalendarResursa } from '../api/termini.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from '../vrijeme/vrijeme.js'
-import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
+import { opisTermina, opisTrenutka, rokPonude } from '../vrijeme/opis.js'
+import { ListaCekanja } from './ListaCekanja.jsx'
 import { Potvrda } from './Potvrda.jsx'
 
 const PORUKE = {
@@ -13,6 +14,16 @@ const PORUKE = {
 }
 
 const OZNAKA = { slobodno: 'slobodno', moje: 'moje', ceka: 'čeka potvrdu', zauzeto: 'zauzeto' }
+
+// Stanje riječima, isto za oznaku u redu i za čitač ekrana
+function oznaka(termin, zona) {
+	if (termin.stanje === 'ponudjen') return `ponuđen tebi ${rokPonude(termin.rokPonude, zona)}`
+	if (termin.stanje === 'zauzeto' && termin.upisId) return 'zauzeto, na listi si'
+	return OZNAKA[termin.stanje]
+}
+
+// Slobodan i meni ponuđen termin se rezervišu, a na tuđi zauzet se upisuje na listu čekanja
+const MOZE_REZERVISATI = ['slobodno', 'ponudjen']
 
 // Jedan dan kao lista, i na telefonu i na desktopu. Sedmica se učitava odjednom (jedan poziv),
 // a traka s danima bira koji se dan prikazuje.
@@ -57,7 +68,13 @@ export function Kalendar({ resursId, zona }) {
 	function odustani() {
 		const pocetakTermina = izabran.termin.pocetak
 		setIzabran(null)
-		lista.current?.querySelector(`button[data-pocetak="${pocetakTermina}"]`)?.focus()
+		lista.current?.querySelector(`button[data-termin="${pocetakTermina}"]`)?.focus()
+	}
+
+	function promjenaListe(tekst) {
+		setIzabran(null)
+		setPoruka(tekst)
+		porukaRef.current?.focus()
 	}
 
 	function uspjeh(rezervacija) {
@@ -110,7 +127,17 @@ export function Kalendar({ resursId, zona }) {
 					naIzborDana={izaberiDan}
 					naIzborTermina={izaberiTermin}
 					potvrda={
-						izabran && (
+						izabran &&
+						(izabran.termin.stanje === 'zauzeto' ? (
+							<ListaCekanja
+								key={izabran.kljuc}
+								resursId={resursId}
+								termin={izabran.termin}
+								zona={zona}
+								naZatvori={odustani}
+								naUspjeh={promjenaListe}
+							/>
+						) : (
 							<Potvrda
 								key={izabran.kljuc}
 								resursId={resursId}
@@ -123,7 +150,7 @@ export function Kalendar({ resursId, zona }) {
 								naIzbor={izaberiTermin}
 								naUspjeh={uspjeh}
 							/>
-						)
+						))
 					}
 					izabran={izabran?.termin}
 				/>
@@ -141,7 +168,7 @@ function Dan({ dan, dani, kalendar, lista, naIzborDana, naIzborTermina, potvrda,
 	const zaDan = termini.filter((t) => danUZoni(t.pocetak, zona) === dan)
 
 	if (zaDan.length === 0) {
-		const slobodniDani = dani.filter((d) => termini.some((t) => t.stanje === 'slobodno' && danUZoni(t.pocetak, zona) === d))
+		const slobodniDani = dani.filter((d) => termini.some((t) => MOZE_REZERVISATI.includes(t.stanje) && danUZoni(t.pocetak, zona) === d))
 		const sljedeci = slobodniDani.find((d) => d > dan) ?? slobodniDani[0]
 		return (
 			<div className="prazan-dan">
@@ -171,17 +198,21 @@ function Dan({ dan, dani, kalendar, lista, naIzborDana, naIzborTermina, potvrda,
 	)
 }
 
-// Potvrda ide u svoj red odmah ispod termina, da se na telefonu vidi bez skrolanja
+// Potvrda ide u svoj red odmah ispod termina, da se na telefonu vidi bez skrolanja.
+// data-pocetak imaju samo termini koji se rezervišu (po njima idu strelice), a data-termin svi
+// koji se mogu otvoriti, da se fokus vrati na pravi red.
 function Red({ termin, zona, naIzbor, potvrda }) {
+	const rezervise = MOZE_REZERVISATI.includes(termin.stanje)
 	return (
 		<>
 			<li className={`termin termin-${termin.stanje}`}>
-				{termin.stanje === 'slobodno' ? (
+				{rezervise || termin.stanje === 'zauzeto' ? (
 					<button
 						type="button"
 						className="termin-red"
-						data-pocetak={termin.pocetak}
-						aria-label={`${opisTermina(termin, zona)}, slobodno`}
+						data-pocetak={rezervise ? termin.pocetak : undefined}
+						data-termin={termin.pocetak}
+						aria-label={`${opisTermina(termin, zona)}, ${oznaka(termin, zona)}`}
 						aria-expanded={Boolean(potvrda)}
 						onClick={() => naIzbor(termin)}
 					>
@@ -204,7 +235,7 @@ function Sadrzaj({ termin, zona }) {
 			<time dateTime={termin.pocetak}>
 				{satUZoni(termin.pocetak, zona)}–{satUZoni(termin.kraj, zona)}
 			</time>
-			<span className="termin-oznaka">{OZNAKA[termin.stanje]}</span>
+			<span className="termin-oznaka">{oznaka(termin, zona)}</span>
 		</>
 	)
 }

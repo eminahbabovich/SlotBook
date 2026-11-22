@@ -946,3 +946,19 @@ Istekla ponuda ne drži termin ni prije nego što je posao obradi, jer provjera 
 
 Testovi su u `WaitlistApiTest`: prvi dobije ponudu, drugi za to vrijeme dobije `409`, istekla ponuda prelazi na sljedećeg, na slobodan ili svoj termin se ne upisuje, a ispisani ne dobije mail. Kad sam izbacio provjeru ponude iz `BookingService`, pao je test u kojem Selma dobije `201` umjesto `409`. Kad je `WaitlistAccess` puštao svakoga, pao je test ispisa (`204` umjesto `403`).
 
+## Lista čekanja u kalendaru i u mojim rezervacijama
+
+Kalendar je poslije koraka 1 lagao. Termin ponuđen nekom s liste nije imao rezervaciju, pa ga je `/slots` slao kao slobodan, a klik na "Rezerviši" je vraćao `409`. Sad `/slots` gleda i listu čekanja. Termin ponuđen drugom ide u `taken`, kao zauzet. Termin ponuđen meni ostaje u `slots`, jer ga mogu rezervisati, a novo polje `offeredToMe` kaže do kada. Na zauzetom terminu `myWaitlistId` kaže da sam na listi i služi za ispis. Sva tri polja su nova, a postojeća su ista, pa je promjena kompatibilna. Frontend `offeredToMe` čita kao neobavezno: bez njega ponuđen termin izgleda kao običan slobodan, a za mene to i jeste.
+
+Ovo su dva upita više po kalendaru (ponude koje traju i moji upisi), po jedan za cijelu sedmicu, ne po terminu. `UpitiPoZahtjevuApiTest` sad pokazuje 10 upita i za 1 i za 6 redova, prije ih je bilo 8.
+
+`GET /api/waitlist/mine` vraća samo žive upise (`WAITING`, `OFFERED`), najbliži termin prvo, s `join fetch` resursa i organizacije, kao moje rezervacije. Slug i `resourceId` su tu da frontend napravi link na kalendar. Upis koji je postao rezervacija se ovdje ne vidi, jer je u mojim rezervacijama. Izvoz podataka (`/api/me/export`) ima sve upise, i završene, jer je i to podatak o korisniku dok je u bazi.
+
+Za UI nisam uvodio novu boju. Ponuđen termin ima žutu traku lijevo, jer je moj, ali samo do roka, pa nije cijeli red žut. Na zauzetom terminu se razlika vidi samo u tekstu ("zauzeto, na listi si"). Ispis iz kalendara je jedan klik u redu koji je već otvoren, a iz mojih rezervacija dva, jer tamo dugme stoji samo i lako se pritisne slučajno. Ponovni upis ide na kraj liste.
+
+Zauzet termin je sada dugme. Strelice i dalje idu samo kroz termine koji se rezervišu, a do zauzetog se dolazi Tabom. Da strelice idu kroz sve, putovanje kroz dug dan bi bilo duže, a zauzet termin se rijetko otvara.
+
+Dvije stvari sam vidio tek na snimcima ekrana iz Playwright testa kroz pravi backend, a Vitest ih nije mogao vidjeti. Prvo, oznaka je bila "ponuđen tebi do 13:34", u kalendaru za ponedjeljak, a rok je bio u nedjelju, pola sata poslije ponude. Bez dana se to čita kao ponedjeljak u 13:34. Sad piše "danas do 13:34" ili "sutra do 00:10". Treće mogućnosti nema, jer rok je najviše 30 minuta od ponude, a istekla ponuda se u kalendaru ne prikazuje. Danas i sutra se računaju po zoni organizacije, i to pokriva test preko ponoći. Drugo, na 375 px se duga oznaka lomila, a s njom i vrijeme ("14:00–" pa "15:00" u drugom redu). Vrijeme se sad ne lomi, a oznaka ide u dva reda.
+
+E2e test `glavni-tok.e2e.js` sad ima i listu čekanja: admin drži termin, klijentkinja se kroz UI upiše, admin otkaže, a ponudu napravi pravi `BookingJob`. Test čeka do dvije minute, a u oba pokretanja je cijeli trajao oko minutu. Mail s ponudom u e2e testu ne čitam, jer bi to dodalo još do 30 s (`NotificationJob`). Tekst maila provjerava `WaitlistApiTest`.
+

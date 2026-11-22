@@ -38,13 +38,14 @@ Izmjereno 22.11.2026, isto za 1 i za 6 redova:
 | članovi organizacije | 2 |
 | moje rezervacije | 1 |
 | raspored providera | 5 |
-| slobodni termini (jedan dan) | 8 |
+| slobodni termini (jedan dan) | 8, od Faze 10 10 |
+| moja lista čekanja (od Faze 10) | 1 |
 | moje organizacije | 1 |
 | dnevnik organizacije | 2 |
 
 N+1 nije nađen nigdje. Liste koje čitaju relaciju već su imale `join fetch` (Faze 2-8). Test sam provjerio mutacijom: bez `join fetch b.client` u rasporedu broj ide sa 7 na 12 upita, po jedan za klijenta svake rezervacije, i test padne. `count` za stranicu se ne vidi u tabeli, jer ga Spring Data preskoči kad je prva stranica manja od veličine stranice.
 
-Brojevi su stalni, ali nisu najmanji mogući. Slobodni termini imaju 8 upita, jer se resurs i organizacija čitaju jednom u provjeri pristupa (`@PreAuthorize`), a opet u servisu, u drugoj transakciji. To nisam dirao, jer ne raste s podacima.
+Brojevi su stalni, ali nisu najmanji mogući. Slobodni termini su imali 8 upita, jer se resurs i organizacija čitaju jednom u provjeri pristupa (`@PreAuthorize`), a opet u servisu, u drugoj transakciji. To nisam dirao, jer ne raste s podacima. Lista čekanja (Faza 10, korak 2) je dodala još dva, ponude koje traju i moje upise, po jedan za cijeli period, a ne po terminu, pa ih je sad 10.
 
 ## EXPLAIN za upite rezervacija
 

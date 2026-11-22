@@ -18,6 +18,7 @@ import ba.slotbook.export.MyDataExport.Membership;
 import ba.slotbook.export.MyDataExport.Notification;
 import ba.slotbook.export.MyDataExport.Profile;
 import ba.slotbook.export.MyDataExport.Session;
+import ba.slotbook.export.MyDataExport.WaitlistEntry;
 
 // SQL umjesto JPA: izvoz čita iz deset tabela iz osam paketa, a ovako svaki upit izričito nabraja
 // kolone koje izlaze. Kolona se na polje recorda veže po imenu (snake_case -> camelCase).
@@ -48,6 +49,16 @@ class MyDataRepository {
 				       b.status, b.created_at
 				from bookings b join resources r on r.id = b.resource_id join organizations o on o.id = r.organization_id
 				where b.client_id = ? order by b.start_time""").param(userId).query(Booking.class).list();
+	}
+
+	// I završeni upisi (istekli, otkazani): i oni su podatak o korisniku dok postoje u bazi
+	List<WaitlistEntry> waitlistEntries(UUID userId) {
+		return jdbc.sql("""
+				select o.name as organization_name, r.name as resource_name, w.start_time, w.end_time, w.status,
+				       w.offered_until, w.created_at
+				from waitlist_entries w join resources r on r.id = w.resource_id
+				join organizations o on o.id = r.organization_id
+				where w.client_id = ? order by w.start_time""").param(userId).query(WaitlistEntry.class).list();
 	}
 
 	// Historija samo korisnikovih rezervacija, ne svega što je mijenjao kao provider

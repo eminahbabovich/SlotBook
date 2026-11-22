@@ -56,13 +56,20 @@
 	border-left: var(--razmak-4) dashed var(--moje);
 }
 
+/* Termin s liste čekanja koji je sad moj do roka: ista žuta traka kao potvrđena rezervacija */
+.upis-ponudjen {
+	padding-left: var(--razmak-12);
+	border-left: var(--razmak-4) solid var(--moje);
+}
+
 .rezervacija-cancelled time,
 .rezervacija-rejected time,
 .rezervacija-expired time {
 	text-decoration: line-through;
 }
 
-.rezervacija .dugme-tekst {
+.rezervacija .dugme-tekst,
+.rezervacija > a {
 	justify-self: start;
 }
 

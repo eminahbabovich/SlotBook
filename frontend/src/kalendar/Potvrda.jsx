@@ -4,7 +4,7 @@ import { ApiError } from '../api/apiFetch.js'
 import { rezervisi } from '../api/rezervacije.js'
 import { porukaGreske, serverNeOdgovara } from '../forma/porukaGreske.js'
 import { danUZoni } from '../vrijeme/vrijeme.js'
-import { opisTermina } from '../vrijeme/opis.js'
+import { opisTermina, rokPonude } from '../vrijeme/opis.js'
 
 const PORUKE = {
 	serverNeOdgovara:
@@ -23,6 +23,8 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 		mutationFn: () => rezervisi(resursId, termin.pocetak, kljuc),
 		onSuccess: (rezervacija) => {
 			queryClient.invalidateQueries({ queryKey: ['kalendar', resursId] })
+			// Rezervisan termin s liste čekanja više nije na listi
+			queryClient.invalidateQueries({ queryKey: ['listaCekanja'] })
 			naUspjeh(rezervacija)
 		},
 		onError: (greska) => {
@@ -54,6 +56,12 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 			<p id={naslov} className="potvrda-pitanje">
 				{greska409 ? `Termin ${opisTermina(termin, zona)} je zauzet.` : `Rezervisati ${opisTermina(termin, zona)}?`}
 			</p>
+			{termin.stanje === 'ponudjen' && !greska409 && (
+				<p className="napomena">
+					Termin se oslobodio i ponuđen je tebi s liste čekanja {rokPonude(termin.rokPonude, zona)}. Poslije toga ide sljedećem
+					na listi.
+				</p>
+			)}
 			{slanje.isError && (
 				<p role="alert" className="greska-forme">
 					{porukaGreske(slanje.error, PORUKE)}
@@ -91,7 +99,7 @@ function najbliziSlobodan(termini, zauzetTermin) {
 	const odmak = (t) => Math.abs(Date.parse(t.pocetak) - Date.parse(zauzetTermin.pocetak))
 	return (
 		termini
-			.filter((t) => t.stanje === 'slobodno' && t.pocetak !== zauzetTermin.pocetak)
+			.filter((t) => ['slobodno', 'ponudjen'].includes(t.stanje) && t.pocetak !== zauzetTermin.pocetak)
 			.sort((a, b) => odmak(a) - odmak(b) || b.pocetak.localeCompare(a.pocetak))[0] ?? null
 	)
 }

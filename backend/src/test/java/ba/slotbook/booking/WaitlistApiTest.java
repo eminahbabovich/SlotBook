@@ -2,6 +2,7 @@ package ba.slotbook.booking;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -163,6 +164,62 @@ class WaitlistApiTest {
 		assertThat(stanje(lejlinUpis)).isEqualTo("CANCELLED");
 		assertThat(jdbc.queryForObject("select count(*) from notifications n join users u on u.id = n.user_id "
 				+ "where n.type = 'WAITLIST_OFFER' and u.email = ?", Long.class, email("lejla"))).isZero();
+	}
+
+	// Ponuđen termin je slobodan samo za Lejlu. Selma ga vidi kao zauzet, uz svoj upis, a ne kao slobodan
+	// termin koji bi joj rezervacija odbila s 409.
+	@Test
+	void kalendarPokazujeTerminKaoPonudjenSamoOnojKojojJePonudjen() throws Exception {
+		String lejlinUpis = upisi(lejlin);
+		String selminUpis = upisi(selmin);
+		kalendar(lejlin).andExpect(jsonPath("$.taken[0].myWaitlistId").value(lejlinUpis))
+				.andExpect(jsonPath("$.taken[0].myStatus").doesNotExist());
+		kalendar(hanin).andExpect(jsonPath("$.taken[0].myStatus").value("CONFIRMED"))
+				.andExpect(jsonPath("$.taken[0].myWaitlistId").doesNotExist());
+
+		otkaziHaninu();
+		waitlistService.offerFreed();
+
+		kalendar(lejlin).andExpect(jsonPath("$.offeredToMe.length()").value(1))
+				.andExpect(jsonPath("$.offeredToMe[0].start").value("2035-11-19T08:00:00Z"))
+				.andExpect(jsonPath("$.offeredToMe[0].waitlistId").value(lejlinUpis))
+				.andExpect(jsonPath("$.offeredToMe[0].offeredUntil").isString())
+				.andExpect(jsonPath("$.slots[?(@.start == '2035-11-19T08:00:00Z')]").isNotEmpty())
+				.andExpect(jsonPath("$.taken.length()").value(0));
+		kalendar(selmin).andExpect(jsonPath("$.offeredToMe.length()").value(0))
+				.andExpect(jsonPath("$.slots[?(@.start == '2035-11-19T08:00:00Z')]").isEmpty())
+				.andExpect(jsonPath("$.taken[0].start").value("2035-11-19T08:00:00Z"))
+				.andExpect(jsonPath("$.taken[0].myStatus").doesNotExist())
+				.andExpect(jsonPath("$.taken[0].myWaitlistId").value(selminUpis));
+	}
+
+	@Test
+	void mojaListaImaSamoMojeZiveUpiseSLinkomNaKalendar() throws Exception {
+		String lejlinUpis = upisi(lejlin);
+		upisi(selmin);
+
+		mockMvc.perform(get("/api/waitlist/mine").header("Authorization", "Bearer " + lejlin))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.totalElements").value(1))
+				.andExpect(jsonPath("$.content[0].id").value(lejlinUpis))
+				.andExpect(jsonPath("$.content[0].resourceId").value(sala.toString()))
+				.andExpect(jsonPath("$.content[0].resourceName").value("Sala za grupni trening"))
+				.andExpect(jsonPath("$.content[0].organizationName").value("Teretana Koševo"))
+				.andExpect(jsonPath("$.content[0].organizationSlug").value("teretana-kosevo-" + oznaka))
+				.andExpect(jsonPath("$.content[0].timezone").value("Europe/Sarajevo"))
+				.andExpect(jsonPath("$.content[0].startTime").value("2035-11-19T08:00:00Z"))
+				.andExpect(jsonPath("$.content[0].status").value("WAITING"))
+				.andExpect(jsonPath("$.content[0].offeredUntil").doesNotExist());
+
+		mockMvc.perform(delete("/api/waitlist/{id}", lejlinUpis).header("Authorization", "Bearer " + lejlin))
+				.andExpect(status().isNoContent());
+		mockMvc.perform(get("/api/waitlist/mine").header("Authorization", "Bearer " + lejlin))
+				.andExpect(jsonPath("$.totalElements").value(0));
+	}
+
+	private ResultActions kalendar(String token) throws Exception {
+		return mockMvc.perform(get("/api/resources/{id}/slots", sala).param("from", "2035-11-19")
+				.param("to", "2035-11-20").header("Authorization", "Bearer " + token)).andExpect(status().isOk());
 	}
 
 	private void otkaziHaninu() {

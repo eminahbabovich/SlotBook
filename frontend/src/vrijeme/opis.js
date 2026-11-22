@@ -10,3 +10,11 @@ export function opisTermina(termin, zona, { bezDana = false } = {}) {
 export function opisTrenutka(trenutak, zona) {
 	return `${nazivDana(danUZoni(trenutak, zona))}, ${satUZoni(trenutak, zona)}`
 }
+
+// Rok ponude s liste čekanja je najviše 30 minuta od ponude, pa je danas ili sutra (ponuda pred ponoć).
+// Dan mora pisati: u kalendaru za ponedjeljak "do 13:34" bi značilo ponedjeljak, a rok je u nedjelju.
+export function rokPonude(trenutak, zona, sada = Date.now()) {
+	const dan = danUZoni(trenutak, zona) === danUZoni(sada, zona) ? 'danas' : 'sutra'
+	return `${dan} do ${satUZoni(trenutak, zona)}`
+}
+

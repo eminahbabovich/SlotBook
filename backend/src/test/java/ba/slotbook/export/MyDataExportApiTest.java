@@ -81,6 +81,12 @@ class MyDataExportApiTest {
 		return id;
 	}
 
+	private void naListi(UUID resurs, String email, String pocetak, String kraj) {
+		jdbc.update("insert into waitlist_entries (id, resource_id, client_id, start_time, end_time, status, "
+				+ "created_at) select gen_random_uuid(), ?, id, ?::timestamptz, ?::timestamptz, 'WAITING', now() "
+				+ "from users where email = ?", resurs, pocetak, kraj, email);
+	}
+
 	@Test
 	void izvozImaSveOKorisnikuBezHashevaTokenaITudjihPodataka() throws Exception {
 		String lejla = nalog(LEJLA, "Lejla");
@@ -103,6 +109,9 @@ class MyDataExportApiTest {
 				""", 201);
 		UUID lejlina = rezervacija(sto, LEJLA, "2035-11-19T08:00:00Z", "2035-11-19T09:00:00Z");
 		UUID tarikova = rezervacija(sto, TARIK, "2035-11-19T10:00:00Z", "2035-11-19T11:00:00Z");
+		// Svako čeka na tuđi termin. Tarikov upis ne smije ući u Lejlin izvoz.
+		naListi(sto, LEJLA, "2035-11-19T10:00:00Z", "2035-11-19T11:00:00Z");
+		naListi(sto, TARIK, "2035-11-19T08:00:00Z", "2035-11-19T09:00:00Z");
 
 		String izvoz = posalji(get("/api/me/export"), lejla, null, 200);
 
@@ -130,7 +139,10 @@ class MyDataExportApiTest {
 				.andExpect(jsonPath("$.invites[0].role").value("CLIENT"))
 				.andExpect(jsonPath("$.loginFailures.failures").value(1))
 				.andExpect(jsonPath("$.auditEntries[*].action", hasItems("ORGANIZATION_CREATED", "RESOURCE_CREATED")))
-				.andExpect(jsonPath("$.auditEntries[*].organizationName", everyItem(is("Čitaonica PMF"))));
+				.andExpect(jsonPath("$.auditEntries[*].organizationName", everyItem(is("Čitaonica PMF"))))
+				.andExpect(jsonPath("$.waitlistEntries[*].startTime", contains("2035-11-19T10:00:00Z")))
+				.andExpect(jsonPath("$.waitlistEntries[0].resourceName").value("Sto 4 kod prozora"))
+				.andExpect(jsonPath("$.waitlistEntries[0].status").value("WAITING"));
 
 		// Ništa od ovoga ne smije izaći: hash lozinke, hashevi tokena (u bazi ih ima i za Lejlu), tijela
 		// mailova (u njima su linkovi s pravim tokenima) i Tarikovi podaci

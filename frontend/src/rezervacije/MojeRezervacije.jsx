@@ -6,6 +6,7 @@ import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
 import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
+import { MojaListaCekanja } from './MojaListaCekanja.jsx'
 import { Otkazivanje } from './Otkazivanje.jsx'
 import { DRZE_TERMIN, STATUS } from './status.js'
 import './rezervacije.css'
@@ -38,6 +39,11 @@ export function MojeRezervacije() {
 	function otkazana(rezervacija) {
 		setOtvorena(null)
 		setPoruka(`Rezervacija je otkazana: ${rezervacija.resurs}, ${opisTermina(rezervacija, rezervacija.zona)}.`)
+		porukaRef.current?.focus()
+	}
+
+	function porukaListe(tekst) {
+		setPoruka(tekst)
 		porukaRef.current?.focus()
 	}
 
@@ -115,6 +121,7 @@ export function MojeRezervacije() {
 				{poruka}
 			</p>
 			{sadrzaj}
+			<MojaListaCekanja sada={sada} naPoruku={porukaListe} />
 		</section>
 	)
 }

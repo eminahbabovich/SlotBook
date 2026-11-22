@@ -31,6 +31,7 @@ export const PRIJAVLJENA = {
 	'/api/me/organizations': () => json([CITAONICA, TERETANA]),
 	'/api/organizations/o1/resources?size=100': () => json({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 }),
 	'/api/organizations/o2/resources?size=100': () => json({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 }),
+	'/api/waitlist/mine?page=0&size=20': () => json({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 }),
 }
 
 export function otvori(adresa) {

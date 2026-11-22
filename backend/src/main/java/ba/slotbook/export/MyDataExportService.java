@@ -20,7 +20,7 @@ public class MyDataExportService {
 		this.clock = clock;
 	}
 
-	// REPEATABLE_READ: svih jedanaest upita vidi isti snimak baze. Pod READ COMMITTED bi rezervacija
+	// REPEATABLE_READ: svih dvanaest upita vidi isti snimak baze. Pod READ COMMITTED bi rezervacija
 	// nastala između dva upita mogla biti u historiji, a ne u listi rezervacija.
 	@Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
 	public MyDataExport export(UUID userId) {
@@ -29,7 +29,7 @@ public class MyDataExportService {
 				data.bookingEvents(userId), data.managedResources(userId),
 				data.notifications(userId, korisnik.email()), data.sessions(userId), data.emailLinks(userId),
 				data.invites(korisnik.email()), data.loginFailures(korisnik.email()).orElse(null),
-				data.auditEntries(userId));
+				data.auditEntries(userId), data.waitlistEntries(userId));
 	}
 
 }

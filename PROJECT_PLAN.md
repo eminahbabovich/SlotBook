@@ -390,7 +390,7 @@ test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati 
    na listi: mail i 30 minuta prednosti, a za to vrijeme drugi ne mogu rezervisati (`409`). Ako ga ne
    uzme, ponuda istekne i ide sljedeći. Preklapanje i dalje čuva `EXCLUDE`, a prednost Java pod
    lockom resursa.
-2. **Lista čekanja, UI.** Na zauzetom terminu dugme "Javi mi ako se oslobodi", moje liste čekanja,
+2. ✅ **Lista čekanja, UI** (22.11.2026). Na zauzetom terminu dugme "Javi mi ako se oslobodi", moje liste čekanja,
    ponuđen termin istaknut u kalendaru. Za to backend još treba: `GET` mojih upisa i u `/slots`
    oznaku da je termin ponuđen meni ili nekom drugom (sad ga kalendar prikaže kao slobodan, a
    rezervacija vrati `409`). Uz to lista čekanja ide u izvoz podataka (`/api/me/export`).

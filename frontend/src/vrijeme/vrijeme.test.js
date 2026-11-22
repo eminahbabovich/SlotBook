@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
+import { rokPonude } from './opis.js'
 import { danUSedmici, danUZoni, dodajDane, dodajMjesece, mjesecUZoni, nazivDana, nazivMjeseca, satUZoni, sedmicaOd, uTrenutakSPomakom, zonaUredjajaRazlicita } from './vrijeme.js'
 
 const SARAJEVO = 'Europe/Sarajevo'
@@ -35,6 +36,13 @@ describe('dan u zoni organizacije, ne u zoni browsera', () => {
 		expect(danUZoni(sada, SARAJEVO)).toBe('2035-11-20')
 		expect(danUZoni(sada, 'America/New_York')).toBe('2035-11-19')
 	})
+})
+
+test('rok ponude kaže danas ili sutra po zoni organizacije, ne po zoni uređaja', () => {
+	// 23:50 po Sarajevu je 22:50Z. Rok 30 minuta kasnije je već sutra u Sarajevu, a isti dan u UTC-u.
+	const sada = Date.parse('2035-11-19T22:50:00Z')
+	expect(rokPonude('2035-11-19T23:00:00Z', 'Europe/Sarajevo', sada)).toBe('sutra do 00:00')
+	expect(rokPonude('2035-11-19T22:55:00Z', 'Europe/Sarajevo', sada)).toBe('danas do 23:55')
 })
 
 test('naziv dana je na bosanskom i ne pomjera se za dan u zoni zapadno od UTC-a', () => {

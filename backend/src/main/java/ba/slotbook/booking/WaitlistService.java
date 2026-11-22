@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +19,7 @@ import ba.slotbook.booking.WaitlistNotNeededException.Razlog;
 import ba.slotbook.error.InvalidFieldException;
 import ba.slotbook.notification.NotificationService;
 import ba.slotbook.notification.NotificationType;
+import ba.slotbook.paging.PageResponse;
 import ba.slotbook.resource.Resource;
 import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.resource.ResourceRepository;
@@ -74,6 +78,16 @@ public class WaitlistService {
 		}
 		return WaitlistEntryResponse.from(entries.save(new WaitlistEntry(resurs, users.getReferenceById(clientId),
 				termin, sada)));
+	}
+
+	// Samo živi upisi, najbliži termin prvo. Završeni (rezervisan, istekao) nisu lista čekanja, a
+	// rezervisan termin je ionako u mojim rezervacijama.
+	@Transactional(readOnly = true)
+	public PageResponse<MyWaitlistEntryResponse> mine(UUID clientId, Pageable pageable) {
+		Pageable poPocetku = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+				Sort.by(Sort.Order.asc("startTime"), Sort.Order.asc("id")));
+		return PageResponse.from(entries.findMine(clientId, WaitlistStatus.ZIVI, poPocetku)
+				.map(MyWaitlistEntryResponse::from));
 	}
 
 	// Vlasništvo je provjerio @PreAuthorize (WaitlistAccess)
