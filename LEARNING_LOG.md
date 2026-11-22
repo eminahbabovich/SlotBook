@@ -303,3 +303,17 @@ U testu sam čitao `log.level` kao jedan ključ, a Spring ga piše ugniježđeno
 Prije toga sam podigao zavisnosti iz sedam Dependabot PR-ova i pustio obje suite: 404 i 188, sve prolazi.
 
 Na kraju je ID ušao i u tijelo greške `500` i u CORS `exposedHeaders`. Oba testa sam prvo vidio crvena: `No results for path: $['requestId']` i `Expected: a string containing "X-Request-Id"`.
+
+## nedjelja, 22. novembar 2026. u 11:26
+
+Ostatak Faze 9 u jednom komadu, korak 2 do 8.
+
+Readiness i liveness su u Bootu 4.1 već bili uključeni, test je prošao prije ijedne linije koda. Pao je samo dio da readiness gleda bazu. Kad sam iz grupe izbacio `readinessState`, readiness je vraćao `200` i kad aplikacija objavi `REFUSING_TRAFFIC`.
+
+Kod Sentryja sam pretpostavio da starter sam hvata greške kontrolera. Ne hvata, jer naš `GlobalExceptionHandler` obradi svaki izuzetak prije njegovog resolvera. Rješenje je `sentry-logback`, i tada ERROR linija postaje događaj. Prvi test je pao baš na tagu: `expected: "ea29604c-..." but was: null`, dok nisam dodao `sentry.context-tags=requestId`. Uslov za uključivanje je samo postojanje `sentry.dsn`, pa bi `${SENTRY_DSN:}` uključio Sentry s praznim DSN-om. Zato DSN nije u properties fajlu, Spring ga čita iz varijable.
+
+N+1 nisam našao nigdje. Brojač upita sam stavio kao `StatementInspector` u `ThreadLocal`, jer bi globalna Hibernate statistika brojala i `BookingJob`. Svoj test sam prvo napisao pogrešno: raspored sa `from` i `to` isti dan je vratio `400`, jer je `to` isključen. Prava stvar je izašla iz `EXPLAIN`: raspored je za sedmicu čitao 1 861 red da vrati 33, jer indeks može suziti samo `start_time < kraj`. Donja granica od 8 sati i `CHECK` u `V33` su to spustili na 33. U ODLUKE sam još ispravio raniji zapis: upit za zauzete termine ipak koristi gist indeks, samo po `resource_id`.
+
+k6 sam pustio iz Dockera, jer nije instaliran. Tri pokretanja, svaki put 601 rezervacija i u sudaru 30 puta `201` i 570 puta `409`, bez ijednog 5xx. Iznenadilo me koliko je log bučan: svaki `409` ostavi dvije WARN linije Hibernatea, 1 140 linija po pokretanju.
+
+Za backup mi je Git Bash prepravio `/tmp/slotbook.dump` u Windows putanju, pa je `pg_dump` pao s `could not open output file "C:/Users/HP/AppData/Local/Temp/slotbook.dump"`. Proradilo je sa `MSYS_NO_PATHCONV=1`. Vraćena baza ima isti broj redova u svih 15 tabela, a aplikacija se nad njom podigla bez ijedne migracije. Na Neon-u to tek trebam uraditi.
