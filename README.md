@@ -44,13 +44,13 @@ U Fazi 10 su došle napredne funkcije, svaka s testom i u UI-ju. Na zauzet termi
 | 8 | Sigurnost i GDPR | gotovo |
 | 9 | Observability i performanse | gotovo |
 | 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | gotovo |
-| 11 | Plaćanje (Stripe, test mode) | nije počelo |
+| 11 | Plaćanje (Stripe, test mode) | u izradi: cijena na resursu gotova, Checkout i webhook nisu počeli |
 | 12 | Deploy i prezentacija | nije počelo |
 | 13 | Završni pregled i dodaci | nije počelo |
 
 Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md), mjerenja (EXPLAIN, broj upita, k6) u [docs/PERFORMANSE.md](docs/PERFORMANSE.md), šta uraditi kad nešto ne radi i kako se vraća backup u [docs/RUNBOOK.md](docs/RUNBOOK.md), a prolaz kroz OWASP Top 10 (šta nas štiti, kojim testom i šta nije pokriveno) u [docs/SIGURNOST.md](docs/SIGURNOST.md).
 
-Backend ima 464 testa i svi prolaze (zadnje pokretanje 22.11.2026.). Frontend ima 231 Vitest test i 8 Playwright testova (zadnje pokretanje 22.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
+Backend ima 466 testova i svi prolaze (zadnje pokretanje 22.11.2026.). Frontend ima 237 Vitest testova i 8 Playwright testova (zadnje pokretanje 22.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
 
 ## Tehnologije
 

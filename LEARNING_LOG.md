@@ -348,3 +348,13 @@ Najviše posla nije bilo u rezervaciji, nego u svemu što je podrazumijevalo da 
 Kod mutacija sam jednom zaključio prebrzo. Dvije mutacije u istom pokretanju su oborile isti test, pa nisam znao koja ga je oborila. Drugu sam pustio samu i tek onda je bilo jasno da i SQL uslov u poslu ima test.
 
 E2e za grupnu sobu ne pokazuje "popunjeno", jer u testu postoje samo dvije osobe, admin i klijent, a za pun termin s dva mjesta treba treća koja nije ni jedna od njih. To pokrivaju Vitest i backend.
+
+## nedjelja, 22. novembar 2026. u 17:36
+
+Mislio sam da je CI zelen poslije Faze 10, a nije bio. Gledao sam Render, koji je bio zelen, i listu u Actions, gdje su CodeQL i CI za isti commit jedan ispod drugog. Crveni X je bio na CI-ju. Pao je frontend test za QR kod: `Unable to find role="alert"`. Aplikacija na 503 ponovi upit poslije 1000 ms, a `findByRole` čeka isto toliko. Na mom laptopu je stizalo, na GitHubu nije. Svi ostali testovi za 503 već imaju `timeout: 3000`, samo ovaj nije.
+
+Počela Faza 11, plaćanje. Razbili smo je na pet koraka. Prvi je samo cijena na resursu, bez ikakvog Stripea. Cijena je u feninzima, cijeli broj, jer Stripe tako i računa. U formi se upisuje u KM sa zarezom, a ono što me iznenadilo je `0.29 * 100`, što u JavaScriptu nije 29 nego `28.999999999999996`. Zato se cijeli dio i feninzi računaju posebno.
+
+Druga stvar koju ne bih sam primijetio: `Number('15 KM')` je `NaN`, a `JSON.stringify` od `NaN` je `null`. Backend za `null` uzima 0, pa bi pogrešno upisana cijena tiho napravila besplatan termin. Forma sad takav unos ne šalje.
+
+Stripe nalog ostavljam za sutra.
