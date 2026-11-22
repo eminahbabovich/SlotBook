@@ -873,3 +873,13 @@ Da JSON linija nosi `requestId` nijedan test ne provjerava. Probao sam: test s J
 Odgovor `500` nosi isti ID i u tijelu, kao polje `requestId` u Problem Detailsu. Poruka kaže "javi nam", a s ID-jem se u logu odmah nađe linija sa stack traceom. ID ne otkriva ništa o serveru, pa ga je sigurno vratiti. Na ostalim greškama ga u tijelu nema, jer one kažu šta korisnik treba uraditi, a zaglavlje `X-Request-Id` ionako imaju. Zaglavlje je dodano i u CORS `exposedHeaders`, jer ga bez toga JavaScript s drugog origina ne može pročitati. Frontend ga još ne prikazuje, to je zapisano u Dodacima.
 
 Osam mutacija, sve padaju na pravom testu: filter nije bean, ID ostaje na niti, filter poslije Securityja, ID iz zahtjeva se prihvata, ID nije u MDC-u, prod profil bez JSON-a, ID nije u tijelu `500`, zaglavlje nije izloženo u CORS-u. Kod je ovaj put napisan prije nego što sam vidio testove crvene, pa mutacije zamjenjuju taj korak.
+
+## Liveness i readiness
+
+U Spring Bootu 4.1 su `/actuator/health/liveness` i `/actuator/health/readiness` uključeni i van Kubernetesa (`management.endpoint.health.probes.enabled` ima podrazumijevano `true`, provjereno u metapodacima jara `spring-boot-health-4.1.2`). Test je to pokazao prije ijedne promjene: obje adrese su vratile `200`. Nije bilo dobro samo to što readiness nije gledao bazu.
+
+Sad je `management.endpoint.health.group.readiness.include=readinessState,db`. Readiness kaže "šalji mi promet": ako baza ne odgovara, vrati `503`. Liveness kaže "proces je živ, ne restartuj me" i bazu namjerno ne gleda. Da je gleda, Neon koji se budi iz hladnog starta bi natjerao Render da restartuje zdravu aplikaciju, a restart bazu ne popravi.
+
+Render ima jednu adresu za health check i koristi je i za deploy (nova verzija dobije promet tek kad vrati `2xx`) i za praćenje dok radi. Zato tamo ide `/actuator/health/readiness`. Detalji (koja komponenta je pala) se ne prikazuju, ostaje samo `{"status":"UP"}`.
+
+Dokaz: `HealthApiTest`. Obje adrese su otvorene bez prijave, readiness ima `db`, a liveness nema, i readiness vrati `503` kad aplikacija objavi `REFUSING_TRAFFIC`, dok liveness ostaje `200`. Mutacija: bez `readinessState` u grupi zadnji test padne s `expected:<503> but was:<200>`. Nisam provjerio šta Render radi kad readiness padne dok aplikacija već radi.
