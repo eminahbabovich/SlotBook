@@ -19,6 +19,7 @@
 		<jacoco.version>0.8.16</jacoco.version>
 		<awssdk.version>2.59.4</awssdk.version>
 		<bucket4j.version>8.22.0</bucket4j.version>
+		<sentry.version>8.63.0</sentry.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -75,6 +76,17 @@
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
 			<version>${awssdk.version}</version>
+		</dependency>
+		<!-- Praćenje grešaka. Uključi se samo kad postoji SENTRY_DSN, a logback dio šalje svaku ERROR liniju loga -->
+		<dependency>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-spring-boot-4-starter</artifactId>
+			<version>${sentry.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-logback</artifactId>
+			<version>${sentry.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>

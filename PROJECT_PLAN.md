@@ -367,7 +367,8 @@ su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
 3. **Metrike.** Micrometer brojači za napravljene rezervacije, sudare (`409`) i neuspjele mailove.
    Endpoint metrika nije javan. Gotovo 22.11.2026.
 4. **Praćenje grešaka.** Neočekivane greške idu u Sentry (free plan) s ID-jem zahtjeva. Bez DSN-a ne
-   šalje ništa, pa lokalno i u testovima ostaje ugašen.
+   šalje ništa, pa lokalno i u testovima ostaje ugašen. Gotovo 22.11.2026 u kodu, a na Renderu čeka
+   da se napravi projekat u Sentryju i postavi `SENTRY_DSN`.
 5. **N+1 i spori upiti.** Broj SQL upita po zahtjevu za glavne liste mjeren u testu, popravka gdje
    raste s brojem redova, `EXPLAIN` za upite koji to traže.
 6. **k6 load test.** Skripta za slobodne termine, rezervaciju i sudar na istom terminu, lokalno. Brojke,
