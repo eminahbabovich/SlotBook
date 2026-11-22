@@ -6,6 +6,8 @@ import { porukaGreske, serverNeOdgovara } from '../forma/porukaGreske.js'
 import { danUZoni } from '../vrijeme/vrijeme.js'
 import { opisTermina, rokPonude } from '../vrijeme/opis.js'
 
+const UPRAVO_ZAUZET = 'Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.'
+
 const PORUKE = {
 	serverNeOdgovara:
 		'Nije jasno da li je rezervacija stigla, server ne odgovara. Pokušaj ponovo: ako je stigla, neće se napraviti dvaput.',
@@ -41,7 +43,9 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 		dugme.current?.focus()
 	}, [])
 
-	const greska409 = zauzet(slanje.error)
+	// Zauzet je i kad je 409 stigao na klik, i kad je kalendar preko SSE saznao prije klika
+	const upravoZauzet = !slanje.isError && !['slobodno', 'ponudjen'].includes(termin.stanje)
+	const greska409 = zauzet(slanje.error) || upravoZauzet
 	const najblizi = greska409 ? najbliziSlobodan(termini, termin) : null
 
 	return (
@@ -62,9 +66,9 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 					na listi.
 				</p>
 			)}
-			{slanje.isError && (
+			{(slanje.isError || upravoZauzet) && (
 				<p role="alert" className="greska-forme">
-					{porukaGreske(slanje.error, PORUKE)}
+					{upravoZauzet ? UPRAVO_ZAUZET : porukaGreske(slanje.error, PORUKE)}
 				</p>
 			)}
 			<div className="potvrda-dugmad">

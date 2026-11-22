@@ -33,13 +33,17 @@ interface WaitlistEntryRepository extends JpaRepository<WaitlistEntry, UUID> {
 			and status in ('WAITING', 'OFFERED')""")
 	int markBooked(UUID resourceId, UUID clientId, Instant start);
 
-	// Ponuda kojoj je prošao rok, i svaki živ upis za termin koji je već počeo
-	@Modifying
+	// Ponuda kojoj je prošao rok, i svaki živ upis za termin koji je već počeo. Vraća resurse kojima
+	// je istekla ponuda, jer tamo se termin drugima opet prikazuje kao slobodan (SlotsChanged).
+	// Bez @Modifying, jer naredba vraća redove, kao BookingRepository.expireAll.
 	@Query(nativeQuery = true, value = """
-			update waitlist_entries set status = 'EXPIRED'
-			where (status = 'OFFERED' and offered_until <= :sada)
-			or (status in ('WAITING', 'OFFERED') and start_time <= :sada)""")
-	int expireAll(Instant sada);
+			with istekli as (
+				update waitlist_entries set status = 'EXPIRED'
+				where (status = 'OFFERED' and offered_until <= :sada)
+				or (status in ('WAITING', 'OFFERED') and start_time <= :sada)
+				returning resource_id, offered_until)
+			select distinct resource_id from istekli where offered_until is not null""")
+	List<UUID> expireAll(Instant sada);
 
 	// Prvi na listi za svaki termin koji je slobodan i nije nikome ponuđen. Ovo je samo prijedlog:
 	// posao pod lockom resursa ponovo provjeri da termin niko nije uzeo u međuvremenu.

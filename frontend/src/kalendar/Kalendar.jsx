@@ -7,6 +7,7 @@ import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, zonaUredjajaRazlic
 import { opisTermina, opisTrenutka, rokPonude } from '../vrijeme/opis.js'
 import { ListaCekanja } from './ListaCekanja.jsx'
 import { Potvrda } from './Potvrda.jsx'
+import { useZivKalendar } from './useZivKalendar.js'
 
 const PORUKE = {
 	serverNeOdgovara: 'Termini se nisu učitali, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -45,6 +46,8 @@ export function Kalendar({ resursId, zona }) {
 		queryKey: kljucKalendara,
 		queryFn: () => kalendarResursa(resursId, pocetak, dodajDane(pocetak, 7)),
 	})
+	// Kad neko drugi rezerviše ili otkaže, termini se osvježe bez ponovnog učitavanja stranice
+	const najavaPromjene = useZivKalendar(resursId)
 
 	function izaberiDan(novi) {
 		setDan(novi)
@@ -91,6 +94,9 @@ export function Kalendar({ resursId, zona }) {
 
 	return (
 		<div className="kalendar">
+			<p className="skriveno" aria-live="polite">
+				{najavaPromjene}
+			</p>
 			<div className="sedmica">
 				<button className="dugme-tekst" type="button" onClick={() => pomjeriSedmicu(-1)} disabled={pocetak <= danas}>
 					Prethodnih 7 dana
@@ -142,7 +148,8 @@ export function Kalendar({ resursId, zona }) {
 								key={izabran.kljuc}
 								resursId={resursId}
 								kljucKalendara={kljucKalendara}
-								termin={izabran.termin}
+								// Trenutno stanje iz kalendara, ne ono u trenutku klika: preko SSE termin može postati zauzet
+								termin={data.termini.find((t) => t.pocetak === izabran.termin.pocetak) ?? izabran.termin}
 								kljuc={izabran.kljuc}
 								zona={zona}
 								termini={data.termini}

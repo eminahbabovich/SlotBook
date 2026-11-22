@@ -28,10 +28,11 @@ export function naIstekSesije(funkcija) {
 	javiIstek = funkcija
 }
 
-// oblik 'blob' je za fajlove (CSV), sve ostalo je JSON
-export async function apiFetch(putanja, { metoda = 'GET', tijelo, zaglavlja = {}, oblik = 'json' } = {}) {
+// oblik 'blob' je za fajlove (CSV), 'tok' za SSE (vraća Response, tijelo čita pozivalac), sve ostalo je JSON.
+// signal prekida zahtjev, npr. kad se kalendar zatvori dok je tok otvoren.
+export async function apiFetch(putanja, { metoda = 'GET', tijelo, zaglavlja = {}, oblik = 'json', signal } = {}) {
 	const poslaniToken = accessToken
-	const odgovor = await posalji(putanja, metoda, tijelo, zaglavlja, poslaniToken)
+	const odgovor = await posalji(putanja, metoda, tijelo, zaglavlja, poslaniToken, signal)
 	if (odgovor.status !== 401 || poslaniToken === null || putanja.startsWith('/api/auth/')) {
 		return procitaj(odgovor, oblik)
 	}
@@ -40,7 +41,7 @@ export async function apiFetch(putanja, { metoda = 'GET', tijelo, zaglavlja = {}
 	if (accessToken === poslaniToken && !(await obnoviSesiju())) {
 		return procitaj(odgovor, oblik)
 	}
-	return procitaj(await posalji(putanja, metoda, tijelo, zaglavlja, accessToken), oblik)
+	return procitaj(await posalji(putanja, metoda, tijelo, zaglavlja, accessToken, signal), oblik)
 }
 
 // Više zahtjeva može dobiti 401 u isto vrijeme. Svi čekaju isti refresh, jer bi drugi
@@ -76,9 +77,9 @@ async function posaljiRefresh() {
 	return true
 }
 
-async function posalji(putanja, metoda, tijelo, zaglavlja, token) {
+async function posalji(putanja, metoda, tijelo, zaglavlja, token, signal) {
 	const headers = { Accept: 'application/json, application/problem+json', ...zaglavlja }
-	const opcije = { method: metoda, headers }
+	const opcije = { method: metoda, headers, signal }
 	if (token !== null) {
 		headers.Authorization = `Bearer ${token}`
 	}
@@ -99,6 +100,9 @@ async function procitaj(odgovor, oblik) {
 	}
 	if (odgovor.status === 204) {
 		return null
+	}
+	if (oblik === 'tok') {
+		return odgovor
 	}
 	if (oblik === 'blob') {
 		return odgovor.blob()

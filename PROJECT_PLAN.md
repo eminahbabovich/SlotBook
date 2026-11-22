@@ -396,7 +396,7 @@ test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati 
    rezervacija vrati `409`). Uz to lista čekanja ide u izvoz podataka (`/api/me/export`).
 3. ✅ **iCal pretplata** (22.11.2026). Tajni link po korisniku (`.ics` bez prijave, token se može promijeniti), moje
    rezervacije u Google/Apple kalendaru. Dugme za kopiranje linka u UI-ju.
-4. **Live kalendar (SSE).** Kad neko rezerviše ili otkaže, otvoreni kalendari istog resursa se
+4. ✅ **Live kalendar (SSE)** (22.11.2026). Kad neko rezerviše ili otkaže, otvoreni kalendari istog resursa se
    osvježe bez reloada. Događaj ide poslije commita, a tok vidi samo član organizacije.
 5. **Ponavljajuće rezervacije.** Isti termin svake sedmice, N puta (najviše 12). Sve ili ništa u jednoj
    transakciji, a `409` kaže koji datumi su zauzeti. UI: izbor broja sedmica pri rezervaciji.

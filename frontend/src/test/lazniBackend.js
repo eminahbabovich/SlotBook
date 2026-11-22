@@ -18,11 +18,24 @@ export const TOKEN = () => json({ accessToken: 'tok', tokenType: 'Bearer', expir
 export function backend(odgovori) {
 	const fetch = vi.fn(async (putanja, opcije) => {
 		const odgovor = odgovori[`${opcije.method} ${putanja}`] ?? odgovori[putanja]
+		// Kalendar uvijek otvara tok. Test koji ga ne zadaje dobije tok koji šuti dok se kalendar ne zatvori.
+		if (odgovor === undefined && putanja.endsWith('/slots/stream')) return tok([], opcije.signal)
 		if (odgovor === undefined) throw new Error(`test nema odgovor za ${opcije.method} ${putanja}`)
-		return odgovor(opcije.body === undefined ? undefined : JSON.parse(opcije.body), opcije.headers)
+		return odgovor(opcije.body === undefined ? undefined : JSON.parse(opcije.body), opcije.headers, opcije.signal)
 	})
 	vi.stubGlobal('fetch', fetch)
 	return fetch
+}
+
+// SSE odgovor: šalje date poruke, pa ostane otvoren dok signal ne prekine vezu, kao pravi server
+export function tok(poruke, signal) {
+	const tijelo = new ReadableStream({
+		start(kontroler) {
+			for (const poruka of poruke) kontroler.enqueue(new TextEncoder().encode(poruka))
+			signal?.addEventListener('abort', () => kontroler.error(new DOMException('Prekinuto', 'AbortError')))
+		},
+	})
+	return new Response(tijelo, { status: 200, headers: { 'Content-Type': 'text/event-stream' } })
 }
 
 export const PRIJAVLJENA = {

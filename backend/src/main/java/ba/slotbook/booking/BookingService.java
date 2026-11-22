@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +48,7 @@ public class BookingService {
 	private final UserRepository users;
 	private final SlotService slotService;
 	private final NotificationService notifications;
+	private final ApplicationEventPublisher objave;
 	private final Clock clock;
 	private final Duration rokZaPotvrdu;
 	private final Duration zatvaranjePoslije;
@@ -56,7 +58,7 @@ public class BookingService {
 
 	public BookingService(BookingRepository bookings, WaitlistEntryRepository waitlist, BookingEventRepository events,
 			ResourceRepository resources, UserRepository users, SlotService slotService,
-			NotificationService notifications, Clock clock,
+			NotificationService notifications, ApplicationEventPublisher objave, Clock clock,
 			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu,
 			@Value("${slotbook.booking.complete-after-hours}") int satiDoZatvaranja,
 			@Value("${slotbook.booking.reminder-hours}") int satiDoPodsjetnika, MeterRegistry metrike) {
@@ -67,6 +69,7 @@ public class BookingService {
 		this.users = users;
 		this.slotService = slotService;
 		this.notifications = notifications;
+		this.objave = objave;
 		this.clock = clock;
 		this.rokZaPotvrdu = Duration.ofHours(satiZaPotvrdu);
 		this.zatvaranjePoslije = Duration.ofHours(satiDoZatvaranja);
@@ -133,6 +136,7 @@ public class BookingService {
 		events.save(new BookingEvent(rezervacija, null, status, klijent, sada));
 		waitlist.markBooked(resourceId, clientId, termin.start());
 		obavijesti(rezervacija, clientId);
+		objave.publishEvent(new SlotsChanged(resourceId));
 		napravljene.increment();
 		return BookingResponse.from(rezervacija);
 	}
@@ -222,6 +226,8 @@ public class BookingService {
 		events.save(new BookingEvent(rezervacija, stari, rezervacija.getStatus(), users.getReferenceById(actorId),
 				sada));
 		obavijesti(rezervacija, actorId);
+		// Svaki prelaz, i potvrda: kalendaru vlasnika se mijenja oznaka "na čekanju" u "moje"
+		objave.publishEvent(new SlotsChanged(rezervacija.getResource().getId()));
 		return BookingResponse.from(rezervacija);
 	}
 
@@ -250,6 +256,7 @@ public class BookingService {
 	private void javiIsteklim(List<UUID> istekle) {
 		for (Booking rezervacija : bookings.findAllById(istekle)) {
 			javi(rezervacija.getClient().getId(), NotificationType.BOOKING_EXPIRED, rezervacija);
+			objave.publishEvent(new SlotsChanged(rezervacija.getResource().getId()));
 		}
 	}
 

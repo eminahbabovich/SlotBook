@@ -126,6 +126,9 @@ test('klijent se prijavi, rezerviše termin i otkaže ga, pa je termin opet slob
 })
 
 test('kad neko drugi uzme termin prije potvrde, klijent dobije poruku i najbliži slobodan termin', async ({ page }) => {
+	// Bez živog kalendara, kao kad SSE veza pukne. S njim bi termin postao zauzet prije klika (test ispod),
+	// a ovdje se dokazuje 409, koji ostaje zadnja zaštita.
+	await page.route('**/slots/stream', (zahtjev) => zahtjev.abort())
 	await prijaviKlijenta(page)
 	await termin(page, '11:00 do 12:00', 'slobodno').click()
 
@@ -207,4 +210,25 @@ test('klijent napravi link za kalendar, a kalendar kroz taj link bez prijave dob
 	await expect(polje).not.toHaveValue(adresa)
 	expect((await kalendar.get(adresa)).status()).toBe(404)
 	await kalendar.dispose()
+})
+
+test('kad neko drugi rezerviše termin koji klijent gleda, kalendar ga pokaže zauzetim bez osvježavanja', async ({ page }) => {
+	const tok = page.waitForResponse((odgovor) => odgovor.url().endsWith(`/api/resources/${resursId}/slots/stream`))
+	await prijaviKlijenta(page)
+	await termin(page, '15:00 do 16:00', 'slobodno').click()
+	await expect(page.getByRole('button', { name: 'Rezerviši' })).toBeVisible()
+	// Veza mora biti otvorena prije admina, inače signal nema kome stići
+	expect((await tok).headers()['content-type']).toMatch(/^text\/event-stream/)
+
+	const admin = (await posalji('POST', '/api/auth/login', { tijelo: { email: ADMIN, password: LOZINKA } })).accessToken
+	const sutra = danUZoni(Date.now() + 24 * 3600_000)
+	const { slots } = await posalji('GET', `/api/resources/${resursId}/slots?from=${danUZoni(Date.now())}&to=${danUZoni(Date.now() + 8 * 24 * 3600_000)}`, { token: admin })
+	const petnaest = slots.find((s) => danUZoni(new Date(s.start)) === sutra && satUZoni(new Date(s.start)) === '15:00')
+	await posalji('POST', `/api/resources/${resursId}/bookings`, { token: admin, tijelo: { startTime: petnaest.start } })
+
+	// Bez reload-a i bez klika: potvrda sama kaže da je termin zauzet i nudi najbliži slobodan
+	await expect(termin(page, '15:00 do 16:00', 'zauzeto')).toBeVisible({ timeout: 5000 })
+	await expect(page.getByRole('alert')).toHaveText('Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.')
+	await expect(page.getByRole('button', { name: 'Rezerviši' })).toHaveCount(0)
+	await expect(page.getByRole('button', { name: /^Najbliži slobodan:/ })).toBeVisible()
 })

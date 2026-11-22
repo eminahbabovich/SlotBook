@@ -101,6 +101,7 @@ class OrganizationIsolationApiTest {
 					"""),
 			new Zahtjev(HttpMethod.DELETE, "/api/resources/{resourceId}/time-off/{timeOffId}", null),
 			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/slots?from=2035-08-06&to=2035-08-13", null),
+			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/slots/stream", null),
 			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/bookings?from=2035-08-06&to=2035-08-13", null),
 			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/stats?from=2035-08-01&to=2035-09-01", null),
 			// POST prije GET-a, da admin u drugom testu ima šta pročitati
@@ -121,6 +122,7 @@ class OrganizationIsolationApiTest {
 			"GET /api/resources/{resourceId}",
 			"GET /api/resources/{resourceId}/availability",
 			"GET /api/resources/{resourceId}/slots",
+			"GET /api/resources/{resourceId}/slots/stream",
 			"GET /api/resources/{resourceId}/image",
 			"POST /api/resources/{resourceId}/bookings",
 			"POST /api/resources/{resourceId}/waitlist");
@@ -132,6 +134,7 @@ class OrganizationIsolationApiTest {
 			"GET /api/resources/{resourceId}",
 			"GET /api/resources/{resourceId}/availability",
 			"GET /api/resources/{resourceId}/slots",
+			"GET /api/resources/{resourceId}/slots/stream",
 			"GET /api/resources/{resourceId}/image",
 			"POST /api/resources/{resourceId}/bookings",
 			"POST /api/resources/{resourceId}/waitlist",

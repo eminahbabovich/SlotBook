@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -37,11 +38,13 @@ public class WaitlistService {
 	private final UserRepository users;
 	private final SlotService slotService;
 	private final NotificationService notifications;
+	private final ApplicationEventPublisher objave;
 	private final Clock clock;
 	private final String appUrl;
 
 	public WaitlistService(WaitlistEntryRepository entries, BookingRepository bookings, ResourceRepository resources,
-			UserRepository users, SlotService slotService, NotificationService notifications, Clock clock,
+			UserRepository users, SlotService slotService, NotificationService notifications,
+			ApplicationEventPublisher objave, Clock clock,
 			@Value("${slotbook.app-url}") String appUrl) {
 		this.entries = entries;
 		this.bookings = bookings;
@@ -49,6 +52,7 @@ public class WaitlistService {
 		this.users = users;
 		this.slotService = slotService;
 		this.notifications = notifications;
+		this.objave = objave;
 		this.clock = clock;
 		this.appUrl = appUrl;
 	}
@@ -102,7 +106,7 @@ public class WaitlistService {
 	@Transactional
 	public int offerFreed() {
 		Instant sada = clock.instant();
-		entries.expireAll(sada);
+		entries.expireAll(sada).forEach(resourceId -> objave.publishEvent(new SlotsChanged(resourceId)));
 		int ponude = 0;
 		for (UUID id : entries.findFirstInLineForFreeSlots(sada)) {
 			WaitlistEntry upis = entries.findWithResourceById(id).orElseThrow();
@@ -120,6 +124,8 @@ public class WaitlistService {
 			if (entries.offer(id, rok) == 1) {
 				notifications.enqueue(upis.getClient().getId(), NotificationType.WAITLIST_OFFER,
 						BookingEmails.ponuda(upis, rok, appUrl));
+				// Drugima se termin sad prikazuje kao zauzet, a onome kome je ponuđen kao njegov
+				objave.publishEvent(new SlotsChanged(resourceId));
 				ponude++;
 			}
 		}
