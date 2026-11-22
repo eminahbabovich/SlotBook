@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { postaviToken } from './apiFetch.js'
-import { mojeRezervacije, otkazi, rezervisi } from './rezervacije.js'
+import { mojeRezervacije, otkazi, rezervisi, rezervisiSeriju } from './rezervacije.js'
 
 afterEach(() => {
 	vi.unstubAllGlobals()
@@ -66,3 +66,27 @@ test('otkazivanje je POST na rezervaciju i vraća novi status', async () => {
 	expect(fetch.mock.calls[0][0]).toBe('/api/bookings/b1/cancel')
 	expect(fetch.mock.calls[0][1].method).toBe('POST')
 })
+
+// BookingSeriesResponse iz BookingSeriesApiTest: rezervacije po redu sedmica, svaka kao BookingResponse
+test('serija vraća rezervacije po sedmicama s istim poljima kao jedna rezervacija', async () => {
+	const tijelo = {
+		seriesId: 's1',
+		bookings: [
+			{ id: 'b1', resourceId: 'r1', startTime: '2036-03-24T08:00:00Z', endTime: '2036-03-24T09:00:00Z', status: 'PENDING', expiresAt: '2036-03-21T10:00:00Z' },
+			{ id: 'b2', resourceId: 'r1', startTime: '2036-03-31T07:00:00Z', endTime: '2036-03-31T08:00:00Z', status: 'PENDING', expiresAt: '2036-03-21T10:00:00Z' },
+		],
+	}
+	vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(tijelo), { status: 201, headers: { 'Content-Type': 'application/json' } })))
+
+	const rezervacije = await rezervisiSeriju('r1', '2036-03-24T08:00:00Z', 2, 'k-2')
+
+	expect(rezervacije.map((r) => r.pocetak)).toEqual(['2036-03-24T08:00:00Z', '2036-03-31T07:00:00Z'])
+	expect(rezervacije[0]).toEqual({ id: 'b1', pocetak: '2036-03-24T08:00:00Z', kraj: '2036-03-24T09:00:00Z', status: 'PENDING', rokPotvrde: '2036-03-21T10:00:00Z' })
+})
+
+test('serija bez liste rezervacija padne glasno', async () => {
+	vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ seriesId: 's1' }), { status: 201, headers: { 'Content-Type': 'application/json' } })))
+
+	await expect(rezervisiSeriju('r1', '2036-03-24T08:00:00Z', 2, 'k-2')).rejects.toThrow('/api/resources/r1/bookings/series: nema polja bookings')
+})
+

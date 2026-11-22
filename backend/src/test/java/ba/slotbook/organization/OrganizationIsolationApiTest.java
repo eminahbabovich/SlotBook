@@ -81,6 +81,10 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/bookings", """
 					{"startTime": "2035-08-06T08:00:00+02:00"}
 					"""),
+			// Druge dvije sedmice, da se ne sudari s rezervacijom iznad
+			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/bookings/series", """
+					{"startTime": "2035-08-13T08:00:00+02:00", "weeks": 2}
+					"""),
 			// 14:00 drži Selmina rezervacija. Termin postoji i s 90 i sa 120 minuta trajanja.
 			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/waitlist", """
 					{"startTime": "2036-01-07T14:00:00+01:00"}
@@ -125,6 +129,7 @@ class OrganizationIsolationApiTest {
 			"GET /api/resources/{resourceId}/slots/stream",
 			"GET /api/resources/{resourceId}/image",
 			"POST /api/resources/{resourceId}/bookings",
+			"POST /api/resources/{resourceId}/bookings/series",
 			"POST /api/resources/{resourceId}/waitlist");
 
 	// Provider drugog stola uz to pravi svoj resurs i vidi statistiku (samo svojih resursa, to dokazuje
@@ -137,6 +142,7 @@ class OrganizationIsolationApiTest {
 			"GET /api/resources/{resourceId}/slots/stream",
 			"GET /api/resources/{resourceId}/image",
 			"POST /api/resources/{resourceId}/bookings",
+			"POST /api/resources/{resourceId}/bookings/series",
 			"POST /api/resources/{resourceId}/waitlist",
 			"POST /api/organizations/{id}/resources",
 			"GET /api/organizations/{id}/stats");

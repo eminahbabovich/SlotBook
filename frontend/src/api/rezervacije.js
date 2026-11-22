@@ -10,6 +10,21 @@ export async function rezervisi(resursId, pocetak, kljuc) {
 	return { id: r.id, pocetak: r.startTime, kraj: r.endTime, status: r.status, rokPotvrde: r.expiresAt ?? null }
 }
 
+// BookingSeriesRequest(startTime, weeks) -> BookingSeriesResponse(seriesId, bookings). Sve ili ništa:
+// kad neka sedmica nije slobodna, 409 ima zauzetiTermini i nijedna rezervacija nije napravljena.
+export async function rezervisiSeriju(resursId, pocetak, sedmica, kljuc) {
+	const putanja = `/api/resources/${resursId}/bookings/series`
+	const r = provjeriPolja(
+		await apiFetch(putanja, { metoda: 'POST', tijelo: { startTime: pocetak, weeks: sedmica }, zaglavlja: { 'Idempotency-Key': kljuc } }),
+		['seriesId', 'bookings'],
+		putanja,
+	)
+	return r.bookings.map((b) => {
+		provjeriPolja(b, ['id', 'startTime', 'endTime', 'status'], putanja)
+		return { id: b.id, pocetak: b.startTime, kraj: b.endTime, status: b.status, rokPotvrde: b.expiresAt ?? null }
+	})
+}
+
 const POLJA_MOJE = ['id', 'resourceName', 'organizationName', 'timezone', 'startTime', 'endTime', 'status', 'cancelDeadline']
 
 // PageResponse<MyBookingResponse>, najkasniji termin prvo (redoslijed bira backend)

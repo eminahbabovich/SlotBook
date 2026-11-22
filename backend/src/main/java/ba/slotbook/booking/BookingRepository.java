@@ -94,4 +94,6 @@ interface BookingRepository extends JpaRepository<Booking, UUID> {
 	// Pokriva ga indeks iza UNIQUE (client_id, idempotency_key)
 	Optional<Booking> findByClientIdAndIdempotencyKey(UUID clientId, String idempotencyKey);
 
+	List<Booking> findBySeriesIdOrderByStartTime(UUID seriesId);
+
 }

@@ -34,6 +34,7 @@ import ba.slotbook.booking.CalendarFeedNotFoundException;
 import ba.slotbook.booking.CancelDeadlinePassedException;
 import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.NoShowTooEarlyException;
+import ba.slotbook.booking.SeriesConflictException;
 import ba.slotbook.booking.SlotOfferedException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.booking.WaitlistNotNeededException;
@@ -172,6 +173,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		problem.setTitle(ex.getRazlog() == WaitlistNotNeededException.Razlog.SLOBODAN ? "Termin je slobodan"
 				: "Termin je već tvoj");
 		problem.setProperty("razlog", ex.getRazlog());
+		return problem;
+	}
+
+	// Lista termina, a ne datuma: frontend ih prikaže u zoni organizacije, kao i ostala vremena
+	@ExceptionHandler(SeriesConflictException.class)
+	ProblemDetail serijaNijeSlobodna(SeriesConflictException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Nijedna rezervacija nije napravljena, jer neke sedmice nisu slobodne. Izaberi manje sedmica ili drugi termin.");
+		problem.setTitle("Neki termini iz serije nisu slobodni");
+		problem.setProperty("zauzetiTermini", ex.getNisuSlobodni());
 		return problem;
 	}
 

@@ -398,7 +398,7 @@ test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati 
    rezervacije u Google/Apple kalendaru. Dugme za kopiranje linka u UI-ju.
 4. ✅ **Live kalendar (SSE)** (22.11.2026). Kad neko rezerviše ili otkaže, otvoreni kalendari istog resursa se
    osvježe bez reloada. Događaj ide poslije commita, a tok vidi samo član organizacije.
-5. **Ponavljajuće rezervacije.** Isti termin svake sedmice, N puta (najviše 12). Sve ili ništa u jednoj
+5. ✅ **Ponavljajuće rezervacije** (22.11.2026). Isti termin svake sedmice, N puta (najviše 12). Sve ili ništa u jednoj
    transakciji, a `409` kaže koji datumi su zauzeti. UI: izbor broja sedmica pri rezervaciji.
 6. **QR check-in.** Rezervacija ima QR kod s potpisanim tokenom. Provider ga skenira ili otvori link i
    rezervacija prelazi u `COMPLETED`. Bez tokena ili za tuđi resurs nema prelaza.
@@ -611,3 +611,8 @@ Otvoreno iz Faze 4 (nije ideja nego dug, za pregled u Fazi 13):
 - `S3StorageServiceTest` je jednom pao usred cijele suite (`The target server failed to respond`), a sam prolazi.
 - Handler za `ObjectOptimisticLockingFailureException` (`409`) nije provjeren kroz HTTP, samo `@Version` u servisu.
 - Grana `23505` -> `422` (dva različita termina s istim `Idempotency-Key` u istom trenutku) nema test.
+
+Otvoreno iz Faze 10:
+
+- Serija rezervacija: otkazivanje cijele serije odjednom i jedan email za seriju umjesto po jednog za svaku sedmicu.
+- SSE radi samo s jednom instancom backenda (veze su u memoriji). Na Renderu nije provjereno koliko dugo drži otvorenu vezu.

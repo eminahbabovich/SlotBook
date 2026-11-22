@@ -232,3 +232,16 @@ test('kad neko drugi rezerviše termin koji klijent gleda, kalendar ga pokaže z
 	await expect(page.getByRole('button', { name: 'Rezerviši' })).toHaveCount(0)
 	await expect(page.getByRole('button', { name: /^Najbliži slobodan:/ })).toBeVisible()
 })
+
+test('klijent rezerviše isti termin tri sedmice zaredom i vidi sva tri u svojim rezervacijama', async ({ page }) => {
+	await prijaviKlijenta(page)
+	await termin(page, '10:00 do 11:00', 'slobodno').click()
+	await page.getByLabel('Ponavljanje').selectOption({ label: 'Svake sedmice, 3 puta' })
+
+	await page.getByRole('button', { name: 'Rezerviši 3 termina' }).click()
+	await expect(page.getByText(/^Termini su tvoji, svake sedmice u isto vrijeme\. Prvi: .*10:00 do 11:00\. Zadnji: .*\.$/)).toBeVisible()
+
+	await page.getByRole('link', { name: 'Moje rezervacije' }).click()
+	await expect(page.getByRole('list', { name: 'Nadolazeće' }).getByRole('listitem').filter({ hasText: '10:00 do 11:00' })).toHaveCount(3)
+})
+

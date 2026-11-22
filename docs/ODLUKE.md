@@ -986,3 +986,14 @@ Ograničenje: otvorene veze su u memoriji jedne instance. Sa dvije instance prom
 
 Jedna promjena ponašanja koju je SSE donio: kad neko drugi uzme termin dok klijent gleda potvrdu, potvrda to kaže prije klika ("Neko je upravo rezervisao ovaj termin"), isto kao kod `409`, i nudi najbliži slobodan. Prva verzija to nije radila: red je postao zauzet, a ispod njega je ostalo dugme "Rezerviši", jer je potvrda pamtila termin iz trenutka klika. Vidio sam to tek u e2e testu kroz pravi browser, Vitest test to nije pokrivao. Sad potvrda čita trenutno stanje termina iz kalendara. `409` i dalje postoji kao zadnja zaštita, kad veza ne radi. E2e test za `409` zato blokira tok (`page.route`), a novi e2e test dokazuje osvježavanje bez reloada.
 
+## Ponavljajuće rezervacije (22.11.2026)
+
+Serija je isti termin svake sedmice, od 2 do 12 puta, i pravi se sve ili ništa. Endpoint je zaseban (`POST /api/resources/{id}/bookings/series`), a ne polje `weeks` na običnoj rezervaciji, jer vraća listu i ima svoj `409`.
+
+Sedmice se računaju u zoni organizacije (`ZonedDateTime.plusWeeks`), ne dodavanjem 7 dana na `Instant`. Razlika se vidi preko ljetnog vremena: serija od 17.3.2036 u 09:00 ide 08:00Z, 08:00Z, pa 07:00Z i 07:00Z, a za klijenta je uvijek 09:00. `BookingSeriesApiTest` to provjerava, a mutacija s `Instant.plus(7 dana)` ga obori.
+
+Kako je "sve ili ništa": resurs se zaključa (`findLockedById`, isto kao kod obične rezervacije), pa se za svaku sedmicu provjeri da se termin nudi i da je slobodan. Ako bilo koja nije, baca se `409` s listom `zauzetiTermini` i ništa se ne upisuje. Tek kad su sve slobodne, upisuju se jedna po jedna. `EXCLUDE` constraint i dalje stoji iza toga, pa i da provjera nešto propusti, transakcija se vrati cijela. Mogao sam samo upisivati redom i hvatati grešku constrainta, ali bi tada `409` znao samo za prvu zauzetu sedmicu, a ne za sve.
+
+Sve rezervacije iz serije imaju isti `series_id` (nova kolona, `V36`). Za sada služi samo za ponovljen zahtjev: `Idempotency-Key` se upisuje samo na prvu rezervaciju serije, jer je kolona `UNIQUE`, a ponovljen zahtjev nađe seriju preko nje. Isti ključ s drugim brojem sedmica je `422`, kao i kod obične rezervacije s drugim terminom. Na frontendu ključ dobije broj sedmica kao nastavak (`...-3`), da promjena broja sedmica u istoj potvrdi ne bude "isti zahtjev".
+
+Šta nisam uradio: otkazivanje cijele serije odjednom (otkazuje se termin po termin) i jedan email za cijelu seriju. Sad svaka sedmica pošalje svoj email, pa serija od 12 sedmica pošalje 12 emailova. To je za "Dodatke" ako bude smetalo.

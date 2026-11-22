@@ -46,6 +46,17 @@ public class BookingController {
 				request.startTime().toInstant(), idempotencyKey);
 	}
 
+	// Isto pravo kao za jednu rezervaciju: ko vidi resurs, rezerviše na njemu
+	@PostMapping("/api/resources/{resourceId}/bookings/series")
+	@ResponseStatus(HttpStatus.CREATED)
+	@PreAuthorize("@resourceAccess.canView(#resourceId, authentication)")
+	public BookingSeriesResponse createSeries(@PathVariable UUID resourceId, @AuthenticationPrincipal Jwt token,
+			@Valid @RequestBody BookingSeriesRequest request,
+			@RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
+		return bookingService.createSeries(resourceId, UUID.fromString(token.getSubject()),
+				request.startTime().toInstant(), request.weeks(), idempotencyKey);
+	}
+
 	// Raspored vidi samo ko vodi resurs (admin ili njegov provider): u njemu su imena klijenata
 	@GetMapping("/api/resources/{resourceId}/bookings")
 	@PreAuthorize("@resourceAccess.canManage(#resourceId, authentication)")

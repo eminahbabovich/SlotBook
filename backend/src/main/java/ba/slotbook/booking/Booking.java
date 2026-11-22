@@ -59,6 +59,9 @@ public class Booking {
 	@Column(name = "idempotency_key", updatable = false)
 	private String idempotencyKey;
 
+	@Column(name = "series_id", updatable = false)
+	private UUID seriesId;
+
 	// Provider potvrđuje dok klijent otkazuje: bez ovoga oba pročitaju PENDING, oba prođu i
 	// pobijedi ko zadnji upiše, a historija ima dva prelaza iz PENDING. Sa @Version drugi padne.
 	@Version
@@ -81,6 +84,11 @@ public class Booking {
 			Instant rok = createdAt.plus(rokZaPotvrdu);
 			this.expiresAt = rok.isBefore(startTime) ? rok : startTime;
 		}
+	}
+
+	// Samo prije prvog upisa: series_id se poslije ne mijenja
+	void uSeriju(UUID serija) {
+		this.seriesId = serija;
 	}
 
 	// Pravilo prelaza je u entitetu, pa ga ne može zaobići nijedan servis koji mijenja status
@@ -139,6 +147,10 @@ public class Booking {
 
 	public Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	public UUID getSeriesId() {
+		return seriesId;
 	}
 
 	public Instant getExpiresAt() {

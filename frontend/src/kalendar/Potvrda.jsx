@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { ApiError } from '../api/apiFetch.js'
-import { rezervisi } from '../api/rezervacije.js'
+import { rezervisi, rezervisiSeriju } from '../api/rezervacije.js'
 import { porukaGreske, serverNeOdgovara } from '../forma/porukaGreske.js'
-import { danUZoni } from '../vrijeme/vrijeme.js'
+import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
 import { opisTermina, rokPonude } from '../vrijeme/opis.js'
 
 const UPRAVO_ZAUZET = 'Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.'
@@ -19,15 +19,21 @@ const PORUKE = {
 export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini, naOdustani, naIzbor, naUspjeh }) {
 	const queryClient = useQueryClient()
 	const naslov = useId()
+	const poljeSedmica = useId()
 	const dugme = useRef(null)
+	const [sedmica, setSedmica] = useState(1)
 
 	const slanje = useMutation({
-		mutationFn: () => rezervisi(resursId, termin.pocetak, kljuc),
-		onSuccess: (rezervacija) => {
+		// Ključ veže i broj sedmica: druga serija istog termina je nova namjera, a ne ponovljen zahtjev
+		mutationFn: () =>
+			sedmica === 1
+				? rezervisi(resursId, termin.pocetak, kljuc).then((rezervacija) => [rezervacija])
+				: rezervisiSeriju(resursId, termin.pocetak, sedmica, `${kljuc}-${sedmica}`),
+		onSuccess: (rezervacije) => {
 			queryClient.invalidateQueries({ queryKey: ['kalendar', resursId] })
 			// Rezervisan termin s liste čekanja više nije na listi
 			queryClient.invalidateQueries({ queryKey: ['listaCekanja'] })
-			naUspjeh(rezervacija)
+			naUspjeh(rezervacije)
 		},
 		onError: (greska) => {
 			if (!zauzet(greska)) return
@@ -46,6 +52,7 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 	// Zauzet je i kad je 409 stigao na klik, i kad je kalendar preko SSE saznao prije klika
 	const upravoZauzet = !slanje.isError && !['slobodno', 'ponudjen'].includes(termin.stanje)
 	const greska409 = zauzet(slanje.error) || upravoZauzet
+	const nisuSlobodne = zauzeteSedmice(slanje.error)
 	const najblizi = greska409 ? najbliziSlobodan(termini, termin) : null
 
 	return (
@@ -69,12 +76,40 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 			{(slanje.isError || upravoZauzet) && (
 				<p role="alert" className="greska-forme">
 					{upravoZauzet ? UPRAVO_ZAUZET : porukaGreske(slanje.error, PORUKE)}
+					{nisuSlobodne && ` Nisu slobodne: ${nisuSlobodne.map((t) => nazivDana(danUZoni(t, zona))).join('; ')}.`}
 				</p>
+			)}
+			{!greska409 && (
+				<div className="polje">
+					<label htmlFor={poljeSedmica}>Ponavljanje</label>
+					<select
+						id={poljeSedmica}
+						value={sedmica}
+						onChange={(d) => {
+							setSedmica(Number(d.target.value))
+							// Stara greška se odnosila na drugi broj sedmica
+							slanje.reset()
+						}}
+					>
+						<option value={1}>Samo ovaj put</option>
+						{[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+							<option key={n} value={n}>
+								Svake sedmice, {n} puta
+							</option>
+						))}
+					</select>
+				</div>
 			)}
 			<div className="potvrda-dugmad">
 				{!greska409 && (
 					<button ref={dugme} className="dugme" type="button" onClick={() => slanje.mutate()} disabled={slanje.isPending}>
-						{slanje.isPending ? 'Rezervacija se šalje' : serverNeOdgovara(slanje.error) ? 'Pokušaj ponovo' : 'Rezerviši'}
+						{slanje.isPending
+							? 'Rezervacija se šalje'
+							: serverNeOdgovara(slanje.error)
+								? 'Pokušaj ponovo'
+								: sedmica === 1
+									? 'Rezerviši'
+									: `Rezerviši ${sedmica} termina`}
 					</button>
 				)}
 				{greska409 &&
@@ -93,8 +128,14 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 	)
 }
 
+// 409 za jedan termin. Serija ima svoj 409 (zauzetiTermini): tada izabrani termin može biti slobodan.
 function zauzet(greska) {
-	return greska instanceof ApiError && greska.status === 409
+	return greska instanceof ApiError && greska.status === 409 && zauzeteSedmice(greska) === null
+}
+
+function zauzeteSedmice(greska) {
+	const termini = greska instanceof ApiError && greska.status === 409 ? greska.problem?.zauzetiTermini : null
+	return Array.isArray(termini) ? termini : null
 }
 
 // Najbliži po vremenu, prije ili poslije. Kod istog razmaka pobjeđuje kasniji, jer je raniji

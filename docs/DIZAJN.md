@@ -92,6 +92,8 @@ Vrijeme je uvijek u zoni organizacije. Kad se zona browsera razlikuje, uz vrijem
 
 Kad se termini promijene preko SSE (neko je rezervisao ili otkazao), kalendar se osvježi bez animacije i bez bljeska: termin samo dobije novo stanje. Čitač ekrana dobije skrivenu najavu "Termini su osvježeni." (`aria-live="polite"`), da promjena ne prođe neprimijećeno. Fokus ostaje gdje je bio. Ako je otvorena potvrda za termin koji je neko upravo uzeo, ona izgleda isto kao poslije `409`: pitanje postane "Termin ... je zauzet.", ispod je greška s crvenom linijom i dugme za najbliži slobodan termin.
 
+Ponavljanje rezervacije je obično polje `select` u potvrdi, ispod pitanja: "Samo ovaj put" ili "Svake sedmice, N puta" (2 do 12). Nisam pravio kalendar s označavanjem sedmica, jer je pravilo uvijek isto (isti dan i sat), a padajuća lista radi tastaturom i na telefonu bez ičeg dodatnog. Dugme kaže koliko termina pravi ("Rezerviši 3 termina"). Kad neke sedmice nisu slobodne, greška ih nabroji po imenu dana, a polje ostane, da se može izabrati manje sedmica.
+
 ## Da ne liči na sve ostalo
 
 Najlakše je napraviti ekran koji izgleda kao hiljadu drugih: bijela kartica sa sjenom, ljubičasto dugme, ikonica uz svaki naslov i rečenica "Dobrodošli nazad!". To ne radimo. Prije nego što ekran bude gotov, pitam se dvije stvari. Da li se prepozna kao SlotBook kad se sakrije logo? Da li bi isti ekran mogao stajati u bilo kojoj drugoj aplikaciji? Ako bi mogao, nije gotov.

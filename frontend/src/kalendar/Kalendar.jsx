@@ -80,14 +80,25 @@ export function Kalendar({ resursId, zona }) {
 		porukaRef.current?.focus()
 	}
 
-	function uspjeh(rezervacija) {
+	function uspjeh(rezervacije) {
+		const [prva] = rezervacije
 		const termin = opisTermina(izabran.termin, zona)
+		const ceka = prva.status === 'PENDING'
+		const zadnji = nazivDana(danUZoni(rezervacije.at(-1).pocetak, zona))
 		setIzabran(null)
-		setPoruka(
-			rezervacija.status === 'PENDING'
-				? `Zahtjev je poslan, a termin ${termin} čeka potvrdu.${rezervacija.rokPotvrde ? ` Rok za potvrdu: ${opisTrenutka(rezervacija.rokPotvrde, zona)}.` : ''}`
-				: `Termin je tvoj: ${termin}.`,
-		)
+		if (rezervacije.length > 1) {
+			setPoruka(
+				ceka
+					? `Zahtjev je poslan za ${rezervacije.length} termina, svake sedmice u isto vrijeme, i svaki čeka potvrdu. Prvi: ${termin}. Zadnji: ${zadnji}.`
+					: `Termini su tvoji, svake sedmice u isto vrijeme. Prvi: ${termin}. Zadnji: ${zadnji}.`,
+			)
+		} else {
+			setPoruka(
+				ceka
+					? `Zahtjev je poslan, a termin ${termin} čeka potvrdu.${prva.rokPotvrde ? ` Rok za potvrdu: ${opisTrenutka(prva.rokPotvrde, zona)}.` : ''}`
+					: `Termin je tvoj: ${termin}.`,
+			)
+		}
 		// Dugme "Rezerviši" nestaje s potvrdom, pa fokus ide na poruku, ne na vrh stranice
 		porukaRef.current?.focus()
 	}
