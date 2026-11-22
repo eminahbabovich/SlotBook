@@ -925,3 +925,12 @@ Dokaz: `BookingRepositoryTest` provjerava da baza odbija rezervaciju od 8 sati i
 ## Faza 9 na produkciji
 
 22.11.2026. je na Renderu Health Check Path promijenjen na `/actuator/health/readiness`, a `SENTRY_DSN` postavljen. Poslije pusha `17738e1..be963f0` deploy je prošao i Render ga je pustio preko readiness provjere. Readiness i liveness s Rendera vraćaju `UP`, a odgovor nosi `x-request-id`. `V33` je primijenjena na Neon-u. U logu to nisam čitao, ali da je Flyway pao, aplikacija ne bi startala i deploy ne bi bio Live. Da Sentry prima događaje s produkcije još nije viđeno, jer od tada nije bilo greške `500`. `/actuator/health` pokazuje imena grupa (`liveness`, `readiness`), a to ne otkriva ništa o bazi ni o verzijama.
+
+## Backup s Neon-a i pg_attver
+
+Prvi backup s Neon-a se nije dao vratiti u običan Postgres 17. `pg_dump` je prošao, ali u dumpu je uz svaku kolonu bilo `ALTER TABLE ... ALTER COLUMN ... SET (pg_attver=...)`, Neonova opcija koju običan Postgres odbije (`unrecognized parameter "pg_attver"`). `pg_restore` šalje `CREATE TABLE` i te `ALTER`-e kao jedan upit, pa je palo i pravljenje 10 od 15 tabela, a za njima podaci, indeksi i strani ključevi. `pg_restore` je završio s "errors ignored on restore: 62", a poređenje broja redova je odmah pokazalo da `users` i ostale tabele fale.
+
+Popravka je u `docs/RUNBOOK.md`: dump se s `pg_restore -f` pretvori u SQL, `sed` izbaci linije sa `SET (pg_attver=`, a SQL se pusti kroz `psql` s `ON_ERROR_STOP`, da prva greška zaustavi vraćanje umjesto da se preskoči kao kod `pg_restore`. Ovako je prošlo, s istim brojem redova u svih 15 tabela. Šta `pg_attver` radi unutar Neona nisam provjerio. Za vraćanje u običan Postgres ta opcija ne treba.
+
+Ovo se ne bi vidjelo da sam samo napravio dump. Zato u RUNBOOK-u piše da backup nije dokazan dok nije vraćen i dok se ne poklopi broj redova.
+

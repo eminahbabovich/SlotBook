@@ -375,7 +375,7 @@ su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
 6. **k6 load test.** Skripta za slobodne termine, rezervaciju i sudar na istom terminu, lokalno. Brojke,
    mašina i pul konekcija u `docs/PERFORMANSE.md`. Gotovo 22.11.2026.
 7. **Backup i `docs/RUNBOOK.md`.** `pg_dump`, vraćanje u praznu bazu i provjera broja redova, pa isti
-   postupak za Neon. Lokalno gotovo i provjereno 22.11.2026, Neon čeka (ručni korak, komande u RUNBOOK-u).
+   postupak za Neon. Gotovo 22.11.2026, lokalno i s Neon-a.
 8. **Kraj faze.** README, status, ODLUKE. Gotovo 22.11.2026.
 
 ## Faza 14 po koracima
@@ -543,7 +543,6 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 Otvoreno iz Faze 9 (ručni koraci i dug):
 
 - Sentry je povezan (`SENTRY_DSN` na Renderu od 22.11.2026), ali prvi pravi događaj s produkcije još nije stigao, pa slanje tamo nije viđeno. Region organizacije nisam potvrdio.
-- Backup s Neon-a po `docs/RUNBOOK.md`, vraćen lokalno i s upoređenim brojem redova. Lokalno je postupak provjeren, na Neon-u nije.
 - k6 je mjeren samo na laptopu, ne na Renderu i Neon-u.
 
 Otvoreno iz Faze 8 (dug, za pregled u Fazi 13):

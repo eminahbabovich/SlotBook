@@ -43,39 +43,43 @@ Dump je imao 199 KB i trajao je 408 ms, a vraćanje 570 ms. `diff` je bio prazan
 
 Komande gore su iz Git Bash-a prepisane za PowerShell, i u PowerShellu ih nisam pokretao.
 
-### Neon
+### Neon, provjereno 22.11.2026.
 
-Ovo još nije urađeno, radi se ručno. Podatke za spajanje daje Neon konzola: Connect, pa isključiti "Connection pooling", jer dump treba direktnu adresu, kao i Flyway. Verziju servera vraća `select version();` u Neonovom SQL Editoru. Ispod je `postgres:17`. Ako je Neon na drugoj verziji, broj se mijenja.
+Podaci za spajanje su u Neon konzoli: Connect, pa isključiti "Connection pooling", jer dump treba direktnu adresu (host bez `-pooler`), kao i Flyway. Host, baza i korisnik nisu tajna, lozinka jeste. Skripta ispod je traži jednom (`Read-Host -AsSecureString`) i drži je samo u varijabli okruženja `PGPASSWORD` tog prozora. Dockeru se prosljeđuje kao `-e PGPASSWORD`, bez vrijednosti u komandi, a na kraju se briše. Verziju servera skripta pita Neon, pa koristi isti image (Neon je bio na 17).
 
-1. Backup (traži lozinku):
+```powershell
+$env:PGHOST = "<host bez -pooler>"
+$env:PGDATABASE = "neondb"
+$env:PGUSER = "neondb_owner"
+$env:PGSSLMODE = "require"
+$sigurna = Read-Host "Neon lozinka" -AsSecureString
+$env:PGPASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sigurna))
+try {
+    $neon = @("-e", "PGHOST", "-e", "PGDATABASE", "-e", "PGUSER", "-e", "PGPASSWORD", "-e", "PGSSLMODE")
+    $glavna = [int]((docker run --rm @neon postgres:17 psql -tAc "show server_version_num").Trim().Substring(0, 2))
+    New-Item -ItemType Directory -Force backup | Out-Null
+    docker run --rm @neon -v "${PWD}\backup:/backup" "postgres:$glavna" pg_dump -Fc -f /backup/neon.dump
+    docker run --rm @neon -v "${PWD}\docs\mjerenja:/sql:ro" "postgres:$glavna" psql -tA -f /sql/broj-redova.sql > backup\neon-prije.txt
+}
+finally {
+    Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
+    $sigurna = $null
+}
+```
 
-   ```powershell
-   New-Item -ItemType Directory -Force backup
-   docker run --rm -it -v "${PWD}\backup:/backup" postgres:17 pg_dump "host=<HOST> dbname=<BAZA> user=<KORISNIK> sslmode=require" -Fc -f /backup/neon.dump
-   ```
+Vraćanje u praznu lokalnu bazu. Običan `pg_restore` ovdje ne radi. Neon u dump upiše svoju opciju kolone, `ALTER TABLE ... ALTER COLUMN ... SET (pg_attver=...)`, koju običan Postgres ne poznaje. Prvi pokušaj je zato pao sa `unrecognized parameter "pg_attver"`: 10 od 15 tabela nije napravljeno, a uz njih ni podaci, indeksi i strani ključevi (62 greške). Dump se zato prvo pretvori u SQL, iz njega se izbace samo te linije, i pusti se kroz `psql`, koji staje na prvoj grešci:
 
-2. Brojanje na Neon-u (traži lozinku):
+```powershell
+docker run -d --rm --name slotbook-vracanje -e POSTGRES_PASSWORD=samo-za-provjeru "postgres:$glavna"
+docker cp backup\neon.dump slotbook-vracanje:/tmp/neon.dump
+docker exec slotbook-vracanje sh -c "pg_restore --no-owner --no-privileges -f /tmp/neon.sql /tmp/neon.dump && sed -i '/SET (pg_attver=/d' /tmp/neon.sql"
+docker exec slotbook-vracanje psql -U postgres -c "create database vraceno"
+docker exec slotbook-vracanje psql -U postgres -d vraceno -q -v ON_ERROR_STOP=1 -f /tmp/neon.sql
+Get-Content docs\mjerenja\broj-redova.sql | docker exec -i slotbook-vracanje psql -U postgres -d vraceno -tA > backup\neon-poslije.txt
+Compare-Object (Get-Content backup\neon-prije.txt) (Get-Content backup\neon-poslije.txt)
+docker stop slotbook-vracanje
+```
 
-   ```powershell
-   Get-Content docs\mjerenja\broj-redova.sql | docker run --rm -i postgres:17 psql "host=<HOST> dbname=<BAZA> user=<KORISNIK> sslmode=require" -tA > backup\neon-prije.txt
-   ```
+Rezultat 22.11.2026: dump je imao 49 512 bajta i trajao je 8 s, preko mreže do Neona u Frankfurtu. U njemu su bile 73 linije `pg_attver`, sve izbačene. Vraćanje je trajalo 521 ms i prošlo bez greške, a broj redova je isti u svih 15 tabela. U vraćenoj bazi su Flyway historija do verzije 33, oba `EXCLUDE` constrainta i `bookings_najvise_osam_sati`. Na Neon-u je bilo malo podataka (jedan korisnik), pa ovo dokazuje postupak, ne brzinu. Pretvaranje i vraćanje sam pokrenuo iz Git Bash-a, a dump i brojanje na Neon-u iz PowerShella.
 
-   Ako za vrijeme ova dva koraka neko pravi rezervaciju, brojevi se neće poklopiti. Na demo bazi to se ne očekuje.
-
-3. Vraćanje u praznu lokalnu bazu:
-
-   ```powershell
-   docker run -d --rm --name slotbook-vracanje -e POSTGRES_PASSWORD=samo-za-provjeru postgres:17
-   docker cp backup\neon.dump slotbook-vracanje:/tmp/neon.dump
-   docker exec slotbook-vracanje psql -U postgres -c "create database vraceno"
-   docker exec slotbook-vracanje pg_restore -U postgres -d vraceno --no-owner --no-privileges /tmp/neon.dump
-   Get-Content docs\mjerenja\broj-redova.sql | docker exec -i slotbook-vracanje psql -U postgres -d vraceno -tA > backup\neon-poslije.txt
-   Compare-Object (Get-Content backup\neon-prije.txt) (Get-Content backup\neon-poslije.txt)
-   docker stop slotbook-vracanje
-   ```
-
-   `--no-owner --no-privileges` je tu jer su na Neon-u vlasnici i prava za Neonove uloge, kojih lokalno nema. Ako `pg_restore` javi greške za te uloge, zapisati koje su.
-
-Rezultat (datum, veličina dumpa, trajanje, ishod poređenja) ide ovdje, umjesto ove rečenice.
-
-Neon ima i svoje vraćanje na raniji trenutak (branch iz prošlosti). Koliko unazad ide na besplatnom planu nisam provjerio, a ni to vraćanje nisam probao.
+Šta nije provjereno: vraćanje u novu Neon bazu, gdje bi `pg_attver` vjerovatno prošao i bez izbacivanja, i Neonovo vraćanje na raniji trenutak (branch iz prošlosti). Koliko unazad to ide na besplatnom planu nisam gledao.

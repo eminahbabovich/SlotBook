@@ -317,3 +317,6 @@ N+1 nisam našao nigdje. Brojač upita sam stavio kao `StatementInspector` u `Th
 k6 sam pustio iz Dockera, jer nije instaliran. Tri pokretanja, svaki put 601 rezervacija i u sudaru 30 puta `201` i 570 puta `409`, bez ijednog 5xx. Iznenadilo me koliko je log bučan: svaki `409` ostavi dvije WARN linije Hibernatea, 1 140 linija po pokretanju.
 
 Za backup mi je Git Bash prepravio `/tmp/slotbook.dump` u Windows putanju, pa je `pg_dump` pao s `could not open output file "C:/Users/HP/AppData/Local/Temp/slotbook.dump"`. Proradilo je sa `MSYS_NO_PATHCONV=1`. Vraćena baza ima isti broj redova u svih 15 tabela, a aplikacija se nad njom podigla bez ijedne migracije. Na Neon-u to tek trebam uraditi.
+
+Kasnije isti dan: Sentry je povezan, Render gleda readiness, sve je pushano i CI je zelen. Backup s Neon-a je prvo izgledao gotov, jer je dump od 49 KB nastao za 8 sekundi. Onda je `pg_restore` izbacio 62 greške, sve zbog `unrecognized parameter "pg_attver"`. Neon u dump upisuje svoju opciju za kolone, a običan Postgres ne zna šta je to. Prošlo je tek kad sam dump pretvorio u SQL i te linije izbacio sa `sed`. Da nisam poredio broj redova, mislio bih da imam backup.
+
