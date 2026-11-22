@@ -28,6 +28,17 @@ public class BookingAccess {
 				.orElse(false);
 	}
 
+	// Samo klijent čija je rezervacija. QR kod je njegov dokaz dolaska, pa ga provider ne može sam uzeti.
+	public boolean isClient(UUID bookingId, Authentication authentication) {
+		if (!(authentication instanceof JwtAuthenticationToken jwt)) {
+			return false;
+		}
+		UUID korisnikId = UUID.fromString(jwt.getToken().getSubject());
+		return bookings.findById(bookingId)
+				.map(rezervacija -> rezervacija.getClient().getId().equals(korisnikId))
+				.orElse(false);
+	}
+
 	// Klijent vidi i otkazuje svoju rezervaciju, a admin i provider bilo koju na resursu koji vode
 	public boolean canView(UUID bookingId, Authentication authentication) {
 		if (!(authentication instanceof JwtAuthenticationToken jwt)) {

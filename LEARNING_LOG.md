@@ -320,3 +320,17 @@ Za backup mi je Git Bash prepravio `/tmp/slotbook.dump` u Windows putanju, pa je
 
 Kasnije isti dan: Sentry je povezan, Render gleda readiness, sve je pushano i CI je zelen. Backup s Neon-a je prvo izgledao gotov, jer je dump od 49 KB nastao za 8 sekundi. Onda je `pg_restore` izbacio 62 greške, sve zbog `unrecognized parameter "pg_attver"`. Neon u dump upisuje svoju opciju za kolone, a običan Postgres ne zna šta je to. Prošlo je tek kad sam dump pretvorio u SQL i te linije izbacio sa `sed`. Da nisam poredio broj redova, mislio bih da imam backup.
 
+
+## nedjelja, 22. novembar 2026. u 16:09
+
+QR check-in, korak 6 Faze 10. Sesija mi se prekinula usred koraka, pa je nastavak išao od napola napisanog backenda.
+
+Kod u QR-u nije u bazi. To je HMAC nad ID-jem rezervacije, s ključem izvedenim iz JWT tajne, i backend ga samo izračuna ponovo i uporedi. Za poređenje ide `MessageDigest.isEqual`, jer obično `equals` stane na prvom različitom znaku, pa bi se iz trajanja moglo naslutiti koliko je pogođeno.
+
+Prvo je link bio `/check-in/{id}?k=...`. Dok sam pisao stranicu za providera, vidio sam da `Cuvar` pri slanju na prijavu pamti `pathname + hash`, a query ne. Provider koji nije prijavljen bi se prijavio i ostao bez koda. Prebacio sam na `#k=`, kao pozivnica, i to sada provjerava Vitest test s prijavom.
+
+E2e test je prvi put pao poslije 90 sekundi: `waiting for getByRole('button', { name: /11:00 do 12:00, slobodno$/ })`. Kod nije bio kriv. Test za `409` već uzima 11:00 i 12:00 u istoj organizaciji, a ja sam izabrao termin bez gledanja šta drugi testovi drže. Sad je 13:00. Poslije toga sam ga greškom pustio još jednom cijelog, umjesto da samo pročitam izvještaj, pa je to bilo još četiri minute.
+
+Mutacije su ovaj put uhvatile obje stvari: bez provjere koda pada test s kodom druge rezervacije, a `canView` umjesto `canManage` pada test u kojem studentica sama sebe skenira. Test izolacije tu drugu mutaciju nije uhvatio, i to je u redu, jer Lejla i Damir ni s `canView` ne vide Alminu rezervaciju.
+
+Da stvarna kamera pročita kod s ekrana nisam provjerio. Telefon ne može otvoriti `localhost`, pa to čeka Vercel.

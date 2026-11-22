@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { postaviToken } from './apiFetch.js'
-import { mojeRezervacije, otkazi, rezervisi, rezervisiSeriju } from './rezervacije.js'
+import { linkZaDolazak, mojeRezervacije, otkazi, rezervisi, rezervisiSeriju, upisiDolazakSKodom } from './rezervacije.js'
 
 afterEach(() => {
 	vi.unstubAllGlobals()
@@ -90,3 +90,23 @@ test('serija bez liste rezervacija padne glasno', async () => {
 	await expect(rezervisiSeriju('r1', '2036-03-24T08:00:00Z', 2, 'k-2')).rejects.toThrow('/api/resources/r1/bookings/series: nema polja bookings')
 })
 
+
+// Oblik kao CheckInLinkResponse i BookingResponse u BookingPrelaziApiTest
+test('link za dolazak je samo url, a upis dolaska šalje kod iz linka', async () => {
+	const fetch = vi.fn(async (putanja) =>
+		putanja.endsWith('/check-in-link')
+			? new Response(JSON.stringify({ url: 'http://localhost:5173/check-in/b1#k=abc' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+			: new Response(JSON.stringify({ id: 'b1', resourceId: 'r1', startTime: '2035-11-19T08:00:00Z', endTime: '2035-11-19T09:00:00Z', status: 'COMPLETED', expiresAt: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+	)
+	vi.stubGlobal('fetch', fetch)
+
+	expect(await linkZaDolazak('b1')).toBe('http://localhost:5173/check-in/b1#k=abc')
+	const upisana = await upisiDolazakSKodom('b1', 'abc')
+
+	expect(fetch.mock.calls[0][0]).toBe('/api/bookings/b1/check-in-link')
+	const [putanja, opcije] = fetch.mock.calls[1]
+	expect(putanja).toBe('/api/bookings/b1/check-in/qr')
+	expect(opcije.method).toBe('POST')
+	expect(JSON.parse(opcije.body)).toEqual({ token: 'abc' })
+	expect(upisana.status).toBe('COMPLETED')
+})

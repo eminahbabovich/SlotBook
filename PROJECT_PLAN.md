@@ -400,7 +400,7 @@ test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati 
    osvježe bez reloada. Događaj ide poslije commita, a tok vidi samo član organizacije.
 5. ✅ **Ponavljajuće rezervacije** (22.11.2026). Isti termin svake sedmice, N puta (najviše 12). Sve ili ništa u jednoj
    transakciji, a `409` kaže koji datumi su zauzeti. UI: izbor broja sedmica pri rezervaciji.
-6. **QR check-in.** Rezervacija ima QR kod s potpisanim tokenom. Provider ga skenira ili otvori link i
+6. ✅ **QR check-in** (22.11.2026). Rezervacija ima QR kod s potpisanim tokenom. Provider ga skenira ili otvori link i
    rezervacija prelazi u `COMPLETED`. Bez tokena ili za tuđi resurs nema prelaza.
 7. **Kapacitet veći od 1.** Grupni trening s N mjesta. `EXCLUDE` tu ne vrijedi, pa broj mjesta čuva
    lock resursa i brojanje, a dokaz je test sa 20 niti na 5 mjesta (prođe tačno 5).

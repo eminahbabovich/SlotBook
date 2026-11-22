@@ -78,3 +78,13 @@
 	padding-left: var(--razmak-16);
 	border-left: var(--razmak-4) solid var(--tekst);
 }
+
+/* QR kod za dolazak: tamni moduli na papiru, širok kao forma, da ga kamera lako uhvati i s telefona */
+.qr-dolaska {
+	display: grid;
+	gap: var(--razmak-8);
+	max-width: var(--sirina-forme);
+	margin: var(--razmak-8) 0 0;
+	color: var(--tekst);
+	background: var(--podloga);
+}

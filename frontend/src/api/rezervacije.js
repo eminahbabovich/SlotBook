@@ -55,3 +55,15 @@ export async function otkazi(rezervacijaId) {
 	const r = await apiFetch(putanja, { metoda: 'POST' })
 	return provjeriPolja(r, ['id', 'status'], putanja)
 }
+
+// CheckInLinkResponse(url). Link traži samo klijent, jer je QR kod njegov dokaz dolaska.
+export async function linkZaDolazak(rezervacijaId) {
+	const putanja = `/api/bookings/${rezervacijaId}/check-in-link`
+	return provjeriPolja(await apiFetch(putanja), ['url'], putanja).url
+}
+
+// QrCheckInRequest(token) -> BookingResponse. Šalje onaj ko vodi resurs, s kodom iz skeniranog linka.
+export async function upisiDolazakSKodom(rezervacijaId, kod) {
+	const putanja = `/api/bookings/${rezervacijaId}/check-in/qr`
+	return provjeriPolja(await apiFetch(putanja, { metoda: 'POST', tijelo: { token: kod } }), ['id', 'status'], putanja)
+}

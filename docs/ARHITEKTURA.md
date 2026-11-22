@@ -67,7 +67,7 @@ sequenceDiagram
     S-->>K: 201 BookingResponse
 ```
 
-Preklapanje čuva `EXCLUDE` constraint u bazi, a lock resursa postoji da drugi zahtjev dobije čist `409` umjesto deadlocka. Promjene statusa (`/confirm`, `/reject`, `/cancel`, `/check-in`, `/no-show`) idu kroz `Booking.prijedi`, koji zna tabelu dozvoljenih prelaza, a istovremenu izmjenu iste rezervacije hvata `@Version`. Zašto je tako, piše u [ODLUKE.md](ODLUKE.md).
+Preklapanje čuva `EXCLUDE` constraint u bazi, a lock resursa postoji da drugi zahtjev dobije čist `409` umjesto deadlocka. Promjene statusa (`/confirm`, `/reject`, `/cancel`, `/check-in`, `/check-in/qr`, `/no-show`) idu kroz `Booking.prijedi`, koji zna tabelu dozvoljenih prelaza, a istovremenu izmjenu iste rezervacije hvata `@Version`. Zašto je tako, piše u [ODLUKE.md](ODLUKE.md).
 
 ## Model podataka
 

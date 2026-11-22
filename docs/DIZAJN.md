@@ -69,6 +69,8 @@ Poruka poslije uspjeha je podebljan tekst ispod liste, bez ikone i zelene boje, 
 
 Link za kalendar (Moj nalog) je obično polje samo za čitanje: cijeli link se označi kad polje dobije fokus, pa se može kopirati i kad dugme "Kopiraj link" ne radi. Tamno dugme je samo jedno: "Napravi link" dok linka nema, a "Kopiraj link" odmah poslije. "Napravi novi link" i "Ugasi link" su sporedne radnje, podvučen tekst. Dugme i sporedne radnje stoje u jednom redu s razmakom `--razmak-16`, a na uskom ekranu se prelome jedno ispod drugog. Nove boje, fontove ni razmake ovo ne uvodi.
 
+QR kod za dolazak se otvara ispod potvrđene rezervacije, na klik na podvučen tekst "QR kod za dolazak", isto kao otkazivanje. Moduli su `--tekst` na `--podloga`, s praznim okvirom od 4 modula, a kod je širok najviše `--sirina-forme`, pa na telefonu zauzme skoro cijelu širinu i kamera ga lako uhvati. Ispod je napomena sitnim sivim slovima. Stranica koju provider otvori iz koda ima samo objašnjenje i jedno tamno dugme "Upiši dolazak". Nove boje, fontove ni razmake ovo ne uvodi.
+
 Forma je široka najviše `--sirina-forme` (400 px), da red za email na desktopu ne bude preko cijelog ekrana. Tu vrijednost sam potvrdio 15.11.2026, poslije koraka 4 Faze 7.
 
 ## Fokus

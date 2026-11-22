@@ -2,6 +2,7 @@ package ba.slotbook.organization;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -117,7 +118,12 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaOdbijanje}/reject", null),
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaOtkazivanje}/cancel", null),
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaDolazak}/check-in", null),
-			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaNedolazak}/no-show", null));
+			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaNedolazak}/no-show", null),
+			// Link za QR traži samo klijent (Alma), a kod iz njega skenira onaj ko vodi resurs
+			new Zahtjev(HttpMethod.GET, "/api/bookings/{zaQrDolazak}/check-in-link", null),
+			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaQrDolazak}/check-in/qr", """
+					{"token": "{qrKod}"}
+					"""));
 
 	// Šta smije klijent čitaonice: vidi aktivan resurs, radno vrijeme, termine i sliku, i rezerviše.
 	// Rezervacije u testu su Almine, pa njihovu historiju i otkazivanje ne smije. Sve ostalo je 403.
@@ -237,6 +243,7 @@ class OrganizationIsolationApiTest {
 				"zaOdbijanje", rezervacija(almaId, "2036-01-07 09:00+01", "PENDING"),
 				"zaOtkazivanje", rezervacija(almaId, "2036-01-07 10:00+01", "CONFIRMED"),
 				"zaDolazak", rezervacija(almaId, "2036-01-07 11:00+01", "CONFIRMED"),
+				"zaQrDolazak", rezervacija(almaId, "2036-01-07 12:00+01", "CONFIRMED"),
 				"zaNedolazak", rezervacija(almaId, OffsetDateTime.now().minusHours(2).toString(), "CONFIRMED"));
 	}
 
@@ -296,7 +303,7 @@ class OrganizationIsolationApiTest {
 
 	private String statusiPripremljenih() {
 		return jdbc.queryForObject("select string_agg(status, ',' order by start_time) from bookings where id in "
-				+ "(?, ?, ?, ?, ?)", String.class, rezervacije.values().toArray());
+				+ "(?, ?, ?, ?, ?, ?)", String.class, rezervacije.values().toArray());
 	}
 
 	private String providerStola() {
@@ -394,9 +401,21 @@ class OrganizationIsolationApiTest {
 		}
 		if (zahtjev.tijelo() != null) {
 			String almaId = users.findByEmail("alma.izolacija@example.com").orElseThrow().getId().toString();
-			builder.contentType(MediaType.APPLICATION_JSON).content(zahtjev.tijelo().replace("{almaId}", almaId));
+			String tijelo = zahtjev.tijelo().replace("{almaId}", almaId);
+			if (tijelo.contains("{qrKod}")) {
+				tijelo = tijelo.replace("{qrKod}", qrKod(rezervacije.get("zaQrDolazak")));
+			}
+			builder.contentType(MediaType.APPLICATION_JSON).content(tijelo);
 		}
 		return mockMvc.perform(builder).andReturn().getResponse().getStatus();
+	}
+
+	// Ispravan kod, da 403 dođe od autorizacije, a ne od pogrešnog koda. Daje ga Alma, jer je rezervacija njena.
+	private String qrKod(UUID rezervacija) throws Exception {
+		String link = JsonPath.read(mockMvc.perform(get("/api/bookings/{id}/check-in-link", rezervacija)
+				.header("Authorization", "Bearer " + alma))
+				.andReturn().getResponse().getContentAsString(), "$.url");
+		return link.substring(link.indexOf("#k=") + 3);
 	}
 
 	private long brojRedova(String tabela) {

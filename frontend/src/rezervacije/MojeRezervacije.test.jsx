@@ -185,3 +185,40 @@ describe('otkazivanje', () => {
 		expect(otkazivanja(fetch)).toHaveLength(2)
 	})
 })
+
+describe('QR kod za dolazak', () => {
+	test('potvrđena rezervacija pokaže QR kod na klik, a ona na čekanju i otkazana ga nemaju', async () => {
+		const fetch = backend({
+			...PRIJAVLJENA,
+			'/api/bookings/mine?page=0&size=20': () => json({ content: POCETNE(), page: 0, size: 20, totalElements: 4, totalPages: 1 }),
+			'/api/bookings/b1/check-in-link': () => json({ url: 'http://localhost:5173/check-in/b1#k=kod-iz-qr-a' }),
+		})
+		otvori('/rezervacije')
+		const korisnik = userEvent.setup()
+
+		const sto = await waitFor(() => redSa('Sto 4'))
+		expect(within(redSa('Grupna soba 2')).queryByRole('button', { name: 'QR kod za dolazak' })).toBeNull()
+		expect(within(redSa('Sala 1')).queryByRole('button', { name: 'QR kod za dolazak' })).toBeNull()
+		expect(fetch.mock.calls.some(([putanja]) => putanja.includes('check-in-link'))).toBe(false)
+
+		await korisnik.click(within(sto).getByRole('button', { name: 'QR kod za dolazak' }))
+
+		const kod = await within(sto).findByRole('img', { name: 'QR kod za dolazak: Sto 4, tihi dio' })
+		expect(kod.querySelector('path').getAttribute('d')).toMatch(/^M\d+ \d+h1v1h-1z/)
+		expect(within(sto).getByRole('button', { name: 'Sakrij QR kod' }).getAttribute('aria-expanded')).toBe('true')
+	})
+
+	test('kad se link ne učita, piše zašto i nudi ponovni pokušaj', async () => {
+		backend({
+			...PRIJAVLJENA,
+			'/api/bookings/mine?page=0&size=20': () => json({ content: POCETNE(), page: 0, size: 20, totalElements: 4, totalPages: 1 }),
+			'/api/bookings/b1/check-in-link': () => problem(503, { title: 'Nedostupno' }),
+		})
+		otvori('/rezervacije')
+
+		await userEvent.setup().click(within(await waitFor(() => redSa('Sto 4'))).getByRole('button', { name: 'QR kod za dolazak' }))
+
+		expect((await screen.findByRole('alert')).textContent).toBe('QR kod se nije učitao, server ne odgovara. Pokušaj ponovo za minutu.')
+		expect(screen.getByRole('button', { name: 'Pokušaj ponovo' })).toBeTruthy()
+	})
+})

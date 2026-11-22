@@ -245,3 +245,32 @@ test('klijent rezerviše isti termin tri sedmice zaredom i vidi sva tri u svojim
 	await expect(page.getByRole('list', { name: 'Nadolazeće' }).getByRole('listitem').filter({ hasText: '10:00 do 11:00' })).toHaveCount(3)
 })
 
+
+// Kameru Playwright nema, pa se link uzme iz odgovora koji je nacrtan u QR kod i otvori u
+// browseru admina, kao što bi ga otvorio telefon. Admin se prvo prijavi, a kod iza # ostane u linku.
+test('klijent pokaže QR kod, admin otvori link iz njega i upiše dolazak, a rezervacija je završena', async ({ page, browser }) => {
+	await prijaviKlijenta(page)
+	await termin(page, '13:00 do 14:00', 'slobodno').click()
+	await page.getByRole('button', { name: 'Rezerviši' }).click()
+	await expect(page.getByText(/^Termin je tvoj: .*13:00 do 14:00\.$/)).toBeVisible()
+
+	await page.getByRole('link', { name: 'Moje rezervacije' }).click()
+	const red = page.getByRole('list', { name: 'Nadolazeće' }).getByRole('listitem').filter({ hasText: '13:00 do 14:00' })
+	const odgovor = page.waitForResponse((o) => o.url().endsWith('/check-in-link'))
+	await red.getByRole('button', { name: 'QR kod za dolazak' }).click()
+	await expect(red.getByRole('img', { name: `QR kod za dolazak: ${RESURS}` })).toBeVisible()
+	const { url } = await (await odgovor).json()
+	expect(url).toMatch(/^http:\/\/localhost:5173\/check-in\/[0-9a-f-]{36}#k=[\w-]{43}$/)
+
+	const adminov = await browser.newPage()
+	await adminov.goto(url)
+	await adminov.getByLabel('Email').fill(ADMIN)
+	await adminov.getByLabel('Lozinka').fill(LOZINKA)
+	await adminov.getByRole('button', { name: 'Prijavi se' }).click()
+	await adminov.getByRole('button', { name: 'Upiši dolazak' }).click()
+	await expect(adminov.getByRole('status')).toHaveText('Dolazak je upisan, rezervacija je završena.')
+	await adminov.close()
+
+	await page.reload()
+	await expect(page.getByRole('list', { name: 'Prošle i otkazane' }).getByRole('listitem').filter({ hasText: '13:00 do 14:00' })).toContainText('završena')
+})

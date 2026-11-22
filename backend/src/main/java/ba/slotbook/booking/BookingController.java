@@ -28,10 +28,13 @@ public class BookingController {
 
 	private final BookingService bookingService;
 	private final BookingAccess bookingAccess;
+	private final CheckInService checkInService;
 
-	public BookingController(BookingService bookingService, BookingAccess bookingAccess) {
+	public BookingController(BookingService bookingService, BookingAccess bookingAccess,
+			CheckInService checkInService) {
 		this.bookingService = bookingService;
 		this.bookingAccess = bookingAccess;
+		this.checkInService = checkInService;
 	}
 
 	// Rezerviše ko vidi resurs: član organizacije, a klijent samo na aktivnom resursu
@@ -99,7 +102,21 @@ public class BookingController {
 				bookingAccess.canManage(bookingId, authentication));
 	}
 
-	// Klijent je došao. QR check-in iz Faze 10 će ići na isti prelaz.
+	@GetMapping("/api/bookings/{bookingId}/check-in-link")
+	@PreAuthorize("@bookingAccess.isClient(#bookingId, authentication)")
+	public CheckInLinkResponse checkInLink(@PathVariable UUID bookingId) {
+		return checkInService.link(bookingId);
+	}
+
+	// Provider je skenirao QR kod klijenta. Isti prelaz kao ručni dolazak ispod, uz dokaz iz koda.
+	@PostMapping("/api/bookings/{bookingId}/check-in/qr")
+	@PreAuthorize("@bookingAccess.canManage(#bookingId, authentication)")
+	public BookingResponse qrCheckIn(@PathVariable UUID bookingId, @Valid @RequestBody QrCheckInRequest zahtjev,
+			@AuthenticationPrincipal Jwt token) {
+		return checkInService.checkIn(bookingId, UUID.fromString(token.getSubject()), zahtjev.token());
+	}
+
+	// Klijent je došao, provider označi ručno (npr. telefon klijenta je ugašen)
 	@PostMapping("/api/bookings/{bookingId}/check-in")
 	@PreAuthorize("@bookingAccess.canManage(#bookingId, authentication)")
 	public BookingResponse checkIn(@PathVariable UUID bookingId, @AuthenticationPrincipal Jwt token) {

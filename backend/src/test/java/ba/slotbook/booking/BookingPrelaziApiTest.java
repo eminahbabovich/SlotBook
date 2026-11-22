@@ -306,4 +306,64 @@ class BookingPrelaziApiTest {
 				.header("Authorization", "Bearer " + lamija))
 				.andExpect(status().isForbidden());
 	}
+
+	private String linkZaDolazak(String token, UUID rezervacija) throws Exception {
+		return JsonPath.read(mockMvc.perform(get("/api/bookings/{id}/check-in-link", rezervacija)
+				.header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString(), "$.url");
+	}
+
+	private ResultActions qrDolazak(String token, UUID rezervacija, String kod) throws Exception {
+		return mockMvc.perform(post("/api/bookings/{id}/check-in/qr", rezervacija)
+				.header("Authorization", "Bearer " + token)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"token": "%s"}
+						""".formatted(kod)));
+	}
+
+	// Hana pokaže QR kod, Selma ga skenira (otvori link) i rezervacija je završena
+	@Test
+	void profesoricaSkeniraKodStudenticeIRezervacijaJeZavrsena() throws Exception {
+		UUID rezervacija = rezervacija(hana, resurs(true));
+
+		String link = linkZaDolazak(hana, rezervacija);
+
+		assertThat(link).startsWith("http://localhost:5173/check-in/" + rezervacija + "#k=");
+		qrDolazak(selma, rezervacija, link.substring(link.indexOf("#k=") + 3))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("COMPLETED"));
+		assertThat(jdbc.queryForObject("select actor_id from booking_events where booking_id = ? "
+				+ "and to_status = 'COMPLETED'", UUID.class, rezervacija)).isEqualTo(id("selma.prelazi@example.com"));
+	}
+
+	// Kod s Lamijine rezervacije ne otvara Haninu, iako je potpis ispravan
+	@Test
+	void kodDrugeRezervacijeJe400IRezervacijaOstajePotvrdjena() throws Exception {
+		UUID hanina = rezervacija(hana, resurs(true));
+		UUID lamijina = rezervacija(lamija, resurs(true));
+		String lamijinLink = linkZaDolazak(lamija, lamijina);
+
+		qrDolazak(selma, hanina, lamijinLink.substring(lamijinLink.indexOf("#k=") + 3))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("token"));
+		qrDolazak(selma, hanina, "").andExpect(status().isBadRequest());
+		assertThat(stanje(hanina)).isEqualTo("CONFIRMED");
+	}
+
+	// Kod je klijentov dokaz dolaska: profesorica ga ne može sama izvući, a studentica sa svojim
+	// kodom ne može sama sebe označiti kao došlu
+	@Test
+	void linkDobijaSamoKlijentAKodSkeniraSamoOnajKoVodiResurs() throws Exception {
+		UUID rezervacija = rezervacija(hana, resurs(true));
+		String link = linkZaDolazak(hana, rezervacija);
+
+		mockMvc.perform(get("/api/bookings/{id}/check-in-link", rezervacija).header("Authorization", "Bearer " + selma))
+				.andExpect(status().isForbidden());
+		mockMvc.perform(get("/api/bookings/{id}/check-in-link", rezervacija).header("Authorization", "Bearer " + lamija))
+				.andExpect(status().isForbidden());
+		qrDolazak(hana, rezervacija, link.substring(link.indexOf("#k=") + 3)).andExpect(status().isForbidden());
+		assertThat(stanje(rezervacija)).isEqualTo("CONFIRMED");
+	}
 }

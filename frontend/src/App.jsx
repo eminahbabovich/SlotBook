@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { BrowserRouter, Link, Route, Routes } from 'react-router'
 import { Clanovi } from './clanovi/Clanovi.jsx'
+import { DolazakSKodom } from './dolazak/DolazakSKodom.jsx'
 import { Nalog } from './nalog/Nalog.jsx'
 import { serverNeOdgovara } from './forma/porukaGreske.js'
 import { KalendarResursa } from './kalendar/KalendarResursa.jsx'
@@ -56,6 +57,7 @@ export default function App() {
 								<Route path="/o/:slug/r/:resursId" element={<KalendarResursa />} />
 								<Route path="/o/:slug/r/:resursId/raspored" element={<RasporedResursa />} />
 								<Route path="/rezervacije" element={<MojeRezervacije />} />
+								<Route path="/check-in/:rezervacijaId" element={<DolazakSKodom />} />
 								<Route path="/pozivnica" element={<PrihvatanjePozivnice />} />
 								<Route path="/nalog" element={<Nalog />} />
 							</Route>

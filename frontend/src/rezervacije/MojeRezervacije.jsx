@@ -8,6 +8,7 @@ import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
 import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
 import { MojaListaCekanja } from './MojaListaCekanja.jsx'
 import { Otkazivanje } from './Otkazivanje.jsx'
+import { QrDolaska } from './QrDolaska.jsx'
 import { DRZE_TERMIN, STATUS } from './status.js'
 import './rezervacije.css'
 
@@ -158,6 +159,7 @@ function Red({ rezervacija: r, sada, otvorena, naOtvori, children }) {
 					Rok za otkazivanje je bio {opisTrenutka(r.rokOtkazivanja, r.zona)}. Ako ne možeš doći, javi se osobi koja vodi termin.
 				</p>
 			)}
+			{r.status === 'CONFIRMED' && Date.parse(r.kraj) > sada && <QrDolaska rezervacija={r} />}
 			{children}
 		</li>
 	)
