@@ -9,7 +9,7 @@ import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { ResursForma } from './ResursForma.jsx'
 
 // Sat je najčešći termin (čitaonica, sala), a bez roka klijent otkazuje do početka
-const PRAZAN_RESURS = { naziv: '', opis: '', trajanjeMinuta: '60', autoPotvrda: true, rokOtkazivanjaSati: '0', brojMjesta: '1' }
+const PRAZAN_RESURS = { naziv: '', opis: '', trajanjeMinuta: '60', autoPotvrda: true, rokOtkazivanjaSati: '0', brojMjesta: '1', cijenaFeninga: 0 }
 
 const PORUKE_ORGANIZACIJA = {
 	serverNeOdgovara: 'Organizacija se nije učitala, server ne odgovara. Pokušaj ponovo za minutu.',

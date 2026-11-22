@@ -3,7 +3,7 @@ import './forma.css'
 
 // Oznaka, polje i tekst ispod njega. aria-describedby veže napomenu i grešku za polje,
 // pa ih čitač ekrana pročita kad korisnik uđe u polje.
-export function Polje({ oznaka, ime, tip = 'text', vrijednost, promjena, greska, napomena, autoComplete }) {
+export function Polje({ oznaka, ime, tip = 'text', vrijednost, promjena, greska, napomena, autoComplete, inputMode }) {
 	const id = useId()
 	const napomenaId = `${id}-napomena`
 	const greskaId = `${id}-greska`
@@ -22,6 +22,7 @@ export function Polje({ oznaka, ime, tip = 'text', vrijednost, promjena, greska,
 				value={vrijednost}
 				onChange={(dogadjaj) => promjena(dogadjaj.target.value)}
 				autoComplete={autoComplete}
+				inputMode={inputMode}
 				aria-invalid={greska ? 'true' : 'false'}
 				aria-describedby={opis || undefined}
 			/>

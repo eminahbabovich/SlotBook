@@ -8,7 +8,7 @@ import { CITAONICA, PRIJAVLJENA, TERETANA, backend, json, otvori, problem, tijel
 // Hana (u1) je admin čitaonice, a u konsultacijama vodi termine
 const KONSULTACIJE = { id: 'o3', name: 'Konsultacije, prof. Đulić', slug: 'konsultacije-dulic', timezone: 'Europe/Sarajevo', role: 'PROVIDER' }
 const resurs = (id, naziv, providerId, ostalo = {}) => ({
-	id, organizationId: 'o1', providerId, name: naziv, description: null, slotMinutes: 60, autoConfirm: true, cancelNoticeHours: 0, capacity: 1, active: true, hasImage: false, ...ostalo,
+	id, organizationId: 'o1', providerId, name: naziv, description: null, slotMinutes: 60, autoConfirm: true, cancelNoticeHours: 0, capacity: 1, priceCents: 0, active: true, hasImage: false, ...ostalo,
 })
 const stranica = (lista) => json({ content: lista, page: 0, size: 100, totalElements: lista.length, totalPages: 1 })
 
@@ -23,7 +23,7 @@ function organizacijeSResursima({ citaonica = [], konsultacije = [], odgovori = 
 		'/api/resources/r-novi/availability': () => json({ timezone: 'Europe/Sarajevo', rules: [] }),
 		'/api/resources/r-novi/time-off?size=50': () => stranica([]),
 		'POST /api/organizations/o1/resources': (t) => {
-			const novi = resurs('r-novi', t.name, 'u1', { description: t.description, slotMinutes: t.slotMinutes, autoConfirm: t.autoConfirm, cancelNoticeHours: t.cancelNoticeHours, capacity: t.capacity })
+			const novi = resurs('r-novi', t.name, 'u1', { description: t.description, slotMinutes: t.slotMinutes, autoConfirm: t.autoConfirm, cancelNoticeHours: t.cancelNoticeHours, capacity: t.capacity, priceCents: t.priceCents })
 			liste.o1.push(novi)
 			return json(novi, 201)
 		},
@@ -31,7 +31,7 @@ function organizacijeSResursima({ citaonica = [], konsultacije = [], odgovori = 
 	for (const [org, lista] of Object.entries(liste)) {
 		for (const r of lista) {
 			tacke[`PUT /api/organizations/${org}/resources/${r.id}`] = (t) => {
-				Object.assign(r, { name: t.name, description: t.description, slotMinutes: t.slotMinutes, autoConfirm: t.autoConfirm, cancelNoticeHours: t.cancelNoticeHours, capacity: t.capacity })
+				Object.assign(r, { name: t.name, description: t.description, slotMinutes: t.slotMinutes, autoConfirm: t.autoConfirm, cancelNoticeHours: t.cancelNoticeHours, capacity: t.capacity, priceCents: t.priceCents })
 				return json(r)
 			}
 		}
@@ -61,6 +61,7 @@ describe('novi resurs', () => {
 		await korisnik.type(screen.getByLabelText('Rok za otkazivanje u satima'), '12')
 		await korisnik.clear(screen.getByLabelText('Broj mjesta u terminu'))
 		await korisnik.type(screen.getByLabelText('Broj mjesta u terminu'), '4')
+		await korisnik.type(screen.getByLabelText('Cijena termina u KM'), '7,50')
 		// Bilježi svaki naslov koji se pojavi, i onaj koji odmah nestane
 		const naslovi = []
 		const posmatrac = new MutationObserver(() => document.querySelectorAll('h1').forEach((h) => naslovi.push(h.textContent)))
@@ -74,7 +75,7 @@ describe('novi resurs', () => {
 		expect(window.location.pathname).toBe('/o/citaonica-pmf/r/r-novi/radno-vrijeme')
 		expect(tijelo(fetch, 'POST /api/organizations/o1/resources')).toEqual({
 			name: 'Grupna soba 2', description: 'Za četvoro, s tablom.', slotMinutes: 90, autoConfirm: false, cancelNoticeHours: 12,
-			capacity: 4,
+			capacity: 4, priceCents: 750,
 		})
 	})
 
@@ -103,6 +104,20 @@ describe('novi resurs', () => {
 		expect(window.location.pathname).toBe('/o/citaonica-pmf/resursi/novi')
 	})
 
+	test('cijena koja nije iznos u KM se ne šalje, nego piše šta treba upisati', async () => {
+		const fetch = organizacijeSResursima()
+		otvori('/o/citaonica-pmf/resursi/novi')
+		const korisnik = userEvent.setup()
+
+		await korisnik.type(await screen.findByLabelText('Naziv'), 'Sala za mali fudbal')
+		await korisnik.type(screen.getByLabelText('Cijena termina u KM'), '15 KM')
+		await korisnik.click(screen.getByRole('button', { name: 'Napravi resurs' }))
+
+		expect(screen.getByText('Upiši cijenu kao broj, npr. 15 ili 7,50.')).toBeTruthy()
+		expect(screen.getByLabelText('Cijena termina u KM').getAttribute('aria-invalid')).toBe('true')
+		expect(fetch.mock.calls.some(([putanja, opcije]) => opcije?.method === 'POST' && putanja.endsWith('/resources'))).toBe(false)
+	})
+
 	test('ko rezerviše termine ne vidi link, a na adresi dobije objašnjenje', async () => {
 		const fetch = organizacijeSResursima()
 		otvori('/o/teretana-ilidza')
@@ -120,7 +135,7 @@ describe('novi resurs', () => {
 
 describe('izmjena', () => {
 	test('osoba koja vodi resurs vidi popunjenu formu, a izmjena šalje i polja koja nisu dirana', async () => {
-		const fetch = organizacijeSResursima({ konsultacije: [resurs('r5', 'Termin konsultacija', 'u1', { autoConfirm: false, cancelNoticeHours: 24, capacity: 3, description: 'Kabinet 214' })] })
+		const fetch = organizacijeSResursima({ konsultacije: [resurs('r5', 'Termin konsultacija', 'u1', { autoConfirm: false, cancelNoticeHours: 24, capacity: 3, priceCents: 1500, description: 'Kabinet 214' })] })
 		otvori('/o/konsultacije-dulic')
 		const korisnik = userEvent.setup()
 
@@ -130,6 +145,7 @@ describe('izmjena', () => {
 		expect(screen.getByLabelText('Opis').value).toBe('Kabinet 214')
 		expect(screen.getByLabelText('Rok za otkazivanje u satima').value).toBe('24')
 		expect(screen.getByLabelText('Broj mjesta u terminu').value).toBe('3')
+		expect(screen.getByLabelText('Cijena termina u KM').value).toBe('15')
 		await korisnik.clear(screen.getByLabelText('Trajanje termina u minutama'))
 		await korisnik.type(screen.getByLabelText('Trajanje termina u minutama'), '30')
 		await korisnik.click(screen.getByRole('button', { name: 'Sačuvaj promjene' }))
@@ -137,7 +153,7 @@ describe('izmjena', () => {
 		expect((await screen.findByText(/^Promjene su sačuvane/)).getAttribute('role')).toBe('status')
 		expect(tijelo(fetch, 'PUT /api/organizations/o3/resources/r5')).toEqual({
 			name: 'Termin konsultacija', description: 'Kabinet 214', slotMinutes: 30, autoConfirm: false, cancelNoticeHours: 24,
-			capacity: 3,
+			capacity: 3, priceCents: 1500,
 		})
 		await korisnik.click(screen.getByRole('link', { name: 'Konsultacije, prof. Đulić' }))
 		expect(await screen.findByText('termini po 30 min')).toBeTruthy()

@@ -414,7 +414,7 @@ Kriterij "gotovo" je gore (tačka 11): plaćanje u test modu radi do kraja, isti
 duplira uplatu, neispravan potpis se odbija. Pravi novac ne ide kroz projekat. Stripe je u testovima
 lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ručno sa Stripe CLI.
 
-1. **Cijena na resursu.** Kolona u feninzima, 0 je besplatno, API i polje u formi resursa. Besplatan
+1. ✅ **Cijena na resursu** (22.11.2026). Kolona u feninzima, 0 je besplatno, API i polje u formi resursa. Besplatan
    resurs radi kao do sada.
 2. **Rezervacija čeka uplatu, Stripe Checkout.** Rezervacija plaćenog resursa je `PENDING` s kratkim
    rokom za uplatu, `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout stranice, uplata ima

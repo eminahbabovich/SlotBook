@@ -3,7 +3,7 @@ import { apiFetch, provjeriPolja } from './apiFetch.js'
 // ResourceResponse. active mora stići: admin i provider vide i deaktivirane resurse, a bez
 // polja bi deaktiviran izgledao kao aktivan.
 function izOdgovora(r, putanja) {
-	provjeriPolja(r, ['id', 'name', 'slotMinutes', 'autoConfirm', 'cancelNoticeHours', 'capacity', 'active'], putanja)
+	provjeriPolja(r, ['id', 'name', 'slotMinutes', 'autoConfirm', 'cancelNoticeHours', 'capacity', 'priceCents', 'active'], putanja)
 	return {
 		id: r.id,
 		naziv: r.name,
@@ -13,6 +13,7 @@ function izOdgovora(r, putanja) {
 		autoPotvrda: r.autoConfirm,
 		rokOtkazivanjaSati: r.cancelNoticeHours,
 		brojMjesta: r.capacity,
+		cijenaFeninga: r.priceCents,
 		aktivan: r.active,
 	}
 }
@@ -29,8 +30,9 @@ export async function resursiOrganizacije(organizacijaId) {
 // uzme podrazumijevanu vrijednost (rok), umjesto da Number('') pošalje 0.
 const broj = (vrijednost) => (vrijednost === '' || vrijednost === null ? null : Number(vrijednost))
 
-// ResourceRequest. Šalju se sva polja i kod izmjene, jer PUT bez autoConfirm, cancelNoticeHours
-// ili capacity vrati ta polja na podrazumijevane vrijednosti (sala s 5 mjesta bi postala 1).
+// ResourceRequest. Šalju se sva polja i kod izmjene, jer PUT bez autoConfirm, cancelNoticeHours,
+// capacity ili priceCents vrati ta polja na podrazumijevane vrijednosti (sala s 5 mjesta bi postala 1,
+// a plaćen termin besplatan). Cijena već stiže u feninzima, forma je pretvara iz KM.
 const zahtjev = (r) => ({
 	name: r.naziv,
 	description: r.opis || null,
@@ -38,6 +40,7 @@ const zahtjev = (r) => ({
 	autoConfirm: r.autoPotvrda,
 	cancelNoticeHours: broj(r.rokOtkazivanjaSati),
 	capacity: broj(r.brojMjesta),
+	priceCents: r.cijenaFeninga,
 })
 
 export async function noviResurs(organizacijaId, resurs) {

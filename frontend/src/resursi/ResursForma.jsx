@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Polje } from '../forma/Polje.jsx'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
+import { feningeUKm, kmUFeninge } from './cijena.js'
 import '../forma/forma.css'
 
 // Ista forma za novi resurs i izmjenu. Šalje sve vrijednosti, i one koje nisu mijenjane,
@@ -13,13 +14,20 @@ export function ResursForma({ pocetno, mutacija, dugme, dugmeSalje, poruke, uspj
 		autoPotvrda: pocetno.autoPotvrda,
 		rokOtkazivanjaSati: String(pocetno.rokOtkazivanjaSati),
 		brojMjesta: String(pocetno.brojMjesta),
+		// Besplatan termin ima prazno polje, ne "0"
+		cijenaKM: pocetno.cijenaFeninga === 0 ? '' : feningeUKm(pocetno.cijenaFeninga),
 	}))
+	const [losaCijena, setLosaCijena] = useState(false)
 	const promijeni = (polje) => (vrijednost) => setR((staro) => ({ ...staro, [polje]: vrijednost }))
 	const poPoljima = greskePoPoljima(mutacija.error)
 
 	function posalji(dogadjaj) {
 		dogadjaj.preventDefault()
-		mutacija.mutate(r)
+		const { cijenaKM, ...ostalo } = r
+		const cijenaFeninga = kmUFeninge(cijenaKM)
+		setLosaCijena(cijenaFeninga === null)
+		if (cijenaFeninga === null) return
+		mutacija.mutate({ ...ostalo, cijenaFeninga })
 	}
 
 	return (
@@ -49,6 +57,15 @@ export function ResursForma({ pocetno, mutacija, dugme, dugmeSalje, poruke, uspj
 				promjena={promijeni('brojMjesta')}
 				greska={poPoljima.capacity}
 				napomena="1 za sto ili konsultacije, više za grupni trening ili grupnu sobu. Najviše 100."
+			/>
+			<Polje
+				oznaka="Cijena termina u KM"
+				ime="priceCents"
+				vrijednost={r.cijenaKM}
+				promjena={promijeni('cijenaKM')}
+				inputMode="decimal"
+				greska={losaCijena ? 'Upiši cijenu kao broj, npr. 15 ili 7,50.' : poPoljima.priceCents}
+				napomena="Prazno je besplatno. Najviše 1000 KM."
 			/>
 			<div className="polje">
 				<label htmlFor="resurs-potvrda">Potvrda rezervacije</label>

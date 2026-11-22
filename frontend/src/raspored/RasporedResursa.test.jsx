@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { postaviToken } from '../api/apiFetch.js'
 import { CITAONICA, PRIJAVLJENA, TERETANA, backend, json, otvori, problem } from '../test/lazniBackend.js'
 
-const resurs = (id, naziv, providerId) => ({ id, organizationId: 'o1', providerId, name: naziv, description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, capacity: 1, active: true, hasImage: false })
+const resurs = (id, naziv, providerId) => ({ id, organizationId: 'o1', providerId, name: naziv, description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, capacity: 1, priceCents: 0, active: true, hasImage: false })
 const RESURSI = (...r) => () => json({ content: r, page: 0, size: 100, totalElements: r.length, totalPages: 1 })
 const rez = (id, start, end, status, klijent, rok = null) => ({ id, startTime: start, endTime: end, status, clientName: klijent, expiresAt: rok })
 
