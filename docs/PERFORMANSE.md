@@ -63,3 +63,29 @@ Raspored je jedini koji je rastao s historijom. Uslov je bio `start_time < kraj 
 Zauzeti termini koriste gist indeks iza `EXCLUDE`, ali samo po `resource_id`. Raspon iz indeksa ne pomaže, jer upit poredi kolone, a ne `tstzrange`. Čita sve aktivne rezervacije stola (312), a ne historiju, jer završene više nisu `PENDING` ni `CONFIRMED`. To raste s brojem budućih rezervacija, a ne sa starim, pa sam ga ostavio.
 
 Šta nije mjereno: sve je opet bilo u memoriji, a brojke za Neon nemam. Ni ovdje se ne mjeri cijeli zahtjev, to radi load test ispod.
+
+## Load test (k6)
+
+Mjereno 22.11.2026. na istom laptopu: Intel Core i5-1245U, 32 GB RAM, Windows 11. Backend je jar (`mvnw package`) na Javi 21.0.12, direktno na Windowsu, s podrazumijevanim podešavanjima: Hikari pul od 10 konekcija i Tomcat s 200 niti. Baza je PostgreSQL 17.11 u privremenom kontejneru `postgres:17`, a k6 je `grafana/k6:2.3.0`, isto u Dockeru (Docker Engine 29.9.2, 12 jezgri i 15,4 GB). Sve je na jednoj mašini, pa k6, backend i baza dijele procesor, a mreže između njih praktično nema.
+
+Podaci su iz [`mjerenja/k6-podaci.sql`](mjerenja/k6-podaci.sql): teretana s 20 sala, jedna sala za sudar i 100 članova. Skripta je [`mjerenja/k6-rezervacije.js`](mjerenja/k6-rezervacije.js). Prije testa se svih 100 članova prijavi (`setup`). Onda 60 sekundi istovremeno traju tri scenarija:
+
+- slobodni termini: 50 zahtjeva u sekundi, sedmični kalendar nasumične sale;
+- rezervacije: 10 u sekundi, svaka na svoj termin (sala i sat iz broja iteracije), pa sudara ne bi smjelo biti;
+- sudar: 20 VU-ova, svaki po 30 iteracija, i svi u n-toj iteraciji traže isti termin u sali za sudar.
+
+Tri pokretanja. Između njih su rezervacije obrisane (`truncate`), a backend je radio cijelo vrijeme, pa je prvo pokretanje na hladnom JVM-u. Vremena su u milisekundama, medijana / p95:
+
+| Scenarij | 1. | 2. | 3. |
+|---|---|---|---|
+| slobodni termini | 17,7 / 95,6 | 15,5 / 68,7 | 13,2 / 71,7 |
+| rezervacije | 26,9 / 104,2 | 21,9 / 72,9 | 19,5 / 76,2 |
+| sudar | nije mjereno posebno | 125,8 / 165,7 | 130,3 / 184,4 |
+
+U svakom pokretanju bilo je 4 303 zahtjeva (oko 69 u sekundi), 0 neuspjelih, 601 rezervacija s `201`, i u sudaru 30 puta `201` i 570 puta `409`. Dakle, po terminu je prošao tačno jedan od 20. Poslije svakog pokretanja baza je imala 30 rezervacija u sali za sudar, 601 u ostalim i 631 zapis u `booking_events`, isto kao brojači u k6. U prvom pokretanju scenarij sudara nije imao svoj prag, pa ni posebno vrijeme. Prag sam dodao poslije.
+
+Sudar je oko šest puta sporiji od obične rezervacije. To je očekivano: rezervacije istog resursa idu jedna za drugom kroz `FOR UPDATE` na resursu (vidi `BookingService.create`), pa 20 zahtjeva za istu salu čeka u redu. Zahtjev za drugu salu ne čeka.
+
+Usput sam vidio da svaki `409` ostavi u logu dvije WARN linije Hibernatea (`SQLState: 23P01` i poruka Postgresa). U jednom pokretanju to je 1 140 linija. Na Renderu bi to bila buka u logu, ali nisam ništa mijenjao.
+
+Šta ovo ne pokazuje: koliko izdrži Render. Besplatni plan ima 0,1 CPU i 512 MB, a Neon je preko mreže, pa bi brojke tamo bile drugačije. Test na produkciji namjerno nisam radio. Ne pokazuje ni gdje je granica. Opterećenje je bilo fiksno (60 zahtjeva u sekundi plus sudar), a ne povećavano dok nešto ne pukne.

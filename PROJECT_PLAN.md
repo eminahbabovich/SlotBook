@@ -373,7 +373,7 @@ su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
    raste s brojem redova, `EXPLAIN` za upite koji to traže. Gotovo 22.11.2026: N+1 nije nađen, raspored
    providera dobio donju granicu (`V33`).
 6. **k6 load test.** Skripta za slobodne termine, rezervaciju i sudar na istom terminu, lokalno. Brojke,
-   mašina i pul konekcija u `docs/PERFORMANSE.md`.
+   mašina i pul konekcija u `docs/PERFORMANSE.md`. Gotovo 22.11.2026.
 7. **Backup i `docs/RUNBOOK.md`.** `pg_dump`, vraćanje u praznu bazu i provjera broja redova, pa isti
    postupak za Neon.
 8. **Kraj faze.** README, status, ODLUKE.
@@ -537,6 +537,7 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Statistika za proizvoljan period, ne samo po mjesecima (backend prima do 366 dana)
 - Godina uz datum izuzetka kad nije tekuća
 - ID zahtjeva u poruci frontenda za grešku `500` ("javi nam i navedi broj ..."), backend ga već šalje u tijelu i u `X-Request-Id`
+- Manje buke u logu kod sudara: svaki `409` ostavi dvije WARN linije Hibernatea (`23P01`), 1 140 linija u jednom k6 pokretanju
 - Metrike na produkciji: registry koji šalje brojače van (npr. OTLP prema besplatnom Grafana Cloudu), jer je `/actuator/metrics` na Renderu namjerno zatvoren
 
 Otvoreno iz Faze 8 (dug, za pregled u Fazi 13):
