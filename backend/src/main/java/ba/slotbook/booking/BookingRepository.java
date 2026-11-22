@@ -18,12 +18,18 @@ interface BookingRepository extends JpaRepository<Booking, UUID> {
 	List<Booking> findByResourceIdAndStatusInAndStartTimeBeforeAndEndTimeAfter(UUID resourceId,
 			Collection<BookingStatus> statusi, Instant to, Instant from);
 
+	// Rezervacija koja dira period počinje najviše 8 sati prije njega (bookings_najvise_osam_sati). S tom
+	// donjom granicom indeks bookings_resource_start čita samo taj period, a ne svu historiju resursa.
+	default List<Booking> findSchedule(UUID resourceId, Instant from, Instant to) {
+		return findSchedule(resourceId, from.minus(Booking.NAJDUZE_TRAJANJE), from, to);
+	}
+
 	// join fetch: ime klijenta za svaki red stiže u istom upitu, a ne jedan upit po rezervaciji
 	@Query("""
 			select b from Booking b join fetch b.client
-			where b.resource.id = :resourceId and b.startTime < :to and b.endTime > :from
+			where b.resource.id = :resourceId and b.startTime > :najranije and b.startTime < :to and b.endTime > :from
 			order by b.startTime, b.id""")
-	List<Booking> findSchedule(UUID resourceId, Instant from, Instant to);
+	List<Booking> findSchedule(UUID resourceId, Instant najranije, Instant from, Instant to);
 
 	// join fetch: naziv resursa i zona organizacije stižu u istom upitu, a ne jedan upit po redu (N+1)
 	@Query("select b from Booking b join fetch b.resource r join fetch r.organization where b.client.id = :clientId")

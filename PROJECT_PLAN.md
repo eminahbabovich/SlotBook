@@ -370,7 +370,8 @@ su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
    šalje ništa, pa lokalno i u testovima ostaje ugašen. Gotovo 22.11.2026 u kodu, a na Renderu čeka
    da se napravi projekat u Sentryju i postavi `SENTRY_DSN`.
 5. **N+1 i spori upiti.** Broj SQL upita po zahtjevu za glavne liste mjeren u testu, popravka gdje
-   raste s brojem redova, `EXPLAIN` za upite koji to traže.
+   raste s brojem redova, `EXPLAIN` za upite koji to traže. Gotovo 22.11.2026: N+1 nije nađen, raspored
+   providera dobio donju granicu (`V33`).
 6. **k6 load test.** Skripta za slobodne termine, rezervaciju i sudar na istom terminu, lokalno. Brojke,
    mašina i pul konekcija u `docs/PERFORMANSE.md`.
 7. **Backup i `docs/RUNBOOK.md`.** `pg_dump`, vraćanje u praznu bazu i provjera broja redova, pa isti

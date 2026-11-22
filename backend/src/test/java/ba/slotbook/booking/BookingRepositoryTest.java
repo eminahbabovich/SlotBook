@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -116,6 +117,31 @@ class BookingRepositoryTest {
 		assertThatThrownBy(
 				() -> rezervacija(stoBr1, emina, "2035-11-19 10:00+01", "2035-11-19 09:00+01", "PENDING"))
 				.hasMessageContaining("bookings_pocetak_prije_kraja");
+	}
+
+	// Raspored providera se oslanja na ovu granicu (findSchedule), pa je čuva baza, a ne samo dužina termina u Javi
+	@Test
+	void bazaOdbijaRezervacijuDuzuOdOsamSati() {
+		rezervacija(stoBr1, emina, "2035-11-19 08:00+01", "2035-11-19 16:00+01", "CONFIRMED");
+
+		assertThatThrownBy(
+				() -> rezervacija(stoBr2, emina, "2035-11-19 08:00+01", "2035-11-19 16:01+01", "PENDING"))
+				.hasMessageContaining("bookings_najvise_osam_sati");
+	}
+
+	// Noćna smjena od 20 do 04 pripada i rasporedu za 19. novembar, iako je počela dan ranije.
+	// Ona koja završi tačno u ponoć ne pripada, jer je kraj isključen.
+	@Test
+	void rasporedVidiRezervacijuKojaJePocelaPrethodnogDana() {
+		rezervacija(stoBr1, emina, "2035-11-18 16:00+01", "2035-11-19 00:00+01", "COMPLETED");
+		rezervacija(stoBr1, dzenan, "2035-11-18 20:00+01", "2035-11-19 04:00+01", "CONFIRMED");
+		rezervacija(stoBr1, emina, "2035-11-19 09:00+01", "2035-11-19 10:00+01", "CONFIRMED");
+
+		List<Booking> raspored = bookings.findSchedule(stoBr1, Instant.parse("2035-11-18T23:00:00Z"),
+				Instant.parse("2035-11-19T23:00:00Z"));
+
+		assertThat(raspored).extracting(Booking::getStartTime).containsExactly(
+				Instant.parse("2035-11-18T19:00:00Z"), Instant.parse("2035-11-19T08:00:00Z"));
 	}
 
 	// Rezervacija ne može nastati kao otkazana, i kad neko upiše historiju mimo Jave

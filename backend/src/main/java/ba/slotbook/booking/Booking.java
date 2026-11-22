@@ -23,6 +23,9 @@ import jakarta.persistence.Version;
 @Table(name = "bookings")
 public class Booking {
 
+	// Isto kao CHECK bookings_najvise_osam_sati u bazi i najduži termin resursa (480 minuta)
+	static final Duration NAJDUZE_TRAJANJE = Duration.ofHours(8);
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;

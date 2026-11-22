@@ -1,6 +1,6 @@
 # Performanse
 
-Ovdje su mjerenja s brojkama i s mašinom na kojoj su urađena. Load test (k6) dolazi u Fazi 9.
+Ovdje su mjerenja s brojkama i s mašinom na kojoj su urađena.
 
 ## Upiti statistike i indeks `bookings (resource_id, start_time)`
 
@@ -25,3 +25,41 @@ Za cijelu godinu indeks ne pomaže i planer ga ne bira. Provjerio sam da li je u
 Indeks je dodan migracijom `V27`. Na ovih 408 hiljada redova pravio se 276 ms i zauzima 16 MB. Svaki upis rezervacije sada ažurira jedan indeks više, a to nisam mjerio.
 
 Šta nije mjereno: sve je bilo u memoriji (`shared hit`, osim 25 stranica u prvom pokretanju), pa brojke ne govore kako bi bilo na Neon-u, gdje baza nije na istoj mašini. Ne mjeri se ni ostatak zahtjeva. Ponuđene minute se računaju u Javi, s 2-3 upita po resursu (resurs, pravila, izuzeci), što je za čitaonicu s 10 stolova oko 30 malih upita. To ide u load test u Fazi 9. Ako godišnji izvještaj postane spor, sljedeći korak bi bio indeks koji pokriva i `status` i `end_time` (`INCLUDE`), da Postgres odgovori iz samog indeksa. To nisam probao.
+
+## Broj upita po zahtjevu (N+1)
+
+`UpitiPoZahtjevuApiTest` mjeri koliko SQL upita pošalje Hibernate za sedam lista: resursi i članovi organizacije, moje rezervacije, raspored providera, slobodni termini, moje organizacije i dnevnik. Svaka lista se mjeri s jednim redom, pa još jednom sa šest, i broj mora ostati isti. Brojač je `StatementInspector` koji broji samo upite iz niti testa. Hibernate statistika je zajednička za cijelu aplikaciju, pa bi u nju upao i `BookingJob`, koji radi svake minute.
+
+Izmjereno 22.11.2026, isto za 1 i za 6 redova:
+
+| Lista | Upita |
+|---|---|
+| resursi organizacije | 3 |
+| članovi organizacije | 2 |
+| moje rezervacije | 1 |
+| raspored providera | 5 |
+| slobodni termini (jedan dan) | 8 |
+| moje organizacije | 1 |
+| dnevnik organizacije | 2 |
+
+N+1 nije nađen nigdje. Liste koje čitaju relaciju već su imale `join fetch` (Faze 2-8). Test sam provjerio mutacijom: bez `join fetch b.client` u rasporedu broj ide sa 7 na 12 upita, po jedan za klijenta svake rezervacije, i test padne. `count` za stranicu se ne vidi u tabeli, jer ga Spring Data preskoči kad je prva stranica manja od veličine stranice.
+
+Brojevi su stalni, ali nisu najmanji mogući. Slobodni termini imaju 8 upita, jer se resurs i organizacija čitaju jednom u provjeri pristupa (`@PreAuthorize`), a opet u servisu, u drugoj transakciji. To nisam dirao, jer ne raste s podacima.
+
+## EXPLAIN za upite rezervacija
+
+Isti podaci i ista mašina kao gore (408 270 rezervacija, `postgres:17` u privremenom kontejneru, šema iz Flyway migracija), mjereno 22.11.2026. SQL je onaj koji Hibernate stvarno pošalje, uhvaćen u `UpitiPoZahtjevuApiTest`. Upiti su u [`mjerenja/liste-explain.sql`](mjerenja/liste-explain.sql). Sto je prvi iz `citaonica-1`, sedmica 19.-26.11.2035, a klijent je onaj s najviše rezervacija (255). Vrijeme iz `EXPLAIN (ANALYZE)`, tri pokretanja zaredom, u milisekundama:
+
+| Upit | Plan | Stranica | Vrijeme |
+|---|---|---|---|
+| zauzeti termini (`FreeSlotService`) | `bookings_bez_preklapanja` (gist), 312 redova za 6 | 322 | 1,10 / 0,99 / 0,86 |
+| raspored, prije `V33` | `bookings_resource_start`, 1 861 red za 33 | 1 906 | 2,84 / 2,79 / 2,77 |
+| raspored, od `V33` | `bookings_resource_start`, 33 reda za 33 | 136 | 0,23 / 0,17 / 0,15 |
+| moje rezervacije, prva stranica | `Index Scan Backward using bookings_client_start` | 88 | 0,17 / 0,15 / 0,20 |
+| broj za stranicu | `bookings_idempotency_key` | 251 | 1,10 / 0,35 / 0,37 |
+
+Raspored je jedini koji je rastao s historijom. Uslov je bio `start_time < kraj perioda AND end_time > početak`, a indeks `(resource_id, start_time)` može suziti samo prvi dio. Postgres je zato čitao sve rezervacije stola od prve do kraja traženog dana. Na ovim podacima je to 1 861 red za sedmicu u novembru, a poslije pet godina rada bilo bi pet puta više. Rezervacija ne može trajati duže od najdužeg termina, 480 minuta, pa ona koja dira period počinje najviše 8 sati prije njega. Upit sad ima i `start_time > početak - 8 sati`, i indeks čita tačno onih 33 reda. Da granica ne zavisi samo od Jave, `V33` je dodala `CHECK (end_time - start_time <= INTERVAL '8 hours')`. Na 408 hiljada redova provjera postojećih redova je trajala 48 ms.
+
+Zauzeti termini koriste gist indeks iza `EXCLUDE`, ali samo po `resource_id`. Raspon iz indeksa ne pomaže, jer upit poredi kolone, a ne `tstzrange`. Čita sve aktivne rezervacije stola (312), a ne historiju, jer završene više nisu `PENDING` ni `CONFIRMED`. To raste s brojem budućih rezervacija, a ne sa starim, pa sam ga ostavio.
+
+Šta nije mjereno: sve je opet bilo u memoriji, a brojke za Neon nemam. Ni ovdje se ne mjeri cijeli zahtjev, to radi load test ispod.
