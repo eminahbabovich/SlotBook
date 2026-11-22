@@ -45,9 +45,10 @@ public class SlotService {
 		ZoneId zona = ZoneId.of(resurs.getOrganization().getTimezone());
 		// Admin i provider vide i deaktiviran resurs, ali na njemu se ne može rezervisati
 		if (!resurs.isActive()) {
-			return new SlotsResponse(zona.getId(), List.of());
+			return new SlotsResponse(zona.getId(), resurs.getCapacity(), List.of());
 		}
-		return new SlotsResponse(zona.getId(), kalkulator(resurs, from, to).between(from, to, clock.instant()));
+		return new SlotsResponse(zona.getId(), resurs.getCapacity(),
+				kalkulator(resurs, from, to).between(from, to, clock.instant()));
 	}
 
 	// Za popunjenost u statistici. Bez ograničenja od 31 dan, jer period ograničava statistika, i bez
@@ -56,7 +57,8 @@ public class SlotService {
 	@Transactional(readOnly = true)
 	public long offeredMinutes(UUID resourceId, LocalDate from, LocalDate to) {
 		Resource resurs = resources.findById(resourceId).orElseThrow(ResourceNotFoundException::new);
-		return kalkulator(resurs, from, to).offeredMinutes(from, to);
+		// Minute mjesta: sala s 5 mjesta ponudi 5 sati u jednom satu, pa puna sala ima 100 %, a ne 500 %
+		return kalkulator(resurs, from, to).offeredMinutes(from, to) * resurs.getCapacity();
 	}
 
 	private SlotCalculator kalkulator(Resource resurs, LocalDate from, LocalDate to) {

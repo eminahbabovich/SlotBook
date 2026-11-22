@@ -193,6 +193,49 @@ class WaitlistApiTest {
 				.andExpect(jsonPath("$.taken[0].myWaitlistId").value(selminUpis));
 	}
 
+	// Grupni trening s dva mjesta: dok ima mjesta, termin je slobodan i lista čekanja ne treba.
+	// Tek kad je pun, ide u zauzete, a na listu se može upisati.
+	@Test
+	void grupniTerminJeSlobodanDokImaMjestaIKalendarKazeKolikoIhJeOstalo() throws Exception {
+		jdbc.update("update resources set capacity = 2 where id = ?", sala);
+
+		kalendar(lejlin).andExpect(jsonPath("$.capacity").value(2))
+				.andExpect(jsonPath("$.slots[?(@.start == '2035-11-19T08:00:00Z')].seatsLeft").value(1))
+				.andExpect(jsonPath("$.slots[?(@.start == '2035-11-19T09:00:00Z')].seatsLeft").value(2));
+		kalendar(hanin).andExpect(jsonPath("$.taken[0].myStatus").value("CONFIRMED"));
+		upis(lejlin, TERMIN).andExpect(status().isConflict()).andExpect(jsonPath("$.razlog").value("SLOBODAN"));
+
+		rezervisi(lejlin).andExpect(status().isCreated());
+
+		kalendar(selmin).andExpect(jsonPath("$.slots[?(@.start == '2035-11-19T08:00:00Z')]").isEmpty())
+				.andExpect(jsonPath("$.taken[0].start").value("2035-11-19T08:00:00Z"))
+				.andExpect(jsonPath("$.taken[0].myStatus").doesNotExist());
+		upisi(selmin);
+		assertThat(jdbc.queryForList("select seat from bookings where resource_id = ? order by seat", Integer.class,
+				sala)).containsExactly(1, 2);
+	}
+
+	// Kad se u punom grupnom terminu oslobodi mjesto, nudi se prvom na listi, i to jedno mjesto čuva
+	// za nju: ni Hana, koja ga je upravo pustila, ga ne može odmah vratiti
+	@Test
+	void oslobodjenoMjestoUGrupnomTerminuIdePrvomNaListi() throws Exception {
+		jdbc.update("update resources set capacity = 2 where id = ?", sala);
+		rezervisi(lejlin).andExpect(status().isCreated());
+		String selminUpis = upisi(selmin);
+
+		otkaziHaninu();
+		waitlistService.offerFreed();
+
+		assertThat(stanje(selminUpis)).isEqualTo("OFFERED");
+		kalendar(hanin).andExpect(jsonPath("$.slots[?(@.start == '2035-11-19T08:00:00Z')]").isEmpty());
+		kalendar(selmin).andExpect(jsonPath("$.slots[?(@.start == '2035-11-19T08:00:00Z')].seatsLeft").value(1))
+				.andExpect(jsonPath("$.offeredToMe[0].waitlistId").value(selminUpis));
+		rezervisi(hanin).andExpect(status().isConflict())
+				.andExpect(jsonPath("$.title").value("Termin je ponuđen drugome"));
+		rezervisi(selmin).andExpect(status().isCreated());
+		assertThat(stanje(selminUpis)).isEqualTo("BOOKED");
+	}
+
 	@Test
 	void mojaListaImaSamoMojeZiveUpiseSLinkomNaKalendar() throws Exception {
 		String lejlinUpis = upisi(lejlin);

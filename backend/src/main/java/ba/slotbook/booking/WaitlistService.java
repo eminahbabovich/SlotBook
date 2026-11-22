@@ -3,7 +3,6 @@ package ba.slotbook.booking;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +32,7 @@ public class WaitlistService {
 	static final Duration ROK_PONUDE = Duration.ofMinutes(30);
 
 	private final WaitlistEntryRepository entries;
-	private final BookingRepository bookings;
+	private final SlobodnaMjesta slobodnaMjesta;
 	private final ResourceRepository resources;
 	private final UserRepository users;
 	private final SlotService slotService;
@@ -42,12 +41,12 @@ public class WaitlistService {
 	private final Clock clock;
 	private final String appUrl;
 
-	public WaitlistService(WaitlistEntryRepository entries, BookingRepository bookings, ResourceRepository resources,
+	public WaitlistService(WaitlistEntryRepository entries, SlobodnaMjesta slobodnaMjesta, ResourceRepository resources,
 			UserRepository users, SlotService slotService, NotificationService notifications,
 			ApplicationEventPublisher objave, Clock clock,
 			@Value("${slotbook.app-url}") String appUrl) {
 		this.entries = entries;
-		this.bookings = bookings;
+		this.slobodnaMjesta = slobodnaMjesta;
 		this.resources = resources;
 		this.users = users;
 		this.slotService = slotService;
@@ -70,14 +69,13 @@ public class WaitlistService {
 		TimeRange termin = slotService.offered(resourceId, start)
 				.orElseThrow(() -> new InvalidFieldException("startTime",
 						"Ovaj termin se ne nudi. Izaberi jedan od termina u kalendaru."));
-		List<Booking> drze = bookings.findByResourceIdAndStatusInAndStartTimeBeforeAndEndTimeAfter(resourceId,
-				BookingStatus.DRZE_TERMIN, termin.end(), termin.start());
-		if (drze.stream().anyMatch(b -> b.getClient().getId().equals(clientId))) {
+		Instant sada = clock.instant();
+		SlobodnaMjesta.Stanje stanje = slobodnaMjesta.za(resurs, clientId, termin, sada);
+		if (stanje.mojeVec()) {
 			throw new WaitlistNotNeededException(Razlog.TVOJ);
 		}
-		// Termin ponuđen nekom drugom je za ostale zauzet, pa se na njega može čekati
-		Instant sada = clock.instant();
-		if (drze.isEmpty() && !entries.isOfferedToOther(resourceId, termin.start(), termin.end(), clientId, sada)) {
+		// Na listu se čeka kad za klijenta nema mjesta: sva su zauzeta ili ponuđena drugima
+		if (stanje.mjesto().isPresent()) {
 			throw new WaitlistNotNeededException(Razlog.SLOBODAN);
 		}
 		return WaitlistEntryResponse.from(entries.save(new WaitlistEntry(resurs, users.getReferenceById(clientId),
@@ -113,10 +111,10 @@ public class WaitlistService {
 			UUID resourceId = upis.getResource().getId();
 			// Rezervacija koja je stigla poslije upita iznad je ovdje već commitana ili čeka ovaj lock,
 			// a poslije njega vidi ponudu i dobije 409
-			resources.findLockedById(resourceId);
-			boolean zauzet = !bookings.findByResourceIdAndStatusInAndStartTimeBeforeAndEndTimeAfter(resourceId,
-					BookingStatus.DRZE_TERMIN, upis.getEndTime(), upis.getStartTime()).isEmpty();
-			if (zauzet) {
+			Resource resurs = resources.findLockedById(resourceId).orElseThrow();
+			TimeRange termin = new TimeRange(upis.getStartTime(), upis.getEndTime());
+			// Svaka ponuda koja traje čuva jedno mjesto, pa se nudi samo mjesto koje niko ne drži
+			if (slobodnaMjesta.za(resurs, upis.getClient().getId(), termin, sada).mjesto().isEmpty()) {
 				continue;
 			}
 			Instant rok = sada.plus(ROK_PONUDE).isBefore(upis.getStartTime()) ? sada.plus(ROK_PONUDE)

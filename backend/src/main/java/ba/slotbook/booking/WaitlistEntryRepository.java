@@ -17,14 +17,14 @@ interface WaitlistEntryRepository extends JpaRepository<WaitlistEntry, UUID> {
 	Optional<WaitlistEntry> findByResourceIdAndClientIdAndStartTimeAndStatusIn(UUID resourceId, UUID clientId,
 			Instant startTime, Set<WaitlistStatus> statusi);
 
-	// Ponuda koja još traje drži termin za tog jednog klijenta. Istekla ga ne drži ni prije nego što je
+	// Ponuda koja još traje drži jedno mjesto za tog jednog klijenta. Istekla ga ne drži ni prije nego što je
 	// posao obradi, pa kašnjenje posla ne blokira termin duže od roka.
 	@Query("""
-			select count(w) > 0 from WaitlistEntry w
+			select count(w) from WaitlistEntry w
 			where w.resource.id = :resourceId and w.status = ba.slotbook.booking.WaitlistStatus.OFFERED
 			and w.offeredUntil > :sada and w.client.id <> :clientId
 			and w.startTime < :end and w.endTime > :start""")
-	boolean isOfferedToOther(UUID resourceId, Instant start, Instant end, UUID clientId, Instant sada);
+	long countOffersToOthers(UUID resourceId, Instant start, Instant end, UUID clientId, Instant sada);
 
 	@Modifying
 	@Query(nativeQuery = true, value = """
@@ -45,16 +45,18 @@ interface WaitlistEntryRepository extends JpaRepository<WaitlistEntry, UUID> {
 			select distinct resource_id from istekli where offered_until is not null""")
 	List<UUID> expireAll(Instant sada);
 
-	// Prvi na listi za svaki termin koji je slobodan i nije nikome ponuđen. Ovo je samo prijedlog:
-	// posao pod lockom resursa ponovo provjeri da termin niko nije uzeo u međuvremenu.
+	// Prvi na listi za svaki termin u kojem ima mjesta koje ne drži ni rezervacija ni ponuda. Ovo je
+	// samo prijedlog: posao pod lockom resursa ponovo provjeri. Po terminu jedna ponuda po prolazu, pa
+	// kad se oslobode dva mjesta, drugo se nudi minutu kasnije.
 	@Query(nativeQuery = true, value = """
 			select distinct on (w.resource_id, w.start_time) w.id from waitlist_entries w
+			join resources r on r.id = w.resource_id
 			where w.status = 'WAITING' and w.start_time > :sada
-			and not exists (select 1 from waitlist_entries o where o.resource_id = w.resource_id
-			                and o.start_time = w.start_time and o.status = 'OFFERED')
-			and not exists (select 1 from bookings b where b.resource_id = w.resource_id
-			                and b.status in ('PENDING', 'CONFIRMED')
-			                and b.start_time < w.end_time and b.end_time > w.start_time)
+			and (select count(*) from waitlist_entries o where o.resource_id = w.resource_id
+			     and o.start_time = w.start_time and o.status = 'OFFERED')
+			  + (select count(distinct b.seat) from bookings b where b.resource_id = w.resource_id
+			     and b.status in ('PENDING', 'CONFIRMED')
+			     and b.start_time < w.end_time and b.end_time > w.start_time) < r.capacity
 			order by w.resource_id, w.start_time, w.created_at, w.id""")
 	List<UUID> findFirstInLineForFreeSlots(Instant sada);
 

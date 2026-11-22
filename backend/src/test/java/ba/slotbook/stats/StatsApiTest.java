@@ -97,6 +97,21 @@ class StatsApiTest {
 						""".formatted(stoBr1, stoBr2), JsonCompareMode.STRICT));
 	}
 
+	// Grupna soba s tri mjesta nudi tri puta više minuta mjesta, pa puna soba ima 100 %, a ne 300 %.
+	// Kapacitet se vraća na kraju, jer podatke dijele svi testovi u klasi.
+	@Test
+	void popunjenostGrupnogResursaRacunaMinuteSvihMjesta() throws Exception {
+		jdbc.update("update resources set capacity = 3 where id = ?", stoBr2);
+		try {
+			mockMvc.perform(get("/api/organizations/{id}/stats" + NOVEMBAR, citaonica)
+					.header("Authorization", "Bearer " + lejla))
+					.andExpect(jsonPath("$.occupancy[1].name").value("Sto br. 2"))
+					.andExpect(jsonPath("$.occupancy[1].offeredMinutes").value(1440));
+		} finally {
+			jdbc.update("update resources set capacity = 1 where id = ?", stoBr2);
+		}
+	}
+
 	// Selma vodi samo Sto br. 1, pa nema Lejlinog utorka ni drugog stola
 	@Test
 	void providerVidiSamoSvojSto() throws Exception {
