@@ -28,6 +28,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.jayway.jsonpath.JsonPath;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 import ba.slotbook.TestcontainersConfiguration;
 import ba.slotbook.availability.AvailabilityInterval;
 import ba.slotbook.availability.AvailabilityService;
@@ -63,6 +65,9 @@ class BookingIstovremenoApiTest {
 	@Autowired
 	JdbcTemplate jdbc;
 
+	@Autowired
+	MeterRegistry metrike;
+
 	private final HttpClient http = HttpClient.newHttpClient();
 
 	// Četiri runde, svaka na svoj termin. Deadlock bez zaključavanja resursa zavisi od toga kako se
@@ -85,6 +90,9 @@ class BookingIstovremenoApiTest {
 			tokeni.add(prijava(email));
 		}
 
+		// Brojači su zajednički za cijeli kontekst, pa se gleda samo koliko je ovaj test dodao
+		double napravljenePrije = metrike.counter("slotbook.bookings.created").count();
+		double sudariPrije = metrike.counter("slotbook.bookings.conflicts").count();
 		for (String pocetak : List.of("10:00", "10:30", "11:00", "11:30")) {
 			// Nijedan 500: svaki odbijen zahtjev je prepoznat kao zauzet termin
 			assertThat(runda(tokeni, konsultacije, "2035-11-19T" + pocetak + ":00+01:00")).as(pocetak)
@@ -94,6 +102,8 @@ class BookingIstovremenoApiTest {
 				konsultacije)).isEqualTo(4);
 		assertThat(jdbc.queryForObject("select count(*) from booking_events e join bookings b on b.id = e.booking_id "
 				+ "where b.resource_id = ?", Long.class, konsultacije)).isEqualTo(4);
+		assertThat(metrike.counter("slotbook.bookings.created").count() - napravljenePrije).isEqualTo(4);
+		assertThat(metrike.counter("slotbook.bookings.conflicts").count() - sudariPrije).isEqualTo(4 * (NITI - 1));
 	}
 
 	// Broj odgovora po HTTP statusu kad svi studenti u istom trenutku traže isti termin

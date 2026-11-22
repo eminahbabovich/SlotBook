@@ -883,3 +883,15 @@ Sad je `management.endpoint.health.group.readiness.include=readinessState,db`. R
 Render ima jednu adresu za health check i koristi je i za deploy (nova verzija dobije promet tek kad vrati `2xx`) i za praćenje dok radi. Zato tamo ide `/actuator/health/readiness`. Detalji (koja komponenta je pala) se ne prikazuju, ostaje samo `{"status":"UP"}`.
 
 Dokaz: `HealthApiTest`. Obje adrese su otvorene bez prijave, readiness ima `db`, a liveness nema, i readiness vrati `503` kad aplikacija objavi `REFUSING_TRAFFIC`, dok liveness ostaje `200`. Mutacija: bez `readinessState` u grupi zadnji test padne s `expected:<503> but was:<200>`. Nisam provjerio šta Render radi kad readiness padne dok aplikacija već radi.
+
+## Metrike: tri brojača
+
+Micrometer je već bio na classpathu preko `spring-boot-starter-actuator` (u Bootu 4 ga donosi `spring-boot-starter-micrometer-metrics`, `micrometer-core` 1.17.2). Dodao sam tri `Counter`-a: `slotbook.bookings.created` (upisana rezervacija), `slotbook.bookings.conflicts` (EXCLUDE odbio termin, `409`) i `slotbook.mail.failed` (SMTP odbio pokušaj slanja). Brojač za mail broji svaki neuspio pokušaj, ne samo konačni `FAILED`, jer je rast tog broja prvi znak da SMTP ne radi, a do `FAILED` prođe nekoliko sati backoffa.
+
+Brojači se registruju u konstruktoru servisa, pa postoje od starta, i s nulom prije prve rezervacije. `created` se povećava na kraju `create()`, prije commita. Ako commit padne poslije toga, brojač bude za jedan veći od broja redova. To se može desiti samo kad baza padne baš tada, pa nisam uvodio `afterCommit`. Sudar se broji tamo gdje se `23P01` prevodi u `SlotTakenException`, pa idempotentno ponovljen zahtjev ili nepostojeći termin nisu sudar.
+
+Logovi kažu šta se desilo jednom zahtjevu, a metrike koliko puta se nešto desilo u vremenu. "Sudari su porasli s 2 na 40 u minuti" se iz loga vidi tek prebrojavanjem linija.
+
+Lokalno je `/actuator/metrics` izložen, ali traži prijavu, jer nije među javnim putanjama u `SecurityConfig`. U prod profilu je od Actuatora vani samo `health`. Brojači su za cijelu aplikaciju, a ne za jednu organizaciju, pa bi ih na Renderu vidio svaki prijavljeni korisnik bilo koje organizacije. Za pravo praćenje na produkciji trebao bi registry koji šalje brojke negdje (npr. OTLP prema besplatnom Grafana Cloudu). To nije u ovoj fazi, pa je zapisano u Dodacima.
+
+Dokaz: `BookingIstovremenoApiTest` sad provjerava i brojače: poslije četiri runde od 20 niti `created` je porastao za 4, a `conflicts` za 76. Test gleda razliku, jer je registry zajednički za sve testove u istom kontekstu. `NotificationSenderTest` sa `SimpleMeterRegistry` provjerava `mail.failed`, `MetricsApiTest` da bez prijave nema metrika (`401`) i da su sva tri brojača tu, a `ProdProfilTest` da je u prod profilu vani samo `health`. Tri mutacije u jednom pokretanju (bez `sudari.increment()`, bez `neuspjeli.increment()`, prod bez ograničenja) obore tri različita testa.

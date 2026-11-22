@@ -48,6 +48,12 @@ class ProdProfilTest {
 		assertThat(env.getProperty("logging.structured.format.console")).isEqualTo("ecs");
 	}
 
+	// Brojači su za cijelu aplikaciju, pa bi ih na Renderu vidio svaki prijavljeni korisnik bilo koje organizacije
+	@Test
+	void uProdukcijiOdActuatoraJeVaniSamoHealth() {
+		assertThat(env.getProperty("management.endpoints.web.exposure.include")).isEqualTo("health");
+	}
+
 	@Test
 	void portDolaziIzVarijableOkruzenja() {
 		assertThat(env.getProperty("server.port")).isEqualTo("9090");

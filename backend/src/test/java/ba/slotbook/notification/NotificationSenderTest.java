@@ -20,6 +20,7 @@ import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import ba.slotbook.user.User;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
@@ -30,8 +31,9 @@ class NotificationSenderTest {
 
 	private final NotificationRepository notifications = mock(NotificationRepository.class);
 	private final JavaMailSender mailSender = mock(JavaMailSender.class);
+	private final SimpleMeterRegistry metrike = new SimpleMeterRegistry();
 	private final NotificationSender sender = new NotificationSender(notifications, mailSender,
-			Clock.fixed(SADA, ZoneOffset.UTC), "SlotBook <noreply@slotbook.local>");
+			Clock.fixed(SADA, ZoneOffset.UTC), "SlotBook <noreply@slotbook.local>", metrike);
 
 	@BeforeEach
 	void praznaPoruka() {
@@ -54,6 +56,7 @@ class NotificationSenderTest {
 		assertThat(obavijest.getAttempts()).isEqualTo(1);
 		assertThat(obavijest.getNextAttemptAt()).isEqualTo(SADA.plusSeconds(60));
 		assertThat(obavijest.getLastError()).isEqualTo("MailSendException: Connection refused");
+		assertThat(metrike.counter("slotbook.mail.failed").count()).isEqualTo(1);
 	}
 
 	// Pozvana osoba možda još nema nalog, pa mail ide na adresu iz pozivnice

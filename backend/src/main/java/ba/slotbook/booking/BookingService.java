@@ -28,6 +28,8 @@ import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.resource.ResourceRepository;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @Service
 public class BookingService {
@@ -48,12 +50,14 @@ public class BookingService {
 	private final Duration rokZaPotvrdu;
 	private final Duration zatvaranjePoslije;
 	private final int satiDoPodsjetnika;
+	private final Counter napravljene;
+	private final Counter sudari;
 
 	public BookingService(BookingRepository bookings, BookingEventRepository events, ResourceRepository resources,
 			UserRepository users, SlotService slotService, NotificationService notifications, Clock clock,
 			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu,
 			@Value("${slotbook.booking.complete-after-hours}") int satiDoZatvaranja,
-			@Value("${slotbook.booking.reminder-hours}") int satiDoPodsjetnika) {
+			@Value("${slotbook.booking.reminder-hours}") int satiDoPodsjetnika, MeterRegistry metrike) {
 		this.bookings = bookings;
 		this.events = events;
 		this.resources = resources;
@@ -64,6 +68,10 @@ public class BookingService {
 		this.rokZaPotvrdu = Duration.ofHours(satiZaPotvrdu);
 		this.zatvaranjePoslije = Duration.ofHours(satiDoZatvaranja);
 		this.satiDoPodsjetnika = satiDoPodsjetnika;
+		this.napravljene = Counter.builder("slotbook.bookings.created")
+				.description("Rezervacije upisane u bazu, i PENDING i CONFIRMED").register(metrike);
+		this.sudari = Counter.builder("slotbook.bookings.conflicts")
+				.description("Zahtjevi koje je EXCLUDE odbio jer je termin zauzet (409)").register(metrike);
 	}
 
 	// Ko smije rezervisati provjerava @PreAuthorize u kontroleru. Klijent šalje samo početak, a kraj
@@ -103,6 +111,7 @@ public class BookingService {
 			// Ostale greške integriteta nisu zauzet termin i ne smiju se tako prijaviti korisniku
 			if (e.getMostSpecificCause() instanceof SQLException sql) {
 				if (EXCLUSION_VIOLATION.equals(sql.getSQLState())) {
+					sudari.increment();
 					throw new SlotTakenException();
 				}
 				// Isti ključ u istom trenutku za drugi resurs: lock resursa ih nije poredao, pa odlučuje UNIQUE
@@ -115,6 +124,7 @@ public class BookingService {
 		// Nastanak je prvi prelaz stanja. Ista transakcija: ako ovaj upis padne, nema ni rezervacije.
 		events.save(new BookingEvent(rezervacija, null, status, klijent, sada));
 		obavijesti(rezervacija, clientId);
+		napravljene.increment();
 		return BookingResponse.from(rezervacija);
 	}
 

@@ -363,9 +363,9 @@ su zapisani s opisom mašine, backup je stvarno vraćen u praznu bazu.
    `requestId`), lokalno u običnom logu, a u prod profilu je log JSON (ECS). Isti ID je i u tijelu
    greške `500`. Gotovo 22.11.2026.
 2. **Health i readiness.** `/actuator/health/liveness` i `/readiness`, baza u readiness, Render gleda
-   readiness.
+   readiness. Gotovo 22.11.2026.
 3. **Metrike.** Micrometer brojači za napravljene rezervacije, sudare (`409`) i neuspjele mailove.
-   Endpoint metrika nije javan.
+   Endpoint metrika nije javan. Gotovo 22.11.2026.
 4. **Praćenje grešaka.** Neočekivane greške idu u Sentry (free plan) s ID-jem zahtjeva. Bez DSN-a ne
    šalje ništa, pa lokalno i u testovima ostaje ugašen.
 5. **N+1 i spori upiti.** Broj SQL upita po zahtjevu za glavne liste mjeren u testu, popravka gdje
@@ -535,6 +535,7 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Statistika za proizvoljan period, ne samo po mjesecima (backend prima do 366 dana)
 - Godina uz datum izuzetka kad nije tekuća
 - ID zahtjeva u poruci frontenda za grešku `500` ("javi nam i navedi broj ..."), backend ga već šalje u tijelu i u `X-Request-Id`
+- Metrike na produkciji: registry koji šalje brojače van (npr. OTLP prema besplatnom Grafana Cloudu), jer je `/actuator/metrics` na Renderu namjerno zatvoren
 
 Otvoreno iz Faze 8 (dug, za pregled u Fazi 13):
 

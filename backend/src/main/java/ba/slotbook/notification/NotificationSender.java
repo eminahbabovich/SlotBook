@@ -15,6 +15,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
@@ -27,13 +29,17 @@ class NotificationSender {
 	private final JavaMailSender mailSender;
 	private final Clock clock;
 	private final String from;
+	private final Counter neuspjeli;
 
 	NotificationSender(NotificationRepository notifications, JavaMailSender mailSender, Clock clock,
-			@Value("${slotbook.mail.from}") String from) {
+			@Value("${slotbook.mail.from}") String from, MeterRegistry metrike) {
 		this.notifications = notifications;
 		this.mailSender = mailSender;
 		this.clock = clock;
 		this.from = from;
+		// Svaki neuspio pokušaj, ne samo konačno FAILED: rast ovog broja je prvi znak da SMTP ne radi
+		this.neuspjeli = Counter.builder("slotbook.mail.failed")
+				.description("Pokušaji slanja maila koje je SMTP odbio").register(metrike);
 	}
 
 	// Jedna obavijest, jedna transakcija. Ako mail ode, a commit padne, obavijest ostane PENDING i
@@ -53,6 +59,7 @@ class NotificationSender {
 		} catch (MailException e) {
 			// Samo greške slanja. Druga greška je bug i ide u log posla, a obavijest čeka popravku.
 			obavijest.neuspjela(sada, e.getClass().getSimpleName() + ": " + e.getMessage());
+			neuspjeli.increment();
 			log.warn("Obavijest {} nije poslana, {}. pokušaj: {}", obavijest.getId(), obavijest.getAttempts(),
 					e.getMessage());
 		}
