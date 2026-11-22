@@ -155,6 +155,10 @@ class OrganizationIsolationApiTest {
 			Map.entry("GET /api/me/export", "samo korisnik iz tokena, MyDataExportApiTest provjerava da tuđeg nema"),
 			Map.entry("GET /api/bookings/mine", "samo korisnik iz tokena"),
 			Map.entry("GET /api/waitlist/mine", "samo korisnik iz tokena, WaitlistApiTest provjerava da tuđeg nema"),
+			Map.entry("GET /api/me/calendar-feed", "samo korisnik iz tokena"),
+			Map.entry("POST /api/me/calendar-feed", "samo korisnik iz tokena"),
+			Map.entry("DELETE /api/me/calendar-feed", "samo korisnik iz tokena"),
+			Map.entry("GET /api/me/calendar.ics", "javno, pravo daje token iz linka, CalendarFeedApiTest provjerava da tuđeg nema"),
 			Map.entry("POST /api/organizations", "nova organizacija, kreator postaje admin"),
 			Map.entry("GET /api/organizations/{slug}", "javni profil: naziv, adresa i zona"),
 			Map.entry("POST /api/invites/accept", "pravo daju token i email iz pozivnice"));

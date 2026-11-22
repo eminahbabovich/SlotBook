@@ -32,6 +32,13 @@ interface BookingRepository extends JpaRepository<Booking, UUID> {
 	List<Booking> findSchedule(UUID resourceId, Instant najranije, Instant from, Instant to);
 
 	// join fetch: naziv resursa i zona organizacije stižu u istom upitu, a ne jedan upit po redu (N+1)
+	// Za pretplatu na kalendar: naziv resursa i organizacije za svaki termin, u jednom upitu
+	@Query("""
+			select b from Booking b join fetch b.resource r join fetch r.organization
+			where b.client.id = :clientId and b.status in :statusi and b.endTime > :od
+			order by b.startTime, b.id""")
+	List<Booking> findForCalendar(UUID clientId, Collection<BookingStatus> statusi, Instant od);
+
 	@Query("select b from Booking b join fetch b.resource r join fetch r.organization where b.client.id = :clientId")
 	Page<Booking> findMine(UUID clientId, Pageable pageable);
 

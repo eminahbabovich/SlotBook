@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import ba.slotbook.export.MyDataExport.AuditEntry;
 import ba.slotbook.export.MyDataExport.Booking;
 import ba.slotbook.export.MyDataExport.BookingEvent;
+import ba.slotbook.export.MyDataExport.CalendarFeed;
 import ba.slotbook.export.MyDataExport.EmailLink;
 import ba.slotbook.export.MyDataExport.Invite;
 import ba.slotbook.export.MyDataExport.LoginFailures;
@@ -59,6 +60,11 @@ class MyDataRepository {
 				from waitlist_entries w join resources r on r.id = w.resource_id
 				join organizations o on o.id = r.organization_id
 				where w.client_id = ? order by w.start_time""").param(userId).query(WaitlistEntry.class).list();
+	}
+
+	Optional<CalendarFeed> calendarFeed(UUID userId) {
+		return jdbc.sql("select created_at from calendar_feeds where user_id = ?").param(userId)
+				.query(CalendarFeed.class).optional();
 	}
 
 	// Historija samo korisnikovih rezervacija, ne svega što je mijenjao kao provider

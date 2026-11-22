@@ -9,7 +9,7 @@ import java.util.UUID;
 public record MyDataExport(Instant exportedAt, Profile user, List<Membership> memberships, List<Booking> bookings,
 		List<BookingEvent> bookingEvents, List<ManagedResource> managedResources, List<Notification> notifications,
 		List<Session> sessions, List<EmailLink> emailLinks, List<Invite> invites, LoginFailures loginFailures,
-		List<AuditEntry> auditEntries, List<WaitlistEntry> waitlistEntries) {
+		List<AuditEntry> auditEntries, List<WaitlistEntry> waitlistEntries, CalendarFeed calendarFeed) {
 
 	public record Profile(UUID id, String email, String displayName, Instant createdAt, Instant emailVerifiedAt) {
 	}
@@ -47,6 +47,10 @@ public record MyDataExport(Instant exportedAt, Profile user, List<Membership> me
 
 	public record WaitlistEntry(String organizationName, String resourceName, Instant startTime, Instant endTime,
 			String status, Instant offeredUntil, Instant createdAt) {
+	}
+
+	// Samo kad je link napravljen. Token se ne izvozi: baza ga nema, a i hash je tajna.
+	public record CalendarFeed(Instant createdAt) {
 	}
 
 	public record AuditEntry(String organizationName, String action, UUID targetId, String detail,

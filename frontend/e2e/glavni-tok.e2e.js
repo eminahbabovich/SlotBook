@@ -178,3 +178,33 @@ test('klijent se upiše na listu čekanja, a kad admin otkaže, termin je ponuđ
 	await page.getByRole('button', { name: 'Rezerviši' }).click()
 	await expect(page.getByText(/^Termin je tvoj: .*14:00 do 15:00\.$/)).toBeVisible()
 })
+
+test('klijent napravi link za kalendar, a kalendar kroz taj link bez prijave dobije njen termin', async ({ page, playwright }) => {
+	await prijaviKlijenta(page)
+	await termin(page, '09:00 do 10:00', 'slobodno').click()
+	await page.getByRole('button', { name: 'Rezerviši' }).click()
+	await expect(page.getByText(/^Termin je tvoj: .*09:00 do 10:00\.$/)).toBeVisible()
+
+	await page.getByRole('link', { name: 'Hana Šehić' }).click()
+	await page.getByRole('button', { name: 'Napravi link' }).click()
+	const polje = page.getByLabel('Tvoj link za kalendar')
+	const adresa = await polje.inputValue()
+	expect(adresa).toMatch(/^http:\/\/localhost:\d+\/api\/me\/calendar\.ics\?token=[\w-]{43}$/)
+
+	// Bez kolačića i tokena, kao Google kad povuče link. Ide kroz Vite proxy, kao na produkciji kroz frontend.
+	const kalendar = await playwright.request.newContext()
+	const odgovor = await kalendar.get(adresa)
+	expect(odgovor.status()).toBe(200)
+	expect(odgovor.headers()['content-type']).toMatch(/^text\/calendar/)
+	const ics = await odgovor.text()
+	expect(ics).toContain(`SUMMARY:${RESURS.replace(',', '\\,')}\r\n`)
+	// 09:00 po Sarajevu je 08:00 u UTC-u zimi, a 07:00 ljeti
+	expect(ics).toMatch(new RegExp(`DTSTART:${danUZoni(Date.now() + 24 * 3600_000).replaceAll('-', '')}T0[78]0000Z\r\n`))
+	expect(ics).toContain('STATUS:CONFIRMED\r\n')
+
+	// Novi link gasi stari, a korisnik ga vidi odmah
+	await page.getByRole('button', { name: 'Napravi novi link' }).click()
+	await expect(polje).not.toHaveValue(adresa)
+	expect((await kalendar.get(adresa)).status()).toBe(404)
+	await kalendar.dispose()
+})

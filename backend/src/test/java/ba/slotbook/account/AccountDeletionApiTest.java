@@ -3,6 +3,7 @@ package ba.slotbook.account;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -133,6 +134,9 @@ class AccountDeletionApiTest {
 				{"email": "%s", "password": "pogresna"}
 				""".formatted(email)).andExpect(status().isUnauthorized());
 		UUID id = jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+		// Red u users ostaje, pa bi link za kalendar bez brisanja i dalje davao njene termine
+		String linkZaKalendar = JsonPath.read(posalji(post("/api/me/calendar-feed"), selma.access(), null)
+				.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.token");
 
 		obrisi(selma.access(), LOZINKA).andExpect(status().isNoContent());
 
@@ -157,6 +161,8 @@ class AccountDeletionApiTest {
 		assertThat(broj("select count(*) from user_tokens where user_id = ?", id)).isZero();
 		assertThat(broj("select count(*) from organization_invites where email = ?", email)).isZero();
 		assertThat(broj("select count(*) from login_failures where email = ?", email)).isZero();
+		assertThat(broj("select count(*) from calendar_feeds where user_id = ?", id)).isZero();
+		mockMvc.perform(get("/api/me/calendar.ics").param("token", linkZaKalendar)).andExpect(status().isNotFound());
 		assertThat(broj("select count(*) from refresh_tokens where user_id = ? and revoked_at is null", id)).isZero();
 		assertThat(jdbc.queryForList("select action from audit_log where organization_id = ? and actor_id = ?",
 				String.class, teretana, id)).containsExactly("ACCOUNT_DELETED");

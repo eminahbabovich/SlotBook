@@ -1,6 +1,7 @@
 import { useSesija } from '../sesija/sesija.js'
 import { BrisanjeNaloga } from './BrisanjeNaloga.jsx'
 import { IzvozPodataka } from './IzvozPodataka.jsx'
+import { PretplataNaKalendar } from './PretplataNaKalendar.jsx'
 import './nalog.css'
 
 export function Nalog() {
@@ -15,6 +16,7 @@ export function Nalog() {
 				<dt>Email</dt>
 				<dd>{korisnik.email}</dd>
 			</dl>
+			<PretplataNaKalendar />
 			<IzvozPodataka />
 			<BrisanjeNaloga />
 		</section>

@@ -67,6 +67,8 @@ Moje rezervacije su ista vrsta liste: dan običnim fontom, sati u `--font-brojev
 
 Poruka poslije uspjeha je podebljan tekst ispod liste, bez ikone i zelene boje, jer zelene u paleti nema.
 
+Link za kalendar (Moj nalog) je obično polje samo za čitanje: cijeli link se označi kad polje dobije fokus, pa se može kopirati i kad dugme "Kopiraj link" ne radi. Tamno dugme je samo jedno: "Napravi link" dok linka nema, a "Kopiraj link" odmah poslije. "Napravi novi link" i "Ugasi link" su sporedne radnje, podvučen tekst. Dugme i sporedne radnje stoje u jednom redu s razmakom `--razmak-16`, a na uskom ekranu se prelome jedno ispod drugog. Nove boje, fontove ni razmake ovo ne uvodi.
+
 Forma je široka najviše `--sirina-forme` (400 px), da red za email na desktopu ne bude preko cijelog ekrana. Tu vrijednost sam potvrdio 15.11.2026, poslije koraka 4 Faze 7.
 
 ## Fokus

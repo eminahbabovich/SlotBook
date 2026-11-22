@@ -394,7 +394,7 @@ test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati 
    ponuđen termin istaknut u kalendaru. Za to backend još treba: `GET` mojih upisa i u `/slots`
    oznaku da je termin ponuđen meni ili nekom drugom (sad ga kalendar prikaže kao slobodan, a
    rezervacija vrati `409`). Uz to lista čekanja ide u izvoz podataka (`/api/me/export`).
-3. **iCal pretplata.** Tajni link po korisniku (`.ics` bez prijave, token se može promijeniti), moje
+3. ✅ **iCal pretplata** (22.11.2026). Tajni link po korisniku (`.ics` bez prijave, token se može promijeniti), moje
    rezervacije u Google/Apple kalendaru. Dugme za kopiranje linka u UI-ju.
 4. **Live kalendar (SSE).** Kad neko rezerviše ili otkaže, otvoreni kalendari istog resursa se
    osvježe bez reloada. Događaj ide poslije commita, a tok vidi samo član organizacije.

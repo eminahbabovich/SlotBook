@@ -35,6 +35,7 @@ import ba.slotbook.TestcontainersConfiguration;
 import ba.slotbook.availability.AvailabilityInterval;
 import ba.slotbook.availability.AvailabilityService;
 import ba.slotbook.booking.BookingService;
+import ba.slotbook.booking.CalendarFeedService;
 import ba.slotbook.booking.WaitlistService;
 import ba.slotbook.organization.OrganizationService;
 import ba.slotbook.resource.ResourceService;
@@ -77,6 +78,9 @@ class UpitiPoZahtjevuApiTest {
 	@Autowired
 	WaitlistService waitlistService;
 
+	@Autowired
+	CalendarFeedService calendarFeedService;
+
 	private UUID mirza;
 	private UUID lejla;
 	private UUID teretana;
@@ -91,12 +95,13 @@ class UpitiPoZahtjevuApiTest {
 		dodaj(1);
 		String mirzinToken = prijava("mirza");
 		String lejlinToken = prijava("lejla");
+		String lejlinLink = calendarFeedService.replace(lejla).token();
 
-		Map<String, Integer> jedan = izmjeri(mirzinToken, lejlinToken);
+		Map<String, Integer> jedan = izmjeri(mirzinToken, lejlinToken, lejlinLink);
 		for (int i = 2; i <= 6; i++) {
 			dodaj(i);
 		}
-		Map<String, Integer> sest = izmjeri(mirzinToken, lejlinToken);
+		Map<String, Integer> sest = izmjeri(mirzinToken, lejlinToken, lejlinLink);
 
 		System.out.println("Upiti po zahtjevu, 1 red: " + jedan + ", 6 redova: " + sest);
 		assertThat(sest).isEqualTo(jedan);
@@ -121,7 +126,7 @@ class UpitiPoZahtjevuApiTest {
 		clan(druga, lejla);
 	}
 
-	private Map<String, Integer> izmjeri(String mirzinToken, String lejlinToken) throws Exception {
+	private Map<String, Integer> izmjeri(String mirzinToken, String lejlinToken, String lejlinLink) throws Exception {
 		Map<String, Integer> broj = new LinkedHashMap<>();
 		broj.put("resursi", upiti(get("/api/organizations/{id}/resources", teretana), mirzinToken));
 		broj.put("clanovi", upiti(get("/api/organizations/{id}/members", teretana), mirzinToken));
@@ -131,6 +136,8 @@ class UpitiPoZahtjevuApiTest {
 		broj.put("slobodniTermini", upiti(get("/api/resources/{id}/slots", salaJedan)
 				.param("from", PONEDJELJAK).param("to", UTORAK), lejlinToken));
 		broj.put("mojaListaCekanja", upiti(get("/api/waitlist/mine"), lejlinToken));
+		// Javna putanja, JWT joj ne smeta, a pravo daje token iz linka
+		broj.put("kalendarIcs", upiti(get("/api/me/calendar.ics").param("token", lejlinLink), lejlinToken));
 		broj.put("mojeOrganizacije", upiti(get("/api/me/organizations"), lejlinToken));
 		broj.put("dnevnik", upiti(get("/api/organizations/{id}/audit-log", teretana), mirzinToken));
 		return broj;

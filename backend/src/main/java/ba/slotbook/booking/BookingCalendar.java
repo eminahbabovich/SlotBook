@@ -4,9 +4,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
-// Jedan termin kao iCalendar (RFC 5545), za prilog u mailu potvrde. Ručno, jer su to četiri
-// polja, a biblioteka bi bila veća od ovog fajla.
+// Termini kao iCalendar (RFC 5545): jedan za prilog u mailu potvrde, a svi moji za pretplatu
+// (CalendarFeedService). Ručno, jer su to četiri polja, a biblioteka bi bila veća od ovog fajla.
 final class BookingCalendar {
 
 	// Vrijeme u UTC-u (Z na kraju): kalendar ga sam prikaže u zoni korisnika, pa ne treba VTIMEZONE,
@@ -14,6 +17,11 @@ final class BookingCalendar {
 	private static final DateTimeFormatter UTC = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
 			.withZone(ZoneOffset.UTC);
 	private static final int NAJDUZI_RED = 75;
+
+	// Pretplata pokazuje ono što drži termin i ono što se desilo. Otkazana, odbijena i istekla
+	// nestanu iz kalendara pri sljedećem osvježavanju, jer ih u fajlu više nema.
+	static final Set<BookingStatus> U_KALENDARU = EnumSet.of(BookingStatus.PENDING, BookingStatus.CONFIRMED,
+			BookingStatus.COMPLETED);
 
 	private BookingCalendar() {
 	}
@@ -23,7 +31,31 @@ final class BookingCalendar {
 				+ red("VERSION:2.0")
 				+ red("PRODID:-//SlotBook//SlotBook//BS")
 				+ red("METHOD:PUBLISH")
-				+ red("BEGIN:VEVENT")
+				+ dogadjaj(rezervacija, sada, null)
+				+ red("END:VCALENDAR");
+	}
+
+	// Kalendar sam povlači fajl ponovo. REFRESH-INTERVAL je iz RFC 7986, a X-PUBLISHED-TTL čita Outlook.
+	// To su samo prijedlozi: koliko često stvarno osvježava odlučuje aplikacija (Google rijetko).
+	static String feed(List<Booking> rezervacije, Instant sada) {
+		StringBuilder fajl = new StringBuilder()
+				.append(red("BEGIN:VCALENDAR"))
+				.append(red("VERSION:2.0"))
+				.append(red("PRODID:-//SlotBook//SlotBook//BS"))
+				.append(red("METHOD:PUBLISH"))
+				.append(red("X-WR-CALNAME:SlotBook"))
+				.append(red("REFRESH-INTERVAL;VALUE=DURATION:PT1H"))
+				.append(red("X-PUBLISHED-TTL:PT1H"));
+		for (Booking rezervacija : rezervacije) {
+			// Na čekanju je TENTATIVE: kalendar je prikaže kao neodlučenu, a ne kao siguran termin
+			fajl.append(dogadjaj(rezervacija, sada,
+					rezervacija.getStatus() == BookingStatus.PENDING ? "TENTATIVE" : "CONFIRMED"));
+		}
+		return fajl.append(red("END:VCALENDAR")).toString();
+	}
+
+	private static String dogadjaj(Booking rezervacija, Instant sada, String status) {
+		return red("BEGIN:VEVENT")
 				// Isti UID za istu rezervaciju: kalendar prepozna termin ako stigne ponovo
 				+ red("UID:" + rezervacija.getId() + "@slotbook")
 				+ red("DTSTAMP:" + UTC.format(sada))
@@ -31,8 +63,8 @@ final class BookingCalendar {
 				+ red("DTEND:" + UTC.format(rezervacija.getEndTime()))
 				+ red("SUMMARY:" + tekst(rezervacija.getResource().getName()))
 				+ red("LOCATION:" + tekst(rezervacija.getResource().getOrganization().getName()))
-				+ red("END:VEVENT")
-				+ red("END:VCALENDAR");
+				+ (status == null ? "" : red("STATUS:" + status))
+				+ red("END:VEVENT");
 	}
 
 	// Zarez, tačka-zarez i obrnuta kosa crta znače nešto u formatu, pa idu s \ ispred

@@ -30,6 +30,7 @@ import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
 import ba.slotbook.booking.BookingStatus;
 import ba.slotbook.booking.BookingTransitionException;
+import ba.slotbook.booking.CalendarFeedNotFoundException;
 import ba.slotbook.booking.CancelDeadlinePassedException;
 import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.NoShowTooEarlyException;
@@ -139,6 +140,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		problem.setTitle("Nalog se još ne može obrisati");
 		problem.setProperty("organizacije", ex.getOrganizacije());
 		problem.setProperty("resursi", ex.getResursi());
+		return problem;
+	}
+
+	// 404, a ne 401: link nije prijava, a odgovor ne kaže je li link nekad postojao
+	@ExceptionHandler(CalendarFeedNotFoundException.class)
+	ProblemDetail linkZaKalendarNePostoji(CalendarFeedNotFoundException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"Ovaj link za kalendar ne postoji ili je zamijenjen novim. Novi link napraviš u svom nalogu u SlotBooku.");
+		problem.setTitle("Link za kalendar ne postoji");
 		return problem;
 	}
 

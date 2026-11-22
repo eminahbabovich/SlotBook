@@ -113,6 +113,8 @@ class MyDataExportApiTest {
 		naListi(sto, LEJLA, "2035-11-19T10:00:00Z", "2035-11-19T11:00:00Z");
 		naListi(sto, TARIK, "2035-11-19T08:00:00Z", "2035-11-19T09:00:00Z");
 
+		posalji(post("/api/me/calendar-feed"), lejla, null, 201);
+
 		String izvoz = posalji(get("/api/me/export"), lejla, null, 200);
 
 		mockMvc.perform(get("/api/me/export").header("Authorization", "Bearer " + lejla))
@@ -142,7 +144,8 @@ class MyDataExportApiTest {
 				.andExpect(jsonPath("$.auditEntries[*].organizationName", everyItem(is("Čitaonica PMF"))))
 				.andExpect(jsonPath("$.waitlistEntries[*].startTime", contains("2035-11-19T10:00:00Z")))
 				.andExpect(jsonPath("$.waitlistEntries[0].resourceName").value("Sto 4 kod prozora"))
-				.andExpect(jsonPath("$.waitlistEntries[0].status").value("WAITING"));
+				.andExpect(jsonPath("$.waitlistEntries[0].status").value("WAITING"))
+				.andExpect(jsonPath("$.calendarFeed.createdAt", endsWith("Z")));
 
 		// Ništa od ovoga ne smije izaći: hash lozinke, hashevi tokena (u bazi ih ima i za Lejlu), tijela
 		// mailova (u njima su linkovi s pravim tokenima) i Tarikovi podaci
@@ -151,8 +154,9 @@ class MyDataExportApiTest {
 				union all select t.token_hash from refresh_tokens t join users u on u.id = t.user_id where u.email = :e
 				union all select t.token_hash from user_tokens t join users u on u.id = t.user_id where u.email = :e
 				union all select token_hash from organization_invites where email = :e
+				union all select f.token_hash from calendar_feeds f join users u on u.id = f.user_id where u.email = :e
 				""".replace(":e", "'" + LEJLA + "'"), String.class);
-		assertThat(tajne).hasSize(4);
+		assertThat(tajne).hasSize(5);
 		for (String tajna : tajne) {
 			assertThat(izvoz).doesNotContain(tajna);
 		}

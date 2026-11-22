@@ -80,6 +80,8 @@ public class SecurityConfig {
 								"/api/auth/password-reset", "/api/auth/password-reset/confirm").permitAll()
 						// Javni profil organizacije: klijent treba vidjeti gdje rezerviše prije nego što se prijavi
 						.requestMatchers(HttpMethod.GET, "/api/organizations/*").permitAll()
+						// Pretplata na kalendar: Google ili telefon povlače fajl bez prijave, pravo daje token iz linka
+						.requestMatchers(HttpMethod.GET, "/api/me/calendar.ics").permitAll()
 						.anyRequest().authenticated())
 				// Čita "Authorization: Bearer ..." i provjerava potpis i rok tokena preko JwtDecoder beana
 				.oauth2ResourceServer(resourceServer -> resourceServer

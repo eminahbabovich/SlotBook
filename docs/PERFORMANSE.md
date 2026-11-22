@@ -28,7 +28,7 @@ Indeks je dodan migracijom `V27`. Na ovih 408 hiljada redova pravio se 276 ms i 
 
 ## Broj upita po zahtjevu (N+1)
 
-`UpitiPoZahtjevuApiTest` mjeri koliko SQL upita pošalje Hibernate za sedam lista: resursi i članovi organizacije, moje rezervacije, raspored providera, slobodni termini, moje organizacije i dnevnik. Svaka lista se mjeri s jednim redom, pa još jednom sa šest, i broj mora ostati isti. Brojač je `StatementInspector` koji broji samo upite iz niti testa. Hibernate statistika je zajednička za cijelu aplikaciju, pa bi u nju upao i `BookingJob`, koji radi svake minute.
+`UpitiPoZahtjevuApiTest` mjeri koliko SQL upita pošalje Hibernate za devet lista: resursi i članovi organizacije, moje rezervacije, raspored providera, slobodni termini, moja lista čekanja, iCal pretplata, moje organizacije i dnevnik. Svaka lista se mjeri s jednim redom, pa još jednom sa šest, i broj mora ostati isti. Brojač je `StatementInspector` koji broji samo upite iz niti testa. Hibernate statistika je zajednička za cijelu aplikaciju, pa bi u nju upao i `BookingJob`, koji radi svake minute.
 
 Izmjereno 22.11.2026, isto za 1 i za 6 redova:
 
@@ -40,6 +40,7 @@ Izmjereno 22.11.2026, isto za 1 i za 6 redova:
 | raspored providera | 5 |
 | slobodni termini (jedan dan) | 8, od Faze 10 10 |
 | moja lista čekanja (od Faze 10) | 1 |
+| iCal pretplata `.ics` (od Faze 10) | 2 |
 | moje organizacije | 1 |
 | dnevnik organizacije | 2 |
 

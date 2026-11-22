@@ -11,3 +11,12 @@
 .nalog-dio {
 	margin-top: var(--razmak-32);
 }
+
+/* Dugme i link (ili dva dugmeta) u jednom redu, a na uskom ekranu jedno ispod drugog */
+.radnje-linka {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--razmak-16);
+}
+
