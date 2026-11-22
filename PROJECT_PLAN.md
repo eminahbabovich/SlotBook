@@ -184,7 +184,7 @@ svaki endpoint opisan u Swaggeru.
 | 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | gotovo |
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | gotovo |
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | gotovo |
-| 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | ⏳ nije počelo |
+| 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | u izradi |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | ⏳ nije počelo |
 | 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | ⏳ nije počelo |
 | 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s **tool calling**, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
@@ -407,6 +407,23 @@ test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati 
    Dokaz je test sa 20 niti na 5 mjesta (prođe tačno 5). Urađeno u četiri dijela: 7a baza i rezervacija,
    7b kalendar, lista čekanja i serije, 7c UI, 7d e2e i pregled ekrana.
 8. ✅ **Kraj faze** (22.11.2026). README, status, ODLUKE. Sve iz plana je stiglo, a ono što je ostalo otvoreno je u Dodacima.
+
+## Faza 11 po koracima
+
+Kriterij "gotovo" je gore (tačka 11): plaćanje u test modu radi do kraja, isti webhook poslan dvaput ne
+duplira uplatu, neispravan potpis se odbija. Pravi novac ne ide kroz projekat. Stripe je u testovima
+lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ručno sa Stripe CLI.
+
+1. **Cijena na resursu.** Kolona u feninzima, 0 je besplatno, API i polje u formi resursa. Besplatan
+   resurs radi kao do sada.
+2. **Rezervacija čeka uplatu, Stripe Checkout.** Rezervacija plaćenog resursa je `PENDING` s kratkim
+   rokom za uplatu, `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout stranice, uplata ima
+   svoju tabelu.
+3. **Webhook.** Provjera potpisa, idempotentna obrada (isti događaj dvaput ne radi ništa drugi put),
+   uplata potvrđuje rezervaciju. Uplata koja stigne za već isteklu rezervaciju se vraća.
+4. **Povrat i istek.** Otkazivanje u roku vraća novac, istekla neplaćena rezervacija oslobađa termin.
+5. **UI i kraj faze.** Dugme za plaćanje, povratak sa Checkouta, ručna provjera sa Stripe CLI,
+   README, ODLUKE, a šta nije stiglo ide u Dodatke.
 
 ## Faza 14 po koracima
 

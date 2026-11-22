@@ -1025,3 +1025,11 @@ Kalendar, lista čekanja i serije koriste isto pravilo, u klasi `SlobodnaMjesta`
 Posao liste čekanja nudi termin kad zbir ponuda i zauzetih mjesta padne ispod kapaciteta. Po terminu ide jedna ponuda po prolazu, pa kad se istovremeno oslobode dva mjesta, drugo se nudi minutu kasnije. To nisam mijenjao, jer je razlika jedna minuta. `WaitlistApiTest` provjerava da oslobođeno mjesto u punom terminu ide prvoj na listi i da ga za to vrijeme ne može uzeti niko drugi, ni osoba koja ga je upravo pustila. Mutacija SQL uslova (`< 1` umjesto `< r.capacity`) obori taj test.
 
 Statistika je imala skrivenu grešku za grupne termine: popunjenost je rezervisane minute dijelila ponuđenim minutama termina, pa bi puna sala s 5 mjesta imala 500 %. Sada se ponuđene minute množe kapacitetom (minute mjesta).
+
+## Cijena na resursu u feninzima (22.11.2026)
+
+Cijena je cijeli broj u feninzima (`price_cents`, 1500 je 15 KM), a ne `NUMERIC` ili `BigDecimal` u markama. Stripe i sam traži iznos u najmanjoj jedinici valute, pa se iznos šalje kakav jeste, bez množenja sa 100 i bez zaokruživanja. Drugi put je bio `NUMERIC(8,2)` u bazi i `BigDecimal` u Javi. Radio bi, ali bi svako mjesto koje računa s novcem moralo paziti na skalu, a frontend bi i tako dobijao broj s decimalama kao `double`.
+
+Besplatan resurs ima cijenu 0, a ne `NULL`. Tako nema trećeg stanja ("cijena nije unesena"), a svi postojeći resursi poslije V38 rade kao do sada. Granica od 0 do 1000 KM je i u `@Min`/`@Max` na `ResourceRequest` (da korisnik dobije 400 s porukom) i u CHECK-u `resources_cijena`, kao kod trajanja i kapaciteta.
+
+Valuta je zasad KM za sve organizacije i nije kolona. Nisam još provjerio da li Stripe prima BAM za Checkout. To se provjerava u koraku 2, a ako ne prima, ide EUR i to se ovdje upiše.

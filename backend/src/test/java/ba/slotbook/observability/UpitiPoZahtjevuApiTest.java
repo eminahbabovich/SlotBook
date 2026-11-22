@@ -113,7 +113,7 @@ class UpitiPoZahtjevuApiTest {
 	private void dodaj(int i) {
 		UUID klijent = korisnik("klijent" + i, "Klijent " + i);
 		clan(teretana, klijent);
-		UUID sala = resourceService.create(teretana, mirza, "Sala " + i, null, 60, true, 0, 1).id();
+		UUID sala = resourceService.create(teretana, mirza, "Sala " + i, null, 60, true, 0, 1, 0).id();
 		availabilityService.replace(sala,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(20, 0))));
 		if (i == 1) {

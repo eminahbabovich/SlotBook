@@ -79,7 +79,7 @@ class BookingSeriesApiTest {
 		UUID fakultet = organizationService.create(profesorica, "Konsultacije ETF", "etf-serija-" + sufiks, ZONA).id();
 		clan(fakultet, lejla);
 		clan(fakultet, amar);
-		kabinet = resourceService.create(fakultet, profesorica, "Kabinet 2-14", null, 60, true, 0, 1).id();
+		kabinet = resourceService.create(fakultet, profesorica, "Kabinet 2-14", null, 60, true, 0, 1, 0).id();
 		availabilityService.replace(kabinet,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(16, 0))));
 		lejlinToken = prijava("lejla");

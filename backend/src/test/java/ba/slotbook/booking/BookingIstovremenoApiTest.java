@@ -77,7 +77,7 @@ class BookingIstovremenoApiTest {
 		UUID profesor = userService.register("edin.istovremeno@example.com", LOZINKA, "Edin").id();
 		UUID katedra = organizationService.create(profesor, "Katedra za softversko inženjerstvo",
 				"katedra-istovremeno", "Europe/Sarajevo").id();
-		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Algoritmi", null, 30, true, 0, 1).id();
+		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Algoritmi", null, 30, true, 0, 1, 0).id();
 		availabilityService.replace(konsultacije,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(12, 0))));
 
@@ -113,7 +113,7 @@ class BookingIstovremenoApiTest {
 		UUID trener = userService.register("amar.kapacitet@example.com", LOZINKA, "Amar").id();
 		UUID teretana = organizationService.create(trener, "Teretana Grbavica", "teretana-kapacitet",
 				"Europe/Sarajevo").id();
-		UUID trening = resourceService.create(teretana, trener, "Grupni trening, kružni", null, 60, true, 0, 5).id();
+		UUID trening = resourceService.create(teretana, trener, "Grupni trening, kružni", null, 60, true, 0, 5, 0).id();
 		availabilityService.replace(trening,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(17, 0), LocalTime.of(20, 0))));
 		List<String> tokeni = new ArrayList<>();
@@ -198,7 +198,7 @@ class BookingIstovremenoApiTest {
 		UUID profesor = userService.register("lejla.kljuc@example.com", LOZINKA, "Lejla").id();
 		UUID katedra = organizationService.create(profesor, "Katedra za matematiku", "katedra-kljuc",
 				"Europe/Sarajevo").id();
-		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Analiza", null, 30, true, 0, 1).id();
+		UUID konsultacije = resourceService.create(katedra, profesor, "Konsultacije, Analiza", null, 30, true, 0, 1, 0).id();
 		availabilityService.replace(konsultacije,
 				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(12, 0))));
 		UUID student = userService.register("tarik.kljuc@example.com", LOZINKA, "Tarik").id();

@@ -121,6 +121,7 @@ class ResourceApiTest {
 				.andExpect(jsonPath("$.autoConfirm").value(true))
 				.andExpect(jsonPath("$.cancelNoticeHours").value(0))
 				.andExpect(jsonPath("$.capacity").value(1))
+				.andExpect(jsonPath("$.priceCents").value(0))
 				.andExpect(jsonPath("$.active").value(true));
 	}
 
@@ -137,6 +138,23 @@ class ResourceApiTest {
 					""".formatted(kapacitet))
 					.andExpect(status().isBadRequest())
 					.andExpect(jsonPath("$.greske[0].polje").value("capacity"));
+		}
+	}
+
+	// Cijena je u feninzima (1 KM = 100), kao iznos u Stripeu, pa nema decimala ni zaokruživanja
+	@Test
+	void terminUSaliKostaPetnaestKMACijenaVanGranicaJe400() throws Exception {
+		napravi(emina, """
+				{"name": "Sala za mali fudbal", "slotMinutes": 60, "priceCents": 1500}
+				""")
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.priceCents").value(1500));
+		for (int cijena : new int[] { -1, 100001 }) {
+			napravi(emina, """
+					{"name": "Sala za mali fudbal 2", "slotMinutes": 60, "priceCents": %d}
+					""".formatted(cijena))
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.greske[0].polje").value("priceCents"));
 		}
 	}
 

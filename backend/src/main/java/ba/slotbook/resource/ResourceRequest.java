@@ -31,12 +31,18 @@ public record ResourceRequest(
 		// Bez polja je jedno mjesto, kao običan resurs. Gornja granica je ista kao CHECK u V37.
 		@Min(value = 1, message = "Termin ima najmanje jedno mjesto.")
 		@Max(value = 100, message = "Termin može imati najviše 100 mjesta.")
-		Integer capacity) {
+		Integer capacity,
+
+		// Bez polja je besplatno. U feninzima, granice su iste kao CHECK u V38.
+		@Min(value = 0, message = "Cijena ne može biti negativna. Za besplatan termin pošalji 0.")
+		@Max(value = 100000, message = "Cijena termina može biti najviše 1000 KM (100000 feninga).")
+		Integer priceCents) {
 
 	public ResourceRequest {
 		autoConfirm = autoConfirm == null ? Boolean.TRUE : autoConfirm;
 		cancelNoticeHours = cancelNoticeHours == null ? 0 : cancelNoticeHours;
 		capacity = capacity == null ? 1 : capacity;
+		priceCents = priceCents == null ? 0 : priceCents;
 	}
 
 }

@@ -66,9 +66,9 @@ class ResourceAccessTest {
 		clan(teretana, dzenan, "CLIENT");
 		clan(citaonica, tarik, "ADMIN");
 
-		kenanovTrening = resources.save(new Resource(teretana, kenan, "Kružni trening", null, 60, true, 0, 1, SADA)).getId();
-		eminaSauna = resources.save(new Resource(teretana, emina, "Sauna", null, 30, true, 0, 1, SADA)).getId();
-		Resource sala = new Resource(teretana, emina, "Stara sala", null, 60, true, 0, 1, SADA);
+		kenanovTrening = resources.save(new Resource(teretana, kenan, "Kružni trening", null, 60, true, 0, 1, 0, SADA)).getId();
+		eminaSauna = resources.save(new Resource(teretana, emina, "Sauna", null, 30, true, 0, 1, 0, SADA)).getId();
+		Resource sala = new Resource(teretana, emina, "Stara sala", null, 60, true, 0, 1, 0, SADA);
 		sala.deactivate();
 		zatvorenaSala = resources.saveAndFlush(sala).getId();
 	}

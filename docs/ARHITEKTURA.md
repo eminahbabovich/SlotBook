@@ -152,6 +152,7 @@ erDiagram
         boolean auto_confirm "false: rezervacija čeka potvrdu"
         int cancel_notice_hours "rok za otkazivanje, 0 do 168"
         int capacity "mjesta u terminu, 1 do 100"
+        int price_cents "u feninzima, 0 je besplatno"
     }
     availability_rules {
         uuid id PK

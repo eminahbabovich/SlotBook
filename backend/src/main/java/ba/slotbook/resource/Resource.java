@@ -54,6 +54,10 @@ public class Resource {
 	@Column(nullable = false)
 	private int capacity;
 
+	// U feninzima, 0 je besplatno
+	@Column(name = "price_cents", nullable = false)
+	private int priceCents;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -64,17 +68,17 @@ public class Resource {
 	}
 
 	Resource(Organization organization, User provider, String name, String description, int slotMinutes,
-			boolean autoConfirm, int cancelNoticeHours, int capacity, Instant createdAt) {
+			boolean autoConfirm, int cancelNoticeHours, int capacity, int priceCents, Instant createdAt) {
 		this.organization = organization;
 		this.provider = provider;
 		this.active = true;
 		this.createdAt = createdAt;
-		update(name, description, slotMinutes, autoConfirm, cancelNoticeHours, capacity);
+		update(name, description, slotMinutes, autoConfirm, cancelNoticeHours, capacity, priceCents);
 	}
 
 	// Manji kapacitet ne dira postojeće rezervacije, nove samo dobijaju mjesta do novog broja
 	void update(String name, String description, int slotMinutes, boolean autoConfirm, int cancelNoticeHours,
-			int capacity) {
+			int capacity, int priceCents) {
 		this.name = name.strip();
 		// Prazan opis iz forme je isto što i bez opisa, da frontend ne mora razlikovati "" i null
 		this.description = description == null || description.isBlank() ? null : description.strip();
@@ -82,6 +86,7 @@ public class Resource {
 		this.autoConfirm = autoConfirm;
 		this.cancelNoticeHours = cancelNoticeHours;
 		this.capacity = capacity;
+		this.priceCents = priceCents;
 	}
 
 	void changeProvider(User provider) {
@@ -131,6 +136,10 @@ public class Resource {
 
 	public int getCapacity() {
 		return capacity;
+	}
+
+	public int getPriceCents() {
+		return priceCents;
 	}
 
 	public boolean isAutoConfirm() {

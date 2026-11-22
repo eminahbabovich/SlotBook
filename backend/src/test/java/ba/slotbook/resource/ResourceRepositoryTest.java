@@ -61,7 +61,7 @@ class ResourceRepositoryTest {
 	@Test
 	void clanOrganizacijeMozeVoditiResurs() {
 		Resource sala = resources.saveAndFlush(
-				new Resource(teretana, lejla, "  Sala za funkcionalni trening ", null, 60, true, 0, 1, SADA));
+				new Resource(teretana, lejla, "  Sala za funkcionalni trening ", null, 60, true, 0, 1, 0, SADA));
 		// Bez ovoga findById vrati isti objekat iz memorije, a ne red pročitan iz baze
 		em.clear();
 
@@ -73,7 +73,7 @@ class ResourceRepositoryTest {
 	@Test
 	void bazaNePustaProvideraKojiNijeClanTeOrganizacije() {
 		assertThatThrownBy(() -> resources.saveAndFlush(
-				new Resource(citaonica, lejla, "Sto 4 u čitaonici", null, 120, true, 0, 1, SADA)))
+				new Resource(citaonica, lejla, "Sto 4 u čitaonici", null, 120, true, 0, 1, 0, SADA)))
 				.isInstanceOf(DataIntegrityViolationException.class)
 				.hasMessageContaining("resources_provider_clan");
 	}
@@ -81,9 +81,17 @@ class ResourceRepositoryTest {
 	@Test
 	void bazaOdbijaTrajanjeTerminaVanGranica() {
 		assertThatThrownBy(() -> resources.saveAndFlush(
-				new Resource(teretana, lejla, "Sauna", null, 0, true, 0, 1, SADA)))
+				new Resource(teretana, lejla, "Sauna", null, 0, true, 0, 1, 0, SADA)))
 				.isInstanceOf(DataIntegrityViolationException.class)
 				.hasMessageContaining("resources_slot_minutes");
+	}
+
+	@Test
+	void bazaOdbijaNegativnuCijenu() {
+		assertThatThrownBy(() -> resources.saveAndFlush(
+				new Resource(teretana, lejla, "Sauna", null, 30, true, 0, 1, -100, SADA)))
+				.isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("resources_cijena");
 	}
 
 }
