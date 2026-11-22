@@ -16,10 +16,17 @@ const PORUKE = {
 
 const OZNAKA = { slobodno: 'slobodno', moje: 'moje', ceka: 'čeka potvrdu', zauzeto: 'zauzeto' }
 
-// Stanje riječima, isto za oznaku u redu i za čitač ekrana
+// 1, 21, 31 mjesto, a 2, 5, 11, 12 mjesta
+const mjesta = (broj) => `${broj} ${broj % 10 === 1 && broj % 100 !== 11 ? 'mjesto' : 'mjesta'}`
+
+// Stanje riječima, isto za oznaku u redu i za čitač ekrana. Grupni termin kaže i koliko je mjesta
+// ostalo, a pun je "popunjeno", jer "zauzeto" zvuči kao da ga je uzela jedna osoba.
 function oznaka(termin, zona) {
 	if (termin.stanje === 'ponudjen') return `ponuđen tebi ${rokPonude(termin.rokPonude, zona)}`
-	if (termin.stanje === 'zauzeto' && termin.upisId) return 'zauzeto, na listi si'
+	if (termin.stanje === 'slobodno' && termin.mjesta) return `slobodno, još ${mjesta(termin.mjesta)}`
+	const zauzeto = termin.pun ? 'popunjeno' : 'zauzeto'
+	if (termin.stanje === 'zauzeto' && termin.upisId) return `${zauzeto}, na listi si`
+	if (termin.stanje === 'zauzeto') return zauzeto
 	return OZNAKA[termin.stanje]
 }
 

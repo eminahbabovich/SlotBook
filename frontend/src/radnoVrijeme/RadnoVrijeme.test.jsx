@@ -6,7 +6,7 @@ import { postaviToken } from '../api/apiFetch.js'
 import { CITAONICA, PRIJAVLJENA, TERETANA, backend, json, otvori, problem, tijelo } from '../test/lazniBackend.js'
 
 const resurs = (id, naziv, providerId) => ({
-	id, organizationId: 'o1', providerId, name: naziv, description: null, slotMinutes: 60, autoConfirm: true, cancelNoticeHours: 0, active: true, hasImage: false,
+	id, organizationId: 'o1', providerId, name: naziv, description: null, slotMinutes: 60, autoConfirm: true, cancelNoticeHours: 0, capacity: 1, active: true, hasImage: false,
 })
 const stranica = (lista) => json({ content: lista, page: 0, size: 50, totalElements: lista.length, totalPages: 1 })
 const ADRESA = '/o/citaonica-pmf/r/r1/radno-vrijeme'

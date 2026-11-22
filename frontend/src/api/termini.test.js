@@ -41,6 +41,19 @@ test('kalendar spaja slobodne i zauzete termine po vremenu, sa stanjem svakog', 
 	expect(kalendar.termini[0].kraj).toBe('2035-11-19T08:00:00Z')
 })
 
+// Oblik kao u WaitlistApiTest za salu s dva mjesta
+test('grupni termin nosi broj mjesta koja ostaju, a običan ne', async () => {
+	const odgovor = (capacity, seatsLeft) =>
+		json({ timezone: 'Europe/Sarajevo', capacity, slots: [{ start: '2035-11-19T07:00:00Z', end: '2035-11-19T08:00:00Z', seatsLeft }], taken: [{ start: '2035-11-19T08:00:00Z', end: '2035-11-19T09:00:00Z', myStatus: null }] })
+	vi.stubGlobal('fetch', vi.fn(async () => odgovor(2, 1)))
+	const grupni = await kalendarResursa('r1', '2035-11-19', '2035-11-26')
+	vi.stubGlobal('fetch', vi.fn(async () => odgovor(1, 1)))
+	const obican = await kalendarResursa('r1', '2035-11-19', '2035-11-26')
+
+	expect(grupni.termini.map((t) => [t.mjesta ?? null, t.pun ?? null])).toEqual([[1, null], [null, true]])
+	expect(obican.termini.map((t) => [t.mjesta ?? null, t.pun ?? null])).toEqual([[null, null], [null, false]])
+})
+
 test('kalendar bez polja taken glasno pada, umjesto da sve zauzeto prikaže kao slobodno', async () => {
 	vi.stubGlobal('fetch', vi.fn(async () => json({ timezone: 'Europe/Sarajevo', slots: [] })))
 

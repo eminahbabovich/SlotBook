@@ -5,8 +5,8 @@ import { deaktivirajResurs, izmijeniResurs, noviResurs, promijeniVoditelja, resu
 const json = (tijelo, status = 200) => new Response(JSON.stringify(tijelo), { status, headers: { 'Content-Type': 'application/json' } })
 
 // Oblik kao ResourceResponse u ResourceApiTest
-const STO = { id: 'r1', organizationId: 'o1', providerId: 'u1', name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, active: true, hasImage: false }
-const STO_ZA_UI = { id: 'r1', naziv: 'Sto 4, tihi dio', opis: null, trajanjeMinuta: 60, vodi: 'u1', autoPotvrda: false, rokOtkazivanjaSati: 24, aktivan: true }
+const STO = { id: 'r1', organizationId: 'o1', providerId: 'u1', name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, capacity: 1, active: true, hasImage: false }
+const STO_ZA_UI = { id: 'r1', naziv: 'Sto 4, tihi dio', opis: null, trajanjeMinuta: 60, vodi: 'u1', autoPotvrda: false, rokOtkazivanjaSati: 24, brojMjesta: 1, aktivan: true }
 
 afterEach(() => {
 	vi.unstubAllGlobals()
@@ -26,6 +26,13 @@ test('resursi organizacije dolaze sa svim što forma i lista trebaju, i s oznako
 	expect(fetch.mock.calls[0][0]).toBe('/api/organizations/o1/resources?size=100')
 })
 
+test('resurs bez polja capacity je greška u API sloju, jer bi izmjena vratila salu na jedno mjesto', async () => {
+	const { capacity: _, ...bezMjesta } = STO
+	vi.stubGlobal('fetch', vi.fn(async () => json({ content: [bezMjesta], page: 0, totalPages: 1 })))
+
+	await expect(resursiOrganizacije('o1')).rejects.toThrow('capacity')
+})
+
 test('resurs bez polja active je greška u API sloju, jer bi deaktiviran izgledao kao aktivan', async () => {
 	const { active: _, ...bezActive } = STO
 	vi.stubGlobal('fetch', vi.fn(async () => json({ content: [bezActive], page: 0, totalPages: 1 })))
@@ -37,25 +44,25 @@ test('novi resurs šalje brojeve kao brojeve, a prazan opis kao null', async () 
 	const fetch = vi.fn(async () => json(STO, 201))
 	vi.stubGlobal('fetch', fetch)
 
-	const resurs = await noviResurs('o1', { naziv: 'Sto 4, tihi dio', opis: '', trajanjeMinuta: '60', autoPotvrda: false, rokOtkazivanjaSati: '24' })
+	const resurs = await noviResurs('o1', { naziv: 'Sto 4, tihi dio', opis: '', trajanjeMinuta: '60', autoPotvrda: false, rokOtkazivanjaSati: '24', brojMjesta: '1' })
 
 	expect(resurs).toEqual(STO_ZA_UI)
 	expect(poziv(fetch)).toEqual({
 		zahtjev: 'POST /api/organizations/o1/resources',
-		tijelo: { name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24 },
+		tijelo: { name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, capacity: 1 },
 	})
 })
 
-// PUT bez autoConfirm ili cancelNoticeHours bi ih vratio na podrazumijevane (ResourceRequest)
+// PUT bez autoConfirm, cancelNoticeHours ili capacity bi ih vratio na podrazumijevane (ResourceRequest)
 test('izmjena šalje sva polja, i ona koja se nisu mijenjala', async () => {
 	const fetch = vi.fn(async () => json(STO))
 	vi.stubGlobal('fetch', fetch)
 
-	await izmijeniResurs('o1', 'r1', { naziv: 'Sto 4', opis: 'Uz prozor.', trajanjeMinuta: 90, autoPotvrda: false, rokOtkazivanjaSati: 24 })
+	await izmijeniResurs('o1', 'r1', { naziv: 'Sto 4', opis: 'Uz prozor.', trajanjeMinuta: 90, autoPotvrda: false, rokOtkazivanjaSati: 24, brojMjesta: 5 })
 
 	expect(poziv(fetch)).toEqual({
 		zahtjev: 'PUT /api/organizations/o1/resources/r1',
-		tijelo: { name: 'Sto 4', description: 'Uz prozor.', slotMinutes: 90, autoConfirm: false, cancelNoticeHours: 24 },
+		tijelo: { name: 'Sto 4', description: 'Uz prozor.', slotMinutes: 90, autoConfirm: false, cancelNoticeHours: 24, capacity: 5 },
 	})
 })
 

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { postaviToken } from '../api/apiFetch.js'
 import { PRIJAVLJENA, backend, json, otvori } from '../test/lazniBackend.js'
 
-const STO = { id: 'r1', organizationId: 'o1', providerId: 'u9', name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: true, cancelNoticeHours: 0, active: true, hasImage: false }
+const STO = { id: 'r1', organizationId: 'o1', providerId: 'u9', name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: true, cancelNoticeHours: 0, capacity: 1, active: true, hasImage: false }
 const RESURSI = { '/api/organizations/o1/resources?size=100': () => json({ content: [STO], page: 0, size: 100, totalElements: 1, totalPages: 1 }) }
 const slobodan = (start, end) => ({ start, end })
 
@@ -67,6 +67,40 @@ test('četiri stanja termina se razlikuju i tekstom, ne samo bojom', async () =>
 	expect(screen.getByRole('button', { name: 'ponedjeljak, 19. novembar, 08:00 do 09:00, slobodno' })).toBeTruthy()
 	// Samo slobodan termin se može izabrati
 	expect(screen.getAllByRole('button', { name: /slobodno$/ })).toHaveLength(2)
+})
+
+// Grupni trening s 5 mjesta: slobodan kaže koliko je mjesta ostalo, pun je "popunjeno", a moje ostaje moje
+test('grupni termin pokazuje koliko je mjesta ostalo, a pun je popunjen', async () => {
+	backend({
+		...PRIJAVLJENA,
+		...RESURSI,
+		'/api/resources/r1/slots?from=2035-11-19&to=2035-11-26': () =>
+			json({
+				timezone: 'Europe/Sarajevo',
+				capacity: 5,
+				slots: [
+					{ start: '2035-11-19T07:00:00Z', end: '2035-11-19T08:00:00Z', seatsLeft: 5 },
+					{ start: '2035-11-19T08:00:00Z', end: '2035-11-19T09:00:00Z', seatsLeft: 1 },
+				],
+				taken: [
+					{ start: '2035-11-19T09:00:00Z', end: '2035-11-19T10:00:00Z', myStatus: 'CONFIRMED' },
+					{ start: '2035-11-19T10:00:00Z', end: '2035-11-19T11:00:00Z', myStatus: null },
+					{ start: '2035-11-19T11:00:00Z', end: '2035-11-19T12:00:00Z', myStatus: null, myWaitlistId: 'w1' },
+				],
+			}),
+	})
+	otvori('/o/citaonica-pmf/r/r1')
+
+	await screen.findByRole('list', { name: /Termini/ })
+
+	expect(redovi().map((red) => red.textContent)).toEqual([
+		'08:00–09:00slobodno, još 5 mjesta',
+		'09:00–10:00slobodno, još 1 mjesto',
+		'10:00–11:00moje',
+		'11:00–12:00popunjeno',
+		'12:00–13:00popunjeno, na listi si',
+	])
+	expect(screen.getByRole('button', { name: 'ponedjeljak, 19. novembar, 09:00 do 10:00, slobodno, još 1 mjesto' })).toBeTruthy()
 })
 
 test('strelice idu kroz slobodne termine, a Enter otvara potvrdu za termin', async () => {

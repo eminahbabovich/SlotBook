@@ -2,25 +2,28 @@ import { apiFetch, provjeriPolja } from './apiFetch.js'
 
 const STANJE_MOJE = { CONFIRMED: 'moje', PENDING: 'ceka' }
 
-// SlotCalendarResponse(timezone, slots, taken, offeredToMe). od i doDana su dani u zoni organizacije,
-// a doDana se ne uključuje, kao u backendu. upisId je moj upis na listu čekanja za taj termin.
+// SlotCalendarResponse(timezone, capacity, slots, taken, offeredToMe). od i doDana su dani u zoni
+// organizacije, a doDana se ne uključuje, kao u backendu. upisId je moj upis na listu čekanja za taj
+// termin. Kod grupnog termina (capacity > 1) slobodan ima broj mjesta koja mogu dobiti, a zauzet je pun.
 export async function kalendarResursa(resursId, od, doDana) {
 	const putanja = `/api/resources/${resursId}/slots?from=${od}&to=${doDana}`
 	const odgovor = provjeriPolja(await apiFetch(putanja), ['timezone', 'slots', 'taken'], putanja)
 	// offeredToMe nije obavezno: bez njega ponuđen termin ostane običan slobodan, a to je za mene i tačno
 	const ponude = new Map((odgovor.offeredToMe ?? []).map((p) => [p.start, p]))
+	const grupni = (odgovor.capacity ?? 1) > 1
 	const termini = [
 		...odgovor.slots.map((t) => {
 			const ponuda = ponude.get(t.start)
 			return ponuda
 				? { pocetak: t.start, kraj: t.end, stanje: 'ponudjen', rokPonude: ponuda.offeredUntil, upisId: ponuda.waitlistId }
-				: { pocetak: t.start, kraj: t.end, stanje: 'slobodno' }
+				: { pocetak: t.start, kraj: t.end, stanje: 'slobodno', mjesta: grupni ? t.seatsLeft : null }
 		}),
 		...odgovor.taken.map((t) => ({
 			pocetak: t.start,
 			kraj: t.end,
 			stanje: STANJE_MOJE[t.myStatus] ?? 'zauzeto',
 			upisId: t.myWaitlistId ?? null,
+			pun: grupni && !t.myStatus,
 		})),
 	]
 	// ISO stringovi u UTC-u se porede kao tekst, isto kao vremena

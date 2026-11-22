@@ -12,6 +12,7 @@ export function ResursForma({ pocetno, mutacija, dugme, dugmeSalje, poruke, uspj
 		trajanjeMinuta: String(pocetno.trajanjeMinuta),
 		autoPotvrda: pocetno.autoPotvrda,
 		rokOtkazivanjaSati: String(pocetno.rokOtkazivanjaSati),
+		brojMjesta: String(pocetno.brojMjesta),
 	}))
 	const promijeni = (polje) => (vrijednost) => setR((staro) => ({ ...staro, [polje]: vrijednost }))
 	const poPoljima = greskePoPoljima(mutacija.error)
@@ -39,6 +40,15 @@ export function ResursForma({ pocetno, mutacija, dugme, dugmeSalje, poruke, uspj
 				promjena={promijeni('trajanjeMinuta')}
 				greska={poPoljima.slotMinutes}
 				napomena="Od 5 do 480. Kalendar nudi termine ove dužine."
+			/>
+			<Polje
+				oznaka="Broj mjesta u terminu"
+				ime="capacity"
+				tip="number"
+				vrijednost={r.brojMjesta}
+				promjena={promijeni('brojMjesta')}
+				greska={poPoljima.capacity}
+				napomena="1 za sto ili konsultacije, više za grupni trening ili grupnu sobu. Najviše 100."
 			/>
 			<div className="polje">
 				<label htmlFor="resurs-potvrda">Potvrda rezervacije</label>
