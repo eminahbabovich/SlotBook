@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import ba.slotbook.availability.SlotService;
@@ -136,7 +137,7 @@ public class BookingService {
 			String idempotencyKey) {
 		provjeriKljuc(idempotencyKey);
 		Resource resurs = resources.findLockedById(resourceId).orElseThrow(ResourceNotFoundException::new);
-		// Svaka sedmica bi trebala svoju uplatu u 15 minuta. Dok to ne riješimo, plaćen termin ide jedan po jedan.
+		// Svaka sedmica bi trebala svoju uplatu u 30 minuta. Dok to ne riješimo, plaćen termin ide jedan po jedan.
 		if (resurs.getPriceCents() > 0) {
 			throw new InvalidFieldException("weeks",
 					"Plaćen termin se za sada ne može rezervisati u seriji. Rezerviši sedmicu po sedmicu.");
@@ -255,6 +256,13 @@ public class BookingService {
 			rezervacija.otkaziKaoKlijent(sada);
 		}
 		return zapisi(rezervacija, stari, actorId, sada);
+	}
+
+	// Za uplatu (ba.slotbook.payment). Red ostaje zaključan do kraja transakcije pozivaoca, a MANDATORY
+	// ne pusti poziv bez nje, jer bi se lock otpustio odmah po povratku i ne bi ništa čuvao.
+	@Transactional(propagation = Propagation.MANDATORY)
+	public Booking lockForPayment(UUID bookingId) {
+		return bookings.findLockedById(bookingId).orElseThrow();
 	}
 
 	// Za BookingJob. Vraća broj isteklih, samo za log.

@@ -41,6 +41,8 @@ import ba.slotbook.booking.SlotOfferedException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.booking.WaitlistNotNeededException;
 import ba.slotbook.organization.AlreadyMemberException;
+import ba.slotbook.payment.NotAwaitingPaymentException;
+import ba.slotbook.payment.StripeCheckout;
 import ba.slotbook.organization.InviteRaceException;
 import ba.slotbook.auth.UserTokenException;
 import ba.slotbook.organization.InviteNotUsableException;
@@ -212,6 +214,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Ovu rezervaciju potvrđuje uplata klijenta, ne osoblje. Ako termin ne može biti održan, odbij je.");
 		problem.setTitle("Rezervacija čeka uplatu");
+		return problem;
+	}
+
+	@ExceptionHandler(NotAwaitingPaymentException.class)
+	ProblemDetail neCekaUplatu(NotAwaitingPaymentException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ova rezervacija se ne plaća: besplatna je, već plaćena, otkazana ili joj je prošao rok za uplatu. "
+						+ "Osvježi prikaz.");
+		problem.setTitle("Rezervacija ne čeka uplatu");
+		return problem;
+	}
+
+	// Stripe nije odgovorio ili je odbio zahtjev. Rezervacija ostaje i klijent može pokušati ponovo.
+	@ExceptionHandler(StripeCheckout.NedostupanException.class)
+	ProblemDetail stripeNedostupan(StripeCheckout.NedostupanException ex) {
+		log.error("Plaćanje nije otvoreno", ex);
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+				"Plaćanje trenutno ne radi. Rezervacija je i dalje tvoja do isteka roka, pokušaj ponovo za minutu.");
+		problem.setTitle("Plaćanje nije dostupno");
 		return problem;
 	}
 

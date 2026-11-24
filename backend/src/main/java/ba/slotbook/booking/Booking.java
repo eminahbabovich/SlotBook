@@ -110,7 +110,7 @@ public class Booking {
 	}
 
 	// Plaćena rezervacija je PENDING dok uplata ne stigne, bez obzira na potvrdu na resursu
-	boolean cekaUplatu() {
+	public boolean cekaUplatu() {
 		return status == BookingStatus.PENDING && priceCents > 0;
 	}
 

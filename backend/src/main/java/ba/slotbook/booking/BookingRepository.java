@@ -9,10 +9,18 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import jakarta.persistence.LockModeType;
+
 interface BookingRepository extends JpaRepository<Booking, UUID> {
+
+	// SELECT ... FOR UPDATE: za uplatu, da dupli klik čeka prvi, a istek i otkazivanje čekaju kraj
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select b from Booking b where b.id = :id")
+	Optional<Booking> findLockedById(UUID id);
 
 	// Rezervacije koje se preklapaju s periodom od..do: počinju prije kraja i završavaju poslije početka
 	List<Booking> findByResourceIdAndStatusInAndStartTimeBeforeAndEndTimeAfter(UUID resourceId,

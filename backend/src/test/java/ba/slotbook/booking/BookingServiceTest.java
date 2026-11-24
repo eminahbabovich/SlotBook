@@ -157,10 +157,10 @@ class BookingServiceTest {
 				Double.class, rezervacija.id())).isEqualTo(86400.0);
 	}
 
-	// Sala u teretani za 15 KM: i s automatskom potvrdom čeka uplatu, a rok je 15 minuta
+	// Sala u teretani za 15 KM: i s automatskom potvrdom čeka uplatu, a rok je 30 minuta
 	// (slotbook.booking.payment-minutes), ne dan kao za potvrdu
 	@Test
-	void placenTerminCekaUplatuPetnaestMinutaIPamtiCijenuIzTrenutkaRezervacije() {
+	void placenTerminCekaUplatuTridesetMinutaIPamtiCijenuIzTrenutkaRezervacije() {
 		UUID sala = resourceService.create(citaonica, profesorica, "Sala za grupni trening", null, 60, true, 0, 1, 1500)
 				.id();
 		availabilityService.replace(sala,
@@ -170,7 +170,7 @@ class BookingServiceTest {
 
 		assertThat(rezervacija.status()).isEqualTo(BookingStatus.PENDING);
 		assertThat(jdbc.queryForObject("select extract(epoch from expires_at - created_at) from bookings where id = ?",
-				Double.class, rezervacija.id())).isEqualTo(900.0);
+				Double.class, rezervacija.id())).isEqualTo(1800.0);
 		assertThat(jdbc.queryForObject("select price_cents from bookings where id = ?", Integer.class,
 				rezervacija.id())).isEqualTo(1500);
 	}
@@ -499,7 +499,7 @@ class BookingServiceTest {
 				String.class, istekla)).contains("nije plaćena na vrijeme");
 	}
 
-	// Svaka sedmica bi trebala svoju uplatu u 15 minuta, pa serija za plaćen termin još ne postoji
+	// Svaka sedmica bi trebala svoju uplatu u 30 minuta, pa serija za plaćen termin još ne postoji
 	@Test
 	void serijaZaPlacenTerminSeOdbijaINistaSeNeUpisuje() {
 		UUID sala = resourceService.create(citaonica, profesorica, "Sala za pilates", null, 60, true, 0, 1, 1000).id();

@@ -589,7 +589,7 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 
 Otvoreno iz Faze 11:
 
-- Serija za plaćen termin se odbija (`400` za `weeks`). Svaka sedmica bi trebala svoju uplatu u 15 minuta. Rješenje bi bila jedna uplata za cijelu seriju, a otkazivanje jedne sedmice onda traži djelimičan povrat.
+- Serija za plaćen termin se odbija (`400` za `weeks`). Svaka sedmica bi trebala svoju uplatu u 30 minuta. Rješenje bi bila jedna uplata za cijelu seriju, a otkazivanje jedne sedmice onda traži djelimičan povrat.
 
 Otvoreno iz Faze 10:
 

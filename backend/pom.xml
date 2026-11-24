@@ -20,6 +20,7 @@
 		<awssdk.version>2.59.4</awssdk.version>
 		<bucket4j.version>8.22.0</bucket4j.version>
 		<sentry.version>8.63.0</sentry.version>
+		<stripe.version>34.2.0</stripe.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -69,6 +70,11 @@
 			<groupId>com.bucket4j</groupId>
 			<artifactId>bucket4j_jdk17-core</artifactId>
 			<version>${bucket4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.stripe</groupId>
+			<artifactId>stripe-java</artifactId>
+			<version>${stripe.version}</version>
 		</dependency>
 
 		<!-- S3-kompatibilno skladište slika (Cloudflare R2 na produkciji) -->

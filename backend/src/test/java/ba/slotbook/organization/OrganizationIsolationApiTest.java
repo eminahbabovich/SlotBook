@@ -123,7 +123,9 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.GET, "/api/bookings/{zaQrDolazak}/check-in-link", null),
 			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaQrDolazak}/check-in/qr", """
 					{"token": "{qrKod}"}
-					"""));
+					"""),
+			// Plaća samo klijent (Alma), pa ni admin tuđe organizacije ni drugi član ne otvaraju uplatu
+			new Zahtjev(HttpMethod.POST, "/api/bookings/{zaUplatu}/pay", null));
 
 	// Šta smije klijent čitaonice: vidi aktivan resurs, radno vrijeme, termine i sliku, i rezerviše.
 	// Rezervacije u testu su Almine, pa njihovu historiju i otkazivanje ne smije. Sve ostalo je 403.
@@ -236,6 +238,8 @@ class OrganizationIsolationApiTest {
 				stoCitaonice);
 		jdbc.update("delete from notifications where booking_id in (select id from bookings where resource_id = ?)",
 				stoCitaonice);
+		jdbc.update("delete from payments where booking_id in (select id from bookings where resource_id = ?)",
+				stoCitaonice);
 		jdbc.update("delete from bookings where resource_id = ?", stoCitaonice);
 		UUID almaId = users.findByEmail("alma.izolacija@example.com").orElseThrow().getId();
 		return Map.of(
@@ -244,7 +248,19 @@ class OrganizationIsolationApiTest {
 				"zaOtkazivanje", rezervacija(almaId, "2036-01-07 10:00+01", "CONFIRMED"),
 				"zaDolazak", rezervacija(almaId, "2036-01-07 11:00+01", "CONFIRMED"),
 				"zaQrDolazak", rezervacija(almaId, "2036-01-07 12:00+01", "CONFIRMED"),
-				"zaNedolazak", rezervacija(almaId, OffsetDateTime.now().minusHours(2).toString(), "CONFIRMED"));
+				"zaNedolazak", rezervacija(almaId, OffsetDateTime.now().minusHours(2).toString(), "CONFIRMED"),
+				"zaUplatu", placena(rezervacija(almaId, "2036-01-07 16:00+01", "PENDING")));
+	}
+
+	// Cijena se upisuje na rezervaciju, a ne na sto, da ostale rezervacije ostanu besplatne
+	private UUID placena(UUID rezervacija) {
+		jdbc.update("update bookings set price_cents = 1500 where id = ?", rezervacija);
+		return rezervacija;
+	}
+
+	private long brojUplata() {
+		return jdbc.queryForObject("select count(*) from payments p join bookings b on b.id = p.booking_id "
+				+ "where b.resource_id = ?", Long.class, stoCitaonice);
 	}
 
 	// Alma se ispisuje sa svog upisa, a ostali ga ne smiju dirati. Selma nije ni u jednoj organizaciji,
@@ -303,7 +319,7 @@ class OrganizationIsolationApiTest {
 
 	private String statusiPripremljenih() {
 		return jdbc.queryForObject("select string_agg(status, ',' order by start_time) from bookings where id in "
-				+ "(?, ?, ?, ?, ?, ?)", String.class, rezervacije.values().toArray());
+				+ "(?, ?, ?, ?, ?, ?, ?)", String.class, rezervacije.values().toArray());
 	}
 
 	private String providerStola() {
@@ -453,6 +469,7 @@ class OrganizationIsolationApiTest {
 		assertThat(brojRezervacija()).isEqualTo(rezervacijaPrije);
 		assertThat(statusiRezervacija()).isEqualTo(statusiPrije);
 		assertThat(statusAlminogUpisa()).isEqualTo("WAITING");
+		assertThat(brojUplata()).isZero();
 	}
 
 	private long brojRezervacija() {
@@ -520,6 +537,7 @@ class OrganizationIsolationApiTest {
 		assertThat(kljucSlike()).isEqualTo(slikaPrije);
 		assertThat(statusiPripremljenih()).isEqualTo(statusiPrije);
 		assertThat(statusAlminogUpisa()).isEqualTo("WAITING");
+		assertThat(brojUplata()).isZero();
 	}
 
 	// Lista uloga mora imenovati rute koje postoje, inače bi greška u kucanju tiho postala 403
