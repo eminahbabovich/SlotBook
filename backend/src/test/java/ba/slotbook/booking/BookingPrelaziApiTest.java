@@ -154,6 +154,22 @@ class BookingPrelaziApiTest {
 				.containsEntry("actor_id", id("selma.prelazi@example.com"));
 	}
 
+	// Plaćenu rezervaciju potvrđuje uplata. Da je provider može potvrditi, klijent bi imao termin bez uplate.
+	// Odbiti je i dalje može, jer novac još nije stigao.
+	@Test
+	void profesoricaNeMozePotvrditiRezervacijuKojaCekaUplatu() throws Exception {
+		UUID resurs = resurs(false);
+		jdbc.update("update resources set price_cents = 1500 where id = ?", resurs);
+		UUID rezervacija = rezervacija(hana, resurs);
+
+		prelaz(selma, rezervacija, "confirm")
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.title").value("Rezervacija čeka uplatu"));
+		assertThat(stanje(rezervacija)).isEqualTo("PENDING");
+
+		prelaz(selma, rezervacija, "reject").andExpect(status().isOk());
+	}
+
 	@Test
 	void profesoricaOdbijaRezervacijuNaCekanju() throws Exception {
 		UUID rezervacija = rezervacija(hana, resurs(false));

@@ -136,6 +136,11 @@ public class BookingService {
 			String idempotencyKey) {
 		provjeriKljuc(idempotencyKey);
 		Resource resurs = resources.findLockedById(resourceId).orElseThrow(ResourceNotFoundException::new);
+		// Svaka sedmica bi trebala svoju uplatu u 15 minuta. Dok to ne riješimo, plaćen termin ide jedan po jedan.
+		if (resurs.getPriceCents() > 0) {
+			throw new InvalidFieldException("weeks",
+					"Plaćen termin se za sada ne može rezervisati u seriji. Rezerviši sedmicu po sedmicu.");
+		}
 		Instant sada = clock.instant();
 		javiIsteklim(bookings.expireOnResource(resourceId, sada));
 		if (idempotencyKey != null) {
@@ -228,6 +233,10 @@ public class BookingService {
 	@Transactional
 	public BookingResponse changeStatus(UUID bookingId, UUID actorId, BookingStatus novi) {
 		Booking rezervacija = bookings.findById(bookingId).orElseThrow();
+		// Ovuda potvrđuje osoblje. Uplata će potvrđivati svojim putem (webhook), pa provjera nije u entitetu.
+		if (novi == BookingStatus.CONFIRMED && rezervacija.cekaUplatu()) {
+			throw new AwaitingPaymentException();
+		}
 		BookingStatus stari = rezervacija.getStatus();
 		Instant sada = clock.instant();
 		rezervacija.prijedi(novi, sada);

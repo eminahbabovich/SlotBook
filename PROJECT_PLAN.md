@@ -587,6 +587,10 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Manje buke u logu kod sudara: svaki `409` ostavi dvije WARN linije Hibernatea (`23P01`), 1 140 linija u jednom k6 pokretanju
 - Metrike na produkciji: registry koji šalje brojače van (npr. OTLP prema besplatnom Grafana Cloudu), jer je `/actuator/metrics` na Renderu namjerno zatvoren
 
+Otvoreno iz Faze 11:
+
+- Serija za plaćen termin se odbija (`400` za `weeks`). Svaka sedmica bi trebala svoju uplatu u 15 minuta. Rješenje bi bila jedna uplata za cijelu seriju, a otkazivanje jedne sedmice onda traži djelimičan povrat.
+
 Otvoreno iz Faze 10:
 
 - Da mjesto nije veće od kapaciteta čuva samo Java pod lockom resursa. Baza bi to mogla čuvati tabelom `resource_seats (resource_id, seat)` sa složenim FK s rezervacije. Cijena: promjena kapaciteta dodaje i briše redove, a staro mjesto u historiji treba riješiti.

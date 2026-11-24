@@ -485,6 +485,34 @@ class BookingServiceTest {
 		assertThat(obavijesti(istekla)).containsExactly("BOOKING_EXPIRED " + studentica);
 	}
 
+	// Klijent nije ništa propustio potvrditi, nego platiti, i mail to treba reći
+	@Test
+	void istekNeplaceneRezervacijeKazeDaNijePlacenaNaVrijeme() {
+		UUID sala = resurs("Sala za jogu", 60, true);
+		UUID istekla = upisi(sala, "PENDING", PONEDJELJAK_09, PONEDJELJAK_09.plus(1, ChronoUnit.HOURS),
+				Instant.now().minus(1, ChronoUnit.MINUTES));
+		jdbc.update("update bookings set price_cents = 1500 where id = ?", istekla);
+
+		service.expireOverdue();
+
+		assertThat(jdbc.queryForObject("select body from notifications where booking_id = ? and type = 'BOOKING_EXPIRED'",
+				String.class, istekla)).contains("nije plaćena na vrijeme");
+	}
+
+	// Svaka sedmica bi trebala svoju uplatu u 15 minuta, pa serija za plaćen termin još ne postoji
+	@Test
+	void serijaZaPlacenTerminSeOdbijaINistaSeNeUpisuje() {
+		UUID sala = resourceService.create(citaonica, profesorica, "Sala za pilates", null, 60, true, 0, 1, 1000).id();
+		availabilityService.replace(sala,
+				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0))));
+
+		assertThatThrownBy(() -> service.createSeries(sala, studentica, PONEDJELJAK_09, 4, null))
+				.isInstanceOf(InvalidFieldException.class)
+				.hasFieldOrPropertyWithValue("polje", "weeks");
+		assertThat(jdbc.queryForObject("select count(*) from bookings where resource_id = ?", Long.class, sala))
+				.isZero();
+	}
+
 	// Outbox: rezervacija koja se poništi ne ostavlja obavijest o sebi
 	@Test
 	void ponistenaRezervacijaNeOstavljaObavijest() {

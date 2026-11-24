@@ -29,6 +29,7 @@ import ba.slotbook.account.AccountDeletionBlockedException;
 import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
 import ba.slotbook.booking.AlreadyInSlotException;
+import ba.slotbook.booking.AwaitingPaymentException;
 import ba.slotbook.booking.BookingStatus;
 import ba.slotbook.booking.BookingTransitionException;
 import ba.slotbook.booking.CalendarFeedNotFoundException;
@@ -206,6 +207,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	// Stanje ide i kao polje, da frontend može osvježiti prikaz bez parsiranja teksta.
 	// Ne pod imenom "status": properties se ispisuju na vrhu JSON-a (@JsonAnyGetter) i
 	// pregazili bi HTTP status koji Problem Details tu propisuje.
+	@ExceptionHandler(AwaitingPaymentException.class)
+	ProblemDetail cekaUplatu(AwaitingPaymentException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ovu rezervaciju potvrđuje uplata klijenta, ne osoblje. Ako termin ne može biti održan, odbij je.");
+		problem.setTitle("Rezervacija čeka uplatu");
+		return problem;
+	}
+
 	@ExceptionHandler(BookingTransitionException.class)
 	ProblemDetail prelazNijeDozvoljen(BookingTransitionException ex) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
