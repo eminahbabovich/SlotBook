@@ -19,7 +19,7 @@
 		<jacoco.version>0.8.16</jacoco.version>
 		<awssdk.version>2.59.4</awssdk.version>
 		<bucket4j.version>8.22.0</bucket4j.version>
-		<sentry.version>8.63.0</sentry.version>
+		<sentry.version>8.65.0</sentry.version>
 		<stripe.version>34.2.0</stripe.version>
 	</properties>
 	<dependencies>
