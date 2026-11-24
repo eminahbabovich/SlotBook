@@ -32,7 +32,7 @@ U Fazi 9 svaki zahtjev dobija ID (`X-Request-Id`), koji je u svakoj liniji loga 
 
 U Fazi 10 su došle napredne funkcije, svaka s testom i u UI-ju. Na zauzet termin se klijent upiše na listu čekanja, a kad se termin oslobodi, posao ga ponudi prvom na listi na 30 minuta i za to vrijeme ga niko drugi ne može uzeti. Moje rezervacije se mogu pratiti u Google ili Apple kalendaru preko tajnog `.ics` linka, a otvoren kalendar se sam osvježi preko SSE kad neko rezerviše ili otkaže. Isti termin se može rezervisati svake sedmice do 12 puta, sve ili ništa, a sedmice se računaju u zoni organizacije, pa ljetno vrijeme ne pomjera sat. Potvrđena rezervacija ima QR kod: kod je HMAC nad rezervacijom, a dolazak upisuje samo onaj ko vodi resurs. Resurs može imati više mjesta (grupni trening, grupna soba). Svaka rezervacija tada dobija broj mjesta, a isti `EXCLUDE` constraint sada kaže da se isto mjesto ne preklapa. Test sa 20 niti na trening s 5 mjesta svaki put pusti tačno 5. Da mjesto nije veće od kapaciteta čuva samo Java pod lockom resursa, a ne baza, i to piše u [docs/ODLUKE.md](docs/ODLUKE.md). QR kod još nisam skenirao pravim telefonom, jer telefon ne može otvoriti `localhost`.
 
-Faza 11 je plaćanje preko Stripea u test modu, i za sada je gotov backend. Resurs ima cijenu, a rezervacija plaćenog termina čeka uplatu 30 minuta. `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout stranice, a Stripe poslije javi uplatu webhookom. Webhook bez ispravnog potpisa se odbija, a isti događaj poslan dvaput ne potvrdi rezervaciju dvaput i ne vrati novac. To dokazuje i test s pet istih dostava u istom trenutku, koji je u prvoj verziji našao grešku: novac vraćen četiri puta za ispravno plaćen termin. Uplata koja stigne za već isteklu rezervaciju se vraća. Stripe je u testovima lažan, a pravi sandbox je otvorio sesiju za 15 KM. Pravi webhook sa Stripe CLI i UI za plaćanje još nisam napravio ni provjerio.
+Faza 11 je plaćanje preko Stripea u test modu, i za sada je gotov backend. Resurs ima cijenu, a rezervacija plaćenog termina čeka uplatu 30 minuta. `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout stranice, a Stripe poslije javi uplatu webhookom. Webhook bez ispravnog potpisa se odbija, a isti događaj poslan dvaput ne potvrdi rezervaciju dvaput i ne vrati novac. To dokazuje i test s pet istih dostava u istom trenutku, koji je u prvoj verziji našao grešku: novac vraćen četiri puta za ispravno plaćen termin. Uplata koja stigne za već isteklu rezervaciju se vraća, kao i uplata za otkazanu rezervaciju, a ako Stripe povrat odbije, otkazivanje ne prolazi. Stripe je u testovima lažan, a pravi sandbox je otvorio sesiju za 15 KM. Pravi webhook sa Stripe CLI i UI za plaćanje još nisam napravio ni provjerio.
 
 | Faza | Šta | Status |
 |---|---|---|
@@ -46,7 +46,7 @@ Faza 11 je plaćanje preko Stripea u test modu, i za sada je gotov backend. Resu
 | 8 | Sigurnost i GDPR | gotovo |
 | 9 | Observability i performanse | gotovo |
 | 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | gotovo |
-| 11 | Plaćanje (Stripe, test mode) | u izradi: cijena na resursu, Checkout i webhook gotovi (backend); povrat pri otkazivanju, istek sesije i UI nisu počeli |
+| 11 | Plaćanje (Stripe, test mode) | u izradi: backend gotov (cijena, Checkout, webhook, povrat, istek sesije); UI i provjera sa Stripe CLI nisu počeli |
 | 12 | Deploy i prezentacija | nije počelo |
 | 13 | Završni pregled i dodaci | nije počelo |
 

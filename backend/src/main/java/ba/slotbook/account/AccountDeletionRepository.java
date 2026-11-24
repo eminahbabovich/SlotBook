@@ -60,16 +60,18 @@ class AccountDeletionRepository {
 
 	// Kao BookingJob: jedna naredba mijenja status i piše historiju. Prošle i one koje upravo traju ostaju.
 	// RETURNING daje novi status, a glavni upit vidi bookings prije izmjene iz WITH, pa b.status je stari.
-	void cancelFutureBookings(UUID userId, Instant sada) {
-		jdbc.sql("""
+	// Vraća otkazane, da plaćanje vrati novac za plaćene.
+	List<UUID> cancelFutureBookings(UUID userId, Instant sada) {
+		return jdbc.sql("""
 				with otkazane as (
 					update bookings set status = 'CANCELLED', version = version + 1
 					where client_id = :korisnik and status in ('PENDING', 'CONFIRMED') and start_time > :sada
 					returning id)
 				insert into booking_events (id, booking_id, from_status, to_status, actor_id, created_at)
 				select gen_random_uuid(), b.id, b.status, 'CANCELLED', :korisnik, :sada
-				from otkazane o join bookings b on b.id = o.id""")
-				.param("korisnik", userId).param("sada", utc(sada)).update();
+				from otkazane o join bookings b on b.id = o.id
+				returning booking_id""")
+				.param("korisnik", userId).param("sada", utc(sada)).query(UUID.class).list();
 	}
 
 	void revokeSessions(UUID userId, Instant sada) {

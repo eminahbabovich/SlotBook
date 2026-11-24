@@ -12,6 +12,9 @@ public interface StripeCheckout {
 	// Cijeli iznos nazad klijentu. Isti ključ drugi put ne vraća novac ponovo.
 	void vrati(String paymentIntent, String kljuc);
 
+	// Sesija se više ne može platiti. Ne uspije ako je klijent upravo platio, i tada uplatu vrati webhook.
+	void zatvori(String sessionId);
+
 	// kljuc ide Stripeu kao Idempotency-Key: ponovljen poziv s istim ključem vrati istu sesiju
 	record NovaSesija(String kljuc, UUID bookingId, String naziv, int iznosFeninga, String valuta,
 			Instant istice, String povratakUspjeh, String povratakOdustao) {

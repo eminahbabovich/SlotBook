@@ -53,6 +53,15 @@ class StripeCheckoutClient implements StripeCheckout {
 		}
 	}
 
+	@Override
+	public void zatvori(String sessionId) {
+		try {
+			stripe.v1().checkout().sessions().expire(sessionId);
+		} catch (StripeException e) {
+			throw new NedostupanException("Stripe nije zatvorio sesiju: " + e.getMessage(), e);
+		}
+	}
+
 	// Posebno od poziva, da test bez mreže provjeri šta se šalje Stripeu
 	static SessionCreateParams parametri(NovaSesija nova) {
 		return SessionCreateParams.builder()

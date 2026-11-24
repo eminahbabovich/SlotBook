@@ -337,6 +337,9 @@ public class BookingService {
 		obavijesti(rezervacija, actorId);
 		// Svaki prelaz, i potvrda: kalendaru vlasnika se mijenja oznaka "na čekanju" u "moje"
 		objave.publishEvent(new SlotsChanged(rezervacija.getResource().getId()));
+		if (rezervacija.getStatus() == BookingStatus.CANCELLED || rezervacija.getStatus() == BookingStatus.REJECTED) {
+			objave.publishEvent(new BookingReleased(rezervacija.getId()));
+		}
 		return BookingResponse.from(rezervacija);
 	}
 
@@ -371,6 +374,7 @@ public class BookingService {
 		for (Booking rezervacija : bookings.findAllById(istekle)) {
 			javi(rezervacija.getClient().getId(), NotificationType.BOOKING_EXPIRED, rezervacija);
 			objave.publishEvent(new SlotsChanged(rezervacija.getResource().getId()));
+			objave.publishEvent(new BookingReleased(rezervacija.getId()));
 		}
 	}
 

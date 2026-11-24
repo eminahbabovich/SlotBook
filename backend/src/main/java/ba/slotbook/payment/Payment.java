@@ -90,6 +90,14 @@ public class Payment {
 		return booking;
 	}
 
+	public String getStripeSessionId() {
+		return stripeSessionId;
+	}
+
+	public String getStripePaymentIntentId() {
+		return stripePaymentIntentId;
+	}
+
 	public PaymentStatus getStatus() {
 		return status;
 	}

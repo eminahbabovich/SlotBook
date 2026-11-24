@@ -1067,3 +1067,17 @@ U historiji rezervacije potvrdu "radi" klijent, jer je posljedica njegove uplate
 Događaj za sesiju koje kod nas nema dobija `200` i preskače se. Lokalni backend i Render dijele isti Stripe sandbox, pa će stizati i tuđe sesije, a na grešku bi ih Stripe slao danima. Primamo samo kartice. Za odgođene metode (bankovni transfer) `payment_status` nije `paid` i takav događaj ne radi ništa.
 
 Pravi webhook sa Stripe CLI (`stripe listen`) nisam još provjerio. Testovi potpisuju događaje sami, istim algoritmom i testnom tajnom. To ide u korak 5.
+
+## Povrat pri otkazivanju i zatvaranje Checkouta (24.11.2026)
+
+Otkazana plaćena rezervacija vraća cijeli iznos, bez obzira ko je otkazao. Klijent otkazuje samo do roka na resursu, a poslije roka ne može ni otkazati, pa djelimičan povrat ne treba. Osoblje otkazuje i u zadnji čas (bolest, kvar), i tada klijent nije kriv. Pravilo s procentima po vremenu (npr. pola novca dan prije) nije u planu i nisam ga uvodio.
+
+Rezervacija pušta termin na četiri mjesta: otkazivanje, odbijanje, istek (posao, i pod lockom resursa kad neko rezerviše) i brisanje naloga, koje buduće rezervacije otkazuje jednim SQL-om, mimo `BookingService`. Brisanje naloga sam skoro preskočio, a tu bi plaćena rezervacija bila otkazana bez povrata. Sva četiri mjesta objave `BookingReleased`, a paket plaćanja ga sluša. Događaj, a ne poziv, jer `PaymentService` već zove `BookingService`, pa bi direktan poziv napravio krug između ta dva beana.
+
+Slušalac radi dvije stvari u dva različita trenutka. Povrat novca je sinhron (`@EventListener`), u transakciji onoga ko je otkazao. Ako Stripe povrat odbije, otkazivanje se poništi i klijent dobije `503`, pa rezervacija ostaje potvrđena i plaćena. Obrnut redoslijed (otkaži, pa vrati novac poslije commita) bi u tom slučaju ostavio otkazanu rezervaciju s novcem kod nas i bez traga da ga treba vratiti. Cijena: Stripe poziv je unutar transakcije otkazivanja.
+
+Zatvaranje otvorene Checkout sesije ide poslije commita (`@TransactionalEventListener(AFTER_COMMIT)`), u novoj transakciji. Samo je pristojnost prema klijentu, da ne plati termin koji više nije njegov, pa ne smije ni usporiti ni oboriti otkazivanje, istek ili tuđu rezervaciju. Ako ne uspije, npr. jer je klijent platio sekundu ranije, uplata ostaje `OPEN`, a kad stigne webhook, novac se vrati (to već radi korak 3). Mislio sam da bi izuzetak iz tog slušaoca klijentu dao `500`. Mutacija je pokazala da ne bi: Spring ga sam uhvati i zapiše kao ERROR (`TransactionSynchronization.afterCompletion threw exception`). `catch` je ostao samo da to bude WARN s porukom šta znači, i to nijedan test ne može provjeriti.
+
+Dokaz je `PaymentRefundApiTest` (8 testova): povrat kad otkaže klijent i kad otkaže osoblje, `503` i nepromijenjena rezervacija kad Stripe ne vrati novac, zatvorena sesija kod otkazivanja, odbijanja i isteka, otkazivanje koje prolazi i kad sesija ne može biti zatvorena, i povrat kod brisanja naloga. Mutacije koje izbace objavu događaja na bilo kojem od četiri mjesta, ili povrat pomjere poslije commita, obore bar jedan test.
+
+Klijent ne dobija poseban mail o povratu. Mail o otkazivanju ne zna da li je rezervacija bila plaćena. Upisano u Dodatke.

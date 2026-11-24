@@ -1,5 +1,7 @@
 package ba.slotbook.payment;
 
+import static ba.slotbook.payment.StripeTestDogadjaji.dogadjaj;
+import static ba.slotbook.payment.StripeTestDogadjaji.potpisan;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -27,9 +29,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.jayway.jsonpath.JsonPath;
-import com.stripe.net.Webhook;
 
 import ba.slotbook.TestcontainersConfiguration;
+import ba.slotbook.payment.StripeTestDogadjaji.Potpisan;
 import ba.slotbook.user.UserRepository;
 
 @Import(TestcontainersConfiguration.class)
@@ -37,8 +39,6 @@ import ba.slotbook.user.UserRepository;
 @AutoConfigureMockMvc
 class StripeWebhookApiTest {
 
-	// Ista kao slotbook.stripe.webhook-secret u TestcontainersConfiguration
-	private static final String TAJNA = "whsec_testna_tajna_samo_za_testove";
 	private static final String LOZINKA = "bascarsija-sebilj-1753";
 
 	@Autowired
@@ -217,9 +217,6 @@ class StripeWebhookApiTest {
 	private record Placanje(UUID rezervacija, String sesija) {
 	}
 
-	private record Potpisan(String tijelo, String potpis) {
-	}
-
 	// Sala od 15 KM, Hanina rezervacija i otvorena uplata kroz pravi tok (lažni Stripe daje sesiju)
 	private Placanje hanaOtvaraPlacanje() throws Exception {
 		UUID sala = idIz(mockMvc.perform(post("/api/organizations/{id}/resources", teretana)
@@ -245,25 +242,6 @@ class StripeWebhookApiTest {
 				.andExpect(status().isOk());
 		return new Placanje(rezervacija, jdbc.queryForObject(
 				"select stripe_session_id from payments where booking_id = ?", String.class, rezervacija));
-	}
-
-	// Samo polja koja čitamo, u obliku u kojem ih Stripe šalje
-	private static String dogadjaj(String id, String tip, String sesija, String paymentIntent, String placeno) {
-		return """
-				{"id": "%s", "object": "event", "type": "%s", "api_version": "2025-01-01", "created": 1,
-				 "data": {"object": {"id": "%s", "object": "checkout.session", "payment_intent": %s,
-				  "payment_status": "%s", "amount_total": 1500, "currency": "bam"}}}
-				""".formatted(id, tip, sesija, paymentIntent == null ? "null" : "\"" + paymentIntent + "\"", placeno);
-	}
-
-	private static Potpisan potpisan(String tijelo) throws Exception {
-		return potpisan(tijelo, Instant.now());
-	}
-
-	// Kao Stripe: HMAC-SHA256 nad "vrijeme.tijelo" tajnom webhooka
-	private static Potpisan potpisan(String tijelo, Instant kad) throws Exception {
-		long t = kad.getEpochSecond();
-		return new Potpisan(tijelo, "t=" + t + ",v1=" + Webhook.Util.computeHmacSha256(TAJNA, t + "." + tijelo));
 	}
 
 	private ResultActions posalji(Potpisan dostava) throws Exception {

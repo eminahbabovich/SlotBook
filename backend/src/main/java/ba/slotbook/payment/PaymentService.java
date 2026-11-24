@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import ba.slotbook.booking.Booking;
@@ -68,6 +69,32 @@ public class PaymentService {
 				resurs.getName() + ", " + termin, rezervacija.getPriceCents(), VALUTA, sada.plus(TRAJANJE_SESIJE),
 				povratak + "uspjeh", povratak + "odustao"));
 		return CheckoutResponse.from(payments.save(new Payment(id, rezervacija, VALUTA, sesija, sada)));
+	}
+
+	// Rezervacija je otkazana ili odbijena (istekla nikad nije plaćena). Klijent otkazuje samo do roka,
+	// a osoblje kad god, i tada klijent nije kriv, pa se plaćena uvijek vraća cijela. Ista transakcija
+	// kao otkazivanje: ako Stripe ne vrati novac, ni otkazivanje ne prođe (503), da ne ostane otkazana
+	// rezervacija s novcem kod nas.
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void refundReleased(UUID bookingId) {
+		bookingService.lockForPayment(bookingId);
+		payments.findByBookingIdAndStatus(bookingId, PaymentStatus.PAID).ifPresent(uplata -> {
+			stripe.vrati(uplata.getStripePaymentIntentId(), "povrat-" + uplata.getId());
+			uplata.vracena(uplata.getStripePaymentIntentId());
+		});
+	}
+
+	// Poslije commita otkazivanja ili isteka, u novoj transakciji. Samo da klijent ne plati termin koji
+	// više nije njegov. Ako Stripe sesiju ne zatvori (npr. upravo je plaćena), uplata ostaje OPEN, a
+	// webhook je vrati kad stigne.
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void closeOpenCheckout(UUID bookingId) {
+		bookingService.lockForPayment(bookingId);
+		var otvorena = payments.findByBookingIdAndStatus(bookingId, PaymentStatus.OPEN);
+		if (otvorena.isPresent()) {
+			stripe.zatvori(otvorena.get().getStripeSessionId());
+			otvorena.get().istekla();
+		}
 	}
 
 	// Webhook, potpis je već provjeren. Isti događaj može stići dvaput (Stripe ga ponovi kad naš odgovor

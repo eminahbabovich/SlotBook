@@ -11,6 +11,7 @@ public class LazniStripeCheckout implements StripeCheckout {
 
 	private final List<NovaSesija> pozivi = new CopyOnWriteArrayList<>();
 	private final List<String> povrati = new CopyOnWriteArrayList<>();
+	private final List<String> zatvorene = new CopyOnWriteArrayList<>();
 	private volatile boolean neRadi;
 	private volatile Duration kasni = Duration.ZERO;
 
@@ -35,6 +36,18 @@ public class LazniStripeCheckout implements StripeCheckout {
 			throw new NedostupanException("Lažni Stripe ne radi", null);
 		}
 		povrati.add(paymentIntent);
+	}
+
+	@Override
+	public void zatvori(String sessionId) {
+		if (neRadi) {
+			throw new NedostupanException("Lažni Stripe ne radi", null);
+		}
+		zatvorene.add(sessionId);
+	}
+
+	public boolean zatvorena(String sessionId) {
+		return zatvorene.contains(sessionId);
 	}
 
 	public List<String> povratiZa(String paymentIntent) {

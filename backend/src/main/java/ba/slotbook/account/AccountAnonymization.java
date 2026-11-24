@@ -5,11 +5,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ba.slotbook.audit.AuditAction;
 import ba.slotbook.audit.AuditLogService;
+import ba.slotbook.booking.BookingReleased;
 
 // Odvojeno od AccountDeletionService, jer provjera lozinke mora biti van transakcije (vidi tamo), a
 // @Transactional na metodi iste klase pozvanoj iznutra ne bi prošao kroz Spring proxy.
@@ -19,11 +21,14 @@ class AccountAnonymization {
 	private final AccountDeletionRepository data;
 	private final AuditLogService auditLog;
 	private final Clock clock;
+	private final ApplicationEventPublisher objave;
 
-	AccountAnonymization(AccountDeletionRepository data, AuditLogService auditLog, Clock clock) {
+	AccountAnonymization(AccountDeletionRepository data, AuditLogService auditLog, Clock clock,
+			ApplicationEventPublisher objave) {
 		this.data = data;
 		this.auditLog = auditLog;
 		this.clock = clock;
+		this.objave = objave;
 	}
 
 	// Sve ili ništa: ako bilo šta padne, nalog ostaje kakav je bio
@@ -37,7 +42,10 @@ class AccountAnonymization {
 			throw new AccountDeletionBlockedException(bezAdmina, resursi);
 		}
 
-		data.cancelFutureBookings(userId, sada);
+		// Plaćena rezervacija dobija povrat u ovoj transakciji. Ako Stripe ne vrati novac, nalog ostaje.
+		for (UUID otkazana : data.cancelFutureBookings(userId, sada)) {
+			objave.publishEvent(new BookingReleased(otkazana));
+		}
 		for (AccountDeletionRepository.Membership clanstvo : data.memberships(userId)) {
 			auditLog.record(clanstvo.organizationId(), userId, AuditAction.ACCOUNT_DELETED, userId, clanstvo.role());
 		}
