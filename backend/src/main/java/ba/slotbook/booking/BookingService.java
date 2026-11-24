@@ -265,6 +265,17 @@ public class BookingService {
 		return bookings.findLockedById(bookingId).orElseThrow();
 	}
 
+	// Za webhook uplate. Rezervaciju je pozivalac već zaključao (lockForPayment) i provjerio da čeka uplatu.
+	// U historiji je potvrdio klijent, jer je potvrda posljedica njegove uplate. Prazan akter baza
+	// dozvoljava samo za istek i zatvaranje (V18), i to pravilo ne slabimo zbog uplate.
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void confirmPaid(Booking rezervacija) {
+		BookingStatus stari = rezervacija.getStatus();
+		Instant sada = clock.instant();
+		rezervacija.prijedi(BookingStatus.CONFIRMED, sada);
+		zapisi(rezervacija, stari, rezervacija.getClient().getId(), sada);
+	}
+
 	// Za BookingJob. Vraća broj isteklih, samo za log.
 	@Transactional
 	public int expireOverdue() {

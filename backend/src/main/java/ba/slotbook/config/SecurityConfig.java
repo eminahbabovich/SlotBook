@@ -82,6 +82,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/organizations/*").permitAll()
 						// Pretplata na kalendar: Google ili telefon povlače fajl bez prijave, pravo daje token iz linka
 						.requestMatchers(HttpMethod.GET, "/api/me/calendar.ics").permitAll()
+						// Stripe nema naš token. Pravo daje potpis, provjerava ga StripeWebhookService.
+						.requestMatchers(HttpMethod.POST, "/api/stripe/webhook").permitAll()
 						.anyRequest().authenticated())
 				// Čita "Authorization: Bearer ..." i provjerava potpis i rok tokena preko JwtDecoder beana
 				.oauth2ResourceServer(resourceServer -> resourceServer

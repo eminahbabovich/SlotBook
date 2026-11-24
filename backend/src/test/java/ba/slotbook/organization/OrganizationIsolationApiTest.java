@@ -178,7 +178,8 @@ class OrganizationIsolationApiTest {
 			Map.entry("GET /api/me/calendar.ics", "javno, pravo daje token iz linka, CalendarFeedApiTest provjerava da tuđeg nema"),
 			Map.entry("POST /api/organizations", "nova organizacija, kreator postaje admin"),
 			Map.entry("GET /api/organizations/{slug}", "javni profil: naziv, adresa i zona"),
-			Map.entry("POST /api/invites/accept", "pravo daju token i email iz pozivnice"));
+			Map.entry("POST /api/invites/accept", "pravo daju token i email iz pozivnice"),
+			Map.entry("POST /api/stripe/webhook", "javno, pravo daje Stripe potpis, StripeWebhookApiTest"));
 
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 13 };
 

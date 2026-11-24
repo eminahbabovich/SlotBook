@@ -42,6 +42,9 @@ public class Payment {
 	@Column(name = "checkout_url", nullable = false, updatable = false)
 	private String checkoutUrl;
 
+	@Column(name = "stripe_payment_intent_id")
+	private String stripePaymentIntentId;
+
 	@Column(name = "expires_at", nullable = false, updatable = false)
 	private Instant expiresAt;
 
@@ -63,8 +66,28 @@ public class Payment {
 		this.createdAt = createdAt;
 	}
 
+	// Prelazi su samo iz OPEN, a pozivalac drži lock rezervacije. Zato isti webhook drugi put nađe
+	// PAID ili REFUNDED i ne radi ništa, ni kad dva ista stignu istovremeno.
+	void placena(String paymentIntent) {
+		this.status = PaymentStatus.PAID;
+		this.stripePaymentIntentId = paymentIntent;
+	}
+
+	void vracena(String paymentIntent) {
+		this.status = PaymentStatus.REFUNDED;
+		this.stripePaymentIntentId = paymentIntent;
+	}
+
+	void istekla() {
+		this.status = PaymentStatus.EXPIRED;
+	}
+
 	public UUID getId() {
 		return id;
+	}
+
+	public Booking getBooking() {
+		return booking;
 	}
 
 	public PaymentStatus getStatus() {

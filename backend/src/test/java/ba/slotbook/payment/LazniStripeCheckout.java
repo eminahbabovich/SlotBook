@@ -10,6 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class LazniStripeCheckout implements StripeCheckout {
 
 	private final List<NovaSesija> pozivi = new CopyOnWriteArrayList<>();
+	private final List<String> povrati = new CopyOnWriteArrayList<>();
 	private volatile boolean neRadi;
 	private volatile Duration kasni = Duration.ZERO;
 
@@ -26,6 +27,18 @@ public class LazniStripeCheckout implements StripeCheckout {
 		}
 		String id = "cs_test_" + nova.kljuc();
 		return new Sesija(id, "https://checkout.stripe.com/c/pay/" + id, nova.istice());
+	}
+
+	@Override
+	public void vrati(String paymentIntent, String kljuc) {
+		if (neRadi) {
+			throw new NedostupanException("Lažni Stripe ne radi", null);
+		}
+		povrati.add(paymentIntent);
+	}
+
+	public List<String> povratiZa(String paymentIntent) {
+		return povrati.stream().filter(paymentIntent::equals).toList();
 	}
 
 	public List<NovaSesija> poziviZa(UUID bookingId) {

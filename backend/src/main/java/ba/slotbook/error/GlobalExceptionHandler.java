@@ -41,6 +41,7 @@ import ba.slotbook.booking.SlotOfferedException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.booking.WaitlistNotNeededException;
 import ba.slotbook.organization.AlreadyMemberException;
+import ba.slotbook.payment.InvalidWebhookException;
 import ba.slotbook.payment.NotAwaitingPaymentException;
 import ba.slotbook.payment.StripeCheckout;
 import ba.slotbook.organization.InviteRaceException;
@@ -223,6 +224,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 				"Ova rezervacija se ne plaća: besplatna je, već plaćena, otkazana ili joj je prošao rok za uplatu. "
 						+ "Osvježi prikaz.");
 		problem.setTitle("Rezervacija ne čeka uplatu");
+		return problem;
+	}
+
+	// Pošiljalac nije Stripe ili je zahtjev izmijenjen. Šta tačno ne valja ide u log, ne njemu.
+	@ExceptionHandler(InvalidWebhookException.class)
+	ProblemDetail neispravanWebhook(InvalidWebhookException ex) {
+		log.warn("Odbijen Stripe webhook: {}", ex.getCause().getMessage());
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+				"Potpis zahtjeva nije ispravan.");
+		problem.setTitle("Neispravan webhook");
 		return problem;
 	}
 

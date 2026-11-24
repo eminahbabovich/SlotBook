@@ -9,6 +9,7 @@ import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.RequestOptions;
+import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.stripe.param.checkout.SessionCreateParams.LineItem;
 import com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData;
@@ -39,6 +40,16 @@ class StripeCheckoutClient implements StripeCheckout {
 			return new Sesija(sesija.getId(), sesija.getUrl(), Instant.ofEpochSecond(sesija.getExpiresAt()));
 		} catch (StripeException e) {
 			throw new NedostupanException("Stripe nije otvorio Checkout sesiju: " + e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void vrati(String paymentIntent, String kljuc) {
+		try {
+			stripe.v1().refunds().create(RefundCreateParams.builder().setPaymentIntent(paymentIntent).build(),
+					RequestOptions.builder().setIdempotencyKey(kljuc).build());
+		} catch (StripeException e) {
+			throw new NedostupanException("Stripe nije vratio novac: " + e.getMessage(), e);
 		}
 	}
 

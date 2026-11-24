@@ -416,11 +416,12 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
 
 1. ✅ **Cijena na resursu** (22.11.2026). Kolona u feninzima, 0 je besplatno, API i polje u formi resursa. Besplatan
    resurs radi kao do sada.
-2. **Rezervacija čeka uplatu, Stripe Checkout.** Rezervacija plaćenog resursa je `PENDING` s kratkim
-   rokom za uplatu, `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout stranice, uplata ima
-   svoju tabelu.
-3. **Webhook.** Provjera potpisa, idempotentna obrada (isti događaj dvaput ne radi ništa drugi put),
-   uplata potvrđuje rezervaciju. Uplata koja stigne za već isteklu rezervaciju se vraća.
+2. ✅ **Rezervacija čeka uplatu, Stripe Checkout** (24.11.2026). Rezervacija plaćenog resursa je `PENDING`
+   30 minuta (Stripe sesija ne može kraće), `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout
+   stranice, uplata ima svoju tabelu. Pravi sandbox je otvorio sesiju za 15 KM u `bam`.
+3. ✅ **Webhook** (24.11.2026). Provjera potpisa, idempotentna obrada (isti događaj dvaput ne radi ništa
+   drugi put, ni kad stignu istovremeno), uplata potvrđuje rezervaciju. Uplata koja stigne za već isteklu
+   rezervaciju se vraća. Pravi webhook sa Stripe CLI još nije provjeren, to je u koraku 5.
 4. **Povrat i istek.** Otkazivanje u roku vraća novac, istekla neplaćena rezervacija oslobađa termin.
 5. **UI i kraj faze.** Dugme za plaćanje, povratak sa Checkouta, ručna provjera sa Stripe CLI,
    README, ODLUKE, a šta nije stiglo ide u Dodatke.

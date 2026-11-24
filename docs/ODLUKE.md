@@ -1032,6 +1032,38 @@ Cijena je cijeli broj u feninzima (`price_cents`, 1500 je 15 KM), a ne `NUMERIC`
 
 Besplatan resurs ima cijenu 0, a ne `NULL`. Tako nema trećeg stanja ("cijena nije unesena"), a svi postojeći resursi poslije V38 rade kao do sada. Granica od 0 do 1000 KM je i u `@Min`/`@Max` na `ResourceRequest` (da korisnik dobije 400 s porukom) i u CHECK-u `resources_cijena`, kao kod trajanja i kapaciteta.
 
-Valuta je zasad KM za sve organizacije i nije kolona. Nisam još provjerio da li Stripe prima BAM za Checkout. To se provjerava u koraku 2, a ako ne prima, ide EUR i to se ovdje upiše.
+Valuta je zasad KM za sve organizacije i nije kolona. Nisam još provjerio da li Stripe prima BAM za Checkout. To se provjerava u koraku 2, a ako ne prima, ide EUR i to se ovdje upiše. Provjereno 24.11.2026: Stripe sandbox je otvorio Checkout sesiju za 15 KM u valuti `bam`, pa ostaje KM.
 
 U formi je cijena obično tekstualno polje s `inputMode="decimal"`, a ne `type="number"`. Tako se na telefonu otvori tastatura s brojevima, a može se upisati i `7,50` sa zarezom, kako se ovdje piše. Šta `type="number"` radi sa zarezom zavisi od browsera i jezika, to nisam htio pogađati. Pretvaranje u feninge je u `resursi/cijena.js` i ne množi decimalni broj sa 100, jer je `0.29 * 100` u JavaScriptu `28.999999999999996`. Unos koji nije iznos (`15 KM`, `-5`, `7,555`) forma ne šalje, nego napiše šta treba upisati. Da je išao kao `Number('15 KM')`, to je `NaN`, JSON ga pošalje kao `null`, a backend bi od toga napravio besplatan termin.
+
+## Plaćen termin čeka uplatu, Stripe Checkout (24.11.2026)
+
+Rezervacija plaćenog resursa je `PENDING` dok uplata ne stigne, i kad resurs ima automatsku potvrdu. Potvrđuje je uplata, ne provider. Provider je zato ne može ručno potvrditi (`409`, "Rezervacija čeka uplatu"), jer bi klijent onda imao termin bez plaćanja. Odbiti je može. Druga opcija je bila da plaćanje dođe tek poslije potvrde providera, ali onda odbijena rezervacija traži povrat, a ništa time ne dokazujem.
+
+Rok za uplatu je 30 minuta (`slotbook.booking.payment-minutes`). Prvo sam htio 15, ali Stripe Checkout sesija ne može isteći ranije od 30 minuta od nastanka ([docs](https://docs.stripe.com/api/checkout/sessions/create)). Sa 15 minuta bi klijent normalno mogao platiti već isteklu rezervaciju. Sesija traje 31 minutu, minuta više, da satovi našeg servera i Stripea ne moraju biti isti. To znači da uplata ipak može stići poslije isteka rezervacije. Tada se novac vraća (webhook, ispod), a u koraku 4 istek rezervacije treba i sesiju zatvoriti kod Stripea.
+
+Cijena se pri rezervaciji prepiše na rezervaciju (`bookings.price_cents`, V39). Kad admin poslije promijeni cijenu, klijent i dalje plaća ono što je vidio. Isto kao stavka narudžbe u webshopu.
+
+Uplata je posebna tabela (`payments`, V40), jedan red po Checkout sesiji. Rezervacija kaže ko drži termin, a uplata šta se desilo s novcem. Baza čuva tri stvari: iznos veći od 0, jedna sesija pripada jednoj uplati (`UNIQUE`), i rezervacija ima najviše jednu otvorenu uplatu (djelimični indeks `UNIQUE (booking_id) WHERE status = 'OPEN'`).
+
+`POST /api/bookings/{id}/pay` smije samo klijent čija je rezervacija. Prvo zaključa red rezervacije (`SELECT ... FOR UPDATE`), pa drugi klik čeka prvi i dobije istu adresu. Stripe se zove dok je lock držan. Cijena toga je da red stoji zaključan dok Stripe ne odgovori, pa sam timeout čitanja spustio s njihovih 80 na 20 sekundi. Drugi put je bio zvati Stripe van transakcije, ali onda dva klika otvore dvije sesije i to se mora rješavati poslije. Test `istovremeniKlikoviCekajuPrviIDobijajuNjegovuSesiju` šalje pet klikova dok lažni Stripe kasni 300 ms: Stripe se zove jednom. Bez `@Lock` taj test pada na `duplicate key` iz djelimičnog indeksa, pa indeks čuva i kad lock zakaže, samo s lošijim odgovorom.
+
+Stripe je iza interfacea `StripeCheckout` s dvije implementacije: `StripeCheckoutClient` (biblioteka `stripe-java` 34.2.0) i `LazniStripeCheckout` u testovima, kao `StorageService`. CI tako ne zavisi od Stripea, a test može reći "Stripe kasni" ili "Stripe ne radi" (`503`, rezervacija ostaje). Šta tačno ide Stripeu (iznos u feninzima, `bam`, rok u sekundama) provjerava unit test nad `SessionCreateParams`, bez mreže.
+
+Serija za plaćen termin se zasad odbija (`400` za `weeks`), jer bi svaka sedmica trebala svoju uplatu u 30 minuta. Upisano u Dodatke.
+
+## Webhook: potpis i isti događaj dvaput (24.11.2026)
+
+`POST /api/stripe/webhook` je javna ruta, jer Stripe nema naš token. Pravo daje potpis: Stripe potpiše `vrijeme.tijelo` HMAC-SHA256 tajnom webhooka, a `Webhook.constructEvent` iz biblioteke to provjeri prije čitanja JSON-a. Zato kontroler prima tijelo kao `String`, tačno kako je stiglo. Da ga Jackson pročita u objekat, potpis više ne bi odgovarao. Potpis stariji od 5 minuta se odbija, da se snimljen pravi zahtjev ne može poslati ponovo, a vrijeme dolazi iz našeg `Clock` beana. Neispravan, izmijenjen ili prestar zahtjev dobija `400` i ne mijenja ništa. Bez tajne u konfiguraciji svaki webhook pada.
+
+Isti događaj može stići dvaput. Stripe ga šalje ponovo kad ne dobije naš `2xx`, npr. kad se odgovor izgubi, i to je normalno ponašanje, ne greška. Nisam pravio tabelu obrađenih događaja. Uplata mijenja stanje samo iz `OPEN` (u `PAID`, `REFUNDED` ili `EXPIRED`), i to pod lockom rezervacije. Drugi isti događaj čeka prvi, nađe `PAID` i ne radi ništa. Tabela s ID-jem događaja bi trebala za događaje koji ne mijenjaju stanje, a takve ne obrađujemo. Dokaz su dva testa: isti događaj poslan dvaput i pet istih dostava u istom trenutku. Kad se provjera `OPEN` izbaci, oba padnu, jer drugi događaj vidi potvrđenu rezervaciju i vrati novac.
+
+Prva verzija je imala grešku koju je uhvatio test s pet istovremenih dostava: vratila je novac četiri puta za ispravno plaćenu rezervaciju. Uplatu sam čitao prije locka rezervacije. Sve niti su pročitale `OPEN`, sačekale lock, i kad su ga dobile, imale su svježu rezervaciju (`CONFIRMED`) i staru uplatu iz memorije. Sada se prvo uzme samo ID rezervacije, onda lock, pa tek onda uplata.
+
+Uplata za rezervaciju koja još drži termin je potvrđuje, i kad joj je rok prošao a posao je još nije istekao, jer termin je i dalje njen. Istekla, otkazana ili odbijena rezervacija termin više nema, pa se novac vraća (`refunds.create` po payment intentu, s idempotency ključem `povrat-{id uplate}`). Ako Stripe povrat odbije, odgovor je `503`, uplata ostaje `OPEN`, a Stripe događaj šalje ponovo.
+
+U historiji rezervacije potvrdu "radi" klijent, jer je posljedica njegove uplate. Prvo sam htio prazan akter, kao kod isteka, ali constraint iz V18 dozvoljava prazan akter samo za istek i zatvaranje, i to je bilo dobro pravilo, pa ga nisam slabio.
+
+Događaj za sesiju koje kod nas nema dobija `200` i preskače se. Lokalni backend i Render dijele isti Stripe sandbox, pa će stizati i tuđe sesije, a na grešku bi ih Stripe slao danima. Primamo samo kartice. Za odgođene metode (bankovni transfer) `payment_status` nije `paid` i takav događaj ne radi ništa.
+
+Pravi webhook sa Stripe CLI (`stripe listen`) nisam još provjerio. Testovi potpisuju događaje sami, istim algoritmom i testnom tajnom. To ide u korak 5.
