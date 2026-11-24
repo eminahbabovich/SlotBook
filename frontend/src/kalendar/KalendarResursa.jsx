@@ -44,7 +44,7 @@ export function KalendarResursa() {
 			<Link to={`/o/${slug}`}>{org.organizacija.naziv}</Link>
 			<h1>{resurs.naziv}</h1>
 			{resurs.opis && <p>{resurs.opis}</p>}
-			<Kalendar resursId={resurs.id} zona={org.organizacija.zona} />
+			<Kalendar resursId={resurs.id} zona={org.organizacija.zona} cijenaFeninga={resurs.cijenaFeninga} />
 		</section>
 	)
 }

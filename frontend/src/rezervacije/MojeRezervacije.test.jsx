@@ -4,9 +4,13 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { postaviToken } from '../api/apiFetch.js'
 import { PRIJAVLJENA, backend, json, otvori, problem } from '../test/lazniBackend.js'
+import { idiNaStripe } from './idiNaStripe.js'
 
-const rez = (id, resurs, organizacija, start, end, status, rok) => ({
+vi.mock('./idiNaStripe.js', () => ({ idiNaStripe: vi.fn() }))
+
+const rez = (id, resurs, organizacija, start, end, status, rok, cijena = 0, rokUplate = null) => ({
 	id, resourceId: 'r1', resourceName: resurs, organizationName: organizacija, timezone: 'Europe/Sarajevo', startTime: start, endTime: end, status, cancelDeadline: rok,
+	priceCents: cijena, paymentDeadline: rokUplate,
 })
 // Sada je subota 17.11.2035. u 11:00 po Sarajevu. Backend šalje najkasniji termin prvo.
 const POCETNE = () => [
@@ -221,5 +225,101 @@ describe('QR kod za dolazak', () => {
 		// Na 503 se upit ponovi jednom poslije 1000 ms (App.jsx), pa poruka ne stiže u podrazumijevanoj sekundi
 		expect((await screen.findByRole('alert', {}, { timeout: 3000 })).textContent).toBe('QR kod se nije učitao, server ne odgovara. Pokušaj ponovo za minutu.')
 		expect(screen.getByRole('button', { name: 'Pokušaj ponovo' })).toBeTruthy()
+	})
+})
+
+describe('plaćanje', () => {
+	const STRIPE = 'https://checkout.stripe.com/c/pay/cs_test_b5'
+	// Sala za jogu u srijedu, 15 KM, plaća se do 11:30 po Sarajevu (sada je 11:00)
+	const zaUplatu = () =>
+		rez('b5', 'Sala za jogu', 'Teretana Ilidža', '2035-11-21T07:00:00Z', '2035-11-21T08:00:00Z', 'PENDING', '2035-11-21T07:00:00Z', 1500, '2035-11-17T10:30:00Z')
+
+	function saUplatom(placanje, rezervacije = [zaUplatu()]) {
+		return backend({
+			...PRIJAVLJENA,
+			'/api/bookings/mine?page=0&size=20': () => json({ content: rezervacije, page: 0, size: 20, totalElements: rezervacije.length, totalPages: 1 }),
+			'POST /api/bookings/b5/pay': () => placanje(rezervacije),
+		})
+	}
+
+	beforeEach(() => idiNaStripe.mockClear())
+
+	test('rezervacija koja čeka uplatu kaže rok, a dugme s cijenom vodi na Stripe Checkout', async () => {
+		const fetch = saUplatom(() => json({ url: STRIPE, expiresAt: '2035-11-17T10:31:00Z' }))
+		otvori('/rezervacije')
+
+		await userEvent.setup().click(await screen.findByRole('button', { name: 'Plati 15 KM' }))
+
+		const red = redSa('Sala za jogu')
+		expect(red.querySelector('.rezervacija-status').textContent).toBe('čeka uplatu')
+		expect(red.textContent).toContain('Rok za uplatu: subota, 17. novembar, 11:30. Poslije toga se termin oslobađa.')
+		await waitFor(() => expect(idiNaStripe).toHaveBeenCalledWith(STRIPE))
+		expect(fetch.mock.calls.filter(([putanja]) => putanja === '/api/bookings/b5/pay')).toHaveLength(1)
+		expect(screen.getByRole('button', { name: 'Otvara se plaćanje' }).disabled).toBe(true)
+	})
+
+	test('kad plaćanje ne radi, poruka kaže da je termin i dalje tvoj, a dugme ostaje za novi pokušaj', async () => {
+		saUplatom(() => problem(503, { title: 'Plaćanje nije dostupno', detail: 'Plaćanje trenutno ne radi.' }))
+		otvori('/rezervacije')
+
+		await userEvent.setup().click(await screen.findByRole('button', { name: 'Plati 15 KM' }))
+
+		expect((await screen.findByRole('alert')).textContent).toContain('Termin je i dalje tvoj do roka za uplatu')
+		expect(screen.getByRole('button', { name: 'Plati 15 KM' }).disabled).toBe(false)
+		expect(idiNaStripe).not.toHaveBeenCalled()
+	})
+
+	// Rok je prošao dok je lista bila otvorena: poruka ostaje gore, a red pokaže novo stanje bez dugmeta
+	test('409 kaže zašto se više ne plaća i osvježi listu', async () => {
+		saUplatom((rezervacije) => {
+			Object.assign(rezervacije[0], { status: 'EXPIRED', paymentDeadline: null })
+			return problem(409, { title: 'Rezervacija ne čeka uplatu', detail: 'Ova rezervacija se ne plaća: besplatna je, već plaćena, otkazana ili joj je prošao rok za uplatu. Osvježi prikaz.' })
+		})
+		otvori('/rezervacije')
+
+		await userEvent.setup().click(await screen.findByRole('button', { name: 'Plati 15 KM' }))
+
+		expect((await screen.findByText(/Ova rezervacija se ne plaća/)).getAttribute('role')).toBe('status')
+		await waitFor(() => expect(redSa('Sala za jogu').querySelector('.rezervacija-status').textContent).toBe('istekla, nije plaćena na vrijeme'))
+		expect(screen.queryByRole('button', { name: /Plati/ })).toBeNull()
+	})
+
+	test('povratak sa Checkouta kaže da je uplata prošla, a lista sama pokaže potvrđenu kad stigne webhook', async () => {
+		const rezervacije = [zaUplatu()]
+		let citanja = 0
+		backend({
+			...PRIJAVLJENA,
+			'/api/bookings/mine?page=0&size=20': () => {
+				// Webhook stigne između prvog i drugog čitanja
+				if (++citanja === 2) Object.assign(rezervacije[0], { status: 'CONFIRMED', paymentDeadline: null })
+				return json({ content: rezervacije, page: 0, size: 20, totalElements: 1, totalPages: 1 })
+			},
+		})
+		otvori('/rezervacije?uplata=uspjeh')
+
+		expect((await screen.findByRole('status')).textContent).toContain('Uplata je prošla')
+		await waitFor(() => expect(redSa('Sala za jogu').querySelector('.rezervacija-status').textContent).toBe('potvrđena'), { timeout: 4000 })
+		expect(screen.queryByRole('button', { name: /Plati/ })).toBeNull()
+	})
+
+	test('povratak bez plaćanja kaže da ništa nije naplaćeno i dugme ostaje', async () => {
+		saUplatom(() => json({ url: STRIPE }))
+		otvori('/rezervacije?uplata=odustao')
+
+		expect((await screen.findByRole('status')).textContent).toContain('ništa nije naplaćeno')
+		expect(await screen.findByRole('button', { name: 'Plati 15 KM' })).toBeTruthy()
+	})
+
+	test('otkazivanje plaćene rezervacije kaže da se novac vraća', async () => {
+		const placena = [rez('b1', 'Sala za jogu', 'Teretana Ilidža', '2035-11-19T08:00:00Z', '2035-11-19T09:00:00Z', 'CONFIRMED', '2035-11-18T08:00:00Z', 1550)]
+		saRezervacijama(undefined, placena)
+		otvori('/rezervacije')
+		const korisnik = userEvent.setup()
+
+		await korisnik.click(await screen.findByRole('button', { name: 'Otkaži' }))
+		expect(screen.getByRole('group').textContent).toContain('Plaćeno je 15,50 KM. Cijeli iznos se vraća na karticu.')
+		await korisnik.click(screen.getByRole('button', { name: 'Otkaži rezervaciju' }))
+
+		expect((await screen.findByText(/Rezervacija je otkazana/)).textContent).toContain('Vraća se 15,50 KM na karticu kojom je plaćeno.')
 	})
 })

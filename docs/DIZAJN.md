@@ -88,6 +88,7 @@ Svako stanje se razlikuje i bez boje: po ivici, šrafuri, tekstu i oznaci.
 - **moja rezervacija:** puna žuta traka, tamni tekst i oznaka "MOJE";
 - **moja na čekanju:** žuta isprekidana ivica bez punjenja i oznaka "ČEKA POTVRDU".
 - **ponuđen meni s liste čekanja** (Faza 10): puna žuta traka lijevo (`--razmak-4`), red bez punjenja i oznaka "PONUĐEN TEBI DANAS DO 17:30" (ili "SUTRA", kad je ponuda stigla pred ponoć). Termin je moj samo do roka, pa nije cijeli red žut kao potvrđena rezervacija, ali žuta i dalje znači "ovo je za tebe";
+- **moja koja čeka uplatu** (Faza 11): isto kao moja na čekanju (isprekidana žuta ivica), samo oznaka kaže "ČEKA UPLATU". Plaćenu ne potvrđuje osoba nego uplata, pa riječ mora reći ko je na potezu;
 - **zauzeto, a na listi sam:** isto kao zauzeto (šrafura, precrtano vrijeme), uz tekst "zauzeto, na listi si". Razlika je samo u riječima, jer termin i dalje nije moj.
 
 Zauzet termin se može otvoriti (Faza 10). Ispod njega se otvori isti red kao potvrda rezervacije, s pitanjem i dugmetom "Javi mi ako se oslobodi", a kad sam na listi, s dugmetom "Ispiši me sa liste". Strelice i dalje idu samo kroz termine koji se rezervišu (slobodan i ponuđen meni), a do zauzetog se dolazi Tabom. U "Mojim rezervacijama" je dio "Lista čekanja" iste vrste liste. Ponuđen termin tamo ima žutu traku i link "Rezerviši u kalendaru", a ispis traži drugi klik, jer se mjesto na listi gubi. Vrijeme termina se nikad ne lomi u dva reda (`white-space: nowrap`), a duga oznaka ide u dva reda, poravnata desno. Nove boje, fontove ni razmake ovo ne uvodi.
@@ -97,6 +98,8 @@ Vrijeme je uvijek u zoni organizacije. Kad se zona browsera razlikuje, uz vrijem
 Kad se termini promijene preko SSE (neko je rezervisao ili otkazao), kalendar se osvježi bez animacije i bez bljeska: termin samo dobije novo stanje. Čitač ekrana dobije skrivenu najavu "Termini su osvježeni." (`aria-live="polite"`), da promjena ne prođe neprimijećeno. Fokus ostaje gdje je bio. Ako je otvorena potvrda za termin koji je neko upravo uzeo, ona izgleda isto kao poslije `409`: pitanje postane "Termin ... je zauzet.", ispod je greška s crvenom linijom i dugme za najbliži slobodan termin.
 
 Ponavljanje rezervacije je obično polje `select` u potvrdi, ispod pitanja: "Samo ovaj put" ili "Svake sedmice, N puta" (2 do 12). Nisam pravio kalendar s označavanjem sedmica, jer je pravilo uvijek isto (isti dan i sat), a padajuća lista radi tastaturom i na telefonu bez ičeg dodatnog. Dugme kaže koliko termina pravi ("Rezerviši 3 termina"). Kad neke sedmice nisu slobodne, greška ih nabroji po imenu dana, a polje ostane, da se može izabrati manje sedmica.
+
+Plaćanje (Faza 11) ne uvodi nove boje, fontove ni razmake. "Plati 15 KM" je glavno tamno dugme, jer je to jedina stvar koju klijent tada treba uraditi, a cijena piše na dugmetu, da se zna koliko prije nego što se ode na Stripe. Iznad dugmeta je rok za uplatu sitnim sivim slovima. Potvrda plaćenog termina kaže cijenu i da se plaća karticom odmah poslije, a ponavljanja nema. Povratak sa Stripea je ista podebljana poruka kao poslije uspjeha, bez zelene i bez ikone. Kad se plaćena rezervacija otkazuje, ispod pitanja piše koliko se vraća.
 
 ## Da ne liči na sve ostalo
 

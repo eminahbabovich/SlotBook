@@ -1,7 +1,10 @@
 package ba.slotbook.payment;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -144,6 +147,47 @@ class PaymentApiTest {
 
 		assertThat(brojUplata(rezervacija)).isZero();
 		assertThat(stripe.poziviZa(rezervacija)).isEmpty();
+	}
+
+	// Moje rezervacije iz ovoga znaju da pokažu dugme "Plati 15 KM" i do kada. Rok dolazi s backenda,
+	// da frontend ne mora ponavljati pravilo šta čeka uplatu.
+	@Test
+	void mojeRezervacijeKazuCijenuIRokZaUplatuSamoZaOnuKojaCekaUplatu() throws Exception {
+		UUID placena = rezervacija(hana, sala(1500));
+		// Besplatna koja čeka potvrdu ima rok (24 sata za osoblje), ali to nije rok za uplatu
+		UUID besplatnaSala = sala(0);
+		jdbc.update("update resources set auto_confirm = false where id = ?", besplatnaSala);
+		UUID besplatna = rezervacija(hana, besplatnaSala);
+		String rok = jdbc.queryForObject("select to_char(expires_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS') from bookings where id = ?",
+				String.class, placena);
+
+		mockMvc.perform(get("/api/bookings/mine").param("size", "100").header("Authorization", "Bearer " + hana))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[?(@.id == '%s')].priceCents".formatted(placena)).value(hasItem(1500)))
+				.andExpect(jsonPath("$.content[?(@.id == '%s')].paymentDeadline".formatted(placena))
+						.value(hasItem(startsWith(rok))))
+				.andExpect(jsonPath("$.content[?(@.id == '%s')].priceCents".formatted(besplatna)).value(hasItem(0)))
+				.andExpect(jsonPath("$.content[?(@.id == '%s')].paymentDeadline".formatted(besplatna)).value(hasItem(nullValue())));
+	}
+
+	// Raspored inače nudi "Potvrdi" za svaku PENDING, a backend potvrdu neplaćene odbija s 409
+	@Test
+	void rasporedKazeOsobljuKojaRezervacijaCekaUplatu() throws Exception {
+		UUID placenaSala = sala(1500);
+		rezervacija(hana, placenaSala);
+		UUID besplatnaSala = sala(0);
+		jdbc.update("update resources set auto_confirm = false where id = ?", besplatnaSala);
+		rezervacija(hana, besplatnaSala);
+
+		mockMvc.perform(get("/api/resources/{id}/bookings", placenaSala).param("from", "2035-11-19").param("to", "2035-11-20")
+				.header("Authorization", "Bearer " + amra))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].status").value("PENDING"))
+				.andExpect(jsonPath("$[0].awaitingPayment").value(true));
+		mockMvc.perform(get("/api/resources/{id}/bookings", besplatnaSala).param("from", "2035-11-19").param("to", "2035-11-20")
+				.header("Authorization", "Bearer " + amra))
+				.andExpect(jsonPath("$[0].status").value("PENDING"))
+				.andExpect(jsonPath("$[0].awaitingPayment").value(false));
 	}
 
 	@Test

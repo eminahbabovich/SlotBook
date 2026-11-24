@@ -7,7 +7,7 @@ import { CITAONICA, PRIJAVLJENA, TERETANA, backend, json, otvori, problem } from
 
 const resurs = (id, naziv, providerId) => ({ id, organizationId: 'o1', providerId, name: naziv, description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, capacity: 1, priceCents: 0, active: true, hasImage: false })
 const RESURSI = (...r) => () => json({ content: r, page: 0, size: 100, totalElements: r.length, totalPages: 1 })
-const rez = (id, start, end, status, klijent, rok = null) => ({ id, startTime: start, endTime: end, status, clientName: klijent, expiresAt: rok })
+const rez = (id, start, end, status, klijent, rok = null, uplata = false) => ({ id, startTime: start, endTime: end, status, clientName: klijent, expiresAt: rok, awaitingPayment: uplata })
 
 // Sada je ponedjeljak 19.11.2035. u 10:30 po Sarajevu. Hana je imala termin od 09:00,
 // Lamija čeka potvrdu za 11:00, Emir dolazi u 13:00, Đana je otkazala.
@@ -20,8 +20,9 @@ const DAN = () => [
 const ADRESA = '/api/resources/r1/bookings?from=2035-11-19&to=2035-11-20'
 
 // Admin čitaonice. Lažni backend pamti promjene statusa, kao pravi.
-function kaoAdmin(promjena = () => null) {
+function kaoAdmin(promjena = () => null, izmijeni = () => {}) {
 	const rezervacije = DAN()
+	izmijeni(rezervacije)
 	const novi = { confirm: 'CONFIRMED', reject: 'REJECTED', 'check-in': 'COMPLETED', 'no-show': 'NO_SHOW' }
 	const odgovori = {
 		...PRIJAVLJENA,
@@ -69,6 +70,19 @@ describe('pregled', () => {
 		expect(within(redSa('Lamija')).getByText('čeka potvrdu')).toBeTruthy()
 		expect(within(redSa('Đana')).getByText('otkazana')).toBeTruthy()
 		expect(window.location.pathname).toBe('/o/citaonica-pmf/r/r1/raspored')
+	})
+
+	// Lamijinu rezervaciju potvrđuje uplata, ne osoblje: backend bi "Potvrdi" odbio s 409
+	test('rezervacija koja čeka uplatu kaže to i nema dugme Potvrdi, ali se može odbiti', async () => {
+		kaoAdmin(() => null, (dan) => Object.assign(dan[1], { awaitingPayment: true, expiresAt: '2035-11-19T10:00:00Z' }))
+		otvori('/o/citaonica-pmf/r/r1/raspored')
+
+		await screen.findByRole('list', { name: 'Rezervacije' })
+		const red = redSa('Lamija')
+		expect(red.querySelector('.rezervacija-status').textContent).toBe('čeka uplatu')
+		expect(red.textContent).toContain('Rok za uplatu: ponedjeljak, 19. novembar, 11:00. Klijent plaća karticom, a ako ne plati, termin se oslobodi.')
+		expect(within(red).queryByRole('button', { name: 'Potvrdi' })).toBeNull()
+		expect(within(red).getByRole('button', { name: 'Odbij' })).toBeTruthy()
 	})
 
 	test('sljedeći dan je novi upit, a prazan dan kaže da nema rezervacija', async () => {

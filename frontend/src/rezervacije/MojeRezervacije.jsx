@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { mojeRezervacije } from '../api/rezervacije.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
@@ -8,8 +8,10 @@ import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
 import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
 import { MojaListaCekanja } from './MojaListaCekanja.jsx'
 import { Otkazivanje } from './Otkazivanje.jsx'
+import { Plati } from './Plati.jsx'
 import { QrDolaska } from './QrDolaska.jsx'
-import { DRZE_TERMIN, STATUS } from './status.js'
+import { feningeUKm } from '../resursi/cijena.js'
+import { DRZE_TERMIN, opisStatusa, placena } from './status.js'
 import './rezervacije.css'
 
 const PORUKE = {
@@ -17,18 +19,38 @@ const PORUKE = {
 	opsta: 'Rezervacije se nisu učitale zbog greške na serveru. Pokušaj ponovo za minutu.',
 }
 
+// Stripe vraća ovamo poslije Checkouta (PaymentService: /rezervacije?uplata=...)
+const POVRATAK = {
+	uspjeh: 'Uplata je prošla. Rezervacija postaje potvrđena čim Stripe to javi serveru, obično za nekoliko sekundi.',
+	odustao: 'Uplata nije završena i ništa nije naplaćeno. Termin čeka uplatu do roka, pa ga možeš platiti iz liste.',
+}
+
+// Poslije uplate potvrda stiže webhookom, ne s povratkom korisnika, pa lista sama pita ponovo.
+// Najviše minutu: ako webhook ne stigne do tada, nešto nije u redu i čekanje ne pomaže.
+const PROVJERA_UPLATE_MS = 2000
+const PROVJERA_UPLATE_NAJVISE_MS = 60_000
+
 export function MojeRezervacije() {
 	const [stranica, setStranica] = useState(0)
 	// Jednom, pri otvaranju: lista ne mijenja grupe dok korisnik čita
 	const [sada] = useState(() => Date.now())
 	const [otvorena, setOtvorena] = useState(null)
-	const [poruka, setPoruka] = useState(null)
+	const [povratak] = useSearchParams()
+	const [uplata] = useState(() => povratak.get('uplata'))
+	const [poruka, setPoruka] = useState(() => POVRATAK[uplata] ?? null)
+	const queryClient = useQueryClient()
 	const porukaRef = useRef(null)
 	const listaRef = useRef(null)
 
 	const { data, isPending, isError, error, refetch } = useQuery({
 		queryKey: ['mojeRezervacije', stranica],
 		queryFn: () => mojeRezervacije(stranica),
+		refetchInterval: (upit) =>
+			uplata === 'uspjeh' &&
+			Date.now() - sada < PROVJERA_UPLATE_NAJVISE_MS &&
+			upit.state.data?.rezervacije.some((r) => r.rokUplate)
+				? PROVJERA_UPLATE_MS
+				: false,
 	})
 
 	function zatvori() {
@@ -39,13 +61,19 @@ export function MojeRezervacije() {
 
 	function otkazana(rezervacija) {
 		setOtvorena(null)
-		setPoruka(`Rezervacija je otkazana: ${rezervacija.resurs}, ${opisTermina(rezervacija, rezervacija.zona)}.`)
+		const povrat = placena(rezervacija) ? ` Vraća se ${feningeUKm(rezervacija.cijenaFeninga)} KM na karticu kojom je plaćeno.` : ''
+		setPoruka(`Rezervacija je otkazana: ${rezervacija.resurs}, ${opisTermina(rezervacija, rezervacija.zona)}.${povrat}`)
 		porukaRef.current?.focus()
 	}
 
 	function porukaListe(tekst) {
 		setPoruka(tekst)
 		porukaRef.current?.focus()
+	}
+
+	function nijeZaUplatu(tekst) {
+		porukaListe(tekst)
+		queryClient.invalidateQueries({ queryKey: ['mojeRezervacije'] })
 	}
 
 	function idiNaStranicu(nova) {
@@ -55,7 +83,14 @@ export function MojeRezervacije() {
 	}
 
 	const red = (r) => (
-		<Red key={r.id} rezervacija={r} sada={sada} otvorena={otvorena === r.id} naOtvori={() => setOtvorena(r.id)}>
+		<Red
+			key={r.id}
+			rezervacija={r}
+			sada={sada}
+			otvorena={otvorena === r.id}
+			naOtvori={() => setOtvorena(r.id)}
+			naOdbijenuUplatu={nijeZaUplatu}
+		>
 			{otvorena === r.id && <Otkazivanje rezervacija={r} naZatvori={zatvori} naUspjeh={otkazana} />}
 		</Red>
 	)
@@ -127,7 +162,7 @@ export function MojeRezervacije() {
 	)
 }
 
-function Red({ rezervacija: r, sada, otvorena, naOtvori, children }) {
+function Red({ rezervacija: r, sada, otvorena, naOtvori, naOdbijenuUplatu, children }) {
 	const drziTermin = DRZE_TERMIN.includes(r.status) && Date.parse(r.pocetak) > sada
 	const rokVazi = Date.parse(r.rokOtkazivanja) >= sada
 
@@ -140,7 +175,13 @@ function Red({ rezervacija: r, sada, otvorena, naOtvori, children }) {
 			<p className="rezervacija-mjesto">
 				{r.resurs} · {r.organizacija}
 			</p>
-			<p className="rezervacija-status">{STATUS[r.status] ?? r.status}</p>
+			<p className="rezervacija-status">{opisStatusa(r)}</p>
+			{r.rokUplate && Date.parse(r.rokUplate) > sada && (
+				<>
+					<p className="napomena">Rok za uplatu: {opisTrenutka(r.rokUplate, r.zona)}. Poslije toga se termin oslobađa.</p>
+					<Plati rezervacijaId={r.id} cijenaFeninga={r.cijenaFeninga} naOdbijeno={naOdbijenuUplatu} />
+				</>
+			)}
 			{drziTermin && rokVazi && (
 				<>
 					<p className="napomena">

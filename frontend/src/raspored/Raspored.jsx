@@ -132,9 +132,12 @@ function Red({ rezervacija: r, resursId, zona, sada, naUspjeh }) {
 	} else if (r.status === 'PENDING') {
 		akcije = (
 			<div className="potvrda-dugmad">
-				<button className="dugme" type="button" onClick={() => promjena.mutate('potvrdi')} disabled={promjena.isPending}>
-					Potvrdi
-				</button>
+				{/* Plaćenu potvrđuje uplata, a backend potvrdu osoblja odbija (409) */}
+				{!r.cekaUplatu && (
+					<button className="dugme" type="button" onClick={() => promjena.mutate('potvrdi')} disabled={promjena.isPending}>
+						Potvrdi
+					</button>
+				)}
 				<button className="dugme-tekst" type="button" onClick={() => setPitanje('odbij')}>
 					Odbij
 				</button>
@@ -159,8 +162,13 @@ function Red({ rezervacija: r, resursId, zona, sada, naUspjeh }) {
 				{opisTermina(r, zona, { bezDana: true })}
 			</time>
 			<p className="rezervacija-mjesto">{r.klijent}</p>
-			<p className="rezervacija-status">{STATUS[r.status] ?? r.status}</p>
-			{r.status === 'PENDING' && r.rokPotvrde && (
+			<p className="rezervacija-status">{r.cekaUplatu ? 'čeka uplatu' : (STATUS[r.status] ?? r.status)}</p>
+			{r.cekaUplatu && r.rokPotvrde && (
+				<p className="napomena">
+					Rok za uplatu: {opisTrenutka(r.rokPotvrde, zona)}. Klijent plaća karticom, a ako ne plati, termin se oslobodi.
+				</p>
+			)}
+			{r.status === 'PENDING' && !r.cekaUplatu && r.rokPotvrde && (
 				<p className="napomena">Rok za potvrdu: {opisTrenutka(r.rokPotvrde, zona)}. Poslije toga zahtjev istekne.</p>
 			)}
 			{r.status === 'CONFIRMED' && !pocelo && <p className="napomena">Dolazak se upisuje kad termin počne.</p>}

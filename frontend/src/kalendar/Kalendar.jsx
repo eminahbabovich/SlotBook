@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { kalendarResursa } from '../api/termini.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
+import { Plati } from '../rezervacije/Plati.jsx'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from '../vrijeme/vrijeme.js'
 import { opisTermina, opisTrenutka, rokPonude } from '../vrijeme/opis.js'
@@ -15,6 +16,8 @@ const PORUKE = {
 }
 
 const OZNAKA = { slobodno: 'slobodno', moje: 'moje', ceka: 'čeka potvrdu', zauzeto: 'zauzeto' }
+// Moja na čekanju kod plaćenog resursa ne čeka osoblje, nego moju uplatu
+const CEKA_UPLATU = 'čeka uplatu'
 
 // 1, 21, 31 mjesto, a 2, 5, 11, 12 mjesta
 const mjesta = (broj) => `${broj} ${broj % 10 === 1 && broj % 100 !== 11 ? 'mjesto' : 'mjesta'}`
@@ -27,6 +30,7 @@ function oznaka(termin, zona) {
 	const zauzeto = termin.pun ? 'popunjeno' : 'zauzeto'
 	if (termin.stanje === 'zauzeto' && termin.upisId) return `${zauzeto}, na listi si`
 	if (termin.stanje === 'zauzeto') return zauzeto
+	if (termin.stanje === 'ceka' && termin.uplata) return CEKA_UPLATU
 	return OZNAKA[termin.stanje]
 }
 
@@ -35,7 +39,9 @@ const MOZE_REZERVISATI = ['slobodno', 'ponudjen']
 
 // Jedan dan kao lista, i na telefonu i na desktopu. Sedmica se učitava odjednom (jedan poziv),
 // a traka s danima bira koji se dan prikazuje.
-export function Kalendar({ resursId, zona }) {
+// cijenaFeninga je cijena resursa: plaćen termin se ne ponavlja i čeka uplatu, ne potvrdu.
+export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
+	const queryClient = useQueryClient()
 	// "Danas" je dan u zoni organizacije. U 00:30 po Sarajevu je za browser u Londonu još jučer.
 	// Računa se jednom, pri otvaranju: kalendar otvoren preko ponoći ostaje na istoj sedmici.
 	const [danas] = useState(() => danUZoni(new Date(), zona))
@@ -44,6 +50,8 @@ export function Kalendar({ resursId, zona }) {
 	// { termin, kljuc }: ključ nastaje kad korisnik izabere termin, jednom po namjeri
 	const [izabran, setIzabran] = useState(null)
 	const [poruka, setPoruka] = useState(null)
+	// Id upravo napravljene rezervacije koja čeka uplatu, za dugme ispod poruke
+	const [zaUplatu, setZaUplatu] = useState(null)
 	const lista = useRef(null)
 	const porukaRef = useRef(null)
 	const dani = sedmicaOd(pocetak)
@@ -60,6 +68,7 @@ export function Kalendar({ resursId, zona }) {
 		setDan(novi)
 		setIzabran(null)
 		setPoruka(null)
+		setZaUplatu(null)
 	}
 
 	function pomjeriSedmicu(smjer) {
@@ -72,6 +81,7 @@ export function Kalendar({ resursId, zona }) {
 		setDan(danUZoni(termin.pocetak, zona))
 		setIzabran({ termin, kljuc: crypto.randomUUID() })
 		setPoruka(null)
+		setZaUplatu(null)
 	}
 
 	// Fokus se vraća na termin s kojeg je potvrda otvorena, da tastatura ne krene od vrha stranice
@@ -84,7 +94,14 @@ export function Kalendar({ resursId, zona }) {
 	function promjenaListe(tekst) {
 		setIzabran(null)
 		setPoruka(tekst)
+		setZaUplatu(null)
 		porukaRef.current?.focus()
+	}
+
+	// Rok je prošao ili je već plaćena: poruka kaže zašto, a kalendar pokaže novo stanje
+	function nijeZaUplatu(tekst) {
+		promjenaListe(tekst)
+		queryClient.invalidateQueries({ queryKey: ['kalendar', resursId] })
 	}
 
 	function uspjeh(rezervacije) {
@@ -93,7 +110,11 @@ export function Kalendar({ resursId, zona }) {
 		const ceka = prva.status === 'PENDING'
 		const zadnji = nazivDana(danUZoni(rezervacije.at(-1).pocetak, zona))
 		setIzabran(null)
-		if (rezervacije.length > 1) {
+		if (ceka && cijenaFeninga > 0) {
+			// Plaćen termin se ne ponavlja (Potvrda ne nudi seriju), pa je rezervacija uvijek jedna
+			setPoruka(`Termin ${termin} čeka uplatu. Rok za uplatu: ${opisTrenutka(prva.rokPotvrde, zona)}. Poslije toga se termin oslobađa.`)
+			setZaUplatu(prva.id)
+		} else if (rezervacije.length > 1) {
 			setPoruka(
 				ceka
 					? `Zahtjev je poslan za ${rezervacije.length} termina, svake sedmice u isto vrijeme, i svaki čeka potvrdu. Prvi: ${termin}. Zadnji: ${zadnji}.`
@@ -146,7 +167,7 @@ export function Kalendar({ resursId, zona }) {
 				<Dan
 					dan={dan}
 					dani={dani}
-					kalendar={data}
+					kalendar={cijenaFeninga > 0 ? saUplatom(data) : data}
 					lista={lista}
 					naIzborDana={izaberiDan}
 					naIzborTermina={izaberiTermin}
@@ -174,6 +195,7 @@ export function Kalendar({ resursId, zona }) {
 								naOdustani={odustani}
 								naIzbor={izaberiTermin}
 								naUspjeh={uspjeh}
+								cijenaFeninga={cijenaFeninga}
 							/>
 						))
 					}
@@ -184,8 +206,15 @@ export function Kalendar({ resursId, zona }) {
 			<p role="status" className="poruka-rezervacije" ref={porukaRef} tabIndex={-1}>
 				{poruka}
 			</p>
+			{zaUplatu && <Plati rezervacijaId={zaUplatu} cijenaFeninga={cijenaFeninga} naOdbijeno={nijeZaUplatu} />}
 		</div>
 	)
+}
+
+// Moje na čekanju kod plaćenog resursa čekaju uplatu. Kalendar ne zna rok ni stanje uplate, samo da
+// je resurs plaćen, a to je dovoljno: plaćenu na čekanju osoblje ne potvrđuje.
+function saUplatom(kalendar) {
+	return { ...kalendar, termini: kalendar.termini.map((t) => (t.stanje === 'ceka' ? { ...t, uplata: true } : t)) }
 }
 
 function Dan({ dan, dani, kalendar, lista, naIzborDana, naIzborTermina, potvrda, izabran }) {

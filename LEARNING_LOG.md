@@ -358,3 +358,19 @@ Počela Faza 11, plaćanje. Razbili smo je na pet koraka. Prvi je samo cijena na
 Druga stvar koju ne bih sam primijetio: `Number('15 KM')` je `NaN`, a `JSON.stringify` od `NaN` je `null`. Backend za `null` uzima 0, pa bi pogrešno upisana cijena tiho napravila besplatan termin. Forma sad takav unos ne šalje.
 
 Stripe nalog ostavljam za sutra.
+
+## utorak, 24. novembar 2026. u 15:23
+
+Dug dan, Faza 11 od koraka 2 do 5. Plan je bio cijela faza za sat, a ispalo je cijeli dan, i to bez ručne provjere sa Stripe CLI, koja i dalje čeka mene.
+
+Stripe nalog sam napravio i dobio sandbox u Njemačkoj, jer BiH nije na listi. KM radi: prava test sesija se otvorila za 15 KM u `bam`. Rok za uplatu je 30 minuta, a ne 15 kako sam htio, jer Checkout sesija ne može trajati kraće. U commitu iz koraka 2a1 i dalje piše 15, a to ostaje, jer je već pushano.
+
+Greške redom. `currency CHAR(3)` je oborio sve testove: `found [bpchar], but expecting [varchar(255)]`, isto kao sa `SMALLINT` u Fazi 10. Nisam naučio prvi put. Pa `gson` iz stripe-java nije na classpathu za kompajliranje, samo za runtime, i `catch (JsonParseException)` se nije kompajlirao. Pa constraint iz V18, koji kaže da rezervaciju bez aktera može promijeniti samo istek. Potvrda od Stripea nema aktera. Nisam oslabio constraint, nego je akter klijent, jer je on platio.
+
+Najbolja stvar dana je test s pet istih webhookova u istom trenutku. Prva verzija je vratila novac četiri puta za ispravno plaćen termin. Uplatu sam čitao prije nego što sam zaključao rezervaciju, pa su sve niti vidjele uplatu kao otvorenu, a onda svaka sljedeća poslije lock-a mislila da je rezervacija već potvrđena "nekom drugom" uplatom. Sad se prvo zaključa rezervacija, pa se tek onda čita uplata.
+
+Kod mutacija sam opet stavio dvije u isto pokretanje i jedna je sakrila drugu. Jednom je vraćen fajl imao stari `mtime`, pa je Maven koristio izmijenjenu klasu i "pala" su mi dva testa koja nisu imala veze s ničim.
+
+U koraku 4 sam napisao komentar da bi izuzetak iz `AFTER_COMMIT` slušaoca klijentu dao 500. Mutacija je pokazala da ne bi: Spring ga sam uhvati i samo zapiše `TransactionSynchronization.afterCompletion threw exception`. Komentar je bio pogrešan, ne kod.
+
+U koraku 5 je kod nastao prije testova, pa je svaki test morao pasti na mutaciji (11 u frontendu, 2 u backendu). Za screenshotove je Playwright ruta `**/api/**` hvatala i `/src/api/statistika.js` iz Vitea, pa je aplikacija ostala prazna 30 sekundi dok nisam vidio šta se traži. Dvaput je i pomoćni fajl završio na Desktopu, van repoa, umjesto u privremenom folderu.

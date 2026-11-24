@@ -3,7 +3,9 @@ import { useEffect, useId, useRef } from 'react'
 import { ApiError } from '../api/apiFetch.js'
 import { otkazi } from '../api/rezervacije.js'
 import { porukaGreske, serverNeOdgovara } from '../forma/porukaGreske.js'
+import { feningeUKm } from '../resursi/cijena.js'
 import { opisTermina } from '../vrijeme/opis.js'
+import { placena } from './status.js'
 
 const PORUKE = {
 	serverNeOdgovara:
@@ -63,6 +65,9 @@ export function Otkazivanje({ rezervacija, naZatvori, naUspjeh }) {
 			<p id={naslov} className="potvrda-pitanje">
 				Otkazati {rezervacija.resurs}, {opisTermina(rezervacija, rezervacija.zona)}?
 			</p>
+			{placena(rezervacija) && (
+				<p className="napomena">Plaćeno je {feningeUKm(rezervacija.cijenaFeninga)} KM. Cijeli iznos se vraća na karticu.</p>
+			)}
 			{slanje.isError && (
 				<p role="alert" className="greska-forme">
 					{porukaGreske(slanje.error, PORUKE)}

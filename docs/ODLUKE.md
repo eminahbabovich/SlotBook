@@ -1081,3 +1081,13 @@ Zatvaranje otvorene Checkout sesije ide poslije commita (`@TransactionalEventLis
 Dokaz je `PaymentRefundApiTest` (8 testova): povrat kad otkaže klijent i kad otkaže osoblje, `503` i nepromijenjena rezervacija kad Stripe ne vrati novac, zatvorena sesija kod otkazivanja, odbijanja i isteka, otkazivanje koje prolazi i kad sesija ne može biti zatvorena, i povrat kod brisanja naloga. Mutacije koje izbace objavu događaja na bilo kojem od četiri mjesta, ili povrat pomjere poslije commita, obore bar jedan test.
 
 Klijent ne dobija poseban mail o povratu. Mail o otkazivanju ne zna da li je rezervacija bila plaćena. Upisano u Dodatke.
+
+## Plaćanje u frontendu (24.11.2026)
+
+Poslije rezervacije plaćenog termina kalendar ne šalje klijenta odmah na Stripe, nego pokaže poruku s rokom i dugme "Plati 15 KM". Odlazak s naše stranice na Stripe je nešto što klijent treba sam izabrati, a dugme ionako treba postojati za slučaj kad plaćanje ne uspije ili se klijent vrati bez plaćanja. Isto dugme je u Mojim rezervacijama, jer je to jedino mjesto gdje se vidi rok za uplatu kasnije.
+
+Šta čeka uplatu odlučuje backend. `GET /api/bookings/mine` sada šalje `priceCents` i `paymentDeadline`, koji postoji samo dok rezervacija čeka uplatu, a raspored providera šalje `awaitingPayment`. Mogao sam u frontendu ponoviti pravilo (PENDING i cijena veća od nule), ali onda bi isto pravilo živjelo na dva mjesta. Oba polja su nova, pa promjena ugovora nije lomljiva. U API sloju su obavezna: bez njih bi plaćena rezervacija ostala bez dugmeta, a raspored bi nudio "Potvrdi" koje backend odbija s `409`, i to bez ikakve greške.
+
+Poslije uplate Stripe vrati klijenta na `/rezervacije?uplata=uspjeh`, ali potvrdu donosi webhook, koji može stići sekundu kasnije. Zato lista na tom povratku pita server svake dvije sekunde dok ima rezervacija koje čekaju uplatu, najviše minutu. SSE za moje rezervacije bi bio tačniji, ali za jedan ekran i jednu minutu ne vrijedi još jedan tok. Ako webhook ne stigne za minutu, nešto ne radi i čekanje ne pomaže.
+
+Testovi su Vitest (moje rezervacije, kalendar, raspored, API sloj), a za backend dva nova testa u `PaymentApiTest`. Kod sam ovdje pisao prije testova, pa sam za svaki test mutacijom pokazao da može pasti: 11 mutacija u frontendu i dvije u backendu, svaka je oborila bar jedan test. Ekrane sam pogledao u Edgeu na 375 i 1280 px, ali s lažnim backendom u Playwright skripti, ne s pravim.

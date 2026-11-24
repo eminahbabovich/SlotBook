@@ -4,6 +4,7 @@ import { ApiError } from '../api/apiFetch.js'
 import { rezervisi, rezervisiSeriju } from '../api/rezervacije.js'
 import { porukaGreske, serverNeOdgovara } from '../forma/porukaGreske.js'
 import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
+import { feningeUKm } from '../resursi/cijena.js'
 import { opisTermina, rokPonude } from '../vrijeme/opis.js'
 
 const UPRAVO_ZAUZET = 'Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.'
@@ -16,7 +17,7 @@ const PORUKE = {
 
 // Potvrda ispod izabranog termina. kljuc (Idempotency-Key) je napravljen kad je termin izabran,
 // pa ga nose i dupli klik i "Pokušaj ponovo". Drugi termin je nova namjera i dobija novi ključ.
-export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini, naOdustani, naIzbor, naUspjeh }) {
+export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini, naOdustani, naIzbor, naUspjeh, cijenaFeninga = 0 }) {
 	const queryClient = useQueryClient()
 	const naslov = useId()
 	const poljeSedmica = useId()
@@ -73,13 +74,17 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 					na listi.
 				</p>
 			)}
+			{cijenaFeninga > 0 && !greska409 && (
+				<p className="napomena">Termin košta {feningeUKm(cijenaFeninga)} KM i plaća se karticom odmah poslije rezervacije.</p>
+			)}
 			{(slanje.isError || upravoZauzet) && (
 				<p role="alert" className="greska-forme">
 					{upravoZauzet ? UPRAVO_ZAUZET : porukaGreske(slanje.error, PORUKE)}
 					{nisuSlobodne && ` Nisu slobodne: ${nisuSlobodne.map((t) => nazivDana(danUZoni(t, zona))).join('; ')}.`}
 				</p>
 			)}
-			{!greska409 && (
+			{/* Serija za plaćen termin se odbija (400 za weeks): svaka sedmica bi trebala svoju uplatu */}
+			{!greska409 && cijenaFeninga === 0 && (
 				<div className="polje">
 					<label htmlFor={poljeSedmica}>Ponavljanje</label>
 					<select

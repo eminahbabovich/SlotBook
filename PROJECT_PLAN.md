@@ -426,7 +426,9 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    brisanje naloga), a otkazana, odbijena ili istekla neplaćena zatvara Checkout sesiju kod Stripea.
    Ako Stripe ne vrati novac, otkazivanje ne prolazi.
 5. **UI i kraj faze.** Dugme za plaćanje, povratak sa Checkouta, ručna provjera sa Stripe CLI,
-   README, ODLUKE, a šta nije stiglo ide u Dodatke.
+   README, ODLUKE, a šta nije stiglo ide u Dodatke. UI je gotov (24.11.2026): dugme "Plati" u
+   kalendaru i u Mojim rezervacijama, poruka i ponovno čitanje poslije povratka, napomena o povratu
+   pri otkazivanju, raspored bez "Potvrdi" za neplaćenu. Ručna provjera sa Stripe CLI još nije urađena.
 
 ## Faza 14 po koracima
 
@@ -592,6 +594,7 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 
 Otvoreno iz Faze 11:
 
+- Kalendar ne zna rok za uplatu moje rezervacije, samo da je resurs plaćen. Rok i dugme su u Mojim rezervacijama, a u kalendaru samo odmah poslije rezervacije.
 - Mail o povratu novca. Sada klijent dobija samo mail o otkazivanju, koji ne zna da li je rezervacija bila plaćena.
 - Serija za plaćen termin se odbija (`400` za `weeks`). Svaka sedmica bi trebala svoju uplatu u 30 minuta. Rješenje bi bila jedna uplata za cijelu seriju, a otkazivanje jedne sedmice onda traži djelimičan povrat.
 

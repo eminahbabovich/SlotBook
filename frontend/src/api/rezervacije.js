@@ -25,7 +25,9 @@ export async function rezervisiSeriju(resursId, pocetak, sedmica, kljuc) {
 	})
 }
 
-const POLJA_MOJE = ['id', 'resourceName', 'organizationName', 'timezone', 'startTime', 'endTime', 'status', 'cancelDeadline']
+// priceCents mora stići: bez njega plaćena rezervacija ne bi imala dugme za plaćanje, a niko ne bi znao zašto.
+// paymentDeadline je null kad rezervacija ne čeka uplatu.
+const POLJA_MOJE = ['id', 'resourceName', 'organizationName', 'timezone', 'startTime', 'endTime', 'status', 'cancelDeadline', 'priceCents']
 
 // PageResponse<MyBookingResponse>, najkasniji termin prvo (redoslijed bira backend)
 export async function mojeRezervacije(stranica) {
@@ -43,6 +45,8 @@ export async function mojeRezervacije(stranica) {
 				kraj: r.endTime,
 				status: r.status,
 				rokOtkazivanja: r.cancelDeadline,
+				cijenaFeninga: r.priceCents,
+				rokUplate: r.paymentDeadline ?? null,
 			}
 		}),
 		stranica: odgovor.page,
@@ -54,6 +58,13 @@ export async function otkazi(rezervacijaId) {
 	const putanja = `/api/bookings/${rezervacijaId}/cancel`
 	const r = await apiFetch(putanja, { metoda: 'POST' })
 	return provjeriPolja(r, ['id', 'status'], putanja)
+}
+
+// CheckoutResponse(url, expiresAt): adresa Stripe Checkout stranice. Drugi klik dok je ista sesija
+// otvorena vrati istu adresu, pa se plaća samo jednom.
+export async function platiti(rezervacijaId) {
+	const putanja = `/api/bookings/${rezervacijaId}/pay`
+	return provjeriPolja(await apiFetch(putanja, { metoda: 'POST' }), ['url'], putanja).url
 }
 
 // CheckInLinkResponse(url). Link traži samo klijent, jer je QR kod njegov dokaz dolaska.
