@@ -374,3 +374,7 @@ Kod mutacija sam opet stavio dvije u isto pokretanje i jedna je sakrila drugu. J
 U koraku 4 sam napisao komentar da bi izuzetak iz `AFTER_COMMIT` slušaoca klijentu dao 500. Mutacija je pokazala da ne bi: Spring ga sam uhvati i samo zapiše `TransactionSynchronization.afterCompletion threw exception`. Komentar je bio pogrešan, ne kod.
 
 U koraku 5 je kod nastao prije testova, pa je svaki test morao pasti na mutaciji (11 u frontendu, 2 u backendu). Za screenshotove je Playwright ruta `**/api/**` hvatala i `/src/api/statistika.js` iz Vitea, pa je aplikacija ostala prazna 30 sekundi dok nisam vidio šta se traži. Dvaput je i pomoćni fajl završio na Desktopu, van repoa, umjesto u privremenom folderu.
+
+Poslije commita sam instalirao Stripe CLI (winget, 1.55.14) i prijavio se u sandbox. Mislio sam da je jutarnja test uplata prošla, a nije: sesija za 15 KM je istekla neplaćena tačno poslije 31 minute, i u sandboxu nema nijednog payment intenta, znači forma za karticu nikad nije poslana. Bar je usput potvrđeno da Stripe stvarno zatvori sesiju na našem `expires_at`.
+
+Backend iz terminala nije htio krenuti: `Port 8080 was already in use`. Port je držao stari backend iz IntelliJ-a, pokrenut u 14:31, još s kodom od prije webhooka. Kad sam sve pokrenuo, mail za novi nalog nije stigao. To još nisam istražio.
