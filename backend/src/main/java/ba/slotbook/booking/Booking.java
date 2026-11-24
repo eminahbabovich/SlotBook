@@ -52,7 +52,7 @@ public class Booking {
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
-	// Samo za PENDING: do kada provider mora potvrditi. Poslije toga rezervacija ističe.
+	// Samo za PENDING: do kada provider mora potvrditi, ili klijent platiti. Poslije toga rezervacija ističe.
 	@Column(name = "expires_at", updatable = false)
 	private Instant expiresAt;
 
@@ -65,6 +65,10 @@ public class Booking {
 	// Mjesto u grupnom terminu, od 1 do kapaciteta resursa. Običan resurs ima samo mjesto 1.
 	@Column(nullable = false, updatable = false)
 	private int seat = 1;
+
+	// Prepisano s resursa pri rezervaciji, ne čita se s resursa, jer admin cijenu može promijeniti
+	@Column(name = "price_cents", nullable = false, updatable = false)
+	private int priceCents;
 
 	// Provider potvrđuje dok klijent otkazuje: bez ovoga oba pročitaju PENDING, oba prođu i
 	// pobijedi ko zadnji upiše, a historija ima dva prelaza iz PENDING. Sa @Version drugi padne.
@@ -98,6 +102,16 @@ public class Booking {
 	// Samo prije prvog upisa, kao serija
 	void naMjesto(int mjesto) {
 		this.seat = mjesto;
+	}
+
+	// Samo prije prvog upisa, kao serija
+	void poCijeni(int feninga) {
+		this.priceCents = feninga;
+	}
+
+	// Plaćena rezervacija je PENDING dok uplata ne stigne, bez obzira na potvrdu na resursu
+	boolean cekaUplatu() {
+		return status == BookingStatus.PENDING && priceCents > 0;
 	}
 
 	// Pravilo prelaza je u entitetu, pa ga ne može zaobići nijedan servis koji mijenja status
@@ -160,6 +174,10 @@ public class Booking {
 
 	public int getSeat() {
 		return seat;
+	}
+
+	public int getPriceCents() {
+		return priceCents;
 	}
 
 	public UUID getSeriesId() {

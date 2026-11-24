@@ -55,6 +55,7 @@ public class BookingService {
 	private final ApplicationEventPublisher objave;
 	private final Clock clock;
 	private final Duration rokZaPotvrdu;
+	private final Duration rokZaUplatu;
 	private final Duration zatvaranjePoslije;
 	private final int satiDoPodsjetnika;
 	private final Counter napravljene;
@@ -65,6 +66,7 @@ public class BookingService {
 			ResourceRepository resources, UserRepository users, SlotService slotService,
 			NotificationService notifications, ApplicationEventPublisher objave, Clock clock,
 			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu,
+			@Value("${slotbook.booking.payment-minutes}") int minutaZaUplatu,
 			@Value("${slotbook.booking.complete-after-hours}") int satiDoZatvaranja,
 			@Value("${slotbook.booking.reminder-hours}") int satiDoPodsjetnika, MeterRegistry metrike) {
 		this.bookings = bookings;
@@ -78,6 +80,7 @@ public class BookingService {
 		this.objave = objave;
 		this.clock = clock;
 		this.rokZaPotvrdu = Duration.ofHours(satiZaPotvrdu);
+		this.rokZaUplatu = Duration.ofMinutes(minutaZaUplatu);
 		this.zatvaranjePoslije = Duration.ofHours(satiDoZatvaranja);
 		this.satiDoPodsjetnika = satiDoPodsjetnika;
 		this.napravljene = Counter.builder("slotbook.bookings.created")
@@ -177,12 +180,16 @@ public class BookingService {
 	// Zauzetost na kraju čuva EXCLUDE.
 	private Booking upisi(Resource resurs, UUID clientId, TimeRange termin, int mjesto, Instant sada,
 			String idempotencyKey, UUID serija) {
-		BookingStatus status = resurs.isAutoConfirm() ? BookingStatus.CONFIRMED : BookingStatus.PENDING;
+		// Plaćen termin potvrđuje uplata, a ne provider, pa automatska potvrda tu ne važi.
+		// Rok je kratak, jer neplaćena rezervacija drži termin koji bi neko drugi platio.
+		boolean placa = resurs.getPriceCents() > 0;
+		BookingStatus status = resurs.isAutoConfirm() && !placa ? BookingStatus.CONFIRMED : BookingStatus.PENDING;
 		User klijent = users.getReferenceById(clientId);
 		Booking nova = new Booking(resurs, klijent, termin.start(), termin.end(), status, sada, idempotencyKey,
-				rokZaPotvrdu);
+				placa ? rokZaUplatu : rokZaPotvrdu);
 		nova.uSeriju(serija);
 		nova.naMjesto(mjesto);
+		nova.poCijeni(resurs.getPriceCents());
 		Booking rezervacija;
 		try {
 			rezervacija = bookings.saveAndFlush(nova);
@@ -311,7 +318,12 @@ public class BookingService {
 		UUID klijent = rezervacija.getClient().getId();
 		UUID provider = rezervacija.getResource().getProvider().getId();
 		switch (rezervacija.getStatus()) {
-			case PENDING -> javi(provider, NotificationType.BOOKING_AWAITS_CONFIRMATION, rezervacija);
+			case PENDING -> {
+				// Rezervaciju koja čeka uplatu provider ne potvrđuje, pa nema šta ni javiti
+				if (!rezervacija.cekaUplatu()) {
+					javi(provider, NotificationType.BOOKING_AWAITS_CONFIRMATION, rezervacija);
+				}
+			}
 			case CONFIRMED -> javi(klijent, NotificationType.BOOKING_CONFIRMED, rezervacija);
 			case REJECTED -> javi(klijent, NotificationType.BOOKING_REJECTED, rezervacija);
 			// Javlja se drugoj strani: kad otkaže klijent, provideru, a kad otkaže osoblje, klijentu

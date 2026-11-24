@@ -157,6 +157,37 @@ class BookingServiceTest {
 				Double.class, rezervacija.id())).isEqualTo(86400.0);
 	}
 
+	// Sala u teretani za 15 KM: i s automatskom potvrdom čeka uplatu, a rok je 15 minuta
+	// (slotbook.booking.payment-minutes), ne dan kao za potvrdu
+	@Test
+	void placenTerminCekaUplatuPetnaestMinutaIPamtiCijenuIzTrenutkaRezervacije() {
+		UUID sala = resourceService.create(citaonica, profesorica, "Sala za grupni trening", null, 60, true, 0, 1, 1500)
+				.id();
+		availabilityService.replace(sala,
+				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0))));
+
+		BookingResponse rezervacija = service.create(sala, studentica, PONEDJELJAK_09, null);
+
+		assertThat(rezervacija.status()).isEqualTo(BookingStatus.PENDING);
+		assertThat(jdbc.queryForObject("select extract(epoch from expires_at - created_at) from bookings where id = ?",
+				Double.class, rezervacija.id())).isEqualTo(900.0);
+		assertThat(jdbc.queryForObject("select price_cents from bookings where id = ?", Integer.class,
+				rezervacija.id())).isEqualTo(1500);
+	}
+
+	// Provider tu nema šta potvrditi, pa mu ne ide mail "čeka potvrdu"
+	@Test
+	void zaRezervacijuKojaCekaUplatuProviderNeDobijaObavijest() {
+		UUID sala = resourceService.create(citaonica, profesorica, "Sala za jogu", null, 60, false, 0, 1, 1000).id();
+		availabilityService.replace(sala,
+				List.of(new AvailabilityInterval(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0))));
+
+		service.create(sala, studentica, PONEDJELJAK_09, null);
+
+		assertThat(jdbc.queryForObject("select count(*) from notifications where user_id = ?", Long.class,
+				profesorica)).isZero();
+	}
+
 	@Test
 	void naAutomatskojPotvrdiNemaRokaZaPotvrdu() {
 		UUID sto = resurs("Sto br. 3", 60, true);
