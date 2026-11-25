@@ -34,7 +34,13 @@
 	--razmak-32: 32px;
 	--razmak-48: 48px;
 
-	--zaobljenje: 2px;
+	--zaobljenje: 3px;
+	--ivica-dugmeta: 3px;
+	--ivica-dugmeta: 3px;
+
+	--trajanje-brzo: 150ms;
+	--trajanje-srednje: 220ms;
+	--trajanje-karta: 300ms;
 	--red-min-visina: 48px;
 	--sirina-forme: 400px;
 

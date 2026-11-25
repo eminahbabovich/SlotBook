@@ -47,7 +47,7 @@ Prored je 1,5 za tekst (`--prored-tekst`) i 1,05 za naslove (`--prored-naslov`),
 
 ## Razmaci i oblik
 
-Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48). Red termina je visok najmanje 48 px, da se lako pogodi prstom. Zaobljenje je 2 px ili nikakvo. Sjena se ne koristi, a granice prave linije od 1 px (`--tekst` na 20 % ili puna kod naslova dana).
+Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48). Red termina je visok najmanje 48 px, da se lako pogodi prstom. Zaobljenje ima hijerarhiju: redovi i trake 0, polja i dugmad 3 px (`--zaobljenje`). Sjena se ne koristi, a granice prave linije od 1 px (`--tekst` na 20 % ili puna kod naslova dana).
 
 ## U kodu
 
@@ -57,7 +57,13 @@ Isti test provjerava i veličine teksta: tabela veličina ovdje i `tokeni.css` m
 
 ## Forme i dugmad
 
-Polje ima punu tamnu ivicu od 1 px, jer ivica polja treba kontrast 3:1, a `--linija` ga nema. Neispravno polje dobije ivicu od 3 px u boji `--greska` i tekst greške ispod, pa se razlikuje i bez boje. Oznaka je iznad polja, nikad samo placeholder. Glavno dugme je tamno (`--tekst`) sa svijetlim tekstom (`--podloga`), a dok čeka odgovor sivo (`--tekst-sporedni`) i kaže šta radi ("Prijava u toku"). Prelaz na drugi ekran (npr. "Napravi nalog" ispod prijave) je podvučen tekst, ne dugme. Greška cijele forme je tekst s debelom crvenom linijom lijevo, bez pozadine i ikone.
+Polje je lim (`--povrsina`) s punom grafitnom ivicom od 1 px, jer ivica polja treba kontrast 3:1, a `--linija` ga nema. Neispravno polje dobije ivicu od 3 px u boji `--greska` i tekst greške ispod, pa se razlikuje i bez boje. Oznaka je iznad polja, nikad samo placeholder. Zaobljenje polja i dugmeta je `--zaobljenje` (3 px), a redovi i trake su ravni.
+
+Glavno dugme je grafitna ploča (`--tekst`) sa svijetlim tekstom (`--povrsina`, 10,22:1) i donjom ivicom od uglja debljine `--ivica-dugmeta` (3 px), pa izgleda utisnuto. Na hover potamni u ugalj, a na klik se spusti za 1 px za `--trajanje-brzo` (150 ms), dok se donja ivica stanji, pa visina ostaje ista. Dok čeka odgovor, dugme je oksid (`--tekst-sporedni`) i kaže šta radi ("Prijava u toku"). Prelaz na drugi ekran (npr. "Napravi nalog" ispod prijave) je podvučen tekst, ne dugme.
+
+Greška cijele forme i greška polja imaju ikonu prekinutog kruga s uzvičnikom ispred teksta, jer su `--greska` i žar bliske boje i greška se ne smije prepoznavati samo po boji. Ikona je CSS maska u boji teksta, pa u SVG-u nema upisane boje. Greška forme ima još debelu crvenu liniju lijevo i crveni tekst (5,42:1), bez pozadine.
+
+Trajanja su `--trajanje-brzo` (150 ms, odgovor na klik), `--trajanje-srednje` (220 ms, promjena stanja) i `--trajanje-karta` (300 ms). Uz `prefers-reduced-motion` su svi prelazi i animacije 0 ms: stanje se i dalje promijeni, samo bez pokreta.
 
 Lista organizacija je kao tabla s polascima: red po organizaciji, naziv lijevo, uloga desno sitnijim sivim slovima, tanka linija (`--linija`) između redova i puna tamna linija iznad prvog. Red je visok najmanje `--red-min-visina`, cijeli je link i na hover podvlači naziv. Nema kartica ni sjene.
 

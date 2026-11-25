@@ -25,7 +25,7 @@
 	padding: 0 var(--razmak-12);
 	font: inherit;
 	color: var(--tekst);
-	background: var(--podloga);
+	background: var(--povrsina);
 	border: 1px solid var(--tekst);
 	border-radius: var(--zaobljenje);
 }
@@ -56,9 +56,30 @@
 	color: var(--greska);
 }
 
+/* Greška ima i ikonu, ne samo boju: crvena greške i žar su bliske boje. Ikona je maska,
+   pa dobija boju teksta (currentColor) i u SVG-u nema upisane boje. */
+.greska-forme,
+.greska-polja {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: var(--razmak-8);
+	align-items: start;
+}
+
+.greska-forme::before,
+.greska-polja::before {
+	content: '';
+	width: 1.25em;
+	height: 1.25em;
+	margin-top: 0.1em;
+	background: currentColor;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M12 3a9 9 0 1 1-8.6 6.3'/%3E%3Cpath d='M12 8v5.5M12 17v.5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
 .greska-forme {
 	margin: 0;
-	padding: var(--razmak-8) var(--razmak-12);
+	padding: var(--razmak-12);
+	color: var(--greska);
 	border-left: var(--razmak-4) solid var(--greska);
 }
 
@@ -68,11 +89,23 @@
 	padding: 0 var(--razmak-24);
 	font: inherit;
 	font-weight: 600;
-	color: var(--podloga);
+	color: var(--povrsina);
 	background: var(--tekst);
-	border: 1px solid var(--tekst);
+	border: 1px solid var(--tekst-na-moje);
+	border-bottom-width: var(--ivica-dugmeta);
 	border-radius: var(--zaobljenje);
 	cursor: pointer;
+	transition: transform var(--trajanje-brzo) ease-out, background-color var(--trajanje-brzo) ease-out;
+}
+
+.dugme:hover {
+	background: var(--tekst-na-moje);
+}
+
+/* Ploča se pritisne: spusti se za 1 px, a donja ivica se stanji, pa visina ostane ista */
+.dugme:active:not(:disabled) {
+	transform: translateY(1px);
+	border-bottom-width: calc(var(--ivica-dugmeta) - 1px);
 }
 
 .dugme:disabled {
