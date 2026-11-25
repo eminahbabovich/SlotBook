@@ -34,6 +34,8 @@ U Fazi 10 su došle napredne funkcije, svaka s testom i u UI-ju. Na zauzet termi
 
 Faza 11 je plaćanje preko Stripea u test modu. Resurs ima cijenu, a rezervacija plaćenog termina čeka uplatu 30 minuta. `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout stranice, a Stripe poslije javi uplatu webhookom. Webhook bez ispravnog potpisa se odbija, a isti događaj poslan dvaput ne potvrdi rezervaciju dvaput i ne vrati novac. To dokazuje i test s pet istih dostava u istom trenutku, koji je u prvoj verziji našao grešku: novac vraćen četiri puta za ispravno plaćen termin. Uplata koja stigne za već isteklu rezervaciju se vraća, kao i uplata za otkazanu rezervaciju, a ako Stripe povrat odbije, otkazivanje ne prolazi. Stripe je u testovima lažan, a pravi sandbox je otvorio sesiju za 15 KM. U frontendu rezervacija koja čeka uplatu ima dugme "Plati 15 KM" (u kalendaru odmah poslije rezervacije i u Mojim rezervacijama), a poslije povratka sa Stripea lista sama pita server dok potvrda ne stigne, najviše minutu. Raspored providera za takvu rezervaciju ne nudi "Potvrdi". Ekrani su provjereni na 375 i 1280 px, ali s lažnim backendom. Cijeli tok sam onda prošao lokalno s pravim sandboxom i Stripe CLI: uplata 15 KM karticom 4242 je preko pravog webhooka potvrdila rezervaciju, a otkazivanje je vratilo cijeli iznos (detalji u [docs/ODLUKE.md](docs/ODLUKE.md)). Na Renderu plaćanje još nije podešeno: nema `STRIPE_*` varijabli ni webhook endpointa u Stripe dashboardu.
 
+Faza 12 je počela redizajnom frontenda, prije deploya, da screenshotovi pokazuju konačan izgled. Smjer se zove "Čelik i žar": siva podloga kao lim, grafitni tekst, i jedna topla boja koja uvijek znači "tvoje". Potpis aplikacije je karta za voz: poslije rezervacije se odštampa karta s brojem rezervacije i žigom stanja, a Moje rezervacije su niz takvih karata. Backend i API nisu dirani. Prije i poslije, s brojkama i onim što nije urađeno, je u [docs/redizajn/poslije.md](docs/redizajn/poslije.md), a pravila dizajna u [docs/DIZAJN.md](docs/DIZAJN.md).
+
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |
@@ -47,12 +49,12 @@ Faza 11 je plaćanje preko Stripea u test modu. Resurs ima cijenu, a rezervacija
 | 9 | Observability i performanse | gotovo |
 | 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | gotovo |
 | 11 | Plaćanje (Stripe, test mode) | gotovo (lokalno; na Renderu nije podešeno) |
-| 12 | Deploy i prezentacija | nije počelo |
+| 12 | Deploy i prezentacija | u izradi (redizajn frontenda gotov) |
 | 13 | Završni pregled i dodaci | nije počelo |
 
 Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md), mjerenja (EXPLAIN, broj upita, k6) u [docs/PERFORMANSE.md](docs/PERFORMANSE.md), šta uraditi kad nešto ne radi i kako se vraća backup u [docs/RUNBOOK.md](docs/RUNBOOK.md), a prolaz kroz OWASP Top 10 (šta nas štiti, kojim testom i šta nije pokriveno) u [docs/SIGURNOST.md](docs/SIGURNOST.md).
 
-Backend ima 466 testova i svi prolaze (zadnje pokretanje 22.11.2026.). Frontend ima 237 Vitest testova i 8 Playwright testova (zadnje pokretanje 22.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
+Backend ima 466 testova i svi prolaze (zadnje pokretanje 22.11.2026.). Frontend ima 256 Vitest testova i 8 Playwright testova (zadnje pokretanje 25.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
 
 ## Tehnologije
 

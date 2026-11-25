@@ -24,10 +24,6 @@
 }
 
 .karta-zaglavlje {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-	gap: var(--razmak-4) var(--razmak-16);
 	font-family: var(--font-karta);
 	font-size: var(--velicina-sitno);
 }

@@ -185,7 +185,7 @@ svaki endpoint opisan u Swaggeru.
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | gotovo |
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | gotovo |
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | gotovo |
-| 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | ⏳ nije počelo |
+| 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | u izradi (redizajn gotov 25.11.2026) |
 | 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | ⏳ nije počelo |
 | 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s **tool calling**, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
 
@@ -434,10 +434,10 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
 
 ## Faza 12 po koracima
 
-1. **Redizajn frontenda** (počeo 25.11.2026). Prije deploya, da screenshotovi i GIF pokazuju konačan
+1. **Redizajn frontenda** ✅ (25.11.2026). Prije deploya, da screenshotovi i GIF pokazuju konačan
    izgled. Pravila su u `REDESIGN.md`: inventar i screenshotovi "prije", 2-3 smjera, moj izbor, pa
    tokeni, tok rezervacije, početna i ostali ekrani. Backend i API se ne diraju. Novi smjer se upisuje
-   u `docs/DIZAJN.md`.
+   u `docs/DIZAJN.md`. Stanje poslije, brojke i šta nije urađeno su u `docs/redizajn/poslije.md`.
 2. Ostali koraci (Vercel, Stripe na Renderu, demo seed, screenshotovi, GIF, README) se planiraju
    poslije redizajna.
 

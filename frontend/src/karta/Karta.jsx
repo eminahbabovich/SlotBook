@@ -9,10 +9,8 @@ export function Karta({ id, pocetak, kraj, zona, resurs, mjesto, zig, kupon, cla
 	return (
 		<Oznaka className={`karta ${className}`} aria-label={id ? `Karta ${brojKarte(id)}` : undefined}>
 			<div className="karta-glavno">
-				<p className="karta-zaglavlje">
-					<span>SlotBook</span>
-					<span>{id ? `Karta № ${brojKarte(id)}` : 'Nova karta'}</span>
-				</p>
+				{/* Bez imena aplikacije: na listi od šest karata bilo bi šest puta isto, a ime je u zaglavlju */}
+				<p className="karta-zaglavlje">{id ? `Karta № ${brojKarte(id)}` : 'Nova karta'}</p>
 				<p className="karta-dan">{nazivDana(danUZoni(pocetak, zona))}</p>
 				<p className="karta-put">
 					<time dateTime={pocetak}>{satUZoni(pocetak, zona)}</time>

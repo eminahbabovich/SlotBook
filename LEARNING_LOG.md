@@ -378,3 +378,18 @@ U koraku 5 je kod nastao prije testova, pa je svaki test morao pasti na mutaciji
 Poslije commita sam instalirao Stripe CLI (winget, 1.55.14) i prijavio se u sandbox. Mislio sam da je jutarnja test uplata prošla, a nije: sesija za 15 KM je istekla neplaćena tačno poslije 31 minute, i u sandboxu nema nijednog payment intenta, znači forma za karticu nikad nije poslana. Bar je usput potvrđeno da Stripe stvarno zatvori sesiju na našem `expires_at`.
 
 Backend iz terminala nije htio krenuti: `Port 8080 was already in use`. Port je držao stari backend iz IntelliJ-a, pokrenut u 14:31, još s kodom od prije webhooka. Kad sam sve pokrenuo, mail za novi nalog nije stigao. To još nisam istražio.
+
+## srijeda, 25. novembar 2026. u 13:47
+
+Jutro je bilo za Stripe CLI. `stripe listen --forward-to localhost:8080/api/stripe/webhook` je vratio `must specify events to forward using --events, --all-snapshot, or --all-thin`, jer je komanda bila napisana po sjećanju. Treba `--events checkout.session.completed,checkout.session.expired`. Drugo iznenađenje: `whsec_` koji listen ispiše nije isti kao onaj u `.env`, pa sam ga morao zalijepiti i ponovo pokrenuti backend. Ovaj put je mail za novi nalog stigao, uz Docker koji radi. Da je jučer Docker bio ugašen samo pretpostavljam. Uplata 15 KM karticom 4242 je potvrdila rezervaciju, a otkazivanje je vratilo novac i poslalo mail.
+
+Onda redizajn, prije deploya. Aplikacija je izgledala kao forma u lijevom uglu na krem papiru, a krem je baš ona boja s liste znakova AI dizajna. Izabrao sam "Čelik i žar" i kartu za voz kao potpis. Colorhunt i Dribbble se ne daju pročitati običnim fetchom, jer sve crta JavaScript, pa sam ih gledao kroz Edge preko Playwrighta.
+
+Najviše me iznenadila greška koju je redizajn otkrio, a nije od njega. Poslije rezervacije fokus je trebao ići na poruku "Termin je tvoj", a išao je na `body`. Poruka je imala `:empty { display: none }`, a `focus()` se zove prije nego React upiše tekst, kad je element još sakriven. Vitest je to sve vrijeme puštao, jer jsdom ne zna za CSS. Vidio sam tek kad sam u Edge-u ispisao `document.activeElement`.
+
+jsdom je zezao i na drugom mjestu: `getByRole('figure', { name: /Primjer karte/ })` ne nađe ništa, jer ne računa ime figure iz `figcaption`. Browser ga računa.
+
+E2e je prvi put pao na tekstu `Sto 4, tihi dio · Čitaonica PMF`. Red u Mojim rezervacijama je postao karta, a Vitest testove sam promijenio, e2e nisam ni pogledao. Prije toga se e2e nije htio ni pokrenuti, jer je port 5173 držao Vite proces koji je preživio gašenje taska. Moralo se tražiti ko drži port, ne pretpostaviti.
+
+Sitnica koja je pojela vrijeme: fajlovi u repou su mješavina CRLF i LF, pa zamjena teksta u `forma.css` nije našla ništa dok skripta nije pazila na kraj reda. Od toga je u `tokeni.css` ostala dupla linija `--ivica-dugmeta`, koju sam našao tek dva koraka kasnije.
+
