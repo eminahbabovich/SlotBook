@@ -51,9 +51,8 @@
 
 .tabla-naziv {
 	font-family: var(--font-naslov);
-	font-stretch: 112%;
 	font-size: var(--velicina-naslov-3);
-	font-weight: 800;
+	font-weight: 700;
 	line-height: 1.1;
 }
 

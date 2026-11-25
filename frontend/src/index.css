@@ -1,5 +1,4 @@
 /* Fontovi iz docs/DIZAJN.md, self-hostani preko Fontsource paketa. */
-@import '@fontsource-variable/anybody/standard.css';
 @import '@fontsource-variable/hanken-grotesk/wght.css';
 @import '@fontsource/ibm-plex-mono/400.css';
 @import './tokeni.css';
@@ -33,15 +32,14 @@ main {
 	padding-bottom: var(--razmak-96);
 }
 
-/* Široka teška slova. Ista porodica kao velike cifre, samo druga širina. */
+/* Naslovi: isti grotesk kao tekst, 700, blago stegnut. Hijerarhiju nosi veličina, ne širina slova. */
 h1,
 h2,
 h3 {
 	font-family: var(--font-naslov);
-	font-stretch: var(--sirina-naslov);
-	font-weight: 800;
+	font-weight: var(--tezina-naslov);
 	line-height: var(--prored-naslov);
-	letter-spacing: -0.01em;
+	letter-spacing: var(--razmak-slova-naslov);
 	text-wrap: balance;
 }
 
@@ -164,9 +162,8 @@ a:hover {
 	color: var(--tekst);
 	text-decoration: none;
 	font-family: var(--font-naslov);
-	font-stretch: 140%;
 	font-size: var(--velicina-naslov-3);
-	font-weight: 850;
+	font-weight: 700;
 	letter-spacing: -0.02em;
 }
 
@@ -177,8 +174,7 @@ a:hover {
 @media (max-width: 480px) {
 	.znak {
 		font-size: var(--velicina-vrijeme);
-		font-stretch: 120%;
-	}
+		}
 }
 
 /* Prijavljen na telefonu: tri linka i prekidač ne stanu pored znaka, pa zaglavlje ima dva reda.

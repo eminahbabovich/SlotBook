@@ -144,9 +144,8 @@
 
 .rezervacija-sat {
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-naslov-3);
-	font-weight: 800;
+	font-weight: 700;
 }
 
 .rezervacija p {

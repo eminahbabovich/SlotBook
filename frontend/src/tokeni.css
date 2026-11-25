@@ -32,8 +32,8 @@
 	--emajl-lapis: #3e6ae6;
 
 	/* Senke: tinta, ne crna, da sjena pripada istom svijetu kao tekst */
-	--sjena-boja: rgb(21 25 51 / 0.14);
-	--sjena-boja-jaka: rgb(21 25 51 / 0.24);
+	--sjena-boja: rgb(21 25 51 / 0.09);
+	--sjena-boja-jaka: rgb(21 25 51 / 0.16);
 	--sjena-noc: rgb(4 6 18 / 0.55);
 	--sjena-noc-jaka: rgb(4 6 18 / 0.75);
 	--odsjaj-dan: rgb(255 255 255 / 0.9);
@@ -61,30 +61,30 @@
 	/* Tri nivoa dubine: ploča leži, žeton stoji, karta lebdi */
 	--dubina-1: 0 1px 0 var(--odsjaj) inset, 0 1px 2px var(--sjena);
 	--dubina-2: 0 1px 0 var(--odsjaj) inset, 0 2px 4px var(--sjena), 0 8px 20px -6px var(--sjena-jaka);
-	--dubina-3: 0 1px 0 var(--odsjaj) inset, 0 4px 10px var(--sjena), 0 24px 48px -12px var(--sjena-jaka);
+	--dubina-3: 0 1px 0 var(--odsjaj) inset, 0 4px 10px var(--sjena), 0 18px 36px -14px var(--sjena-jaka);
 	--utisnuto: inset 0 2px 4px var(--sjena), inset 0 0 0 1px var(--linija);
 	--metal: linear-gradient(160deg, var(--mjed-sjaj) 0%, var(--mjed) 38%, var(--mjed-sjena) 100%);
 
 	/* Zrno: fino kucana površina mjedi, samo na podlozi i karti */
-	--zrno: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='z'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23z)'/%3E%3C/svg%3E");
+	--zrno: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='z'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .025 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23z)'/%3E%3C/svg%3E");
 
-	--font-naslov: 'Anybody Variable', sans-serif;
+	--font-naslov: 'Hanken Grotesk Variable', sans-serif;
 	--font-tekst: 'Hanken Grotesk Variable', sans-serif;
-	--font-brojevi: 'Anybody Variable', sans-serif;
+	--font-brojevi: 'Hanken Grotesk Variable', sans-serif;
 	--font-karta: 'IBM Plex Mono', monospace;
-	--sirina-naslov: 128%;
-	--sirina-brojevi: 82%;
 
 	--velicina-sitno: 14px;
 	--velicina-tekst: 16px;
 	--velicina-vrijeme: 20px;
-	--velicina-naslov-3: 25px;
-	--velicina-naslov-2: 31px;
-	--velicina-naslov-1: 44px;
-	--velicina-naslov-0: 68px;
-	--velicina-hero: clamp(76px, 9.6vw, 148px);
+	--velicina-naslov-3: 20px;
+	--velicina-naslov-2: 26px;
+	--velicina-naslov-1: 34px;
+	--velicina-naslov-0: 44px;
+	--velicina-hero: clamp(38px, 5vw, 64px);
 	--prored-tekst: 1.55;
-	--prored-naslov: 1;
+	--prored-naslov: 1.15;
+	--tezina-naslov: 700;
+	--razmak-slova-naslov: -0.02em;
 
 	--razmak-4: 4px;
 	--razmak-8: 8px;

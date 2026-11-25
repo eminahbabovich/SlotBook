@@ -27,9 +27,8 @@
 
 .zeton time {
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-vrijeme);
-	font-weight: 800;
+	font-weight: 700;
 	line-height: 1;
 }
 
@@ -124,17 +123,17 @@
 	background: var(--greska);
 }
 
-/* Glavna akcija: mjed. Jedna po ekranu. */
+/* Glavna akcija: puna mjed, bez preliva (preliv je samo karta i moj žeton). Jedna po ekranu. */
 .dugme.dugme-mjed {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	color: var(--tekst-na-moje);
 	text-decoration: none;
-	background: var(--metal);
+	background: var(--moje);
 	border: 0;
 	border-radius: var(--zaobljenje-puno);
-	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj), inset 0 -2px 0 var(--mjed-sjena);
+	box-shadow: var(--dubina-2), inset 0 1px 0 var(--odsjaj), inset 0 -2px 0 var(--mjed-sjena);
 	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz), filter var(--trajanje-brzo);
 }
 

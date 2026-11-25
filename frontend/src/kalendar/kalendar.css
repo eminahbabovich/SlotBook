@@ -93,9 +93,8 @@
 
 .dan span:nth-child(2) {
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-naslov-3);
-	font-weight: 800;
+	font-weight: 700;
 	color: var(--tekst);
 }
 
@@ -228,9 +227,8 @@
 
 .termin time {
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-vrijeme);
-	font-weight: 800;
+	font-weight: 700;
 	line-height: 1;
 	font-variant-numeric: tabular-nums;
 	/* Vrijeme se nikad ne lomi. Kad je oznaka duga (rok ponude), ona ide u više redova. */
@@ -399,11 +397,11 @@
 	gap: var(--razmak-8) var(--razmak-24);
 }
 
-/* Glavna akcija u karti je mjedena: Rezerviši je trenutak zbog kojeg je kalendar tu */
+/* Glavna akcija u karti je puna mjed, bez preliva: preliv je samo karta i moj žeton */
 .karta-nova .potvrda-dugmad .dugme {
 	color: var(--tekst-na-moje);
-	background: var(--metal);
-	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj);
+	background: var(--moje);
+	box-shadow: var(--dubina-1);
 }
 
 /* Žeton u kuponu karte u nastajanju: tu sleti žeton s ploče */
@@ -413,9 +411,8 @@
 	gap: 2px;
 	padding: var(--razmak-8) var(--razmak-12);
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-vrijeme);
-	font-weight: 800;
+	font-weight: 700;
 	line-height: 1;
 	background: var(--izdignuto);
 	border-radius: var(--zaobljenje-zeton);
@@ -424,7 +421,6 @@
 
 .kupon-zeton-oznaka {
 	font-family: var(--font-tekst);
-	font-stretch: 100%;
 	font-size: var(--velicina-sitno);
 	font-weight: 600;
 	color: var(--tekst-sporedni);

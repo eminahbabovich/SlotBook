@@ -44,7 +44,7 @@ Senke su od tinte, ne od crne (`--sjena-boja`, u noći `--sjena-noc`), i imaju t
 
 ## Fontovi
 
-**Anybody** (`@fontsource-variable/anybody`, širina 50 do 150 %, težina 100 do 900) je za naslove i velike cifre. Naslovi su široki (`--sirina-naslov`, 128 %), cifre vremena uske i visoke (`--sirina-brojevi`, 82 %, `tabular-nums`). Na landingu širina i težina slova prate kursor. **Hanken Grotesk** (`@fontsource-variable/hanken-grotesk`) je sav tekst, forme i dugmad. **IBM Plex Mono** je samo na karti (`--font-karta`), kao otisak.
+**Hanken Grotesk** (`@fontsource-variable/hanken-grotesk`, težina 100 do 900) je jedini font za naslove, tekst, cifre i dugmad (Redizajn 3, 25.11.2026). Naslovi su 700, normalne širine, s razmakom slova -0,02em (`--tezina-naslov`, `--razmak-slova-naslov`) i proredom 1,15. Cifre vremena su `tabular-nums`, pa se 08:00 i 11:00 poravnaju. Anybody s osom širine i slova koja se šire prema kursoru su izbačeni: upadali su u oči, ali nisu djelovali ozbiljno. Latin-ext (č, ć, š, đ, ž) Hanken ima u posebnom podskupu koji browser skine samo kad treba. **IBM Plex Mono** je samo na karti (`--font-karta`), kao otisak.
 
 Latin-ext (č, ć, š, đ, ž) imaju sva tri, provjereno 25.11.2026 po fajlovima `*-latin-ext-*.woff2` u paketima.
 
@@ -55,11 +55,11 @@ Veličine teksta. Osnova je 16 px, ispod 14 px se ne ide:
 | `--velicina-sitno` | `14px` | napomene, oznake stanja |
 | `--velicina-tekst` | `16px` | sav ostali tekst, dugmad, polja forme |
 | `--velicina-vrijeme` | `20px` | vrijeme na žetonu |
-| `--velicina-naslov-3` | `25px` | naslov dana, podnaslov |
-| `--velicina-naslov-2` | `31px` | naslov dijela ekrana |
-| `--velicina-naslov-1` | `44px` | naslov ekrana, jedan po ekranu |
-| `--velicina-naslov-0` | `68px` | naslovi sekcija na landingu, velike brojke na dashboardu |
-| `--velicina-hero` | `clamp(76px, 9.6vw, 148px)` | samo naslov u heru landinga |
+| `--velicina-naslov-3` | `20px` | naslov dana, podnaslov, naslov pločice |
+| `--velicina-naslov-2` | `26px` | naslov dijela ekrana |
+| `--velicina-naslov-1` | `34px` | naslov ekrana, jedan po ekranu |
+| `--velicina-naslov-0` | `44px` | naslovi sekcija na landingu, velike brojke na dashboardu |
+| `--velicina-hero` | `clamp(38px, 5vw, 64px)` | samo naslov u heru landinga |
 
 Prored je 1,55 za tekst i 1 za naslove: široka teška slova s većim proredom izgledaju kao dva odvojena reda.
 
@@ -81,7 +81,7 @@ Sve vrijednosti su u `frontend/src/tokeni.css`. Primitive su imenovane po temi (
 
 Polje je udubljeno u ploču: pozadina je `--podloga`, s unutrašnjom sjenom odozgo i ivicom od 1 px u `--tekst-sporedni`. Ivica polja treba kontrast 3:1, a sporedna boja ima 6,41:1 na dnevnoj podlozi i 5,98:1 na noćnoj izdignutoj ploči. `--linija` bi bila preslaba. Na hover ivica postane `--tekst`. Neispravno polje dobije ivicu od 3 px u boji `--greska` i tekst greške ispod, pa se razlikuje i bez boje. Oznaka je iznad polja, nikad samo placeholder. Zaobljenje polja je `--zaobljenje` (10 px).
 
-Dugme je pilula od tinte (`--tekst` s tekstom u `--podloga`, 14,31:1 danju), a noću obrnuto: svijetla pilula s tamnim tekstom. Ima sjenu `--dubina-2` i tanak svijetli rub gore, pa stoji iznad ploče. Na hover se digne za 1 px, a na klik spusti i sjena se skrati, sve za `--trajanje-brzo`. Dok čeka odgovor, blijedo je (60 %) i kaže šta radi ("Prijava u toku"). Glavna akcija ekrana je mjedena (`.dugme-mjed`, `--metal` s tekstom `--tekst-na-moje`): "Rezerviši" u karti i "Prijavi se". Jedna po ekranu. Veza na drugi ekran koja mora stajati kao dugme (Članovi i pozivnice, Novi resurs, Statistika) je pilula od površine s tankim rubom (`.veza-pilula`), da se ne miješa s akcijom. Prelaz koji je samo rečenica ("Napravi nalog" ispod prijave) ostaje podvučen tekst.
+Dugme je pilula od tinte (`--tekst` s tekstom u `--podloga`, 14,31:1 danju), a noću obrnuto: svijetla pilula s tamnim tekstom. Ima sjenu `--dubina-2` i tanak svijetli rub gore, pa stoji iznad ploče. Na hover se digne za 1 px, a na klik spusti i sjena se skrati, sve za `--trajanje-brzo`. Dok čeka odgovor, blijedo je (60 %) i kaže šta radi ("Prijava u toku"). Glavna akcija ekrana je mjedena (`.dugme-mjed`, puna `--moje` s tekstom `--tekst-na-moje`, 7,07:1 danju i 8,82:1 noću). Od Redizajna 3 dugme nema metalni preliv: preliv `--metal` je samo na karti i na mom žetonu, da mjed ostane znak za "tvoje", a ne ukras: "Rezerviši" u karti i "Prijavi se". Jedna po ekranu. Veza na drugi ekran koja mora stajati kao dugme (Članovi i pozivnice, Novi resurs, Statistika) je pilula od površine s tankim rubom (`.veza-pilula`), da se ne miješa s akcijom. Prelaz koji je samo rečenica ("Napravi nalog" ispod prijave) ostaje podvučen tekst.
 
 Greška cijele forme i greška polja imaju ikonu prekinutog kruga s uzvičnikom ispred teksta, jer se greška ne smije prepoznavati samo po boji (šipak iz emajla je blizu boje greške). Ikona je CSS maska u boji teksta, pa u SVG-u nema upisane boje. Greška forme je još i ploča s 8 % boje greške i trakom od 4 px lijevo. Poruka o uspjehu u formi je ista ploča, samo od površine i s trakom od tinte.
 
@@ -111,7 +111,7 @@ Forma koja stoji sama na ekranu (nalog, članovi, resurs, radno vrijeme, izuzeci
 
 ## Prijava i registracija
 
-Odjavljen korisnik na `/` dolazi na landing, a prijava i registracija su na svojim adresama. Obje imaju dvije ploče. Lijevo je tamna ploča, uvijek noćna i u svijetloj temi, kao noć pomjeranja sata na landingu: gore "Termin je tvoj." iz landinga (drugi red mjeden), pa rečenica šta je SlotBook i primjer karte za sutra od 10 do 11, da ne izgleda kao stara zaboravljena rezervacija. Desno je forma na izdignutoj ploči, s mjedenim dugmetom preko cijele širine. Na telefonu je prvo forma, pa tamna ploča, da se prijava vidi bez skrolanja. Na užem od 480 px ploča ima manji unutrašnji razmak, a karta nema red s mjestom, da pruga između dva vremena ostane vidljiva.
+Odjavljen korisnik na `/` dolazi na landing, a prijava i registracija su na svojim adresama. Obje imaju dvije ploče. Lijevo je tamna ploča, uvijek noćna i u svijetloj temi, kao noć pomjeranja sata na landingu: gore "Termin je tvoj." u boji teksta, bez preliva, pa rečenica šta je SlotBook i primjer karte za sutra od 10 do 11, da ne izgleda kao stara zaboravljena rezervacija. Desno je forma na izdignutoj ploči, s mjedenim dugmetom preko cijele širine. Na telefonu je prvo forma, pa tamna ploča, da se prijava vidi bez skrolanja. Na užem od 480 px ploča ima manji unutrašnji razmak, a karta nema red s mjestom, da pruga između dva vremena ostane vidljiva.
 
 Na demu (profil `demo` na backendu) je ispod forme dio "Probaj bez naloga": tri demo računa kao žetoni s emajl rubom odozdo (lapis, tirkiz, šipak), u svakom ime podebljano i uloga sitnim slovima, a ispod lozinka u `--font-karta`. Cijeli žeton je dugme. Van dema se ne vidi ništa, ni dok se učitava.
 
@@ -222,3 +222,9 @@ Prije i poslije:
 Za studenticu koja pred ispit traži sto u čitaonici, za profesora koji drži konsultacije i za osobu koja vodi salu u teretani. Niko od njih ne želi provoditi vrijeme u aplikaciji. Žele termin i da znaju da je njihov. Zato aplikacija ne požuruje i ne vara. Otkazivanje se ne skriva, nema odbrojavanja ("još samo 2 termina!") koje nije stvarno, i nema dugmeta za odbijanje koje posramljuje ("Ne, ne treba mi termin").
 
 Pristupačnost je dio poštovanja, ne dodatak: kontrast AA, sve radi tastaturom, fokus je vidljiv (tamni okvir), a čitač ekrana čita cijelu rečenicu ("utorak, 19. novembar, 08:00 do 09:00, slobodno").
+
+## Landing (Redizajn 3)
+
+Landing ima osam dijelova, svaki odgovara na jedno pitanje posjetioca. Hero: naslov "Termini za čitaonice, teretane i konsultacije", jedna rečenica, dugmad "Probaj demo" (mjed) i "Napravi organizaciju" (sporedno, obris), a desno pravi mini kalendar u okviru prozora aplikacije. Ispod je traka pilula "za koga" s emajl tačkama, pa prije i poslije (lijevo udubljena ploča s crticama, desno izdignuta s mjedenim kvačicama, pa se razlikuju i bez boje), pa "Kako radi" u tri koraka kao jedina tamna sekcija preko cijele širine. U tamnoj temi je cijela stranica noćna, pa se ta sekcija izdvaja tonom površine i linijama gore i dolje. Slijedi šest mogućnosti s ikonama crtanim rukom (`landing/Ikona.jsx`, linija 1,75 px na mreži 24), tri kartice "Na ovo se možeš osloniti" (sudar, pomjeranje sata, odvojene organizacije, bez statusnih kodova i imena testova), česta pitanja kao `<details>`, ulaz u demo, završni poziv i mala sekcija "Kako je napravljeno". Pokret: hero tekst i prozor se pojave jednom (500 i 600 ms), let žetona u demou i animacija sudara na klik. Lenis ostaje. Bez cjenovnika, citata, brojki korisnika i logotipa.
+
+Tekst na landingu je za vlasnika čitaonice i za studenta: naslov do osam riječi, opis jedna rečenica, dugme kaže šta se desi. Tehnički dokazi (409, EXCLUDE, testovi) su u README-u i `docs/`, ne na stranici.

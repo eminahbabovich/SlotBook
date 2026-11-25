@@ -33,22 +33,11 @@
 .uvod-naslov {
 	margin: 0;
 	font-family: var(--font-naslov);
-	font-stretch: 100%;
 	font-size: var(--velicina-naslov-0);
-	font-weight: 800;
-	line-height: 0.95;
-	letter-spacing: -0.02em;
+	font-weight: 700;
+	line-height: var(--prored-naslov);
+	letter-spacing: var(--razmak-slova-naslov);
 	color: var(--noc-tekst);
-}
-
-.uvod-naslov span {
-	display: block;
-}
-
-.uvod-naslov-mjed {
-	color: transparent;
-	background: linear-gradient(170deg, var(--mjed-sjaj), var(--mjed) 55%, var(--mjed-sjena));
-	background-clip: text;
 }
 
 .uvod-recenica {
@@ -92,8 +81,8 @@
 .pocetna-forma .dugme {
 	justify-self: stretch;
 	color: var(--tekst-na-moje);
-	background: var(--metal);
-	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj);
+	background: var(--moje);
+	box-shadow: var(--dubina-1);
 }
 
 /* Na uskom telefonu ploča daje karti svaki piksel, da pruga između vremena ostane vidljiva */

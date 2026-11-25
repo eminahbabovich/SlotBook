@@ -17,7 +17,7 @@ export function Uvod() {
 		<div className="uvod">
 			{/* Isti naslov kao na landingu, ovdje mali: prijava je nastavak iste priče, ne nova stranica */}
 			<p className="uvod-naslov" aria-hidden="true">
-				<span>Termin</span> <span className="uvod-naslov-mjed">je tvoj.</span>
+				Termin je tvoj.
 			</p>
 			<p className="uvod-recenica">
 				Sto u čitaonici, konsultacije, sala za trening. Termin rezervišeš za pola minute, a kad dvoje klikne u istoj sekundi, dobije ga

@@ -1,5 +1,5 @@
 /* Statistika: brojke gore, pa ploče s tabelama i mreža gužve. Svaki dio je ploča, a brojevi su u
-   uskom Anybody fontu kao vremena u kalendaru. Trake i mreža narastu jednom, kad stignu podaci. */
+   istom fontu kao vremena u kalendaru, s ciframa iste širine. Trake i mreža narastu jednom, kad stignu podaci. */
 .statistika-ploce {
 	display: grid;
 	gap: var(--razmak-24);
@@ -46,9 +46,8 @@
 .brojka dd {
 	margin: 0;
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-naslov-1);
-	font-weight: 800;
+	font-weight: 700;
 	line-height: 1;
 	font-variant-numeric: tabular-nums;
 }
@@ -61,7 +60,6 @@
 
 .brojka .brojka-opis {
 	font-family: var(--font-tekst);
-	font-stretch: 100%;
 	font-size: var(--velicina-sitno);
 	font-weight: 400;
 	line-height: 1.3;
@@ -71,8 +69,8 @@
 /* Popunjenost je glavni broj za onoga ko vodi prostor, pa je jedina na mjedi */
 .brojka-mjed {
 	color: var(--tekst-na-moje);
-	background: var(--metal);
-	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj);
+	background: var(--moje);
+	box-shadow: var(--dubina-2);
 }
 
 .brojka-mjed dt,
@@ -167,9 +165,8 @@
 
 .statistika-tabela .broj {
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-vrijeme);
-	font-weight: 800;
+	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 }
 
@@ -203,7 +200,7 @@
    redu, pa traka ne nosi značenje sama. */
 .stanje-confirmed .traka-puna,
 .stanje-completed .traka-puna {
-	background: var(--metal);
+	background: var(--moje);
 }
 
 .stanje-cancelled .traka-puna,
