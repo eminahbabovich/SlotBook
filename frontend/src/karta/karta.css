@@ -64,7 +64,7 @@
 	background-repeat: no-repeat;
 	background-position: calc(50% + var(--nx) * 80%) calc(50% + var(--ny) * 80%);
 	mix-blend-mode: soft-light;
-	opacity: 0.55;
+	opacity: var(--folija-jacina);
 }
 
 .karta-glavno {
@@ -196,7 +196,7 @@
 	}
 	to {
 		background-position: 0% 0%;
-		opacity: 0.55;
+		opacity: var(--folija-jacina);
 	}
 }
 

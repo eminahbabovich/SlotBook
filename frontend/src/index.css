@@ -58,6 +58,18 @@ h3 {
 	font-size: var(--velicina-naslov-3);
 }
 
+/* Na telefonu široki naslov od 44 px ne stane ni za "Moje rezervacije", pa se spusti za stepen */
+@media (max-width: 480px) {
+	h1,
+	h1.resurs-naslov {
+		font-size: var(--velicina-naslov-2);
+	}
+
+	h2 {
+		font-size: var(--velicina-naslov-3);
+	}
+}
+
 p {
 	text-wrap: pretty;
 }

@@ -52,6 +52,8 @@
 	--odsjaj: var(--odsjaj-dan);
 	--sjena: var(--sjena-boja);
 	--sjena-jaka: var(--sjena-boja-jaka);
+	/* Folija na karti: na tamnoj podlozi isti preliv udara jače, pa je noću slabija */
+	--folija-jacina: 0.55;
 	--linija: color-mix(in srgb, var(--tekst) 14%, transparent);
 	--linija-jaka: color-mix(in srgb, var(--tekst) 32%, transparent);
 	--sraf: color-mix(in srgb, var(--tekst) 9%, transparent);
@@ -131,6 +133,7 @@
 		--odsjaj: var(--odsjaj-noc);
 		--sjena: var(--sjena-noc);
 		--sjena-jaka: var(--sjena-noc-jaka);
+		--folija-jacina: 0.28;
 		color-scheme: dark;
 	}
 }
@@ -147,5 +150,6 @@
 	--odsjaj: var(--odsjaj-noc);
 	--sjena: var(--sjena-noc);
 	--sjena-jaka: var(--sjena-noc-jaka);
+	--folija-jacina: 0.28;
 	color-scheme: dark;
 }

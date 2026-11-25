@@ -1,11 +1,13 @@
-/* Moje rezervacije su karte (karta/karta.css), jedna ispod druge. Stanje je žig na kuponu, a uz
-   njega i oblik: na čekanju isprekidana ivica, potvrđena žig od žara, otkazana precrtano vrijeme,
-   završena rupa od kondukterskih kliješta. */
+/* Moje rezervacije su karte (karta/karta.css). Najbliži termin je velika karta koja se naginje, ostale
+   nadolazeće su u mreži, a prošle i otkazane su tiše: bez folije, bez sjene, siva traka umjesto mjedi.
+   Stanje je žig na kuponu, a uz njega i oblik: na čekanju isprekidan okvir, otkazana precrtano
+   vrijeme, završena rupa od kondukterskih kliješta. */
 .karte {
 	display: grid;
-	gap: var(--razmak-16);
-	max-width: 720px;
-	margin: 0 0 var(--razmak-32);
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr));
+	gap: var(--razmak-24);
+	align-items: start;
+	margin: 0 0 var(--razmak-48);
 	padding: 0;
 	list-style: none;
 }
@@ -14,15 +16,45 @@
 	justify-self: start;
 }
 
-.karta-pending .karta {
-	border-style: dashed;
+.karta-radnje {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0 var(--razmak-24);
 }
 
-/* Tvoje je žar, kao u kalendaru, ali samo na žigu: cijeli kupon od žara na svakoj karti bi listu
-   pretvorio u niz narandžastih traka. Ugalj na žaru ima 4,82:1. */
+.karta-radnje:empty {
+	display: none;
+}
+
+.karta-radnje > :not(.dugme-tekst) {
+	flex-basis: 100%;
+	max-width: none;
+}
+
+/* Najbliži termin: preko cijele širine (do širine karte koja se lijepo čita) i krupnija vremena */
+.karta-stavka-prva {
+	grid-column: 1 / -1;
+	max-width: 720px;
+}
+
+@media (min-width: 600px) {
+	.karta-stavka-prva .karta-put time {
+		font-size: var(--velicina-naslov-1);
+	}
+}
+
+/* Na čekanju: isprekidan mjedeni okvir oko tijela. Zarezi perforacije ga presijeku, kao na papiru. */
+.karta-pending .karta-tijelo {
+	outline: 2px dashed var(--tekst-mjed);
+	outline-offset: -2px;
+}
+
+/* Potvrđena: žig na mjedi. Cijeli kupon od mjedi na svakoj karti bi listu pretvorio u niz zlatnih traka. */
 .karta-confirmed .zig {
 	color: var(--tekst-na-moje);
-	background: var(--moje);
+	background: var(--metal);
+	border-color: var(--tekst-na-moje);
 }
 
 .karta-cancelled .karta,
@@ -31,10 +63,17 @@
 	color: var(--tekst-sporedni);
 }
 
+.karta-cancelled .zig,
+.karta-rejected .zig,
+.karta-expired .zig {
+	color: var(--greska);
+}
+
 .karta-cancelled .karta-put time,
 .karta-rejected .karta-put time,
 .karta-expired .karta-put time {
 	text-decoration: line-through;
+	text-decoration-thickness: 3px;
 }
 
 /* Rupa kroz kupon: krug u boji podloge s tamnim rubom, vidi se i bez boje */
@@ -42,16 +81,38 @@
 	background: radial-gradient(circle at 50% var(--razmak-24), var(--podloga) 0 9px, var(--tekst) 9px 10px, transparent 10px);
 }
 
-.karta-stavka .potvrda {
-	margin-top: var(--razmak-8);
-	padding-left: var(--razmak-16);
-	border-left: var(--razmak-4) solid var(--tekst);
+/* Arhiva: karta leži na stolu, ne lebdi */
+.karte-arhiva .karta {
+	filter: none;
 }
 
-/* Raspored i lista čekanja su redovi kao termin u kalendaru: limene ploče s procjepom od podloge */
+.karte-arhiva .karta-tijelo {
+	background: var(--povrsina);
+	box-shadow: inset 0 0 0 1px var(--linija);
+}
+
+.karte-arhiva .karta-tijelo::before {
+	background: var(--linija-jaka);
+}
+
+.karte-arhiva .karta-folija {
+	display: none;
+}
+
+/* Pitanje za otkazivanje u karti: traka u boji greške lijevo, jer se otkazivanje ne može vratiti */
+.karta-stavka .potvrda {
+	margin-top: var(--razmak-8);
+	padding: var(--razmak-16);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje);
+	box-shadow: inset var(--razmak-4) 0 0 var(--greska);
+}
+
+/* Raspored i lista čekanja: ploče jedna ispod druge, sa stanjem kao trakom lijevo */
 .rezervacije {
 	display: grid;
-	gap: 2px;
+	gap: var(--razmak-12);
+	max-width: 720px;
 	margin: 0 0 var(--razmak-32);
 	padding: 0;
 	list-style: none;
@@ -60,10 +121,12 @@
 .rezervacija {
 	display: grid;
 	gap: var(--razmak-4);
-	padding: var(--razmak-12) var(--razmak-16);
-	background: var(--povrsina);
-	/* Prozirna traka, da tekst stoji isto i kad red nema traku od žara (otkazana) */
+	padding: var(--razmak-16) var(--razmak-16) var(--razmak-16) var(--razmak-24);
+	background: var(--izdignuto);
+	/* Prozirna traka, da tekst stoji isto i kad red nema traku od mjedi (otkazana) */
 	border-left: var(--razmak-4) solid transparent;
+	border-radius: var(--zaobljenje-zeton);
+	box-shadow: var(--dubina-1);
 }
 
 .rezervacija time {
@@ -81,7 +144,9 @@
 
 .rezervacija-sat {
 	font-family: var(--font-brojevi);
-	font-size: var(--velicina-vrijeme);
+	font-stretch: var(--sirina-brojevi);
+	font-size: var(--velicina-naslov-3);
+	font-weight: 800;
 }
 
 .rezervacija p {
@@ -98,16 +163,16 @@
 	color: var(--tekst-sporedni);
 }
 
-/* Stanje i bez boje: potvrđena ima traku od žara lijevo, kao "tvoje" u kalendaru */
+/* Stanje i bez boje: potvrđena ima punu traku od mjedi lijevo, kao "tvoje" u kalendaru */
 .rezervacija-confirmed {
 	border-left: var(--razmak-4) solid var(--moje);
 }
 
 .rezervacija-pending {
-	border-left: var(--razmak-4) dashed var(--moje);
+	border-left: var(--razmak-4) dashed var(--tekst-mjed);
 }
 
-/* Termin s liste čekanja koji je sad moj do roka: ista traka od žara kao potvrđena rezervacija */
+/* Termin s liste čekanja koji je sad moj do roka: ista traka od mjedi kao potvrđena rezervacija */
 .upis-ponudjen {
 	border-left: var(--razmak-4) solid var(--moje);
 }
@@ -125,16 +190,38 @@
 
 .rezervacija .potvrda {
 	margin-top: var(--razmak-8);
-	padding-left: var(--razmak-16);
-	border-left: var(--razmak-4) solid var(--tekst);
+	padding: var(--razmak-16);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje);
+	box-shadow: inset var(--razmak-4) 0 0 var(--tekst);
 }
 
-/* QR kod za dolazak: tamni moduli na papiru, širok kao forma, da ga kamera lako uhvati i s telefona */
+/* QR kod za dolazak: uvijek tamni moduli na bijeloj ploči, i u tamnoj temi, jer kamera traži
+   kontrast i tihu zonu oko koda. Širok taman da ga kamera s telefona lako uhvati. */
 .qr-dolaska {
 	display: grid;
 	gap: var(--razmak-8);
-	max-width: var(--sirina-forme);
 	margin: var(--razmak-8) 0 0;
-	color: var(--tekst);
-	background: var(--podloga);
+	padding: var(--razmak-16);
+	color: var(--dan-tekst);
+	background: var(--dan-izdignuto);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: var(--dubina-2);
+}
+
+.qr-dolaska svg {
+	width: min(100%, 200px);
+}
+
+.qr-dolaska figcaption {
+	color: var(--dan-sporedni);
+}
+
+/* Na širem ekranu kod lijevo, objašnjenje desno, da karta ne naraste duplo */
+@media (min-width: 600px) {
+	.qr-dolaska {
+		grid-template-columns: 200px 1fr;
+		align-items: center;
+		gap: var(--razmak-16);
+	}
 }

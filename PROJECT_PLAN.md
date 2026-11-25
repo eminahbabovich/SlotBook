@@ -453,8 +453,8 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    Smjer je u `docs/redizajn/smjer.md`: landing za odjavljene s tri teška problema koja se mogu probati,
    žetoni umjesto redova termina, karta s folijom i nagibom, svijetla i tamna tema. Redom: landing,
    kalendar i rezervacija, dashboard, ostali ekrani, commit po ekranu, svi Vitest i e2e testovi prolaze.
-   Stanje 25.11. uveče: landing ✅ (5736fef), kalendar i rezervacija ✅ (bb19224), 266 Vitest i 8 e2e
-   prolaze. Sljedeće: Moje rezervacije (karte s folijom, QR, slika), pa dashboard, pa prijava,
+   Stanje 25.11. uveče: landing ✅ (5736fef), kalendar i rezervacija ✅ (bb19224), moje rezervacije ✅,
+   266 Vitest i 8 e2e prolaze. Sljedeće: dashboard, pa prijava,
    registracija, organizacije, nalog i stanja (prazno, greška, učitavanje), pa prelazi između ekrana.
    Prijava još prikazuje stari `Uvod` i forme imaju stari izgled polja.
 7. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (✅ 25.11.2026, rezultat u

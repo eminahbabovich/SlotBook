@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { mojeRezervacije } from '../api/rezervacije.js'
 import { Karta } from '../karta/Karta.jsx'
+import { SacuvajKartu } from '../karta/SacuvajKartu.jsx'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
@@ -83,9 +84,11 @@ export function MojeRezervacije() {
 		setPoruka(null)
 	}
 
-	const red = (r) => (
+	// vrsta: 'prva' je najbliži termin (velika karta koja se naginje), 'arhiva' su prošle i otkazane
+	const red = (r, vrsta) => (
 		<Red
 			key={r.id}
+			vrsta={vrsta}
 			rezervacija={r}
 			sada={sada}
 			otvorena={otvorena === r.id}
@@ -120,15 +123,15 @@ export function MojeRezervacije() {
 					<>
 						<h2>Nadolazeće</h2>
 						<ul className="karte" aria-label="Nadolazeće">
-							{nadolazece.map(red)}
+							{nadolazece.map((r, i) => red(r, i === 0 && stranica === 0 ? 'prva' : 'nadolazeca'))}
 						</ul>
 					</>
 				)}
 				{ostale.length > 0 && (
 					<>
 						<h2>Prošle i otkazane</h2>
-						<ul className="karte" aria-label="Prošle i otkazane">
-							{ostale.map(red)}
+						<ul className="karte karte-arhiva" aria-label="Prošle i otkazane">
+							{ostale.map((r) => red(r, 'arhiva'))}
 						</ul>
 					</>
 				)}
@@ -163,14 +166,24 @@ export function MojeRezervacije() {
 	)
 }
 
-function Red({ rezervacija: r, sada, otvorena, naOtvori, naOdbijenuUplatu, children }) {
+function Red({ rezervacija: r, vrsta, sada, otvorena, naOtvori, naOdbijenuUplatu, children }) {
 	const drziTermin = DRZE_TERMIN.includes(r.status) && Date.parse(r.pocetak) > sada
 	const rokVazi = Date.parse(r.rokOtkazivanja) >= sada
+	// Sliku ima smisla čuvati samo za potvrđen termin koji tek dolazi: s njom se ide na ulaz
+	const zaSliku = r.status === 'CONFIRMED' && Date.parse(r.kraj) > sada
 
-	return (
-		<li className={`karta-stavka karta-${r.status.toLowerCase()}`}>
-			{/* Stanje je žig na kuponu, riječima, pa se čita i bez boje */}
-			<Karta id={r.id} pocetak={r.pocetak} kraj={r.kraj} zona={r.zona} resurs={r.resurs} mjesto={r.organizacija} zig={opisStatusa(r)}>
+	const karta = (
+		// Stanje je žig na kuponu, riječima, pa se čita i bez boje
+		<Karta
+			id={r.id}
+			pocetak={r.pocetak}
+			kraj={r.kraj}
+			zona={r.zona}
+			resurs={r.resurs}
+			mjesto={r.organizacija}
+			zig={opisStatusa(r)}
+			nagib={vrsta === 'prva'}
+		>
 				{r.rokUplate && Date.parse(r.rokUplate) > sada && (
 					<>
 						<p className="napomena">Rok za uplatu: {opisTrenutka(r.rokUplate, r.zona)}. Poslije toga se termin oslobađa.</p>
@@ -178,26 +191,34 @@ function Red({ rezervacija: r, sada, otvorena, naOtvori, naOdbijenuUplatu, child
 					</>
 				)}
 				{drziTermin && rokVazi && (
-					<>
-						<p className="napomena">
-							{r.rokOtkazivanja === r.pocetak
-								? 'Otkazati možeš do početka termina.'
-								: // "do ponedjeljak" nije bosanski, a sklanjanje dana nije vrijedno koda, pa ide dvotačka
-									`Rok za otkazivanje: ${opisTrenutka(r.rokOtkazivanja, r.zona)}.`}
-						</p>
-						<button className="dugme-tekst" type="button" data-rezervacija={r.id} aria-expanded={otvorena} onClick={naOtvori}>
-							Otkaži
-						</button>
-					</>
+					<p className="napomena">
+						{r.rokOtkazivanja === r.pocetak
+							? 'Otkazati možeš do početka termina.'
+							: // "do ponedjeljak" nije bosanski, a sklanjanje dana nije vrijedno koda, pa ide dvotačka
+								`Rok za otkazivanje: ${opisTrenutka(r.rokOtkazivanja, r.zona)}.`}
+					</p>
 				)}
 				{drziTermin && !rokVazi && (
 					<p className="napomena">
 						Rok za otkazivanje je bio {opisTrenutka(r.rokOtkazivanja, r.zona)}. Ako ne možeš doći, javi se osobi koja vodi termin.
 					</p>
 				)}
-				{r.status === 'CONFIRMED' && Date.parse(r.kraj) > sada && <QrDolaska rezervacija={r} />}
-				{children}
-			</Karta>
+				{/* Radnje u jednom redu; QR kod i pitanje za otkazivanje se otvore ispod, preko cijele širine */}
+				<div className="karta-radnje">
+					{drziTermin && rokVazi && (
+						<button className="dugme-tekst" type="button" data-rezervacija={r.id} aria-expanded={otvorena} onClick={naOtvori}>
+							Otkaži
+						</button>
+					)}
+					{r.status === 'CONFIRMED' && Date.parse(r.kraj) > sada && <QrDolaska rezervacija={r} />}
+					{children}
+				</div>
+		</Karta>
+	)
+
+	return (
+		<li className={`karta-stavka karta-${r.status.toLowerCase()} karta-stavka-${vrsta}`}>
+			{zaSliku ? <SacuvajKartu id={r.id}>{karta}</SacuvajKartu> : karta}
 		</li>
 	)
 }
