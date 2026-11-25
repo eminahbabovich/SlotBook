@@ -203,12 +203,18 @@ export default function Landing() {
 
 				<footer className="napravljeno" aria-labelledby="napravljeno-naslov">
 					<h2 id="napravljeno-naslov">Kako je napravljeno</h2>
-					<p>SlotBook je studentski projekat: Spring Boot, PostgreSQL i React.</p>
-					<p>
-						Tehničke odluke, testovi i ono što još nije urađeno su na{' '}
-						<a href="https://github.com/eminahbabovich/SlotBook">GitHubu</a>, u{' '}
-						<a href="https://github.com/eminahbabovich/SlotBook#readme">README-u</a>.
-					</p>
+					<p>SlotBook je studentski projekat. Odluke, testovi i ono što još nije urađeno su opisani u README-u.</p>
+					<ul className="cipovi" aria-label="Tehnologije">
+						<li>Java i Spring Boot</li>
+						<li>PostgreSQL</li>
+						<li>React</li>
+					</ul>
+					<div className="akcije">
+						<a className="dugme dugme-sporedno" href="https://github.com/eminahbabovich/SlotBook">
+							Pogledaj kod na GitHubu
+						</a>
+						<a href="https://github.com/eminahbabovich/SlotBook#readme">Pročitaj README</a>
+					</div>
 				</footer>
 			</div>
 		</MotionConfig>
