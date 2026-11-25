@@ -1,47 +1,49 @@
 # Dizajn
 
-Izabran je smjer **Red vožnje**, 15.11.2026. Bila su tri prijedloga (druga dva su bila katalog čitaonice i šalterski listić), a uzeo sam onaj koji je preporučio AI mentor, jer je kalendar termina po prirodi red vožnje: vremena u koloni, termini kao redovi, a na telefonu lista. Implementira se u Fazi 7.
+Smjer je **Čelik i žar**, izabran 25.11.2026 za redizajn u Fazi 12. Zamijenio je smjer **Red vožnje** iz Faze 7 (15.11.2026), koji je bio čitljiv, ali bez lica: krem papir, crni tekst i linkovi umjesto dugmadi. Prijedlog s razlozima, skicama i samokritikom je u [redizajn/smjer.md](redizajn/smjer.md), a stanje prije u [redizajn/inventar-prije.md](redizajn/inventar-prije.md).
+
+Redizajn ide korak po korak (`REDESIGN.md`, sekcija 9). Boje, fontovi i veličine ispod već važe. Sekcije od "Razmaci i oblik" naniže još opisuju komponente iz Faze 7 i prepisuju se kad dođe red na svaku. Gdje tamo piše "žuta", sad je žar.
 
 Pravilo: boja, font, razmak ili zaobljenje kojeg ovdje nema ne ulazi u UI. Ako nešto zatreba, prvo se dopiše ovdje, pa tek onda u kod. Vrijednosti u kodu su CSS varijable na jednom mjestu.
 
 ## Ideja
 
-Inspiracija je tabla s polascima na stanici i tramvajski red vožnje na stajalištu. Dan je tabla, a termin je jedan red: vrijeme lijevo, tabularnim ciframa, poravnato kao polasci. Linije su jake i horizontalne, a sjena i zaobljenih kartica gotovo nema. Žuta je jedina jaka boja i znači samo jedno: ovo je tvoje, kao istaknut polazak. Izuzetaka nema, ni za fokus.
+Zenica je grad čelika i željeznički čvor: sivi lim, utisnuta slova na natpisnim pločicama mašina i vagona, kartonska karta za voz koju kondukter probuši. Podloga je hladan čelik, naslovi su široka teška slova, a rezervacija je karta. Jedina topla boja je žar i znači samo jedno: ovo je tvoje.
 
 ## Boje
 
-Kontrast je računat po WCAG formuli za relativnu luminansu. Svaki par prolazi AA za običan tekst (najmanje 4,5:1).
+Paleta je s Color Hunta ([37353e 44444e 715a5a d3dad9](https://colorhunt.co/palette/37353e44444e715a5ad3dad9) i žar iz [524646 a8a492 fcf2e5 ec5b38](https://colorhunt.co/palette/524646a8a492fcf2e5ec5b38)). Površina i tekst na žaru su izvedeni iz nje, a sporedni tekst je zatamnjen da prođe AA. Kontrast je po WCAG formuli za relativnu luminansu.
 
 | Varijabla | Hex | Uloga | Kontrast |
 |---|---|---|---|
-| `--podloga` | `#F4F1EA` | papir reda vožnje, pozadina svega | |
-| `--tekst` | `#16191D` | tekst, linije, ikone | 15,63 na podlozi |
-| `--tekst-sporedni` | `#5A6069` | datum ispod naslova, napomene | 5,62 na podlozi |
-| `--moje` | `#F2B705` | samo moja rezervacija | tekst na žutoj 9,70 |
-| `--greska` | `#B3261E` | greška i ono što se ne može vratiti | 5,79 na podlozi |
+| `--podloga` | `#D3DAD9` | čelik, pozadina svega | |
+| `--povrsina` | `#E9EDEC` | lim: polja, red termina, karta | |
+| `--tekst` | `#37353E` | grafit: tekst, linije, glavno dugme | 8,50 na podlozi, 10,22 na površini |
+| `--tekst-na-moje` | `#1F1E24` | ugalj: tekst na žaru | 4,82 na žaru |
+| `--tekst-sporedni` | `#5E4A4A` | oksid: napomene, datum ispod naslova | 5,79 na podlozi, 6,96 na površini |
+| `--moje` | `#EC5B38` | žar: samo moja rezervacija | 2,42 na podlozi, zato nikad tekst |
+| `--greska` | `#9A2A22` | greška, uvijek uz ikonu i tekst | 5,42 na podlozi |
 
-Žuta se ne koristi za dugmad, linkove ni ukras. Ako je žuto, korisnik zna da je to njegov termin.
+Žar se ne koristi za dugmad, linkove ni ukras. Glavno dugme je grafit. Greška i žar su bliske boje, pa se greška nikad ne prepoznaje samo po boji.
 
 ## Fontovi
 
-`Big Shoulders Display` je za naslove: uzak je, kao natpisi na stanici. `IBM Plex Sans` je za sav tekst, a `IBM Plex Mono` za vremena, datume i brojeve, s tabularnim ciframa, da se 08:00 i 11:00 poravnaju. Svi imaju subset `latin-ext` (č, ć, š, đ, ž), što sam provjerio preko Fontsource API-ja. Self-hostaju se preko Fontsource paketa, ne učitavaju se s Google servera.
+**Archivo** (`@fontsource-variable/archivo`, osa širine 62 do 125) je za sve osim karte. Naslovi su široki i teški (`--sirina-naslov` 125 %, težina 800), tekst normalne širine. Vremena su isti font s `tabular-nums`, pa monospace više ne treba. **IBM Plex Mono** je samo na karti (`--font-karta`), kao otisak štampača na blagajni. Big Shoulders i Plex Sans su izbačeni.
 
-U browseru je provjereno 15.11.2026, u Edgeu, na 375 i 1280 px: "Čitaonica PMF, đački termin, ž" i sva velika i mala slova č, ć, š, đ, ž crta svaki od tri fonta, a ne rezervni font iz sistema. Probna stranica svako slovo izmjeri preko canvasa dvaput, s rezervnim `monospace` i sa `serif`, pa iste širine znače da slovo dolazi iz našeg fonta. Kad sam Mono privremeno sveo na `latin` subset, a Big Shoulders na nepostojeće ime, oba su pokazala slova koja fale. Kvačice i crtu na đ sam pogledao i okom. Na Firefoxu i Safariju nisam provjerio.
+Provjereno 25.11.2026 u Edgeu: svih deset slova č, ć, š, đ, ž crta Archivo, a ne rezervni font (canvas, isto mjerenje kao u Fazi 7). Uz `tabular-nums` su "11:11" i "00:00" iste širine (104 px), a bez njega nisu (96 i 104). Plex Mono je provjeren 15.11.2026.
 
-Uski display font se ne stavlja na duge naslove i ne ide ispod 24 px, jer se na telefonu teško čita.
+Veličine teksta (skala 1,25). Osnova je 16 px, a ispod 14 px se ne ide:
 
-Veličine teksta (izabrane 15.11.2026). Osnova je 16 px, a ispod 14 px se ne ide:
+| Varijabla | Veličina | Gdje |
+|---|---|---|
+| `--velicina-sitno` | `14px` | napomene, oznake stanja |
+| `--velicina-tekst` | `16px` | sav ostali tekst, dugmad, polja forme |
+| `--velicina-vrijeme` | `20px` | vrijeme u redu termina, težina 600 |
+| `--velicina-naslov-3` | `25px` | naslov dana, podnaslov |
+| `--velicina-naslov-2` | `31px` | naslov dijela ekrana |
+| `--velicina-naslov-1` | `39px` | naslov ekrana, jedan po ekranu |
 
-| Varijabla | Veličina | Font | Gdje |
-|---|---|---|---|
-| `--velicina-sitno` | `14px` | Plex Sans | datum ispod naslova, napomene, oznake "MOJE" i "ČEKA POTVRDU" |
-| `--velicina-tekst` | `16px` | Plex Sans | sav ostali tekst, dugmad, polja forme |
-| `--velicina-vrijeme` | `18px` | Plex Mono | vrijeme u redu termina, da se po njemu traži |
-| `--velicina-naslov-3` | `24px` | Big Shoulders | naslov dana na tabli |
-| `--velicina-naslov-2` | `32px` | Big Shoulders | naslov dijela ekrana |
-| `--velicina-naslov-1` | `40px` | Big Shoulders | naslov ekrana, jedan po ekranu |
-
-Prored je 1,5 za tekst (`--prored-tekst`) i 1,1 za naslove (`--prored-naslov`), jer uski naslov s velikim proredom izgleda kao dva odvojena reda.
+Prored je 1,5 za tekst (`--prored-tekst`) i 1,05 za naslove (`--prored-naslov`), jer široka teška slova s velikim proredom izgledaju kao dva odvojena reda.
 
 ## Razmaci i oblik
 
@@ -77,7 +79,7 @@ Forma je široka najviše `--sirina-forme` (400 px), da red za email na desktopu
 
 ## Fokus
 
-Fokus je tamni okvir od 3 px u boji `--tekst`, odmaknut 2 px od elementa (`--fokus`, `--fokus-odmak`). Prvo je bio planiran žuti, ali žuta na podlozi ima kontrast 1,61:1, a WCAG traži najmanje 3:1 za okvir fokusa. Tamni ima 15,63:1 na podlozi i 9,70:1 na žutoj traci moje rezervacije, pa se vidi i tamo. Ostale kontraste iz tabele boja sam izračunao po istoj formuli i slažu se.
+Fokus je okvir od 3 px u boji `--tekst` (grafit), odmaknut 2 px od elementa (`--fokus`, `--fokus-odmak`). WCAG traži najmanje 3:1 za okvir fokusa. Grafit ima 8,50:1 na podlozi, 10,22:1 na površini i 3,51:1 na žaru, pa se vidi i na mojoj rezervaciji, iako tamo s najmanjom rezervom. Žar kao fokus ne ide: 2,42:1 na podlozi.
 
 ## Stanja termina
 

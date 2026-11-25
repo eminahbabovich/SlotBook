@@ -38,7 +38,7 @@ describe('vrijednosti iz docs/DIZAJN.md', () => {
 	test('tokeni imaju tačno boje iz tabele u DIZAJN.md, ni jednu više ni manje', () => {
 		const boje = izDizajna(jeBoja)
 
-		expect(Object.keys(boje)).toHaveLength(5)
+		expect(Object.keys(boje)).toHaveLength(7)
 		expect(izTokena(jeBoja)).toEqual(boje)
 	})
 

@@ -1,26 +1,30 @@
 /* Jedino mjesto s vrijednostima iz docs/DIZAJN.md. Komponente koriste samo ove varijable,
    a nova boja, font ili razmak se prvo dopiše u DIZAJN.md. */
 :root {
-	--podloga: #f4f1ea;
-	--tekst: #16191d;
-	--tekst-sporedni: #5a6069;
-	--moje: #f2b705;
-	--greska: #b3261e;
+	--podloga: #d3dad9;
+	--povrsina: #e9edec;
+	--tekst: #37353e;
+	--tekst-na-moje: #1f1e24;
+	--tekst-sporedni: #5e4a4a;
+	--moje: #ec5b38;
+	--greska: #9a2a22;
 
 	--linija: color-mix(in srgb, var(--tekst) 20%, transparent);
 
-	--font-naslov: 'Big Shoulders Display Variable', sans-serif;
-	--font-tekst: 'IBM Plex Sans Variable', sans-serif;
-	--font-brojevi: 'IBM Plex Mono', monospace;
+	--font-naslov: 'Archivo Variable', sans-serif;
+	--font-tekst: 'Archivo Variable', sans-serif;
+	--font-brojevi: 'Archivo Variable', sans-serif;
+	--font-karta: 'IBM Plex Mono', monospace;
+	--sirina-naslov: 125%;
 
 	--velicina-sitno: 14px;
 	--velicina-tekst: 16px;
-	--velicina-vrijeme: 18px;
-	--velicina-naslov-3: 24px;
-	--velicina-naslov-2: 32px;
-	--velicina-naslov-1: 40px;
+	--velicina-vrijeme: 20px;
+	--velicina-naslov-3: 25px;
+	--velicina-naslov-2: 31px;
+	--velicina-naslov-1: 39px;
 	--prored-tekst: 1.5;
-	--prored-naslov: 1.1;
+	--prored-naslov: 1.05;
 
 	--razmak-4: 4px;
 	--razmak-8: 8px;

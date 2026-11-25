@@ -1,6 +1,5 @@
 /* Fontovi iz docs/DIZAJN.md, self-hostani preko Fontsource paketa. */
-@import '@fontsource-variable/big-shoulders-display';
-@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource-variable/archivo/wdth.css';
 @import '@fontsource/ibm-plex-mono/400.css';
 @import './tokeni.css';
 
@@ -14,12 +13,13 @@ body {
 	line-height: var(--prored-tekst);
 }
 
-/* Uski display font ne ide ispod 24 px, zato h3 ima najmanju veličinu naslova. */
+/* Široka teška slova, kao utisnuta u lim. Ista porodica kao tekst, samo druga širina. */
 h1,
 h2,
 h3 {
 	font-family: var(--font-naslov);
-	font-weight: 700;
+	font-stretch: var(--sirina-naslov);
+	font-weight: 800;
 	line-height: var(--prored-naslov);
 }
 
@@ -70,8 +70,9 @@ h1 {
 	color: var(--tekst);
 	text-decoration: none;
 	font-family: var(--font-naslov);
+	font-stretch: var(--sirina-naslov);
 	font-size: var(--velicina-naslov-3);
-	font-weight: 700;
+	font-weight: 800;
 	text-transform: uppercase;
 }
 

@@ -104,8 +104,10 @@
 	text-decoration: line-through;
 }
 
+/* Grafit na žaru ima 3,51:1, ugalj 4,82:1 */
 .termin-moje .termin-red {
 	background: var(--moje);
+	color: var(--tekst-na-moje);
 }
 
 .termin-ceka .termin-red {
