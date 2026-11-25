@@ -18,7 +18,7 @@ for (const [ime, viewport] of Object.entries(SIRINE)) {
 	for (const tema of ['light', 'dark']) {
 		const stranica = await browser.newPage({ viewport, colorScheme: tema, deviceScaleFactor: 1 })
 		await stranica.goto('http://localhost:5173/')
-		await stranica.getByRole('heading', { name: 'Termin je tvoj.' }).waitFor()
+		await stranica.getByRole('heading', { level: 1 }).waitFor()
 		await stranica.waitForTimeout(1200)
 		const t = tema === 'light' ? 'svijetla' : 'tamna'
 		await stranica.screenshot({ path: `${izlaz}/landing-hero-${ime}-${t}.png` })
