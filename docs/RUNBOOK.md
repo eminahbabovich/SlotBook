@@ -86,7 +86,7 @@ Rezultat 22.11.2026: dump je imao 49 512 bajta i trajao je 8 s, preko mreže do 
 
 ## Deploy frontenda na Vercel
 
-Napisano 25.11.2026, prije prvog deploya. Koraci su po Vercelovoj dokumentaciji i još nisu prođeni, pa se ovdje ispravlja šta se pokaže drugačije.
+Prođeno 25.11.2026, adresa je `https://slot-book-delta.vercel.app`. Vercel je sam prepoznao Vite, a Build Command, Output Directory i Install Command ostaju na podrazumijevanim vrijednostima (prekidači isključeni). Rezultati provjera su na kraju ove sekcije.
 
 Na vercel.com: Add New, Project, pa import repozitorija `SlotBook` s GitHuba. Root Directory je `frontend`. Framework Preset prepozna Vite, Build Command ostaje `npm run build`, a Output Directory `dist`. Varijable okruženja frontend ne treba, jer adresu backenda nosi `frontend/vercel.json`. Ako Render servis ikad dobije drugu adresu, mijenja se tamo. Deploy.
 
@@ -101,9 +101,11 @@ curl.exe -i https://<projekat>.vercel.app/o/citaonica-pmf
 
 Prvi treba vratiti JSON s backenda i zaglavlje `x-request-id`, a drugi `index.html`, ne `404`. Onda prijava u browseru, pa DevTools, Network: `/api/auth/login` vraća `Set-Cookie` s refresh tokenom, a poslije osvježavanja stranice `/api/auth/refresh` vraća `200` i sesija ostaje. Na kraju kalendar u dva taba: rezervacija u jednom treba se pojaviti u drugom bez osvježavanja. Ako se ne pojavi, SSE ne prolazi kroz Vercel. Kalendar tada i dalje radi, samo se ne osvježava sam.
 
+Rezultat 25.11.2026 (curl s mog računara): `/api/status` kroz Vercel vraća JSON s `X-Render-Origin-Server: Render`, a dva ista zahtjeva imaju `X-Vercel-Cache: MISS` i različit `X-Request-Id`, znači da Vercel API ne kešira. `/o/citaonica-pmf` vraća `index.html`. Preflight vraća `Access-Control-Allow-Origin` s Vercel adresom. Prijava vraća refresh kolačić (`HttpOnly; Secure; SameSite=Strict; Path=/api/auth`), a `/api/auth/refresh` samo s tim kolačićem vraća `200`. SSE tok se otvori s `text/event-stream`, rezervacija i otkazivanje stignu kao dva `event:promjena` dok je tok otvoren, a tok je ostao otvoren punih 400 s, koliko je curl čekao. Dva taba u browseru nisam probao, samo curl. Granica pokušaja po IP-u kroz Vercel ne radi, vidi `docs/ODLUKE.md`.
+
 ## Demo na Renderu
 
-Profil `demo` na pokretanju OBRIŠE SVE iz baze i upiše demo podatke. Pali se samo na bazi koja služi samo za demo. Na Renderu: Environment, `SPRING_PROFILES_ACTIVE` = `prod,demo`, Save. Render poslije toga sam pokrene novi deploy, a u logu se vidi `Demo podaci su vraćeni na početak`. Provjera: `curl.exe https://<backend>/api/demo` vraća tri računa. Bez profila `demo` isti zahtjev vraća `404`.
+Profil `demo` na pokretanju OBRIŠE SVE iz baze i upiše demo podatke. Pali se samo na bazi koja služi samo za demo. Na Renderu: Environment, `SPRING_PROFILES_ACTIVE` = `prod,demo`, pa "Save, rebuild, and deploy" (rebuild, da sigurno bude zadnji commit s demo kodom). Render poslije toga sam pokrene novi deploy, a u logu se vidi `Demo podaci su vraćeni na početak`. Provjera: `curl.exe https://<backend>/api/demo` vraća tri računa. Bez profila `demo` isti zahtjev vraća `404`.
 
 Demo se sam vrati na početak kad je stariji od 24 sata, ili kad nekog od tri računa nema. Restart servisa ga vraća samo ako je stariji od dana. Za ručno vraćanje se u Neon SQL editoru postare računi, pa restart:
 

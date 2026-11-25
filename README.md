@@ -49,18 +49,18 @@ Faza 12 je počela redizajnom frontenda, prije deploya, da screenshotovi pokazuj
 | 9 | Observability i performanse | gotovo |
 | 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | gotovo |
 | 11 | Plaćanje (Stripe, test mode) | gotovo (lokalno; na Renderu nije podešeno) |
-| 12 | Deploy i prezentacija | u izradi (redizajn frontenda gotov) |
+| 12 | Deploy i prezentacija | u izradi (redizajn, demo i Vercel gotovi) |
 | 13 | Završni pregled i dodaci | nije počelo |
 
 Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md), mjerenja (EXPLAIN, broj upita, k6) u [docs/PERFORMANSE.md](docs/PERFORMANSE.md), šta uraditi kad nešto ne radi i kako se vraća backup u [docs/RUNBOOK.md](docs/RUNBOOK.md), a prolaz kroz OWASP Top 10 (šta nas štiti, kojim testom i šta nije pokriveno) u [docs/SIGURNOST.md](docs/SIGURNOST.md).
 
-Backend ima 505 testova i svi prolaze (zadnje pokretanje 25.11.2026.). Frontend ima 256 Vitest testova i 8 Playwright testova (zadnje pokretanje 25.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
+Backend ima 505 testova i svi prolaze (zadnje pokretanje 25.11.2026.). Frontend ima 261 Vitest test i 8 Playwright testova (zadnje pokretanje 25.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
 
 ## Tehnologije
 
 Backend je Java 21 sa Spring Bootom 4.1.2 (Hibernate 7.4), PostgreSQL 17 i Flywayom za migracije. API se dokumentira springdoc-om 3.2.0. Testovi koriste JUnit i Testcontainers, pa se vrte na pravom PostgreSQL-u u Dockeru, a ne na H2 ili na mojoj lokalnoj bazi. Pokrivenost mjeri JaCoCo, a CI na svaki push pokreće testove i gitleaks nad cijelom git historijom.
 
-Frontend je React 19 s Viteom 8, u JavaScriptu. Fontovi su self-hostani preko Fontsource paketa. Backend radi na Renderu, a baza je na Neon-u. Vercel za frontend i Cloudflare R2 za slike su planirani i još nisu podešeni.
+Frontend je React 19 s Viteom 8, u JavaScriptu. Fontovi su self-hostani preko Fontsource paketa. Frontend je na Vercelu, backend na Renderu, a baza na Neon-u. Cloudflare R2 za slike je planiran i još nije podešen.
 
 ## Pokretanje lokalno
 
@@ -127,9 +127,9 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 Backend radi na https://slotbook-dxvs.onrender.com. Za sada ima samo [`/api/status`](https://slotbook-dxvs.onrender.com/api/status), [`/actuator/health`](https://slotbook-dxvs.onrender.com/actuator/health) i [Swagger UI](https://slotbook-dxvs.onrender.com/swagger-ui/index.html). Sve ostale adrese traže prijavu i bez nje vraćaju 401, pa i one koje ne postoje.
 
-Frontend još nije na Vercelu, pa live adrese aplikacije još nema (ovdje dolazi link poslije prvog deploya). Sve je pripremljeno: `frontend/vercel.json` prosljeđuje `/api` na Render, a koraci za deploy i provjeru su u [docs/RUNBOOK.md](docs/RUNBOOK.md). Free plan na Renderu uspavljuje servis poslije 15 minuta bez saobraćaja, pa prvi zahtjev poslije pauze traje oko minutu.
+Aplikacija je na **https://slot-book-delta.vercel.app** (od 25.11.2026). Vercel `/api` prosljeđuje na Render (`frontend/vercel.json`), pa je za browser sve na jednoj adresi. Koraci za deploy i šta je poslije njega provjereno su u [docs/RUNBOOK.md](docs/RUNBOOK.md). Free plan na Renderu uspavljuje servis poslije 15 minuta bez saobraćaja. Prvi zahtjev poslije pauze je 25.11. trajao 207 sekundi, pa se demo prvi put zna učitavati par minuta.
 
-Demo se pali profilom `demo`. Na prijavi su tada tri računa (klijent, provider i admin) i ulazi se jednim klikom, bez registracije. Podaci su čitaonica i teretana s četiri sedmice rezervacija, a jednom dnevno se sami vrate na početak. Profil na pokretanju obriše cijelu bazu, pa se pali samo na bazi koja služi za demo. Zašto i kako je u [docs/ODLUKE.md](docs/ODLUKE.md). Lokalno je provjeren na praznoj bazi, na Renderu još nije uključen.
+Demo se pali profilom `demo`. Na prijavi su tada tri računa (klijent, provider i admin) i ulazi se jednim klikom, bez registracije. Podaci su čitaonica i teretana s četiri sedmice rezervacija, a jednom dnevno se sami vrate na početak. Profil na pokretanju obriše cijelu bazu, pa se pali samo na bazi koja služi za demo. Zašto i kako je u [docs/ODLUKE.md](docs/ODLUKE.md). Na Renderu je uključen od 25.11.2026. Nov nalog se na demu za sada ne može potvrditi, jer SMTP na Renderu još nije podešen, pa rade samo tri demo računa.
 
 Tok ispod je lokalni backend s profilom `demo`: ulaz kao Hana jednim klikom, sto u čitaonici, slobodan termin, rezervacija i karta, pa Moje rezervacije. Okviri su Playwright screenshotovi pojedinih koraka, složeni u GIF.
 

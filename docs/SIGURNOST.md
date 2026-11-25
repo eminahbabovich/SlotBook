@@ -54,7 +54,7 @@ Prijava ima granicu od 20 pokušaja u minuti po IP adresi, a registracija 20 na 
 
 Dokaz: `AuthRateLimitApiTest` (i da lažni `X-Forwarded-For` ne daje nove pokušaje), `LoginLockApiTest`, `RegisterApiTest.postojeciEmailDobijaIstiOdgovorAVlasnikMail`, `VrijemeOdgovoraTest`, `RefreshApiTest.ponovoPoslanStariTokenPonistavaCijeluPorodicu`, `PasswordResetApiTest`. Frontend pokazuje sat sljedećeg pokušaja iz `Retry-After` (`porukaGreske.test.js`).
 
-Nije pokriveno: reset lozinke za postojeći email je sporiji 6 do 15 ms nego za nepostojeći (mjereno kroz MockMvc), pa se mjerenjem vremena možda može saznati ko ima nalog. Produkcija broji IP iz `CF-Connecting-IP`, po Renderovom vodiču, a to na Renderu nije provjereno. Nema dvofaktorske prijave.
+Nije pokriveno: reset lozinke za postojeći email je sporiji 6 do 15 ms nego za nepostojeći (mjereno kroz MockMvc), pa se mjerenjem vremena možda može saznati ko ima nalog. Produkcija broji IP iz `CF-Connecting-IP`, po Renderovom vodiču. Kad zahtjev ide preko Vercela, tu stoji Vercelova adresa, a ne posjetiočeva, i 25.11.2026 je 30 prijava kroz Vercel u minuti prošlo bez `429` (`docs/ODLUKE.md`). Granica po IP-u na live adresi zato ne radi, štiti samo zaključavanje po emailu. Nema dvofaktorske prijave.
 
 ## A08 Software or Data Integrity Failures
 

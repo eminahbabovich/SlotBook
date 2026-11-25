@@ -443,10 +443,15 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    `DemoApiTest`, odluka u `docs/ODLUKE.md`.
 3. **Priprema za Vercel** ✅ (25.11.2026). `frontend/vercel.json` (rewrite `/api` na Render i
    `index.html` za rute), koraci za deploy, demo i varijable u `docs/RUNBOOK.md`.
-4. **Deploy (radim ja ručno):** Vercel projekat, `APP_URL` i `SPRING_PROFILES_ACTIVE=prod,demo` na
-   Renderu, Stripe varijable i webhook, SMTP, R2, uptime monitor. Poslije svakog provjera iz RUNBOOK-a.
-5. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (otvoreno pitanje u
-   `docs/ODLUKE.md`), live link i GIF toka u README, status faze.
+4. **Deploy (radim ja ručno):** (Vercel, `APP_URL` i demo ✅ 25.11.2026, `https://slot-book-delta.vercel.app`) Vercel projekat, `APP_URL` i `SPRING_PROFILES_ACTIVE=prod,demo` na
+   Renderu, Stripe varijable i webhook, R2, uptime monitor. Poslije svakog provjera iz RUNBOOK-a.
+5. **SMTP na Renderu.** Besplatan SMTP servis (npr. Brevo ili Gmail s app lozinkom), varijable
+   `MAIL_*` i `SPRING_MAIL_*` na Renderu. Provjera: nov nalog na Vercelu dobije mail za potvrdu,
+   link iz maila vodi na Vercel adresu i prijava poslije potvrde prolazi. Dok ovoga nema, nov nalog
+   se ne može potvrditi, pa na demu rade samo tri demo računa.
+6. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (✅ 25.11.2026, rezultat u
+   `docs/RUNBOOK.md` i `docs/ODLUKE.md`: granica po IP-u kroz Vercel ne radi), live link (✅) i GIF
+   toka u README, status faze.
 
 ## Faza 14 po koracima
 
@@ -608,6 +613,7 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Godina uz datum izuzetka kad nije tekuća
 - ID zahtjeva u poruci frontenda za grešku `500` ("javi nam i navedi broj ..."), backend ga već šalje u tijelu i u `X-Request-Id`
 - Manje buke u logu kod sudara: svaki `409` ostavi dvije WARN linije Hibernatea (`23P01`), 1 140 linija u jednom k6 pokretanju
+- Granica pokušaja prijave po IP-u iza Vercela: kroz Vercel `CF-Connecting-IP` nosi Vercelovu adresu, pa granica ne radi (30 prijava u minuti bez `429`, 25.11.2026). `X-Real-IP` bi radio samo kad bi Render primao zahtjeve isključivo od Vercela.
 - Metrike na produkciji: registry koji šalje brojače van (npr. OTLP prema besplatnom Grafana Cloudu), jer je `/actuator/metrics` na Renderu namjerno zatvoren
 
 Otvoreno iz Faze 11:
