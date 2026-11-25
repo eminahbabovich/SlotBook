@@ -5,6 +5,7 @@ import { promijeniVoditelja } from '../api/resursi.js'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
 import { ULOGE } from '../organizacije/upiti.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 
 const PORUKE_CLANOVI = {
 	serverNeOdgovara: 'Članovi se nisu učitali, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -31,7 +32,7 @@ export function Voditelj({ organizacija, resurs }) {
 	})
 
 	if (clanovi.isPending) {
-		return <p aria-live="polite">Učitavaju se članovi</p>
+		return <Ucitava tekst="Učitavaju se članovi" />
 	}
 	if (clanovi.isError) {
 		return <NijeUcitano poruka={porukaGreske(clanovi.error, PORUKE_CLANOVI)} ponovo={() => clanovi.refetch()} />

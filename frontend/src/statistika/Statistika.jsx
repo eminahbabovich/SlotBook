@@ -7,6 +7,7 @@ import { OrganizacijaNijeDostupna } from '../organizacije/Organizacija.jsx'
 import { useOrganizacija } from '../organizacije/upiti.js'
 import { mozeDodatiResurs } from '../raspored/vodiResurs.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { dodajMjesece, mjesecUZoni, nazivMjeseca } from '../vrijeme/vrijeme.js'
 import { CsvIzvoz } from './CsvIzvoz.jsx'
 import { Najtrazeniji, Popunjenost, PoStanju } from './Tabele.jsx'
@@ -31,7 +32,7 @@ export function Statistika() {
 	const org = useOrganizacija(slug)
 
 	if (org.isPending) {
-		return <p aria-live="polite">Učitava se organizacija</p>
+		return <Ucitava tekst="Učitava se organizacija" />
 	}
 	if (org.isError) {
 		return <NijeUcitano poruka={porukaGreske(org.error, PORUKE_ORGANIZACIJA)} ponovo={() => org.refetch()} />
@@ -69,7 +70,7 @@ function StatistikaOrganizacije({ organizacija }) {
 
 	let sadrzaj
 	if (isPending) {
-		sadrzaj = <p aria-live="polite">Učitava se statistika za {nazivMjeseca(mjesec)}</p>
+		sadrzaj = <Ucitava tekst={`Učitava se statistika za ${nazivMjeseca(mjesec)}`} />
 	} else if (isError) {
 		sadrzaj = <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />
 	} else {

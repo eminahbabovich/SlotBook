@@ -3,6 +3,7 @@ import { useSesija } from '../sesija/sesija.js'
 import { Link, useParams } from 'react-router'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { ULOGE, useOrganizacija, useResursi } from './upiti.js'
 
 const PORUKE = {
@@ -20,7 +21,7 @@ export function Organizacija() {
 	const { organizacija, isPending, isError, error, refetch } = useOrganizacija(slug)
 
 	if (isPending) {
-		return <p aria-live="polite">Učitava se organizacija</p>
+		return <Ucitava tekst="Učitava se organizacija" />
 	}
 	if (isError) {
 		return <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />
@@ -51,16 +52,16 @@ function Resursi({ organizacija }) {
 	const { korisnik } = useSesija()
 
 	if (isPending) {
-		return <p aria-live="polite">Učitavaju se resursi</p>
+		return <Ucitava tekst="Učitavaju se resursi" />
 	}
 	if (isError) {
 		return <NijeUcitano poruka={porukaGreske(error, PORUKE_RESURSI)} ponovo={() => refetch()} />
 	}
 	if (resursi.length === 0) {
 		return mozeDodatiResurs(organizacija) ? (
-			<p>Ova organizacija još nema ništa za rezervaciju. Prvi resurs, npr. salu, sto ili termin konsultacija, dodaješ preko linka Novi resurs.</p>
+			<p className="prazno">Ova organizacija još nema ništa za rezervaciju. Prvi resurs, npr. salu, sto ili termin konsultacija, dodaješ preko linka Novi resurs.</p>
 		) : (
-			<p>
+			<p className="prazno">
 				Ova organizacija još nema ništa za rezervaciju. Kad admin doda salu, sto ili termin konsultacija, pojavit će se
 				ovdje.
 			</p>

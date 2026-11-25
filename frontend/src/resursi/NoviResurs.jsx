@@ -6,6 +6,7 @@ import { OrganizacijaNijeDostupna } from '../organizacije/Organizacija.jsx'
 import { useOrganizacija } from '../organizacije/upiti.js'
 import { mozeDodatiResurs } from '../raspored/vodiResurs.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { ResursForma } from './ResursForma.jsx'
 
 // Sat je najčešći termin (čitaonica, sala), a bez roka klijent otkazuje do početka
@@ -40,7 +41,7 @@ export function NoviResurs() {
 	})
 
 	if (isPending) {
-		return <p aria-live="polite">Učitava se organizacija</p>
+		return <Ucitava tekst="Učitava se organizacija" />
 	}
 	if (isError) {
 		return <NijeUcitano poruka={porukaGreske(error, PORUKE_ORGANIZACIJA)} ponovo={() => refetch()} />

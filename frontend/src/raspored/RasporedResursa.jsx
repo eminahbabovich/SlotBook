@@ -4,6 +4,7 @@ import { OrganizacijaNijeDostupna } from '../organizacije/Organizacija.jsx'
 import { useOrganizacija, useResursi } from '../organizacije/upiti.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Raspored } from './Raspored.jsx'
 import { vodiResurs } from './vodiResurs.js'
 
@@ -20,7 +21,7 @@ export function RasporedResursa() {
 	const resursi = useResursi(org.organizacija)
 
 	if (org.isPending || (org.organizacija !== undefined && resursi.isPending)) {
-		return <p aria-live="polite">Učitava se raspored</p>
+		return <Ucitava tekst="Učitava se raspored" />
 	}
 	const greska = org.isError ? org : resursi.isError ? resursi : null
 	if (greska) {

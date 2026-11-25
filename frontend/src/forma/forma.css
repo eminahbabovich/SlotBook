@@ -114,6 +114,16 @@
 	cursor: wait;
 }
 
+/* Radnja koja se ne može vratiti (brisanje naloga, otkazivanje): ista ploča, ali u boji greške,
+   da se ne zamijeni sa "Rezerviši". Lim na grešci ima 6,52:1. Dok se šalje, siva je kao svako. */
+.dugme-opasno:not(:disabled) {
+	background: var(--greska);
+}
+
+.dugme-opasno:not(:disabled):hover {
+	background: var(--tekst-na-moje);
+}
+
 /* Dugme koje izgleda kao link: vodi na drugi ekran, ne šalje podatke. */
 .dugme-tekst {
 	min-height: var(--red-min-visina);

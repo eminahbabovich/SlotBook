@@ -21,7 +21,7 @@ export function PoStanju({ poStanju, mjesec }) {
 		<section className="statistika-dio">
 			<h2 id="po-stanju">Rezervacije po stanju</h2>
 			{ukupno === 0 ? (
-				<p>Za {mjesec} nema rezervacija.</p>
+				<p className="prazno">Za {mjesec} nema rezervacija.</p>
 			) : (
 				<>
 					<p>Ukupno {brojRezervacija(ukupno)}.</p>
@@ -34,7 +34,7 @@ export function PoStanju({ poStanju, mjesec }) {
 						</thead>
 						<tbody>
 							{redovi.map(([stanje, broj]) => (
-								<tr key={stanje}>
+								<tr key={stanje} className={`stanje-${stanje.toLowerCase()}`}>
 									<th scope="row">
 										{STATUS[stanje]}
 										<Traka udio={broj / najvise} />

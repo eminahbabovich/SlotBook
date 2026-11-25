@@ -85,7 +85,7 @@ export function BrisanjeNaloga() {
 					</button>
 				</div>
 			) : (
-				<button className="dugme" type="submit">
+				<button className="dugme dugme-opasno" type="submit">
 					Obriši nalog
 				</button>
 			)}

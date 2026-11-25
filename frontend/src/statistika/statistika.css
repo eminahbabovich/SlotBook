@@ -68,6 +68,23 @@
 	border-radius: var(--zaobljenje);
 }
 
+/* Po stanju, isto kao u kalendaru: održana i potvrđena su žar, a ono što se nije desilo (otkazana,
+   odbijena, istekla, nedolazak) je šrafura. Na čekanju ostaje grafit. Broj piše u redu, pa traka ne
+   nosi značenje sama. */
+.stanje-confirmed .traka-puna,
+.stanje-completed .traka-puna {
+	background: var(--moje);
+	box-shadow: inset 0 0 0 1px var(--tekst-na-moje);
+}
+
+.stanje-cancelled .traka-puna,
+.stanje-rejected .traka-puna,
+.stanje-expired .traka-puna,
+.stanje-no_show .traka-puna {
+	background: repeating-linear-gradient(135deg, var(--tekst) 0 2px, transparent 2px var(--razmak-4));
+	box-shadow: inset 0 0 0 1px var(--tekst);
+}
+
 /* Mjesec iznad, a ispod njega prethodni lijevo i sljedeći desno. U jednom redu bi se na
    telefonu sve troje prelomilo u po dva reda. */
 .mjesec {

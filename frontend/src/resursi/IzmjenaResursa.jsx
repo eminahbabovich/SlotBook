@@ -7,6 +7,7 @@ import { useOrganizacija, useResursi } from '../organizacije/upiti.js'
 import { vodiResurs } from '../raspored/vodiResurs.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Deaktivacija } from './Deaktivacija.jsx'
 import { ResursForma } from './ResursForma.jsx'
 import { Voditelj } from './Voditelj.jsx'
@@ -35,7 +36,7 @@ export function IzmjenaResursa() {
 	})
 
 	if (org.isPending || (org.organizacija !== undefined && resursi.isPending)) {
-		return <p aria-live="polite">Učitava se resurs</p>
+		return <Ucitava tekst="Učitava se resurs" />
 	}
 	const greska = org.isError ? org : resursi.isError ? resursi : null
 	if (greska) {

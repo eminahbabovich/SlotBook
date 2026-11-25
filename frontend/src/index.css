@@ -35,6 +35,16 @@ h3 {
 	font-size: var(--velicina-naslov-3);
 }
 
+/* Kostur dok se nešto učitava polako "diše" (kalendar i stanja/stanja.css) */
+@keyframes disanje {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0.5;
+	}
+}
+
 /* Bez pomjeranja za one koji to traže u sistemu: promjena stanja ostaje, samo bez prelaza */
 @media (prefers-reduced-motion: reduce) {
 	*,

@@ -1,7 +1,10 @@
-// Greška učitavanja: šta se nije učitalo i zašto, uz dugme za ponovni pokušaj.
+import './stanja.css'
+
+// Greška učitavanja: šta se nije učitalo i zašto, uz dugme za ponovni pokušaj. Ploča lima s
+// trakom u boji greške, da se ne izgubi na praznom ekranu.
 export function NijeUcitano({ poruka, ponovo }) {
 	return (
-		<div className="forma">
+		<div className="nije-ucitano">
 			<p role="alert" className="greska-forme">
 				{poruka}
 			</p>

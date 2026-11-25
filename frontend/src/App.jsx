@@ -76,8 +76,10 @@ function NePostoji() {
 	return (
 		<section>
 			<h1>Stranica ne postoji</h1>
-			<p>Ova adresa ne vodi nigdje u SlotBooku.</p>
-			<Link to="/">Na početak</Link>
+			<div className="prazno">
+				<p>Ova adresa ne vodi nigdje u SlotBooku. Možda je link star ili ima grešku u kucanju.</p>
+				<Link to="/">Na početak</Link>
+			</div>
 		</section>
 	)
 }

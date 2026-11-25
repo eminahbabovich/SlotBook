@@ -3,6 +3,7 @@ import { useId, useState } from 'react'
 import { adresaKalendara, linkZaKalendar, noviLinkZaKalendar, ugasiLinkZaKalendar } from '../api/nalog.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { opisTrenutka } from '../vrijeme/opis.js'
 import '../forma/forma.css'
 
@@ -44,7 +45,7 @@ export function PretplataNaKalendar() {
 
 	let sadrzaj
 	if (stanje.isPending) {
-		sadrzaj = <p aria-live="polite">Učitava se link za kalendar</p>
+		sadrzaj = <Ucitava tekst="Učitava se link za kalendar" />
 	} else if (stanje.isError) {
 		sadrzaj = <NijeUcitano poruka={porukaGreske(stanje.error, PORUKE)} ponovo={() => stanje.refetch()} />
 	} else if (token !== null) {

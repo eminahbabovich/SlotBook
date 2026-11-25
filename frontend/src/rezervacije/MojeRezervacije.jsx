@@ -5,6 +5,7 @@ import { mojeRezervacije } from '../api/rezervacije.js'
 import { Karta } from '../karta/Karta.jsx'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
 import { MojaListaCekanja } from './MojaListaCekanja.jsx'
 import { Otkazivanje } from './Otkazivanje.jsx'
@@ -97,15 +98,15 @@ export function MojeRezervacije() {
 
 	let sadrzaj
 	if (isPending) {
-		sadrzaj = <p aria-live="polite">Učitavaju se tvoje rezervacije</p>
+		sadrzaj = <Ucitava tekst="Učitavaju se tvoje rezervacije" />
 	} else if (isError) {
 		sadrzaj = <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />
 	} else if (data.rezervacije.length === 0 && stranica === 0) {
 		sadrzaj = (
-			<>
+			<div className="prazno">
 				<p>Još nemaš rezervacija. Termin biraš u kalendaru organizacije.</p>
 				<Link to="/">Tvoje organizacije</Link>
-			</>
+			</div>
 		)
 	} else {
 		// Backend šalje najkasniji termin prvo. Za nadolazeće je korisnije obrnuto: prvo ono što je najbliže.

@@ -75,7 +75,7 @@ export function Otkazivanje({ rezervacija, naZatvori, naUspjeh }) {
 			)}
 			<div className="potvrda-dugmad">
 				{!odbijeno && (
-					<button ref={dugme} className="dugme" type="button" onClick={() => slanje.mutate()} disabled={slanje.isPending}>
+					<button ref={dugme} className="dugme dugme-opasno" type="button" onClick={() => slanje.mutate()} disabled={slanje.isPending}>
 						{slanje.isPending ? 'Otkazivanje u toku' : serverNeOdgovara(slanje.error) ? 'Pokušaj ponovo' : 'Otkaži rezervaciju'}
 					</button>
 				)}

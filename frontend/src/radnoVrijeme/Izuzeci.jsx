@@ -5,6 +5,7 @@ import { izuzeciResursa, noviIzuzetak, ukloniIzuzetak } from '../api/radnoVrijem
 import { Polje } from '../forma/Polje.jsx'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { opisTrenutka } from '../vrijeme/opis.js'
 import { uTrenutakSPomakom } from '../vrijeme/vrijeme.js'
 import '../organizacije/organizacije.css'
@@ -55,11 +56,11 @@ export function Izuzeci({ resursId, zona }) {
 
 	let sadrzaj
 	if (lista.isPending) {
-		sadrzaj = <p aria-live="polite">Učitavaju se izuzeci</p>
+		sadrzaj = <Ucitava tekst="Učitavaju se izuzeci" />
 	} else if (lista.isError) {
 		sadrzaj = <NijeUcitano poruka={porukaGreske(lista.error, PORUKE_LISTA)} ponovo={() => lista.refetch()} />
 	} else if (lista.data.length === 0) {
-		sadrzaj = <p>Nema izuzetaka. Kad resurs ne radi zbog godišnjeg, praznika ili kvara, upiši to ovdje.</p>
+		sadrzaj = <p className="prazno">Nema izuzetaka. Kad resurs ne radi zbog godišnjeg, praznika ili kvara, upiši to ovdje.</p>
 	} else {
 		sadrzaj = (
 			<ul className="tabla" aria-label="Izuzeci">

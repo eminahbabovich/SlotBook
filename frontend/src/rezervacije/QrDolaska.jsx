@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { linkZaDolazak } from '../api/rezervacije.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 
 const PORUKE = {
 	serverNeOdgovara: 'QR kod se nije učitao, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -32,7 +33,7 @@ function Kod({ rezervacija }) {
 		staleTime: Infinity,
 	})
 
-	if (isPending) return <p aria-live="polite">Učitava se QR kod</p>
+	if (isPending) return <Ucitava tekst="Učitava se QR kod" />
 	if (isError) return <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />
 	return (
 		<figure className="qr-dolaska">

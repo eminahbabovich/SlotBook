@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { NovaOrganizacija } from './NovaOrganizacija.jsx'
 import { ULOGE, useMojeOrganizacije } from './upiti.js'
 import './organizacije.css'
@@ -21,11 +22,11 @@ export function Organizacije() {
 			{!korisnik.emailPotvrden && (
 				<p className="napomena-blok">Email još nije potvrđen. Link za potvrdu je poslan na {korisnik.email} poslije registracije.</p>
 			)}
-			{isPending && <p aria-live="polite">Učitavaju se tvoje organizacije</p>}
+			{isPending && <Ucitava tekst="Učitavaju se tvoje organizacije" />}
 			{isError && <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />}
 			{organizacije?.length === 0 && (
 				<>
-					<p>Još nisi član nijedne organizacije. U postojeću te poziva njen admin, a link stiže mailom. Možeš napraviti i svoju.</p>
+					<p className="prazno">Još nisi član nijedne organizacije. U postojeću te poziva njen admin, a link stiže mailom. Možeš napraviti i svoju.</p>
 					<NovaOrganizacija />
 				</>
 			)}

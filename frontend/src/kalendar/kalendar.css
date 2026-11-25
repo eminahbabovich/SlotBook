@@ -276,15 +276,6 @@
 	animation: disanje var(--trajanje-disanje) ease-in-out infinite alternate;
 }
 
-@keyframes disanje {
-	from {
-		opacity: 1;
-	}
-	to {
-		opacity: 0.5;
-	}
-}
-
 .prazan-dan,
 .izabran {
 	margin-top: var(--razmak-16);

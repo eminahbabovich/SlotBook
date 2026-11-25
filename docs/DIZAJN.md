@@ -91,6 +91,22 @@ Forma je široka najviše `--sirina-forme` (400 px), da red za email na desktopu
 
 Odjavljen korisnik na `/` dolazi na prijavu, pa je ona prvi ekran koji neko vidi. Nova ruta nije dodana. Na desktopu (od 900 px) je lijevo jedna rečenica šta je SlotBook, u fontu naslova i veličini `--velicina-naslov-1`, a ispod nje primjer karte za sutra od 10 do 11 (zato da ne izgleda kao stara zaboravljena rezervacija). Desno je forma. Na telefonu je prvo rečenica (`--velicina-naslov-3`), pa forma, a karta je ispod forme, da se prijava vidi bez skrolanja. To je odstupanje od skice u `docs/redizajn/smjer.md`, gdje je karta bila iznad forme. Registracija ima isti uvod. Na užem od 480 px kupon karte je 88 px, a vremena na karti `--velicina-vrijeme`, da se pruga između njih vidi.
 
+## Učitavanje, greška, prazno
+
+Učitavanje je na svim ekranima isto: tri prazne ploče lima koje polako "dišu" (`Ucitava`), u obliku liste koja će stići, a čitač ekrana čuje šta se učitava ("Učitavaju se tvoje rezervacije"). Kalendar ima svoj kostur od četiri ploče, jer zna kakvi su redovi. Ranije je na 20 mjesta stajao samo tekst "Učitava se...".
+
+Greška učitavanja (`NijeUcitano`) je ploča lima s trakom u boji `--greska` lijevo, ikonom i rečenicom šta se nije učitalo, i dugmetom "Pokušaj ponovo". Traka je samo na ploči, ne i na poruci unutra.
+
+Prazno stanje je isprekidan obris (`--linija`, 2 px) sa zaobljenjem karte, isti kao prazna karta u kalendaru, s rečenicom šta se može dalje i, gdje ima smisla, linkom ili dugmetom. Tako izgleda i stranica koja ne postoji.
+
+Radnja koja se ne može vratiti ("Obriši nalog", "Otkaži rezervaciju") je ista ploča kao dugme, ali u boji `--greska` (lim na grešci 6,52:1), da se ne zamijeni s glavnom radnjom. Dok se šalje, siva je kao svako dugme.
+
+Trake u statistici "po stanju" nose značenje kao kalendar: potvrđena i završena su žar s ivicom od uglja, ono što se nije desilo (otkazana, odbijena, istekla, nedolazak) je šrafura, a na čekanju grafit. Broj uvijek piše u redu, pa traka nije jedini nosilac podatka.
+
+Ikona u tabu (`public/favicon.svg`) je mala karta od grafita s kuponom od žara i perforacijom. SVG ne može čitati CSS varijable, pa su tu hex vrijednosti iz tabele boja, a `tokeni.test.js` gleda samo `src/`.
+
+Nije urađeno: polja za vrijeme (`input type=time`) i dalje pokazuju AM/PM kad je browser na engleskom. Format bira browser po svom jeziku, ne po `lang="bs"`, a zamjena drugom kontrolom bi bila promjena ponašanja, ne dizajna.
+
 ## Fokus
 
 Fokus je okvir od 3 px u boji `--tekst` (grafit), odmaknut 2 px od elementa (`--fokus`, `--fokus-odmak`). WCAG traži najmanje 3:1 za okvir fokusa. Grafit ima 8,50:1 na podlozi, 10,22:1 na površini i 3,51:1 na žaru, pa se vidi i na mojoj rezervaciji, iako tamo s najmanjom rezervom. Žar kao fokus ne ide: 2,42:1 na podlozi.

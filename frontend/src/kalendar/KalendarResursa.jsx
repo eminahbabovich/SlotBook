@@ -4,6 +4,7 @@ import { feningeUKm } from '../resursi/cijena.js'
 import { OrganizacijaNijeDostupna } from '../organizacije/Organizacija.jsx'
 import { useOrganizacija, useResursi } from '../organizacije/upiti.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Kalendar } from './Kalendar.jsx'
 import './kalendar.css'
 
@@ -19,7 +20,7 @@ export function KalendarResursa() {
 	const resursi = useResursi(org.organizacija)
 
 	if (org.isPending || (org.organizacija !== undefined && resursi.isPending)) {
-		return <p aria-live="polite">Učitava se kalendar</p>
+		return <Ucitava tekst="Učitava se kalendar" />
 	}
 	const greska = org.isError ? org : resursi.isError ? resursi : null
 	if (greska) {

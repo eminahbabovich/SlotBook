@@ -6,7 +6,8 @@ import { mkdirSync } from 'node:fs'
 import { chromium, request } from 'playwright'
 
 const API = 'http://localhost:8080'
-const MAILPIT = 'http://localhost:8025'
+// Za e2e Mailpit (8026): MAILPIT=http://localhost:8026 node e2e/screenshotovi.mjs ...
+const MAILPIT = process.env.MAILPIT ?? 'http://localhost:8025'
 const APP = 'http://localhost:5173'
 const ZONA = 'Europe/Sarajevo'
 const LOZINKA = 'tihi-dio-cetvrti-sprat'

@@ -238,7 +238,8 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 						{poruka}
 					</p>
 					{zaUplatu && <Plati rezervacijaId={zaUplatu} cijenaFeninga={cijenaFeninga} naOdbijeno={nijeZaUplatu} />}
-					{!izabran && !karta && !poruka && (
+					{/* Samo kad su termini stigli: dok se učitavaju ili kad se nisu učitali, nema šta birati */}
+					{data && !izabran && !karta && !poruka && (
 						<p className="karta-prazna">Izaberi slobodan termin, a ovdje se pojavi karta: dan, vrijeme i šta rezervišeš.</p>
 					)}
 				</div>
@@ -261,7 +262,7 @@ function Dan({ dan, dani, kalendar, cijenaFeninga, lista, naIzborDana, naIzborTe
 		const slobodniDani = dani.filter((d) => termini.some((t) => MOZE_REZERVISATI.includes(t.stanje) && danUZoni(t.pocetak, zona) === d))
 		const sljedeci = slobodniDani.find((d) => d > dan) ?? slobodniDani[0]
 		return (
-			<div className="prazan-dan">
+			<div className="prazan-dan prazno">
 				<p>Ovaj dan nema termina.</p>
 				{sljedeci ? (
 					<button className="dugme-tekst" type="button" onClick={() => naIzborDana(sljedeci)}>

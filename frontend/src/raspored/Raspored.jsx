@@ -5,6 +5,7 @@ import { promijeniStatus, rasporedResursa } from '../api/raspored.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { STATUS } from '../rezervacije/status.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
 import { danUZoni, dodajDane, nazivDana } from '../vrijeme/vrijeme.js'
 import '../kalendar/kalendar.css'
@@ -52,11 +53,11 @@ export function Raspored({ resursId, zona }) {
 
 	let sadrzaj
 	if (isPending) {
-		sadrzaj = <p aria-live="polite">Učitava se raspored za ovaj dan</p>
+		sadrzaj = <Ucitava tekst="Učitava se raspored za ovaj dan" />
 	} else if (isError) {
 		sadrzaj = <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />
 	} else if (data.length === 0) {
-		sadrzaj = <p>Za ovaj dan nema rezervacija.</p>
+		sadrzaj = <p className="prazno">Za ovaj dan nema rezervacija.</p>
 	} else {
 		sadrzaj = (
 			<ul className="rezervacije" aria-label="Rezervacije">

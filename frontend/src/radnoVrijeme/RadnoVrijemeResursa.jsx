@@ -7,6 +7,7 @@ import { useOrganizacija, useResursi } from '../organizacije/upiti.js'
 import { vodiResurs } from '../raspored/vodiResurs.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Izuzeci } from './Izuzeci.jsx'
 import { Sedmica } from './Sedmica.jsx'
 import './radnoVrijeme.css'
@@ -30,7 +31,7 @@ export function RadnoVrijemeResursa() {
 	const resursi = useResursi(org.organizacija)
 
 	if (org.isPending || (org.organizacija !== undefined && resursi.isPending)) {
-		return <p aria-live="polite">Učitava se resurs</p>
+		return <Ucitava tekst="Učitava se resurs" />
 	}
 	const greska = org.isError ? org : resursi.isError ? resursi : null
 	if (greska) {
@@ -67,7 +68,7 @@ function Pravila({ resursId }) {
 	const { data, isPending, isError, error, refetch } = useQuery({ queryKey: ['radnoVrijeme', resursId], queryFn: () => radnoVrijeme(resursId) })
 
 	if (isPending) {
-		return <p aria-live="polite">Učitava se radno vrijeme</p>
+		return <Ucitava tekst="Učitava se radno vrijeme" />
 	}
 	if (isError) {
 		return <NijeUcitano poruka={porukaGreske(error, PORUKE_PRAVILA)} ponovo={() => refetch()} />

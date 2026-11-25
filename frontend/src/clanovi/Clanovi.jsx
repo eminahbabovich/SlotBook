@@ -7,6 +7,7 @@ import { OrganizacijaNijeDostupna } from '../organizacije/Organizacija.jsx'
 import { ULOGE, useOrganizacija } from '../organizacije/upiti.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
+import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Pozivnica } from './Pozivnica.jsx'
 import '../organizacije/organizacije.css'
 
@@ -27,7 +28,7 @@ export function Clanovi() {
 	const { organizacija, isPending, isError, error, refetch } = useOrganizacija(slug)
 
 	if (isPending) {
-		return <p aria-live="polite">Učitava se organizacija</p>
+		return <Ucitava tekst="Učitava se organizacija" />
 	}
 	if (isError) {
 		return <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />
@@ -64,7 +65,7 @@ function ListaClanova({ organizacija }) {
 	})
 
 	if (isPending) {
-		return <p aria-live="polite">Učitavaju se članovi</p>
+		return <Ucitava tekst="Učitavaju se članovi" />
 	}
 	if (isError) {
 		return <NijeUcitano poruka={porukaGreske(error, PORUKE_CLANOVI)} ponovo={() => refetch()} />
