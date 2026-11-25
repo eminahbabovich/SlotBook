@@ -174,7 +174,10 @@ export default function Landing() {
 					<div className="pitanja">
 						{PITANJA.map(([pitanje, odgovor]) => (
 							<details key={pitanje}>
-								<summary>{pitanje}</summary>
+								<summary>
+									{pitanje}
+									<span className="pitanje-znak" aria-hidden="true" />
+								</summary>
 								<p>{odgovor}</p>
 							</details>
 						))}

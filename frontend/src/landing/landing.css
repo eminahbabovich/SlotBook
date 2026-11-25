@@ -539,15 +539,31 @@
 	width: min(100%, 200px);
 }
 
-/* Česta pitanja: harmonika od <details>, tastatura i čitač ekrana rade bez JavaScripta */
+/* Česta pitanja: centriran blok, svako pitanje u svojoj ploči. <details> radi i bez JavaScripta, s
+   tastaturom i čitačem ekrana. Otvoreno pitanje je izdignuto i ima mjedenu liniju lijevo. */
 .pitanja {
 	display: grid;
-	max-width: 760px;
-	border-top: 1px solid var(--linija);
+	gap: var(--razmak-12);
+	width: 100%;
+	max-width: 720px;
+	margin: 0 auto;
+	interpolate-size: allow-keywords;
 }
 
 .pitanja details {
-	border-bottom: 1px solid var(--linija);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: inset 0 0 0 1px var(--linija);
+	transition: box-shadow var(--trajanje-srednje) var(--kriva-izlaz), background-color var(--trajanje-srednje) var(--kriva-izlaz);
+}
+
+.pitanja details:hover {
+	box-shadow: inset 0 0 0 1px var(--linija-jaka), var(--dubina-1);
+}
+
+.pitanja details[open] {
+	background: var(--izdignuto);
+	box-shadow: inset 4px 0 0 var(--moje), var(--dubina-2);
 }
 
 .pitanja summary {
@@ -556,8 +572,9 @@
 	align-items: center;
 	gap: var(--razmak-16);
 	min-height: var(--red-min-visina);
-	padding: var(--razmak-16) 0;
+	padding: var(--razmak-16) var(--razmak-24);
 	font-weight: 600;
+	border-radius: inherit;
 	cursor: pointer;
 	list-style: none;
 }
@@ -566,23 +583,66 @@
 	display: none;
 }
 
-/* Plus koji se okrene u krstić kad je odgovor otvoren */
-.pitanja summary::after {
-	content: '+';
+/* Plus od dvije crte: uspravna se okrene u vodoravnu i ostane minus, a cijeli znak se zarotira */
+.pitanje-znak {
+	position: relative;
 	flex: none;
-	font-size: var(--velicina-naslov-3);
-	line-height: 1;
+	width: 28px;
+	height: 28px;
 	color: var(--tekst-sporedni);
-	transition: transform var(--trajanje-brzo) var(--kriva-izlaz);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: inset 0 0 0 1px var(--linija-jaka);
+	transition: transform var(--trajanje-srednje) var(--kriva-izlaz), background-color var(--trajanje-srednje) var(--kriva-izlaz);
 }
 
-.pitanja details[open] summary::after {
-	transform: rotate(45deg);
+.pitanje-znak::before,
+.pitanje-znak::after {
+	content: '';
+	position: absolute;
+	top: 13px;
+	left: 8px;
+	width: 12px;
+	height: 2px;
+	background: currentColor;
+	border-radius: 1px;
+	transition: transform var(--trajanje-srednje) var(--kriva-izlaz);
+}
+
+.pitanje-znak::after {
+	transform: rotate(90deg);
+}
+
+.pitanja summary:hover .pitanje-znak {
+	color: var(--tekst);
+}
+
+.pitanja details[open] .pitanje-znak {
+	color: var(--tekst-na-moje);
+	background: var(--moje);
+	box-shadow: none;
+	transform: rotate(180deg);
+}
+
+.pitanja details[open] .pitanje-znak::after {
+	transform: rotate(0deg);
+}
+
+/* Glatko otvaranje gdje browser to zna (::details-content), drugdje se odgovor samo pojavi */
+.pitanja details::details-content {
+	block-size: 0;
+	overflow: hidden;
+	transition:
+		block-size var(--trajanje-srednje) var(--kriva-izlaz),
+		content-visibility var(--trajanje-srednje) allow-discrete;
+}
+
+.pitanja details[open]::details-content {
+	block-size: auto;
 }
 
 .pitanja details p {
 	max-width: 60ch;
-	padding: 0 0 var(--razmak-16);
+	padding: 0 var(--razmak-24) var(--razmak-24);
 	color: var(--tekst-sporedni);
 	line-height: var(--prored-tekst);
 }
@@ -626,12 +686,6 @@
 	margin: 0;
 	font-size: var(--velicina-tekst);
 	color: var(--tekst);
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.pitanja summary::after {
-		transition: none;
-	}
 }
 
 /* Sudar: dvadeset žetona oko jednog termina */
