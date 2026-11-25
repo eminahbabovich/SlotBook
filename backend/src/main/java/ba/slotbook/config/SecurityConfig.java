@@ -82,6 +82,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/organizations/*").permitAll()
 						// Pretplata na kalendar: Google ili telefon povlače fajl bez prijave, pravo daje token iz linka
 						.requestMatchers(HttpMethod.GET, "/api/me/calendar.ics").permitAll()
+						// Demo računi za prijavu. Endpoint postoji samo u profilu demo, inače je odgovor 404.
+						.requestMatchers(HttpMethod.GET, "/api/demo").permitAll()
 						// Stripe nema naš token. Pravo daje potpis, provjerava ga StripeWebhookService.
 						.requestMatchers(HttpMethod.POST, "/api/stripe/webhook").permitAll()
 						.anyRequest().authenticated())

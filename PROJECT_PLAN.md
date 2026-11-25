@@ -438,8 +438,15 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    izgled. Pravila su u `REDESIGN.md`: inventar i screenshotovi "prije", 2-3 smjera, moj izbor, pa
    tokeni, tok rezervacije, početna i ostali ekrani. Backend i API se ne diraju. Novi smjer se upisuje
    u `docs/DIZAJN.md`. Stanje poslije, brojke i šta nije urađeno su u `docs/redizajn/poslije.md`.
-2. Ostali koraci (Vercel, Stripe na Renderu, demo seed, screenshotovi, GIF, README) se planiraju
-   poslije redizajna.
+2. **Demo profil** ✅ (25.11.2026). Tri računa s prijavom jednim klikom, čitaonica i teretana s
+   četiri sedmice rezervacija, vraćanje na početak kad je demo stariji od 24 sata. Testovi u
+   `DemoApiTest`, odluka u `docs/ODLUKE.md`.
+3. **Priprema za Vercel** ✅ (25.11.2026). `frontend/vercel.json` (rewrite `/api` na Render i
+   `index.html` za rute), koraci za deploy, demo i varijable u `docs/RUNBOOK.md`.
+4. **Deploy (radim ja ručno):** Vercel projekat, `APP_URL` i `SPRING_PROFILES_ACTIVE=prod,demo` na
+   Renderu, Stripe varijable i webhook, SMTP, R2, uptime monitor. Poslije svakog provjera iz RUNBOOK-a.
+5. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (otvoreno pitanje u
+   `docs/ODLUKE.md`), live link i GIF toka u README, status faze.
 
 ## Faza 14 po koracima
 

@@ -4,6 +4,7 @@ import { ApiError } from '../api/apiFetch.js'
 import { Polje } from '../forma/Polje.jsx'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
+import { DemoRacuni } from './DemoRacuni.jsx'
 import { Uvod } from './Uvod.jsx'
 
 const PORUKE = {
@@ -22,16 +23,20 @@ export function Prijava() {
 	const poPoljima = greskePoPoljima(greska)
 
 	// Poslije uspjeha ekran nestane (sesija pređe u 'prijavljen'), pa se salje ne vraća.
-	async function posalji(dogadjaj) {
-		dogadjaj.preventDefault()
+	async function prijaviSe(adresa, sifra) {
 		setSalje(true)
 		setGreska(null)
 		try {
-			await prijavi(email, lozinka)
+			await prijavi(adresa, sifra)
 		} catch (g) {
 			setGreska(g)
 			setSalje(false)
 		}
+	}
+
+	function posalji(dogadjaj) {
+		dogadjaj.preventDefault()
+		prijaviSe(email, lozinka)
 	}
 
 	// noValidate: provjeru radi backend, pa su poruke na bosanskom i na jednom mjestu,
@@ -72,6 +77,7 @@ export function Prijava() {
 					Prvi put ovdje:{' '}
 					<Link to="/registracija" state={lokacija.state}>Napravi nalog</Link>
 				</p>
+				<DemoRacuni prijaviKao={prijaviSe} salje={salje} />
 			</div>
 		</section>
 	)

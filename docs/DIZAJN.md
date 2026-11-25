@@ -91,6 +91,8 @@ Forma je široka najviše `--sirina-forme` (400 px), da red za email na desktopu
 
 Odjavljen korisnik na `/` dolazi na prijavu, pa je ona prvi ekran koji neko vidi. Nova ruta nije dodana. Na desktopu (od 900 px) je lijevo jedna rečenica šta je SlotBook, u fontu naslova i veličini `--velicina-naslov-1`, a ispod nje primjer karte za sutra od 10 do 11 (zato da ne izgleda kao stara zaboravljena rezervacija). Desno je forma. Na telefonu je prvo rečenica (`--velicina-naslov-3`), pa forma, a karta je ispod forme, da se prijava vidi bez skrolanja. To je odstupanje od skice u `docs/redizajn/smjer.md`, gdje je karta bila iznad forme. Registracija ima isti uvod. Na užem od 480 px kupon karte je 88 px, a vremena na karti `--velicina-vrijeme`, da se pruga između njih vidi.
 
+Na demu (profil `demo` na backendu) je ispod forme dio "Probaj bez naloga": tri demo računa kao ploče iste vrste kao termini u kalendaru (lim, procjep od 2 px, cijeli red je dugme), u svakoj ime podebljano i uloga sitnim slovima, a ispod lozinka u `--font-karta`. Širok je kao forma. Van dema se ne vidi ništa, ni dok se učitava.
+
 ## Učitavanje, greška, prazno
 
 Učitavanje je na svim ekranima isto: tri prazne ploče lima koje polako "dišu" (`Ucitava`), u obliku liste koja će stići, a čitač ekrana čuje šta se učitava ("Učitavaju se tvoje rezervacije"). Kalendar ima svoj kostur od četiri ploče, jer zna kakvi su redovi. Ranije je na 20 mjesta stajao samo tekst "Učitava se...".

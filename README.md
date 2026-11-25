@@ -54,7 +54,7 @@ Faza 12 je počela redizajnom frontenda, prije deploya, da screenshotovi pokazuj
 
 Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md), mjerenja (EXPLAIN, broj upita, k6) u [docs/PERFORMANSE.md](docs/PERFORMANSE.md), šta uraditi kad nešto ne radi i kako se vraća backup u [docs/RUNBOOK.md](docs/RUNBOOK.md), a prolaz kroz OWASP Top 10 (šta nas štiti, kojim testom i šta nije pokriveno) u [docs/SIGURNOST.md](docs/SIGURNOST.md).
 
-Backend ima 466 testova i svi prolaze (zadnje pokretanje 22.11.2026.). Frontend ima 256 Vitest testova i 8 Playwright testova (zadnje pokretanje 25.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
+Backend ima 505 testova i svi prolaze (zadnje pokretanje 25.11.2026.). Frontend ima 256 Vitest testova i 8 Playwright testova (zadnje pokretanje 25.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
 
 ## Tehnologije
 
@@ -127,7 +127,21 @@ Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada 
 
 Backend radi na https://slotbook-dxvs.onrender.com. Za sada ima samo [`/api/status`](https://slotbook-dxvs.onrender.com/api/status), [`/actuator/health`](https://slotbook-dxvs.onrender.com/actuator/health) i [Swagger UI](https://slotbook-dxvs.onrender.com/swagger-ui/index.html). Sve ostale adrese traže prijavu i bez nje vraćaju 401, pa i one koje ne postoje.
 
-Pravog demoa još nema: demo računi stižu u Fazi 12, a screenshotovi kad bude frontenda. Free plan na Renderu uspavljuje servis poslije 15 minuta bez saobraćaja, pa prvi zahtjev poslije pauze traje oko minutu.
+Frontend još nije na Vercelu, pa live adrese aplikacije još nema (ovdje dolazi link poslije prvog deploya). Sve je pripremljeno: `frontend/vercel.json` prosljeđuje `/api` na Render, a koraci za deploy i provjeru su u [docs/RUNBOOK.md](docs/RUNBOOK.md). Free plan na Renderu uspavljuje servis poslije 15 minuta bez saobraćaja, pa prvi zahtjev poslije pauze traje oko minutu.
+
+Demo se pali profilom `demo`. Na prijavi su tada tri računa (klijent, provider i admin) i ulazi se jednim klikom, bez registracije. Podaci su čitaonica i teretana s četiri sedmice rezervacija, a jednom dnevno se sami vrate na početak. Profil na pokretanju obriše cijelu bazu, pa se pali samo na bazi koja služi za demo. Zašto i kako je u [docs/ODLUKE.md](docs/ODLUKE.md). Lokalno je provjeren na praznoj bazi, na Renderu još nije uključen.
+
+Tok ispod je lokalni backend s profilom `demo`: ulaz kao Hana jednim klikom, sto u čitaonici, slobodan termin, rezervacija i karta, pa Moje rezervacije. Okviri su Playwright screenshotovi pojedinih koraka, složeni u GIF.
+
+![Tok rezervacije: demo prijava, kalendar, karta, moje rezervacije](docs/tok-rezervacije.gif)
+
+Screenshotovi su pravi ekrani, uslikani Playwrightom na lokalnom backendu s probnim podacima. Svi, i oni od prije redizajna, su u [docs/redizajn/](docs/redizajn/).
+
+| Kalendar i karta u nastajanju | Moje rezervacije |
+|---|---|
+| ![Kalendar stola u čitaonici, izabran termin i karta desno](docs/redizajn/poslije/13-kalendar-sto-odabran-desktop.png) | ![Moje rezervacije kao karte sa žigom stanja](docs/redizajn/poslije/16-moje-rezervacije-desktop.png) |
+| **Statistika organizacije** | **Telefon: kalendar** |
+| ![Statistika s rezervacijama po stanju i popunjenošću](docs/redizajn/poslije/37-statistika-desktop.png) | ![Kalendar na telefonu](docs/redizajn/poslije/13-kalendar-sto-odabran-mobitel.png) |
 
 ## Licenca
 

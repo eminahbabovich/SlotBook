@@ -393,3 +393,16 @@ E2e je prvi put pao na tekstu `Sto 4, tihi dio · Čitaonica PMF`. Red u Mojim r
 
 Sitnica koja je pojela vrijeme: fajlovi u repou su mješavina CRLF i LF, pa zamjena teksta u `forma.css` nije našla ništa dok skripta nije pazila na kraj reda. Od toga je u `tokeni.css` ostala dupla linija `--ivica-dugmeta`, koju sam našao tek dva koraka kasnije.
 
+## srijeda, 25. novembar 2026. u 14:12
+
+Poslije pusha je došao demo. Mislio sam da je "noćni reset" iz plana jedna `@Scheduled(cron = ...)` linija, ali Render na besplatnom planu spava čim nema zahtjeva, a s njim spava i raspored. Posao u 4 ujutro bi se vrtio samo kad neko slučajno gleda demo u 4 ujutro. Sad se pri svakom startu i svaki sat pita: jesu li demo računi stariji od dana, i postoje li uopšte. Drugo pitanje je došlo kad sam shvatio da posjetilac može obrisati Hanin nalog i pokvariti demo svima do sutra.
+
+Prvo sam u upitu imao i `deleted_at is null`, za obrisane naloge. Onda sam pogledao `AccountAnonymization`: obrisan nalog dobije email `obrisan-...@slotbook.invalid`, pa ga upit po emailu ionako ne nađe. Uslov je bio višak i izbačen je.
+
+Demo podaci idu SQL-om, ne kroz servise, jer `BookingService` ne pušta rezervaciju u prošlosti, a statistika bez prošlosti je prazna. Bio sam nervozan da ću upisati nešto što aplikacija nikad ne bi napravila, ali `EXCLUDE` i `CHECK` važe i za `JdbcTemplate`. Prvo punjenje je prošlo bez ijednog constrainta, što me malo iznenadilo.
+
+Svaki test u `DemoApiTest` na početku "postari" demo za dva dana, da bi provjera morala napuniti. Mutacija bez pravila od 24 sata je zato oborila svih šest testova, a ne samo onaj koji to dokazuje. Radi, ali bi bilo ljepše da pada jedan.
+
+Dokumentacija za Vercel kaže da rewrite prosljeđuje IP posjetioca u `x-forwarded-for`, a nama granica pokušaja čita `CF-Connecting-IP`, gdje će biti Vercelov server. Ne znam još šta stvarno stigne na Render. Ostavio sam kako jeste i zapisao kao otvoreno.
+
+Opet je poslije gašenja taska ostao živ backend na 8080 i Vite na 5173. Ovaj put sam odmah tražio ko drži port. README je pisao 466 backend testova od 22.11., a ima ih 505: Faza 11 je dodala testove, a brojka nije ažurirana.

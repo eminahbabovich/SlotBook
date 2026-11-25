@@ -52,3 +52,66 @@
 		order: 0;
 	}
 }
+
+/* Demo računi su ploče kao termini u kalendaru: lim, procjep od podloge, cijeli red je dugme */
+.demo {
+	display: grid;
+	gap: var(--razmak-12);
+	max-width: var(--sirina-forme);
+	margin-top: var(--razmak-24);
+	padding-top: var(--razmak-24);
+	border-top: 1px solid var(--tekst);
+}
+
+.demo h2 {
+	margin: 0;
+	font-size: var(--velicina-naslov-3);
+}
+
+.demo p {
+	margin: 0;
+}
+
+.demo-racuni {
+	display: grid;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.demo-racun {
+	box-sizing: border-box;
+	display: grid;
+	gap: var(--razmak-4);
+	width: 100%;
+	min-height: var(--red-min-visina);
+	padding: var(--razmak-8) var(--razmak-16);
+	font: inherit;
+	color: var(--tekst);
+	text-align: left;
+	background: var(--povrsina);
+	border: 0;
+	cursor: pointer;
+}
+
+.demo-racun:hover .demo-ime {
+	text-decoration: underline;
+}
+
+.demo-racun:disabled {
+	cursor: wait;
+}
+
+.demo-ime {
+	font-weight: 700;
+}
+
+.demo-opis {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+.demo code {
+	font-family: var(--font-karta);
+}

@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { postaviToken } from '../api/apiFetch.js'
-import { BEZ_SESIJE, backend, otvori, problem, tijelo } from '../test/lazniBackend.js'
+import { BEZ_SESIJE, PRIJAVLJENA, TOKEN, backend, json, otvori, problem, tijelo } from '../test/lazniBackend.js'
 
 const NEPRIJAVLJENA = { '/api/auth/refresh': BEZ_SESIJE }
 const PRAZNO = (status) => () => new Response(null, { status })
@@ -110,6 +110,39 @@ describe('prijava', () => {
 		expect(primjer.textContent).toContain('11:00')
 		expect(primjer.textContent).toContain('Sto 4, tihi dio')
 		expect(screen.getByText(/dobije ga tačno jedno/)).toBeTruthy()
+	})
+
+	// Javni demo (profil demo): posjetilac ne pravi nalog, nego klikne na jedan od tri računa
+	test('na demu se uđe jednim klikom, s emailom računa i javnom lozinkom', async () => {
+		const fetch = backend({
+			...PRIJAVLJENA,
+			'/api/auth/refresh': BEZ_SESIJE,
+			'GET /api/demo': () =>
+				json({
+					lozinka: 'sebilj-na-bascarsiji',
+					racuni: [
+						{ email: 'klijent@slotbook.test', ime: 'Hana Šehić', opis: 'rezerviše sto, konsultacije i trening' },
+						{ email: 'admin@slotbook.test', ime: 'Amila Kovačević', opis: 'uređuje resurse i članove' },
+					],
+				}),
+			'POST /api/auth/login': TOKEN,
+		})
+		otvori('/prijava')
+
+		await userEvent.setup().click(await screen.findByRole('button', { name: /Uđi kao Hana Šehić/ }))
+
+		expect(await screen.findByRole('button', { name: 'Odjavi se' })).toBeTruthy()
+		expect(tijelo(fetch, 'POST /api/auth/login')).toEqual({ email: 'klijent@slotbook.test', password: 'sebilj-na-bascarsiji' })
+	})
+
+	test('van dema (404) prijava nema demo računa', async () => {
+		const fetch = backend({ ...NEPRIJAVLJENA, 'GET /api/demo': () => problem(404, { title: 'Nije pronađeno' }) })
+		otvori('/prijava')
+
+		await screen.findByLabelText('Email')
+		await vi.waitFor(() => expect(fetch.mock.calls.some(([putanja]) => putanja === '/api/demo')).toBe(true))
+		await new Promise((kraj) => setTimeout(kraj, 0))
+		expect(screen.queryByRole('heading', { name: 'Probaj bez naloga' })).toBeNull()
 	})
 
 	test('zaključana prijava kaže zašto i u koliko sati je sljedeći pokušaj', async () => {

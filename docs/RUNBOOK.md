@@ -83,3 +83,40 @@ docker stop slotbook-vracanje
 Rezultat 22.11.2026: dump je imao 49 512 bajta i trajao je 8 s, preko mreže do Neona u Frankfurtu. U njemu su bile 73 linije `pg_attver`, sve izbačene. Vraćanje je trajalo 521 ms i prošlo bez greške, a broj redova je isti u svih 15 tabela. U vraćenoj bazi su Flyway historija do verzije 33, oba `EXCLUDE` constrainta i `bookings_najvise_osam_sati`. Na Neon-u je bilo malo podataka (jedan korisnik), pa ovo dokazuje postupak, ne brzinu. Pretvaranje i vraćanje sam pokrenuo iz Git Bash-a, a dump i brojanje na Neon-u iz PowerShella.
 
 Šta nije provjereno: vraćanje u novu Neon bazu, gdje bi `pg_attver` vjerovatno prošao i bez izbacivanja, i Neonovo vraćanje na raniji trenutak (branch iz prošlosti). Koliko unazad to ide na besplatnom planu nisam gledao.
+
+## Deploy frontenda na Vercel
+
+Napisano 25.11.2026, prije prvog deploya. Koraci su po Vercelovoj dokumentaciji i još nisu prođeni, pa se ovdje ispravlja šta se pokaže drugačije.
+
+Na vercel.com: Add New, Project, pa import repozitorija `SlotBook` s GitHuba. Root Directory je `frontend`. Framework Preset prepozna Vite, Build Command ostaje `npm run build`, a Output Directory `dist`. Varijable okruženja frontend ne treba, jer adresu backenda nosi `frontend/vercel.json`. Ako Render servis ikad dobije drugu adresu, mijenja se tamo. Deploy.
+
+Poslije prvog deploya na Renderu (Environment) treba promijeniti `APP_URL` na adresu s Vercela (`https://<projekat>.vercel.app`, bez kose crte na kraju). Iz nje backend pravi linkove u mailovima, a CORS dozvoljava samo nju.
+
+Provjera, redom:
+
+```powershell
+curl.exe -i https://<projekat>.vercel.app/api/status
+curl.exe -i https://<projekat>.vercel.app/o/citaonica-pmf
+```
+
+Prvi treba vratiti JSON s backenda i zaglavlje `x-request-id`, a drugi `index.html`, ne `404`. Onda prijava u browseru, pa DevTools, Network: `/api/auth/login` vraća `Set-Cookie` s refresh tokenom, a poslije osvježavanja stranice `/api/auth/refresh` vraća `200` i sesija ostaje. Na kraju kalendar u dva taba: rezervacija u jednom treba se pojaviti u drugom bez osvježavanja. Ako se ne pojavi, SSE ne prolazi kroz Vercel. Kalendar tada i dalje radi, samo se ne osvježava sam.
+
+## Demo na Renderu
+
+Profil `demo` na pokretanju OBRIŠE SVE iz baze i upiše demo podatke. Pali se samo na bazi koja služi samo za demo. Na Renderu: Environment, `SPRING_PROFILES_ACTIVE` = `prod,demo`, Save. Render poslije toga sam pokrene novi deploy, a u logu se vidi `Demo podaci su vraćeni na početak`. Provjera: `curl.exe https://<backend>/api/demo` vraća tri računa. Bez profila `demo` isti zahtjev vraća `404`.
+
+Demo se sam vrati na početak kad je stariji od 24 sata, ili kad nekog od tri računa nema. Restart servisa ga vraća samo ako je stariji od dana. Za ručno vraćanje se u Neon SQL editoru postare računi, pa restart:
+
+```sql
+update users set created_at = created_at - interval '2 days' where email like '%@slotbook.test';
+```
+
+## Ostale varijable za produkciju
+
+Stripe (test mode): `STRIPE_SECRET_KEY` (`sk_test_...`) i `STRIPE_WEBHOOK_SECRET`. Webhook se dodaje u Stripe dashboardu (Developers, Webhooks, Add endpoint) na `https://<backend>/api/stripe/webhook`, s događajima `checkout.session.completed` i `checkout.session.expired`, a njegov `whsec_` ide u `STRIPE_WEBHOOK_SECRET`. Webhook ide direktno na Render, ne preko Vercela.
+
+SMTP: `MAIL_HOST`, `MAIL_PORT` i `MAIL_FROM`, a korisnik i lozinka preko standardnih Spring varijabli `SPRING_MAIL_USERNAME` i `SPRING_MAIL_PASSWORD`. Za port 465 još `SPRING_MAIL_PROTOCOL` = `smtps`. Ovo nije provjereno ni s jednim pravim SMTP servisom. Demo računi ionako ne primaju mail, ali bez SMTP-a ne može se napraviti nov nalog, jer potvrda emaila ne stigne.
+
+Slike (R2): `STORAGE_TYPE` = `s3` i `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`. Bez toga slike nestanu sa svakim deployem.
+
+Uptime monitor (npr. UptimeRobot) na `https://<backend>/actuator/health/liveness` svakih 5 minuta drži Render budnim, pa posjetilac ne čeka hladni start. Liveness ne pita bazu, pa Neon i dalje može spavati. Nisam provjerio koliko to troši od besplatnih sati na Renderu i Neonu.
