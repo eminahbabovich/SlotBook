@@ -1,0 +1,54 @@
+/* Prijava kao početni ekran: lijevo šta je SlotBook i primjer karte, desno forma. Na telefonu
+   je prvo rečenica, pa forma, a karta ispod, da se prijava vidi bez skrolanja. */
+.pocetna {
+	display: grid;
+	gap: var(--razmak-32);
+}
+
+.uvod {
+	display: contents;
+}
+
+.uvod-recenica {
+	margin: 0;
+	font-family: var(--font-naslov);
+	font-stretch: var(--sirina-naslov);
+	font-size: var(--velicina-naslov-3);
+	font-weight: 800;
+	line-height: var(--prored-naslov);
+}
+
+.uvod-primjer {
+	order: 1;
+	display: grid;
+	gap: var(--razmak-8);
+	max-width: 560px;
+	margin: 0;
+}
+
+.uvod-primjer figcaption {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+@media (min-width: 900px) {
+	.pocetna {
+		grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+		align-items: start;
+		gap: var(--razmak-48);
+		padding-top: var(--razmak-32);
+	}
+
+	.uvod {
+		display: grid;
+		gap: var(--razmak-32);
+	}
+
+	.uvod-recenica {
+		font-size: var(--velicina-naslov-1);
+	}
+
+	.uvod-primjer {
+		order: 0;
+	}
+}

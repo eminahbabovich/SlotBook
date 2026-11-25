@@ -95,6 +95,23 @@ describe('potvrda emaila', () => {
 })
 
 describe('prijava', () => {
+	// Prijava je prvi ekran za odjavljene, pa kaže šta je SlotBook i pokazuje kartu za sutra u 10
+	test('kaže šta je SlotBook i pokazuje primjer karte za sutrašnji termin', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(new Date('2035-11-19T06:00:00Z'))
+		backend({ ...NEPRIJAVLJENA })
+		otvori('/prijava')
+
+		// jsdom ne računa ime figure iz figcaption (browser to radi), pa se natpis provjerava posebno
+		const primjer = await screen.findByRole('figure')
+		expect(primjer.querySelector('figcaption').textContent).toMatch(/^Primjer karte/)
+		expect(primjer.textContent).toContain('utorak, 20. novembar')
+		expect(primjer.textContent).toContain('10:00')
+		expect(primjer.textContent).toContain('11:00')
+		expect(primjer.textContent).toContain('Sto 4, tihi dio')
+		expect(screen.getByText(/dobije ga tačno jedno/)).toBeTruthy()
+	})
+
 	test('zaključana prijava kaže zašto i u koliko sati je sljedeći pokušaj', async () => {
 		vi.useFakeTimers({ toFake: ['Date'] })
 		vi.setSystemTime(new Date('2035-11-19T13:20:00Z'))

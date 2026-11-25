@@ -87,6 +87,10 @@ QR kod za dolazak se otvara ispod potvrđene rezervacije, na klik na podvučen t
 
 Forma je široka najviše `--sirina-forme` (400 px), da red za email na desktopu ne bude preko cijelog ekrana. Tu vrijednost sam potvrdio 15.11.2026, poslije koraka 4 Faze 7.
 
+## Prijava kao početni ekran
+
+Odjavljen korisnik na `/` dolazi na prijavu, pa je ona prvi ekran koji neko vidi. Nova ruta nije dodana. Na desktopu (od 900 px) je lijevo jedna rečenica šta je SlotBook, u fontu naslova i veličini `--velicina-naslov-1`, a ispod nje primjer karte za sutra od 10 do 11 (zato da ne izgleda kao stara zaboravljena rezervacija). Desno je forma. Na telefonu je prvo rečenica (`--velicina-naslov-3`), pa forma, a karta je ispod forme, da se prijava vidi bez skrolanja. To je odstupanje od skice u `docs/redizajn/smjer.md`, gdje je karta bila iznad forme. Registracija ima isti uvod. Na užem od 480 px kupon karte je 88 px, a vremena na karti `--velicina-vrijeme`, da se pruga između njih vidi.
+
 ## Fokus
 
 Fokus je okvir od 3 px u boji `--tekst` (grafit), odmaknut 2 px od elementa (`--fokus`, `--fokus-odmak`). WCAG traži najmanje 3:1 za okvir fokusa. Grafit ima 8,50:1 na podlozi, 10,22:1 na površini i 3,51:1 na žaru, pa se vidi i na mojoj rezervaciji, iako tamo s najmanjom rezervom. Žar kao fokus ne ide: 2,42:1 na podlozi.
