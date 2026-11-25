@@ -6,6 +6,7 @@ import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { ULOGE, useOrganizacija, useResursi } from './upiti.js'
 import { emajlResursa } from '../resursi/emajl.js'
+import { PrelazLink } from '../tema/PrelazLink.jsx'
 
 const PORUKE = {
 	serverNeOdgovara: 'Organizacija se nije učitala, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -33,7 +34,11 @@ export function Organizacija() {
 
 	return (
 		<section>
-			<h1>{organizacija.naziv}</h1>
+			<h1>
+				<span className="ime-prelaz" style={{ viewTransitionName: `org-${organizacija.id}` }}>
+					{organizacija.naziv}
+				</span>
+			</h1>
 			<div className="organizacija-podaci">
 				<p>Tvoja uloga: {ULOGE[organizacija.uloga] ?? organizacija.uloga}.</p>
 				<p>Vrijeme termina je po zoni {organizacija.zona}.</p>
@@ -86,12 +91,14 @@ function Resursi({ organizacija }) {
 		<ul className="tabla">
 			{resursi.map((r) => (
 				<li key={r.id} className="tabla-stavka" style={{ '--emajl': emajlResursa(r.id) }}>
-					<Link to={`/o/${organizacija.slug}/r/${r.id}`} className="tabla-red">
-						<span className="tabla-naziv">{r.naziv}</span>
+					<PrelazLink to={`/o/${organizacija.slug}/r/${r.id}`} className="tabla-red">
+						<span className="tabla-naziv" style={{ viewTransitionName: `resurs-${r.id}` }}>
+							{r.naziv}
+						</span>
 						<span className="tabla-uloga">
 							{!r.aktivan && 'deaktiviran, '}termini po {r.trajanjeMinuta} min
 						</span>
-					</Link>
+					</PrelazLink>
 					{vodiResurs(organizacija, r, korisnik.id) && (
 						<>
 							<Link to={`/o/${organizacija.slug}/r/${r.id}/raspored`} className="tabla-raspored" aria-label={`Raspored: ${r.naziv}`}>

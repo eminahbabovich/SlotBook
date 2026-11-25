@@ -1,4 +1,3 @@
-import { Link } from 'react-router'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
@@ -7,6 +6,7 @@ import { emajlResursa } from '../resursi/emajl.js'
 import { NovaOrganizacija } from './NovaOrganizacija.jsx'
 import { ULOGE, useMojeOrganizacije } from './upiti.js'
 import './organizacije.css'
+import { PrelazLink } from '../tema/PrelazLink.jsx'
 
 const PORUKE = {
 	serverNeOdgovara: 'Organizacije se nisu učitale, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -35,10 +35,12 @@ export function Organizacije() {
 				<ul className="tabla">
 					{organizacije.map((o) => (
 						<li key={o.id} style={{ '--emajl': emajlResursa(o.id) }}>
-							<Link to={`/o/${o.slug}`} className="tabla-red">
-								<span className="tabla-naziv">{o.naziv}</span>
+							<PrelazLink to={`/o/${o.slug}`} className="tabla-red">
+								<span className="tabla-naziv" style={{ viewTransitionName: `org-${o.id}` }}>
+									{o.naziv}
+								</span>
 								<span className="tabla-uloga">{ULOGE[o.uloga] ?? o.uloga}</span>
-							</Link>
+							</PrelazLink>
 						</li>
 					))}
 				</ul>

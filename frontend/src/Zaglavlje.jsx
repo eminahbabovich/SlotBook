@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 import { porukaGreske } from './forma/porukaGreske.js'
 import { useSesija } from './sesija/sesija.js'
 import { PrekidacTeme } from './tema/PrekidacTeme.jsx'
 import { Znak } from './tema/Znak.jsx'
+import { PrelazLink } from './tema/PrelazLink.jsx'
 
 const PORUKE = {
 	serverNeOdgovara: 'Odjava nije uspjela, server ne odgovara. Sesija je i dalje otvorena, pokušaj ponovo za minutu.',
@@ -29,16 +29,16 @@ export function Zaglavlje() {
 	return (
 		<header className="zaglavlje">
 			<div className={status === 'prijavljen' ? 'zaglavlje-red zaglavlje-red-prijavljen' : 'zaglavlje-red'}>
-				<Link to="/" className="znak">
+				<PrelazLink to="/" className="znak">
 					<Znak />
 					<span className="znak-ime">SlotBook</span>
-				</Link>
+				</PrelazLink>
 				<div className="zaglavlje-desno">
 					{status === 'prijavljen' && (
 						<div className="zaglavlje-nalog">
-							<Link to="/rezervacije">Moje rezervacije</Link>
+							<PrelazLink to="/rezervacije">Moje rezervacije</PrelazLink>
 							{/* Ime je ujedno link na nalog. Na telefonu ove tri stavke idu u drugi red zaglavlja. */}
-							<Link to="/nalog">{korisnik.ime}</Link>
+							<PrelazLink to="/nalog">{korisnik.ime}</PrelazLink>
 							<button className="dugme-tekst" type="button" onClick={odjaviSe} disabled={salje}>
 								{salje ? 'Odjava u toku' : 'Odjavi se'}
 							</button>
@@ -46,7 +46,7 @@ export function Zaglavlje() {
 					)}
 					{status === 'odjavljen' && (
 						<div className="zaglavlje-nalog">
-							<Link to="/prijava">Prijava</Link>
+							<PrelazLink to="/prijava">Prijava</PrelazLink>
 						</div>
 					)}
 					<PrekidacTeme />

@@ -236,6 +236,24 @@ time {
 	justify-content: space-between;
 }
 
+/* Naslov koji preleti s pločice (naziv organizacije ili resursa). Mora biti jedan komad: ime
+   prelaza na tekstu prelomljenom u dva reda browser ne zna animirati i preskoči cijeli prelaz. */
+.ime-prelaz {
+	display: inline-block;
+}
+
+/* Naziv koji leti s pločice u naslov ide istom krivom i trajanjem kao karta */
+:root[data-prelaz='ekran']::view-transition-group(*) {
+	animation-duration: var(--trajanje-karta);
+	animation-timing-function: var(--kriva-izlaz);
+}
+
+/* Imenovan element bez para na novom ekranu (nazivi ostalih pločica) ode brzo, da ne visi preko
+   novog ekrana dok naziv koji ima par leti */
+:root[data-prelaz='ekran']::view-transition-old(*):only-child {
+	animation: var(--trajanje-brzo) var(--kriva-izlaz) both ekran-odlazi;
+}
+
 /* Prelaz između ekrana (View Transitions): staro se malo spusti i izblijedi, novo dođe odozdo.
    Samo za promjenu ekrana (data-prelaz iz tema/prelaz.js); tema i let žetona se samo pretope.
    Elementi s view-transition-name (naziv resursa, karta, žeton) prelete sami, preko ovoga. */

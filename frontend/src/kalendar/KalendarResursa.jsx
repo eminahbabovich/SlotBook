@@ -8,6 +8,7 @@ import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Kalendar } from './Kalendar.jsx'
 import './kalendar.css'
+import { PrelazLink } from '../tema/PrelazLink.jsx'
 
 const PORUKE = {
 	serverNeOdgovara: 'Resurs se nije učitao, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -45,12 +46,13 @@ export function KalendarResursa() {
 	return (
 		// Emajl boja resursa ide kroz cijelu stranicu: pločica uz naslov i rub svakog slobodnog žetona
 		<section className="resurs-stranica" style={{ '--emajl': emajlResursa(resurs.id) }}>
-			<Link className="nazad" to={`/o/${slug}`}>
+			<PrelazLink className="nazad" to={`/o/${slug}`}>
 				{org.organizacija.naziv}
-			</Link>
+			</PrelazLink>
 			<h1 className="resurs-naslov">
 				<span className="resurs-plocica" aria-hidden="true" />
-				{resurs.naziv}
+				{/* Isto ime kao naziv na pločici resursa, pa naziv preleti s liste u naslov */}
+				<span style={{ viewTransitionName: `resurs-${resurs.id}` }}>{resurs.naziv}</span>
 			</h1>
 			{/* Ono što se pita prije izbora termina: koliko traje, koliko košta, koliko ljudi stane */}
 			<ul className="resurs-podaci">
