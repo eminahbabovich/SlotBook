@@ -9,7 +9,9 @@ export function TudjaVrata() {
 				<span className="vrata-org vrata-citaonica">Čitaonica PMF</span>
 			</div>
 			<h3>Svako vidi samo svoje</h3>
-			<p>Teretana ne može vidjeti ni dirati rezervacije čitaonice, i obrnuto.</p>
+			<p>
+				Teretana <strong>ne može vidjeti ni dirati</strong> rezervacije čitaonice, i obrnuto.
+			</p>
 		</article>
 	)
 }

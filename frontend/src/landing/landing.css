@@ -242,16 +242,21 @@
 	background: var(--emajl-sipak);
 }
 
-/* Sekcija: naslov pa sadržaj, sve poravnato lijevo */
+/* Sekcija: naslov centriran iznad sadržaja, ograničene širine, da ne bježi u stranu */
 .sekcija {
 	display: grid;
-	gap: var(--razmak-32);
+	gap: var(--razmak-48);
 }
 
 .sekcija-naslov {
-	max-width: 22ch;
-	margin: 0;
+	max-width: 24ch;
+	margin: 0 auto;
 	font-size: var(--velicina-naslov-1);
+	text-align: center;
+}
+
+.landing strong {
+	font-weight: 700;
 }
 
 .landing h3 {
@@ -385,10 +390,10 @@
 }
 
 /* Mogućnosti: mreža 3 × 2 bez kartica, ikona na mjedenoj pločici, naslov i jedna rečenica */
+/* Šest kartica: 1, 2 ili 3 kolone, uvijek pune redove (6 je djeljivo i s 2 i s 3) */
 .mogucnosti {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-	gap: var(--razmak-48) var(--razmak-32);
+	gap: var(--razmak-16);
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -398,6 +403,22 @@
 	display: grid;
 	gap: var(--razmak-12);
 	align-content: start;
+	justify-items: start;
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-ploca);
+}
+
+@media (min-width: 640px) {
+	.mogucnosti {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (min-width: 960px) {
+	.mogucnosti {
+		grid-template-columns: repeat(3, 1fr);
+	}
 }
 
 .mogucnosti p {
@@ -426,10 +447,13 @@
 	gap: var(--razmak-16);
 }
 
+/* Ilustracija, naslov i tekst na istoj, srednjoj osi. Ilustracije su iste visine, pa su naslovi u istom redu. */
 .oslonac-kartica {
 	display: grid;
 	align-content: start;
+	justify-items: center;
 	gap: var(--razmak-12);
+	text-align: center;
 	padding: var(--razmak-24);
 	background: var(--izdignuto);
 	border-radius: var(--zaobljenje-ploca);
@@ -442,7 +466,7 @@
 }
 
 .oslonac-kartica .dugme-tekst {
-	justify-self: start;
+	justify-self: center;
 	min-height: 0;
 	padding: var(--razmak-4) 0;
 	font-weight: 600;
@@ -456,8 +480,9 @@
 
 .noc-traka {
 	display: flex;
+	justify-self: stretch;
 	justify-content: space-between;
-	min-height: 120px;
+	min-height: 200px;
 	align-items: center;
 	padding: 0 var(--razmak-8);
 	font-variant-numeric: tabular-nums;
@@ -478,7 +503,8 @@
 	grid-template-columns: 1fr auto 1fr;
 	align-items: center;
 	gap: var(--razmak-12);
-	min-height: 120px;
+	justify-self: stretch;
+	min-height: 200px;
 }
 
 .vrata-org {
@@ -503,7 +529,7 @@
 }
 
 .oslonac-sudar .sudar-polje {
-	justify-self: start;
+	width: min(100%, 200px);
 }
 
 /* Česta pitanja: harmonika od <details>, tastatura i čitač ekrana rade bez JavaScripta */
@@ -691,7 +717,9 @@
 /* Ulaz u demo: tri velika žetona, svaki u svojoj emajl boji */
 .ulaz {
 	display: grid;
+	justify-items: center;
 	gap: var(--razmak-24);
+	text-align: center;
 	padding: var(--razmak-48) var(--razmak-24);
 	background: var(--zrno), var(--povrsina);
 	border-radius: var(--zaobljenje-ploca);
@@ -708,6 +736,8 @@
 
 .ulaz-racuni {
 	display: grid;
+	width: 100%;
+	text-align: left;
 	gap: var(--razmak-16);
 	margin: 0;
 	padding: 0;

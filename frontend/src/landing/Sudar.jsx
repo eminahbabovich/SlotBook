@@ -61,7 +61,9 @@ export function Sudar() {
 				})}
 			</div>
 			<h3>Nema duplih rezervacija</h3>
-			<p>Kad dvoje klikne na isti termin u istoj sekundi, dobije ga samo jedno, a drugo odmah vidi da je zauzet.</p>
+			<p>
+				Kad dvoje klikne na isti termin u istoj sekundi, <strong>dobije ga samo jedno</strong>, a drugo odmah vidi da je zauzet.
+			</p>
 			<button type="button" className="dugme-tekst" onClick={posalji} disabled={faza === 'juri'}>
 				{faza === 'miruje' ? 'Pusti dvadeset klikova odjednom' : 'Pusti ponovo'}
 			</button>

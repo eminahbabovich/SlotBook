@@ -13,7 +13,9 @@ export function NocPomjeranja() {
 				))}
 			</div>
 			<h3>Vrijeme je uvijek tačno</h3>
-			<p>I kad se sat pomjera na ljetno računanje vremena, termin u 10:00 ostaje u 10:00.</p>
+			<p>
+				I kad se sat pomjera na ljetno računanje vremena, <strong>termin u 10:00 ostaje u 10:00</strong>.
+			</p>
 		</article>
 	)
 }
