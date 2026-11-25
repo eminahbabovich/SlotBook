@@ -59,3 +59,12 @@ Pravi 3D (WebGL) ne koristim. Odlučio sam da je jedini 3D karta, napravljena CS
 ## Šta ne radimo
 
 Lista iz `REDESIGN.md` sekcija 5 i dalje važi. Posebno: nema ljubičasto-plavih gradijenata, glassmorphisma ni blur blobova; gradijent je dozvoljen samo na mjedu i foliji, gdje glumi metal; sjene su slojevite i nose informaciju o nivou, nisu ista siva sjena ispod svega.
+
+## Redizajn 3: isti fazon, profesionalnije (25.11.2026)
+
+Poslije drugog redizajna landing je izgledao kao vježba iz animacije: široki Anybody, slova koja se šire prema kursoru, zlatni preliv na naslovu i dugmadima, a sekcije su objašnjavale `EXCLUDE` i statusne kodove. Za 5 sekundi se nije vidjelo šta je SlotBook i za koga je. Smjer iz `redizajn-3.md` je bio da materijal ostane, a da se stiša sve ostalo.
+
+Šta sam promijenio. Jedan font za sve (Hanken Grotesk), naslovi 700 s razmakom slova -0,02em, skala spuštena (naslov ekrana 44 na 34 px, hero s 148 na najviše 64 px). Anybody je izbačen iz paketa. Metalni preliv ostaje samo na karti i na mom žetonu, a dugmad su puna mjed. Zrno je upola slabije, a sjene su za trećinu tiše. Landing je prepisan po strukturi koju imaju ozbiljni proizvodi te vrste: hero s pravim UI-jem, za koga, prije i poslije, tri koraka, šest mogućnosti, česta pitanja, poziv. Tri stara tehnička demoa su postala kartice koje kažu korist običnim jezikom. Na ostalim ekranima sam skratio napomene o zoni i poruke o serveru koji "spava".
+
+Šta nisam uradio. Stranicu slotbooks.com, koju fajl navodi kao uzor za strukturu, nisam otvarao, nego sam se držao opisa strukture iz `redizajn-3.md`. Plaćanje nije u mreži mogućnosti, jer Stripe nije podešen na produkciji. Screenshotovi su u `docs/redizajn/redizajn-3/`, slikani na lokalnom demo serveru.
+

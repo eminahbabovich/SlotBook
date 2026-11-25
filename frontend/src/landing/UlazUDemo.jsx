@@ -6,11 +6,11 @@ import { porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
 
 const PORUKE = {
-	serverNeOdgovara: 'Server se još budi (besplatni plan spava kad nema posjeta). Pokušaj ponovo za minutu.',
+	serverNeOdgovara: 'Server se pokreće, pokušaj ponovo za minutu.',
 	opsta: 'Ulaz u demo nije uspio zbog greške na serveru. Pokušaj ponovo za minutu.',
 }
 
-// Tri demo računa kao velika dugmad. Van dema (404) ili dok server spava ostaju obična prijava i
+// Tri demo računa kao velika dugmad. Van dema (404) ili dok se server pokreće ostaju obična prijava i
 // registracija, pa landing radi i kad backend ne odgovara.
 export function UlazUDemo() {
 	const { prijavi } = useSesija()
@@ -58,11 +58,11 @@ export function UlazUDemo() {
 				</>
 			) : isPending ? (
 				<p className="ulaz-uvod" aria-live="polite">
-					Pita se server za demo račune. Ako je spavao, buđenje traje do dvije minute.
+					Učitavaju se demo računi. Ako server dugo nije korišten, pokretanje traje do dvije minute.
 				</p>
 			) : isError ? (
 				<div className="ulaz-uvod">
-					<p role="alert">Server ne odgovara, pa demo računi nisu stigli. Besplatni plan spava kad nema posjeta.</p>
+					<p role="alert">Server se još pokreće, pa demo računi nisu stigli. Osvježi stranicu za minutu.</p>
 					<button type="button" className="dugme-tekst" onClick={() => refetch()}>
 						Pokušaj ponovo
 					</button>

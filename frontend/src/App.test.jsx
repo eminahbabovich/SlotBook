@@ -147,7 +147,7 @@ describe('organizacije', () => {
 
 		expect(await screen.findByRole('heading', { name: 'Čitaonica PMF' })).toBeTruthy()
 		expect(screen.getByText('Tvoja uloga: admin.')).toBeTruthy()
-		expect(screen.getByText(/Europe\/Sarajevo/)).toBeTruthy()
+		expect(screen.getByText('Vrijeme: Sarajevo')).toBeTruthy()
 		expect(window.location.pathname).toBe('/o/citaonica-pmf')
 	})
 
@@ -212,7 +212,7 @@ describe('početna za odjavljene', () => {
 		backend({ '/api/auth/refresh': BEZ_SESIJE, '/api/demo': () => problem(404, {}) })
 		otvori('/')
 
-		expect(await screen.findByRole('heading', { name: 'Termin je tvoj.' }, LANDING)).toBeTruthy()
+		expect(await screen.findByRole('heading', { level: 1, name: 'Termini za čitaonice, teretane i konsultacije' }, LANDING)).toBeTruthy()
 		expect(screen.getAllByRole('link', { name: /Prijav/ }).length).toBeGreaterThan(0)
 		expect(screen.queryByLabelText('Lozinka')).toBeNull()
 		expect(window.location.pathname).toBe('/')
@@ -262,7 +262,7 @@ describe('sesija', () => {
 
 		odjavaRadi = true
 		await korisnik.click(screen.getByRole('button', { name: 'Odjavi se' }))
-		expect(await screen.findByRole('heading', { name: 'Termin je tvoj.' }, LANDING)).toBeTruthy()
+		expect(await screen.findByRole('heading', { level: 1, name: 'Termini za čitaonice, teretane i konsultacije' }, LANDING)).toBeTruthy()
 		expect(screen.queryByText('Hana Šehić')).toBeNull()
 		expect(screen.queryByRole('link', { name: /Čitaonica PMF/ })).toBeNull()
 	})

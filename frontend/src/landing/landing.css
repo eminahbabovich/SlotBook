@@ -1,65 +1,110 @@
-/* Landing za odjavljene: hero s demom, tri teška problema, ulaz u demo. Raspored je asimetričan:
-   tekst lijevo, ono što se može probati desno, a na telefonu jedno ispod drugog. */
+/* Landing za odjavljene (Redizajn 3): miran ritam proizvoda. Hero s pravim UI-jem u prozoru, traka
+   "za koga", prije i poslije, tamna sekcija s koracima, mogućnosti, oslonac, pitanja, demo i poziv.
+   Jedan font, umjereni naslovi, mjed samo kao akcent. */
 .landing {
 	display: grid;
 	gap: var(--razmak-96);
+	padding-bottom: var(--razmak-48);
 }
 
-/* Hero */
+/* Hero: tekst lijevo, prozor aplikacije desno. Na telefonu prozor ispod teksta. */
 .hero {
 	display: grid;
 	gap: var(--razmak-48);
-	padding-top: var(--razmak-24);
+	align-items: center;
+	padding-top: var(--razmak-32);
 }
 
 .hero-tekst {
 	display: grid;
 	gap: var(--razmak-24);
-	align-content: start;
-	/* Slova se šire prema kursoru, pa naslov ne smije izaći preko ploče s terminima */
-	overflow-x: clip;
-	overflow-clip-margin: var(--razmak-16);
+	justify-items: start;
+	max-width: 34rem;
 }
 
 .hero-naslov {
 	margin: 0;
 	font-size: var(--velicina-hero);
-	font-stretch: 100%;
-	font-weight: 760;
-	line-height: 0.86;
-	letter-spacing: -0.03em;
-}
-
-.hn-red {
-	display: block;
-	white-space: nowrap;
-}
-
-.hn-slovo {
-	display: inline-block;
-}
-
-/* Drugi red je mjed, kao ugravirano u ploču. Gradijent je samo na slovima, ne na pozadini. */
-.hn-red:last-child {
-	background: var(--metal);
-	background-clip: text;
-	color: transparent;
-	padding-bottom: 0.08em;
+	line-height: 1.08;
+	letter-spacing: -0.025em;
 }
 
 .hero-recenica {
-	max-width: 34ch;
 	margin: 0;
 	font-size: var(--velicina-vrijeme);
-	line-height: 1.45;
+	line-height: var(--prored-tekst);
 	color: var(--tekst-sporedni);
 }
 
-.hero-akcija {
-	justify-self: start;
-	min-height: 56px;
-	padding: 0 var(--razmak-32);
-	font-size: var(--velicina-vrijeme);
+.hero-napomena {
+	margin: 0;
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+.akcije {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--razmak-12);
+}
+
+/* Sporedno dugme: obris na podlozi, ista visina kao glavno */
+.dugme.dugme-sporedno {
+	color: var(--tekst);
+	text-decoration: none;
+	background: var(--izdignuto);
+	box-shadow: inset 0 0 0 1px var(--linija-jaka);
+}
+
+.dugme.dugme-mjed {
+	text-decoration: none;
+}
+
+/* Prozor aplikacije: traka s znakom i nazivom organizacije, ispod pravi mini kalendar */
+.prozor {
+	min-width: 0;
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-3), inset 0 0 0 1px var(--linija);
+	overflow: hidden;
+}
+
+.prozor-traka {
+	display: flex;
+	align-items: center;
+	gap: var(--razmak-8);
+	padding: var(--razmak-12) var(--razmak-16);
+	font-size: var(--velicina-sitno);
+	font-weight: 600;
+	color: var(--tekst-sporedni);
+	border-bottom: 1px solid var(--linija);
+}
+
+.prozor-traka svg {
+	width: 20px;
+	height: 20px;
+}
+
+.prozor .hero-demo {
+	padding: var(--razmak-16);
+}
+
+.prozor .hero-ploca {
+	padding: 0;
+	background: none;
+	box-shadow: none;
+}
+
+@media (min-width: 960px) {
+	.hero {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+		gap: var(--razmak-64);
+		padding-top: var(--razmak-48);
+	}
+
+	.prozor .hero-demo {
+		padding: var(--razmak-24);
+	}
 }
 
 /* Mini kalendar: ploča sa žetonima, a ispod nje mjesto za kartu */
@@ -92,9 +137,8 @@
 
 .hero-resurs {
 	font-family: var(--font-naslov);
-	font-stretch: var(--sirina-naslov);
 	font-size: var(--velicina-naslov-3);
-	font-weight: 800;
+	font-weight: 700;
 	line-height: 1.1;
 }
 
@@ -142,92 +186,425 @@
 	font-size: var(--velicina-sitno);
 }
 
-@media (min-width: 960px) {
-	.hero {
-		grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-		align-items: start;
-		min-height: min(calc(100dvh - 140px), 760px);
-		padding-top: var(--razmak-48);
-	}
-
-	.hero-tekst {
-		position: sticky;
-		top: 120px;
-	}
-}
-
-/* Sekcije: tri teška problema */
-.sekcije {
+/* Za koga: jedan red pilula s emajl tačkom, bez naslova sekcije */
+.za-koga {
 	display: grid;
-	gap: var(--razmak-96);
+	gap: var(--razmak-16);
+	justify-items: center;
+	margin-top: calc(-1 * var(--razmak-48));
+	text-align: center;
 }
 
-.sekcije-uvod {
-	max-width: 26ch;
+.za-koga p {
 	margin: 0;
-	font-family: var(--font-naslov);
-	font-stretch: var(--sirina-naslov);
-	font-size: var(--velicina-naslov-2);
-	font-weight: 700;
-	line-height: 1.1;
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
 }
 
+.za-koga ul {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--razmak-8);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.za-koga li {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--razmak-8);
+	padding: var(--razmak-8) var(--razmak-16);
+	font-weight: 600;
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: inset 0 0 0 1px var(--linija);
+}
+
+.za-koga li::before {
+	content: '';
+	width: 8px;
+	height: 8px;
+	background: var(--emajl-tirkiz);
+	border-radius: 50%;
+}
+
+.za-koga li:nth-child(4n + 2)::before {
+	background: var(--emajl-lapis);
+}
+
+.za-koga li:nth-child(4n + 3)::before {
+	background: var(--emajl-safran);
+}
+
+.za-koga li:nth-child(4n)::before {
+	background: var(--emajl-sipak);
+}
+
+/* Sekcija: naslov pa sadržaj, sve poravnato lijevo */
 .sekcija {
 	display: grid;
 	gap: var(--razmak-32);
-	align-items: center;
-}
-
-.sekcija-tekst {
-	display: grid;
-	gap: var(--razmak-16);
-	max-width: 56ch;
-}
-
-.sekcija-tekst p {
-	margin: 0;
 }
 
 .sekcija-naslov {
-	margin: 0 0 var(--razmak-8);
+	max-width: 22ch;
+	margin: 0;
 	font-size: var(--velicina-naslov-1);
-	font-stretch: 92%;
-	letter-spacing: -0.02em;
 }
 
-.dokaz {
-	padding: var(--razmak-12) var(--razmak-16);
-	font-size: var(--velicina-sitno);
+.landing h3 {
+	margin: 0;
+	font-size: var(--velicina-naslov-3);
+}
+
+.landing p {
+	margin: 0;
+}
+
+/* Prije i poslije: dvije ploče, lijeva tiha (udubljena, precrtane tačke), desna izdignuta s mjedi */
+.prije-poslije {
+	display: grid;
+	gap: var(--razmak-16);
+}
+
+.prije,
+.poslije {
+	display: grid;
+	align-content: start;
+	gap: var(--razmak-16);
+	padding: var(--razmak-32);
+	border-radius: var(--zaobljenje-ploca);
+}
+
+.prije {
 	color: var(--tekst-sporedni);
+	background: var(--podloga);
+	box-shadow: var(--utisnuto);
+}
+
+.poslije {
+	background: var(--izdignuto);
+	box-shadow: var(--dubina-2), inset 0 3px 0 var(--moje);
+}
+
+.prije ul,
+.poslije ul {
+	display: grid;
+	gap: var(--razmak-12);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.prije li,
+.poslije li {
+	display: grid;
+	grid-template-columns: 20px 1fr;
+	gap: var(--razmak-12);
+	line-height: var(--prored-tekst);
+}
+
+/* Oznaka ispred reda: crtica za "danas", mjedena kvačica za SlotBook. Razlika je i u obliku. */
+.prije li::before {
+	content: '';
+	width: 12px;
+	height: 2px;
+	margin-top: 0.75em;
+	background: var(--tekst-sporedni);
+}
+
+.poslije li::before {
+	content: '';
+	width: 16px;
+	height: 16px;
+	margin-top: 0.2em;
+	background: var(--moje);
+	border-radius: 50%;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8'/%3E%3Cpath d='M4.5 8.2l2.3 2.3 4.7-4.8' stroke='white' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+@media (min-width: 760px) {
+	.prije-poslije {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+/* Tamna sekcija: uvijek noćna, i u svijetloj temi, preko cijele širine ekrana */
+.tamna {
+	margin-inline: calc(50% - 50vw);
+	padding: var(--razmak-96) var(--razmak-16);
+	color: var(--noc-tekst);
+	background: var(--zrno), var(--noc-podloga);
+}
+
+.tamna-unutra {
+	display: grid;
+	gap: var(--razmak-48);
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.koraci {
+	display: grid;
+	gap: var(--razmak-32);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.koraci li {
+	display: grid;
+	gap: var(--razmak-12);
+	align-content: start;
+}
+
+.koraci p {
+	color: var(--noc-sporedni);
+	line-height: var(--prored-tekst);
+}
+
+/* Broj koraka kao mjeden žeton: ovo je stvarno niz, pa broj ima smisla */
+.korak-broj {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--dan-tekst);
+	background: var(--mjed-noc);
+	border-radius: var(--zaobljenje-zeton);
+}
+
+@media (min-width: 760px) {
+	.koraci {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+/* Mogućnosti: mreža 3 × 2 bez kartica, ikona na mjedenoj pločici, naslov i jedna rečenica */
+.mogucnosti {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+	gap: var(--razmak-48) var(--razmak-32);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mogucnosti li {
+	display: grid;
+	gap: var(--razmak-12);
+	align-content: start;
+}
+
+.mogucnosti p {
+	color: var(--tekst-sporedni);
+	line-height: var(--prored-tekst);
+}
+
+.ikona {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	color: var(--tekst-na-moje);
+	background: color-mix(in srgb, var(--moje) 35%, var(--izdignuto));
+	border-radius: var(--zaobljenje);
+}
+
+.ikona svg {
+	width: 24px;
+	height: 24px;
+}
+
+/* Oslonac: tri ploče, prva sa sudarom */
+.oslonac {
+	display: grid;
+	gap: var(--razmak-16);
+}
+
+.oslonac-kartica {
+	display: grid;
+	align-content: start;
+	gap: var(--razmak-12);
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-1);
+}
+
+.oslonac-kartica p {
+	color: var(--tekst-sporedni);
+	line-height: var(--prored-tekst);
+}
+
+.oslonac-kartica .dugme-tekst {
+	justify-self: start;
+	min-height: 0;
+	padding: var(--razmak-4) 0;
+	font-weight: 600;
+}
+
+@media (min-width: 900px) {
+	.oslonac {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+.noc-traka {
+	display: flex;
+	justify-content: space-between;
+	min-height: 120px;
+	align-items: center;
+	padding: 0 var(--razmak-8);
+	font-variant-numeric: tabular-nums;
+	font-size: var(--velicina-naslov-3);
+	font-weight: 700;
+}
+
+/* Sat koji te noći ne postoji: precrtan i blijed */
+.noc-rupa {
+	color: var(--tekst-sporedni);
+	text-decoration: line-through;
+	text-decoration-thickness: 2px;
+	opacity: 0.6;
+}
+
+.vrata {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+	gap: var(--razmak-12);
+	min-height: 120px;
+}
+
+.vrata-org {
+	padding: var(--razmak-12);
+	font-size: var(--velicina-sitno);
+	font-weight: 600;
+	text-align: center;
 	background: var(--povrsina);
 	border-radius: var(--zaobljenje);
-	box-shadow: inset 3px 0 0 var(--moje);
+	box-shadow: inset 0 -3px 0 var(--emajl-tirkiz), inset 0 0 0 1px var(--linija);
 }
 
-.sekcija .dugme-mjed {
+.vrata-citaonica {
+	box-shadow: inset 0 -3px 0 var(--emajl-lapis), inset 0 0 0 1px var(--linija);
+}
+
+.vrata-zid {
+	width: 4px;
+	height: 72px;
+	background: var(--tekst);
+	border-radius: var(--zaobljenje-puno);
+}
+
+.oslonac-sudar .sudar-polje {
 	justify-self: start;
-	padding: 0 var(--razmak-24);
 }
 
-@media (min-width: 960px) {
-	.sekcija {
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		gap: var(--razmak-64);
-	}
+/* Česta pitanja: harmonika od <details>, tastatura i čitač ekrana rade bez JavaScripta */
+.pitanja {
+	display: grid;
+	max-width: 760px;
+	border-top: 1px solid var(--linija);
+}
 
-	.sekcija-naslov {
-		font-size: var(--velicina-naslov-0);
-	}
+.pitanja details {
+	border-bottom: 1px solid var(--linija);
+}
 
-	.sekcija-obrnuta .sekcija-tekst {
-		order: 1;
+.pitanja summary {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--razmak-16);
+	min-height: var(--red-min-visina);
+	padding: var(--razmak-16) 0;
+	font-weight: 600;
+	cursor: pointer;
+	list-style: none;
+}
+
+.pitanja summary::-webkit-details-marker {
+	display: none;
+}
+
+/* Plus koji se okrene u krstić kad je odgovor otvoren */
+.pitanja summary::after {
+	content: '+';
+	flex: none;
+	font-size: var(--velicina-naslov-3);
+	line-height: 1;
+	color: var(--tekst-sporedni);
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz);
+}
+
+.pitanja details[open] summary::after {
+	transform: rotate(45deg);
+}
+
+.pitanja details p {
+	max-width: 60ch;
+	padding: 0 0 var(--razmak-16);
+	color: var(--tekst-sporedni);
+	line-height: var(--prored-tekst);
+}
+
+/* Završni poziv */
+.poziv {
+	display: grid;
+	gap: var(--razmak-16);
+	justify-items: center;
+	padding: var(--razmak-64) var(--razmak-24);
+	text-align: center;
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-1);
+}
+
+.poziv .sekcija-naslov {
+	max-width: none;
+}
+
+.poziv p {
+	color: var(--tekst-sporedni);
+}
+
+.poziv .akcije {
+	justify-content: center;
+	margin-top: var(--razmak-8);
+}
+
+/* Kako je napravljeno: mala i mirna, za one koji gledaju kod */
+.napravljeno {
+	display: grid;
+	gap: var(--razmak-8);
+	padding-top: var(--razmak-32);
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+	border-top: 1px solid var(--linija);
+}
+
+.napravljeno h2 {
+	margin: 0;
+	font-size: var(--velicina-tekst);
+	color: var(--tekst);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pitanja summary::after {
+		transition: none;
 	}
 }
 
 /* Sudar: dvadeset žetona oko jednog termina */
 .sudar-polje {
 	position: relative;
-	width: min(100%, 460px);
+	width: min(100%, 240px);
 	aspect-ratio: 1;
 	justify-self: center;
 	border-radius: 50%;
@@ -255,21 +632,15 @@
 
 .sudar-termin time {
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
-	font-size: var(--velicina-naslov-2);
-	font-weight: 800;
+	font-size: var(--velicina-tekst);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
 }
 
 .sudar-termin-uzet {
 	color: var(--tekst-na-moje);
 	background: var(--metal);
 	box-shadow: var(--dubina-3), inset 0 1px 0 var(--mjed-sjaj);
-}
-
-.sudar-termin-uzet::after {
-	content: '201';
-	font-family: var(--font-karta);
-	font-size: var(--velicina-sitno);
 }
 
 .sudar-termin {
@@ -282,13 +653,12 @@
 	left: 50%;
 	display: grid;
 	place-items: center;
-	width: 44px;
-	height: 44px;
-	margin: -22px 0 0 -22px;
+	width: 22px;
+	height: 22px;
+	margin: -11px 0 0 -11px;
 	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-sitno);
-	font-weight: 800;
+	font-weight: 700;
 	background: var(--izdignuto);
 	border-radius: var(--zaobljenje-puno);
 	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl-lapis);
@@ -306,170 +676,16 @@
 	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl-tirkiz);
 }
 
-.sudar-201 {
+.sudar-dobio {
 	z-index: 2;
 	color: var(--tekst-na-moje);
-	background: var(--metal);
+	background: var(--moje);
 }
 
-.sudar-409 {
+.sudar-odbijen {
 	color: var(--greska);
 	background: var(--povrsina);
 	box-shadow: var(--utisnuto);
-}
-
-/* Noć pomjeranja sata */
-.noc {
-	display: grid;
-	gap: var(--razmak-24);
-	padding: var(--razmak-32);
-	color: var(--noc-tekst);
-	background: var(--zrno), var(--noc-podloga);
-	border-radius: var(--zaobljenje-ploca);
-	box-shadow: var(--dubina-3), inset 0 0 0 1px var(--odsjaj-noc);
-}
-
-.noc p {
-	margin: 0;
-}
-
-.noc-lokalno {
-	font-family: var(--font-brojevi);
-	font-stretch: 70%;
-	font-size: var(--velicina-naslov-0);
-	font-weight: 850;
-	line-height: 1;
-	color: var(--mjed-noc);
-}
-
-.noc-pomak {
-	color: var(--noc-sporedni);
-}
-
-.noc-traka {
-	position: relative;
-	display: flex;
-	justify-content: space-between;
-	padding-top: var(--razmak-24);
-	border-top: 2px solid var(--noc-sporedni);
-	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
-	font-weight: 700;
-	font-variant-numeric: tabular-nums;
-	color: var(--noc-sporedni);
-}
-
-.noc-oznaka {
-	width: 2ch;
-	text-align: center;
-}
-
-/* Sat koji ne postoji: precrtan i blijed, i kazaljka ga preskoči */
-.noc-rupa {
-	text-decoration: line-through;
-	opacity: 0.4;
-}
-
-.noc-kazaljka {
-	position: absolute;
-	top: -9px;
-	left: calc(var(--polozaj) * (100% - 2ch) + 1ch);
-	width: 16px;
-	height: 16px;
-	margin-left: -8px;
-	background: var(--metal);
-	border-radius: 50%;
-	box-shadow: 0 0 0 4px var(--noc-podloga);
-	transition: left var(--trajanje-srednje) var(--kriva-izlaz);
-}
-
-.noc-klizac input {
-	width: 100%;
-	accent-color: var(--mjed-noc);
-}
-
-/* Tuđa vrata */
-.vrata {
-	display: grid;
-	grid-template-columns: 1fr minmax(120px, 1.2fr) 1fr;
-	align-items: stretch;
-	gap: var(--razmak-8);
-	min-height: 260px;
-}
-
-.vrata p {
-	margin: 0;
-}
-
-.vrata-org {
-	display: grid;
-	align-content: space-between;
-	gap: var(--razmak-16);
-	padding: var(--razmak-16);
-	background: var(--izdignuto);
-	border-radius: var(--zaobljenje-ploca);
-	box-shadow: var(--dubina-2);
-}
-
-.vrata-teretana {
-	box-shadow: var(--dubina-2), inset 0 4px 0 var(--emajl-sipak);
-}
-
-.vrata-citaonica {
-	box-shadow: var(--dubina-2), inset 0 4px 0 var(--emajl-lapis);
-}
-
-.vrata-ime {
-	font-family: var(--font-naslov);
-	font-stretch: var(--sirina-naslov);
-	font-weight: 800;
-	line-height: 1.1;
-}
-
-.vrata-uloga,
-.vrata-brojac {
-	font-size: var(--velicina-sitno);
-	color: var(--tekst-sporedni);
-}
-
-.vrata-broj {
-	display: block;
-	font-family: var(--font-brojevi);
-	font-stretch: var(--sirina-brojevi);
-	font-size: var(--velicina-naslov-1);
-	font-weight: 850;
-	line-height: 1;
-	color: var(--tekst);
-}
-
-/* Zid: zahtjevi udare u njega i odbiju se. Desna ivica je deblja, to je granica čitaonice. */
-.vrata-zid {
-	position: relative;
-	display: grid;
-	align-content: center;
-	gap: var(--razmak-4);
-	overflow: hidden;
-	padding: var(--razmak-8);
-	border-right: 6px solid var(--tekst);
-	background: repeating-linear-gradient(-45deg, var(--sraf) 0 6px, transparent 6px 12px);
-	border-radius: var(--zaobljenje);
-}
-
-.vrata-zahtjev {
-	display: block;
-	overflow: hidden;
-	padding: var(--razmak-4) var(--razmak-8);
-	font-family: var(--font-karta);
-	font-size: var(--velicina-sitno);
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	background: var(--izdignuto);
-	border-radius: var(--zaobljenje);
-	box-shadow: var(--dubina-1);
-}
-
-.vrata-zahtjev b {
-	color: var(--greska);
 }
 
 /* Ulaz u demo: tri velika žetona, svaki u svojoj emajl boji */
@@ -541,9 +757,8 @@
 
 .ulaz-ime {
 	font-family: var(--font-naslov);
-	font-stretch: var(--sirina-naslov);
 	font-size: var(--velicina-naslov-3);
-	font-weight: 800;
+	font-weight: 700;
 	line-height: 1.1;
 }
 
@@ -565,31 +780,16 @@
 	}
 }
 
-.podnozje {
-	padding: var(--razmak-32) 0 0;
-	font-size: var(--velicina-sitno);
-	color: var(--tekst-sporedni);
-	border-top: 1px solid var(--linija);
+
+/* U tamnoj temi je cijela stranica noćna, pa se "Kako radi" izdvaja tonom površine i linijama */
+:root[data-tema='tamna'] .tamna {
+	background: var(--zrno), var(--povrsina);
+	box-shadow: inset 0 1px 0 var(--linija), inset 0 -1px 0 var(--linija);
 }
 
-.podnozje p {
-	margin: 0;
-}
-
-@media (max-width: 600px) {
-	.vrata {
-		grid-template-columns: 1fr 1fr;
-	}
-
-	.vrata-zid {
-		grid-column: 1 / -1;
-		grid-row: 2;
-		min-height: 160px;
-		border-right: 0;
-		border-bottom: 6px solid var(--tekst);
-	}
-
-	.noc {
-		padding: var(--razmak-24);
+@media (prefers-color-scheme: dark) {
+	:root:not([data-tema='svijetla']) .tamna {
+		background: var(--zrno), var(--povrsina);
+		box-shadow: inset 0 1px 0 var(--linija), inset 0 -1px 0 var(--linija);
 	}
 }

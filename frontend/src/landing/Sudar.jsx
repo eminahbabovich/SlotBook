@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 const BROJ = 20
 const RADIJUS = 0.42 // dio širine polja, od centra do žetona u krugu
 
-// Dvadeset žetona krene na isti termin u centru. Jedan se zaključa (201), ostali se odbiju (409).
-// Ovo je animacija onoga što test radi na pravoj bazi, ne poziv servera: piše i ispod.
+// Dvadeset žetona krene na isti termin u centru. Jedan ga dobije, ostali se odbiju. Animacija onoga
+// što test radi na pravoj bazi (README), ne poziv servera.
 export function Sudar() {
 	const [faza, setFaza] = useState('miruje')
 	const [pobjednik, setPobjednik] = useState(0)
@@ -34,28 +34,7 @@ export function Sudar() {
 	const gotovo = faza === 'gotovo'
 
 	return (
-		<section className="sekcija" aria-labelledby="sudar-naslov">
-			<div className="sekcija-tekst">
-				<h2 id="sudar-naslov" className="sekcija-naslov">
-					Dvadeset ruku, jedan termin
-				</h2>
-				<p>
-					Konsultacije kod profesora, ponedjeljak u 10:00. Dvadeset studenata klikne u istoj sekundi. Prođe tačno jedan, a ostalih
-					devetnaest dobije poruku da je termin upravo zauzet.
-				</p>
-				<p>
-					To ne čuva Java kod, nego baza: <code>EXCLUDE</code> constraint ne pušta dvije rezervacije koje se preklapaju na istom
-					resursu, ma koliko ih stiglo odjednom.
-				</p>
-				<p className="dokaz">
-					Dokaz: <code>BookingIstovremenoApiTest</code> pušta 20 niti na pravi Postgres, u četiri runde. Svaki put jedan odgovor
-					201 i devetnaest 409, nijedan 500.
-				</p>
-				<button type="button" className="dugme dugme-mjed" onClick={posalji} disabled={faza === 'juri'}>
-					{faza === 'miruje' ? 'Pošalji 20 zahtjeva odjednom' : 'Pošalji ponovo'}
-				</button>
-			</div>
-
+		<article className="oslonac-kartica oslonac-sudar">
 			<div className="sudar-polje" aria-hidden="true" ref={polje}>
 				<div className={`sudar-termin ${gotovo ? 'sudar-termin-uzet' : ''}`}>
 					<time>10:00</time>
@@ -69,7 +48,7 @@ export function Sudar() {
 					return (
 						<motion.span
 							key={i}
-							className={`sudar-zeton ${jePobjednik ? 'sudar-201' : ''} ${gotovo && !jePobjednik ? 'sudar-409' : ''}`}
+							className={`sudar-zeton ${jePobjednik ? 'sudar-dobio' : ''} ${gotovo && !jePobjednik ? 'sudar-odbijen' : ''}`}
 							initial={false}
 							animate={uCentru ? { x: 0, y: 0, scale: 0.7, opacity: jePobjednik ? 0 : 1 } : { x, y, scale: 1, opacity: 1 }}
 							transition={
@@ -77,15 +56,18 @@ export function Sudar() {
 									? { duration: 0.42, delay: (i % 7) * 0.025, ease: [0.5, 0, 0.75, 0] }
 									: { type: 'spring', stiffness: 260, damping: 14, delay: (i % 5) * 0.02 }
 							}
-						>
-							{gotovo && !jePobjednik ? '409' : ''}
-						</motion.span>
+ />
 					)
 				})}
 			</div>
+			<h3>Nema duplih rezervacija</h3>
+			<p>Kad dvoje klikne na isti termin u istoj sekundi, dobije ga samo jedno, a drugo odmah vidi da je zauzet.</p>
+			<button type="button" className="dugme-tekst" onClick={posalji} disabled={faza === 'juri'}>
+				{faza === 'miruje' ? 'Pusti dvadeset klikova odjednom' : 'Pusti ponovo'}
+			</button>
 			<p className="skriveno" aria-live="polite">
-				{gotovo ? 'Jedan zahtjev je prošao s 201, devetnaest je dobilo 409.' : ''}
+				{gotovo ? 'Jedan klik je dobio termin, ostalih devetnaest je vidjelo da je zauzet.' : ''}
 			</p>
-		</section>
+		</article>
 	)
 }
