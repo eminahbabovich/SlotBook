@@ -445,7 +445,7 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    `index.html` za rute), koraci za deploy, demo i varijable u `docs/RUNBOOK.md`.
 4. **Deploy (radim ja ručno):** (Vercel, `APP_URL` i demo ✅ 25.11.2026, `https://slot-book-delta.vercel.app`) Vercel projekat, `APP_URL` i `SPRING_PROFILES_ACTIVE=prod,demo` na
    Renderu, Stripe varijable i webhook, R2, uptime monitor. Poslije svakog provjera iz RUNBOOK-a.
-5. **SMTP na Renderu.** Besplatan SMTP servis (npr. Brevo ili Gmail s app lozinkom), varijable
+5. **SMTP na Renderu** ✅ (25.11.2026). Brevo, port 2525 sa STARTTLS-om. Mail stiže, ali u spam (`docs/ODLUKE.md`). Besplatan SMTP servis (npr. Brevo ili Gmail s app lozinkom), varijable
    `MAIL_*` i `SPRING_MAIL_*` na Renderu. Provjera: nov nalog na Vercelu dobije mail za potvrdu,
    link iz maila vodi na Vercel adresu i prijava poslije potvrde prolazi. Dok ovoga nema, nov nalog
    se ne može potvrditi, pa na demu rade samo tri demo računa.
@@ -613,6 +613,8 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Godina uz datum izuzetka kad nije tekuća
 - ID zahtjeva u poruci frontenda za grešku `500` ("javi nam i navedi broj ..."), backend ga već šalje u tijelu i u `X-Request-Id`
 - Manje buke u logu kod sudara: svaki `409` ostavi dvije WARN linije Hibernatea (`23P01`), 1 140 linija u jednom k6 pokretanju
+- Vlastiti domen za mail (SPF, DKIM, DMARC), da mail za potvrdu ne ide u spam. Sada je pošiljalac Gmail adresa preko Brevoa.
+- Obavijest čiji se mail ne može sastaviti (npr. pogrešan `MAIL_FROM`) ostaje `PENDING` i pada svakih 30 s, a svaki pad ide u Sentry i troši besplatnu kvotu. Bolje bi bilo da je odmah `FAILED` ili da čeka duže.
 - Granica pokušaja prijave po IP-u iza Vercela: kroz Vercel `CF-Connecting-IP` nosi Vercelovu adresu, pa granica ne radi (30 prijava u minuti bez `429`, 25.11.2026). `X-Real-IP` bi radio samo kad bi Render primao zahtjeve isključivo od Vercela.
 - Metrike na produkciji: registry koji šalje brojače van (npr. OTLP prema besplatnom Grafana Cloudu), jer je `/actuator/metrics` na Renderu namjerno zatvoren
 
@@ -633,7 +635,7 @@ Otvoreno iz Faze 10:
 
 Otvoreno iz Faze 9 (ručni koraci i dug):
 
-- Sentry je povezan (`SENTRY_DSN` na Renderu od 22.11.2026), ali prvi pravi događaj s produkcije još nije stigao, pa slanje tamo nije viđeno. Region organizacije nisam potvrdio.
+- Sentry je povezan (`SENTRY_DSN` na Renderu od 22.11.2026). Prvi pravi događaj s produkcije je stigao 25.11.2026 (mail se nije mogao sastaviti zbog `MAIL_FROM` bez `< >`), s mailom vlasniku. Region organizacije nisam potvrdio.
 - k6 je mjeren samo na laptopu, ne na Renderu i Neon-u.
 
 Otvoreno iz Faze 8 (dug, za pregled u Fazi 13):

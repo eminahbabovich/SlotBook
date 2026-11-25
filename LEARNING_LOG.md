@@ -406,3 +406,13 @@ Svaki test u `DemoApiTest` na početku "postari" demo za dva dana, da bi provjer
 Dokumentacija za Vercel kaže da rewrite prosljeđuje IP posjetioca u `x-forwarded-for`, a nama granica pokušaja čita `CF-Connecting-IP`, gdje će biti Vercelov server. Ne znam još šta stvarno stigne na Render. Ostavio sam kako jeste i zapisao kao otvoreno.
 
 Opet je poslije gašenja taska ostao živ backend na 8080 i Vite na 5173. Ovaj put sam odmah tražio ko drži port. README je pisao 466 backend testova od 22.11., a ima ih 505: Faza 11 je dodala testove, a brojka nije ažurirana.
+
+## srijeda, 25. novembar 2026. u 19:45
+
+Vercel se digao iz prvog puta, za minutu. Više vremena je otišlo na Render, koji se poslije pauze budio 207 sekundi, a README je pisao "oko minutu".
+
+Granica pokušaja je ispala gore nego što smo mislili. Mislio sam da će svi posjetioci kroz Vercel dijeliti jednu granicu, a desilo se suprotno: 30 pogrešnih prijava u minuti, nijedna `429`. Vercel šalje s više adresa, pa se zahtjevi raspu po bucketima. Prvi test je čak pokazao da granica radi, ali samo zato što je svih 25 zahtjeva išlo na isti email, pa je posle pet proradilo zaključavanje naloga, koje isto vraća `429`. Dva različita razloga, isti status. Drugi test je svaki put slao drugi email.
+
+Za mail je plan bio port 465. Prije podešavanja smo pročitali stranicu o besplatnom planu na Renderu: od septembra 2025 blokira 25, 465 i 587. Brevo prima i 2525, pa je dodan STARTTLS u `application-prod.properties`. `smtps` ne, jer timeouti važe za `mail.smtp.*`, a `smtps` čita `mail.smtps.*`.
+
+Prvi mail nije ni krenuo. U `MAIL_FROM` sam upisao `SlotBook adresa@gmail.com`, bez `< >`, i dobio od Sentryja `IllegalStateException: Mail za obavijest ... se ne može sastaviti`. Smiješno je da je to prvi pravi događaj koji je ikad stigao u Sentry, tri dana poslije povezivanja. Sa zagradama mail stiže, link vodi na Vercel i prijava radi. Samo završi u spamu, jer šalje Brevo, a pošiljalac je Gmail.
