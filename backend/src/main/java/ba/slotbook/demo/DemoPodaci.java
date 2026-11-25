@@ -15,11 +15,15 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 // Podaci za javni demo: čitaonica i teretana, tri računa s javnom lozinkom i nekoliko sedmica
 // rezervacija. Postoji samo u profilu demo, jer prije punjenja obriše SVE iz baze.
@@ -44,21 +48,44 @@ public class DemoPodaci {
 	private static final Set<DayOfWeek> RADNI_DANI = Set.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
 			DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
 	private static final Duration TRAJANJE_DEMA = Duration.ofHours(24);
+	private static final int POKUSAJA = 3;
+
+	private static final Logger log = LoggerFactory.getLogger(DemoPodaci.class);
 
 	private final JdbcTemplate jdbc;
 	private final PasswordEncoder passwordEncoder;
 	private final Clock clock;
+	private final TransactionTemplate transakcija;
 
-	public DemoPodaci(JdbcTemplate jdbc, PasswordEncoder passwordEncoder, Clock clock) {
+	public DemoPodaci(JdbcTemplate jdbc, PasswordEncoder passwordEncoder, Clock clock,
+			PlatformTransactionManager transactionManager) {
 		this.jdbc = jdbc;
 		this.passwordEncoder = passwordEncoder;
 		this.clock = clock;
+		this.transakcija = new TransactionTemplate(transactionManager);
 	}
 
 	// Demo se vrati na početak kad je stariji od 24 sata, ili odmah kad nekog demo računa nema
 	// (posjetilac ga je obrisao, a obrisan nalog dobije drugi email). Vraća true ako je punio.
-	@Transactional
+	// TRUNCATE zaključava tabele jednu po jednu, a pozadinski poslovi (obavijesti, istek rezervacija) ih
+	// za to vrijeme čitaju svojim redom. Kad se zaključavanja ukrste, Postgres prekine jednu transakciju
+	// (deadlock), i to je često baš ova. Prekinuta transakcija se ne može nastaviti, pa se cijela
+	// ponavlja ispočetka. Zato petlja ide oko TransactionTemplate, a ne @Transactional na metodi.
 	public boolean osvjeziAkoTreba() {
+		for (int pokusaj = 1;; pokusaj++) {
+			try {
+				return Boolean.TRUE.equals(transakcija.execute(status -> osvjeziUTransakciji()));
+			} catch (PessimisticLockingFailureException e) {
+				if (pokusaj == POKUSAJA) {
+					throw e;
+				}
+				log.warn("Vraćanje dema je izgubilo u deadlocku s drugom transakcijom, pokušaj {} od {}", pokusaj,
+						POKUSAJA);
+			}
+		}
+	}
+
+	private boolean osvjeziUTransakciji() {
 		Integer ispravnih = jdbc.queryForObject("""
 				select count(*) from users
 				where email in (?, ?, ?) and created_at > ?
@@ -73,11 +100,13 @@ public class DemoPodaci {
 	}
 
 	// Imena tabela dolaze iz kataloga baze i prolaze kroz quote_ident, pa nema unosa izvana.
+	// Abecedni red je stalan: pg_tables bez njega vraća tabele redom koji se mijenja poslije svakog brisanja.
 	// Flyway historija ostaje, inače bi Flyway pri sljedećem startu htio ponovo praviti šemu.
 	private void obrisiSve() {
 		List<String> tabele = jdbc.queryForList("""
 				select quote_ident(tablename) from pg_tables
 				where schemaname = current_schema() and tablename <> 'flyway_schema_history'
+				order by tablename
 				""", String.class);
 		jdbc.execute("truncate table " + String.join(", ", tabele) + " cascade");
 	}

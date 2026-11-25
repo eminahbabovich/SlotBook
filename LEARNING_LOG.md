@@ -459,3 +459,12 @@ Kad sam skratio "Vrijeme termina je po zoni Europe/Sarajevo" u "Vrijeme: Sarajev
 
 U tamnoj temi je sekcija "Kako radi" nestala, jer je "tamna sekcija" na tamnoj stranici ista boja kao sve oko nje. Vidio sam to tek na screenshotu.
 
+## Srijeda, 25. novembar 2026, 22:27
+
+Dizajn je bio gotov, a CI na backendu crven, iako backend nisam dirao od prošlog zelenog pusha. `gh` nemam, ali repo je javan, pa sam preko `api.github.com` vidio da je pao samo korak "Build i testovi". Logove GitHub ne da bez prijave, pa sam pokrenuo testove lokalno i isti test je pao: `DemoApiTest`, `ERROR: deadlock detected` na `TRUNCATE`.
+
+Mislio sam da je nestabilan test. Nije. Postgres je u poruci napisao ko koga čeka: TRUNCATE čeka tabelu koju drži neki posao, a posao čeka tabelu koju je TRUNCATE već uzeo. Isto se može desiti na Renderu, jer demo tamo svaki sat briše sve dok `@Scheduled` poslovi rade.
+
+Popravka je ponoviti cijelu transakciju, najviše tri puta. Prvo sam htio samo staviti petlju u metodu s `@Transactional`, ali poziv iz iste klase ne prolazi kroz proxy, pa ne bi bilo nove transakcije. Zato `TransactionTemplate`.
+
+Test sam prvo napisao bez popravke i pao je iz pravog razloga. Iznenadilo me da `pg_tables` vraća tabele drugim redom poslije svakog TRUNCATE-a, pa je ista skripta nekad pravila sudar, a nekad ne. Sad je `order by tablename`.

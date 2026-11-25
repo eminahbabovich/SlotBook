@@ -10,9 +10,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +50,9 @@ class DemoApiTest {
 
 	@Autowired
 	DemoPodaci podaci;
+
+	@Autowired
+	DataSource dataSource;
 
 	// Svaki test kreće od svježeg dema: računi se "postare" za dva dana, pa provjera mora napuniti
 	@BeforeEach
@@ -134,6 +143,64 @@ class DemoApiTest {
 
 	private int brojOrganizacija() {
 		return jdbc.queryForObject("select count(*) from organizations", Integer.class);
+	}
+
+	// CI 25.11.2026: TRUNCATE iz vraćanja dema se sudario s pozadinskim poslom i Postgres ga je prekinuo
+	// (deadlock detected). Ovdje se isti sudar pravi namjerno: druga transakcija drži zadnju tabelu iz
+	// TRUNCATE-a, a kad TRUNCATE čeka na nju, čita prvu, koju je TRUNCATE već zaključao.
+	@Test
+	void vracanjeDemaUspijeIKadIzgubiUDeadlockuSDrugomTransakcijom() throws Exception {
+		jdbc.update("update users set created_at = created_at - interval '2 days'");
+		long deadlockaPrije = deadlockova();
+		try (Connection druga = dataSource.getConnection(); Statement sql = druga.createStatement()) {
+			druga.setAutoCommit(false);
+			// Druga transakcija ne smije biti žrtva: Postgres prekida onu koja prva otkrije krug, a to
+			// je ona kojoj prije istekne deadlock_timeout (reset ima podrazumijevanu 1 s)
+			sql.execute("set local deadlock_timeout = '10s'");
+			sql.execute("set local statement_timeout = '20s'");
+			sql.execute("lock table waitlist_entries in access share mode");
+
+			CompletableFuture<Boolean> vracanje = CompletableFuture.supplyAsync(podaci::osvjeziAkoTreba);
+			cekajDaTruncateCekaNaZakljucavanje();
+			sql.executeQuery("select count(*) from audit_log").close();
+			druga.commit();
+
+			assertThat(vracanje.get(30, TimeUnit.SECONDS)).isTrue();
+		}
+		// Bez ovoga bi test prošao i kad do sudara uopšte ne dođe
+		assertThat(cekajNoviDeadlock(deadlockaPrije)).as("Postgres je zabilježio deadlock").isTrue();
+		assertThat(jdbc.queryForObject("select count(*) from users where email = ?", Integer.class,
+				"klijent@slotbook.test")).isEqualTo(1);
+	}
+
+	private void cekajDaTruncateCekaNaZakljucavanje() throws InterruptedException {
+		for (int i = 0; i < 200; i++) {
+			Integer cekaju = jdbc.queryForObject("""
+					select count(*) from pg_stat_activity
+					where wait_event_type = 'Lock' and query ilike 'truncate%'
+					""", Integer.class);
+			if (cekaju > 0) {
+				return;
+			}
+			Thread.sleep(50);
+		}
+		throw new AssertionError("TRUNCATE nije počeo čekati na zaključanu tabelu");
+	}
+
+	// Brojač u pg_stat_database se ne osvježi istog trena, nego kad prekinuta sesija završi transakciju
+	private boolean cekajNoviDeadlock(long prije) throws InterruptedException {
+		for (int i = 0; i < 100; i++) {
+			if (deadlockova() > prije) {
+				return true;
+			}
+			Thread.sleep(200);
+		}
+		return false;
+	}
+
+	private long deadlockova() {
+		return jdbc.queryForObject("select deadlocks from pg_stat_database where datname = current_database()",
+				Long.class);
 	}
 
 	private String token(String email) throws Exception {

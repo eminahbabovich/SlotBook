@@ -460,6 +460,11 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
 7. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (✅ 25.11.2026, rezultat u
    `docs/RUNBOOK.md` i `docs/ODLUKE.md`: granica po IP-u kroz Vercel ne radi), live link (✅) i GIF
    toka u README, status faze.
+8. **Deadlock pri vraćanju dema** (25.11.2026, commitano, nije pushano): CI pao na `DemoApiTest`,
+   `TRUNCATE` se sudarao s `@Scheduled` poslovima. Ponovni pokušaj kroz `TransactionTemplate`, test
+   koji pravi deadlock namjerno, odluka u `docs/ODLUKE.md`. 506 backend testova prolazi lokalno.
+   **Sutra:** push i provjera CI-ja, pa ostatak koraka 4 (Stripe varijable i webhook na Renderu, R2,
+   uptime monitor), CI badge i poddomen, pa zatvaranje Faze 12 i Faza 13.
 
 ## Faza 14 po koracima
 

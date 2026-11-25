@@ -1135,3 +1135,15 @@ Servis je Brevo. Prvo sam predložio Mailjet, jer Brevovu stranicu s cijenama ni
 Na 2525 veza počinje nešifrovana, pa je u `application-prod.properties` uključen STARTTLS, i to kao `required`, da se bez TLS-a ne pošalje ni lozinka. `smtps` nisam uzeo i zbog timeouta: podešeni su za `mail.smtp.*`, a `smtps` čita `mail.smtps.*`, pa bi slanje moglo visiti bez granice.
 
 Rezultat (25.11.2026): Render pušta 2525. Nov nalog na Vercelu dobije mail za potvrdu, link vodi na Vercel adresu, a prijava poslije potvrde prolazi. Mail završi u spamu. Pošiljalac je Gmail adresa, a šalje ga Brevov server, pa Gmail ne vidi potpis koji se slaže s domenom pošiljaoca (Brevo to i javlja kao "Freemail domain is not recommended" kod DMARC-a). Popravka je vlastiti domen s SPF i DKIM zapisima, a to je u Dodacima. Prvi pokušaj je pao jer je `MAIL_FROM` bio upisan bez `< >` (`SlotBook adresa@gmail.com`), pa se mail nije mogao ni sastaviti. To je javio Sentry mailom, i to je prvi pravi događaj s produkcije koji je stigao u Sentry.
+
+## Vraćanje dema i deadlock s pozadinskim poslovima (25.11.2026)
+
+CI je pao na `DemoApiTest` s `ERROR: deadlock detected` na `TRUNCATE` svih tabela. Isti kod je prošao pola sata ranije. Uzrok: `TRUNCATE` zaključava tabele jednu po jednu, a `NotificationJob` (svakih 30 s) i `BookingJob` (svake minute) ih za to vrijeme čitaju svojim redom. U Postgresovoj poruci je proces 71 (`TRUNCATE`) čekao tabelu koju drži proces 70, a 70 je čekao `AccessShareLock`, znači običan `SELECT`, na tabeli koju je `TRUNCATE` već zaključao. Koji je posao bio proces 70 nisam utvrdio, baza iz testa je već bila ugašena.
+
+Nije samo problem testa. Na Renderu demo profil radi isto vraćanje svaki sat i pri pokretanju, dok isti poslovi rade. Svaki sat bi greška samo otišla u log. Za pokretanje (`ApplicationReadyEvent`) mislim da izuzetak sruši start aplikacije, ali to nisam provjerio.
+
+Birao sam između dvije stvari. Isključiti `@Scheduled` u testovima bi dalo zelen CI za pet minuta, ali bi sakrilo grešku koja postoji u produkciji. Uzeo sam ono što Postgres i preporučuje: transakcija koja izgubi u deadlocku se ponovi. `osvjeziAkoTreba` sada ide kroz `TransactionTemplate`, s najviše tri pokušaja na `PessimisticLockingFailureException`. Petlja mora biti oko transakcije, jer je prekinuta transakcija mrtva, a `@Transactional` na metodi koja se zove iz iste klase ne bi ni prošao kroz proxy. API sam provjerio u našem `spring-tx` 7.0.10 kroz `javap`.
+
+Usput: tabele se brišu abecednim redom. `pg_tables` bez `order by` vraća tabele redom koji se mijenja poslije svakog brisanja, pa je u CI-ju i lokalno redoslijed bio različit.
+
+Dokaz je `vracanjeDemaUspijeIKadIzgubiUDeadlockuSDrugomTransakcijom`: druga konekcija drži `waitlist_entries` (zadnja u nizu), čeka da `TRUNCATE` stane na nju, pa čita `audit_log` (prva u nizu). Test provjerava i da je brojač `deadlocks` u `pg_stat_database` porastao, da ne prođe kad do sudara ne dođe. S `POKUSAJA = 1` test padne na `deadlock detected`. Svih 506 backend testova prolazi lokalno. CI s ovom popravkom još nije pokrenut, jer nije pushano.
