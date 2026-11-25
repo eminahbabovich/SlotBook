@@ -1,33 +1,49 @@
-/* Stanja koja se ponavljaju na svim ekranima: učitavanje, greška i prazno. */
+/* Stanja koja se ponavljaju na svim ekranima: učitavanje, greška i prazno. Isti materijal kao
+   ostatak aplikacije: pločice, ploče i otisak žetona. */
 .kostur {
 	display: grid;
-	gap: 2px;
+	gap: var(--razmak-12);
 	max-width: 720px;
 }
 
+/* Tri pločice različite visine, da kostur liči na sadržaj, a ne na tri ista pravougaonika */
 .kostur span {
-	min-height: var(--red-min-visina);
-	background: var(--povrsina);
+	min-height: calc(var(--red-min-visina) + var(--razmak-24));
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: var(--dubina-1);
 	animation: disanje var(--trajanje-disanje) ease-in-out infinite alternate;
 }
 
-/* Poruka unutra ne treba svoju traku, ploča je već ima */
-.nije-ucitano .greska-forme {
-	padding: 0;
-	border-left: 0;
+.kostur span:nth-child(2) {
+	min-height: var(--red-min-visina);
+	animation-delay: 200ms;
 }
 
+.kostur span:nth-child(3) {
+	animation-delay: 400ms;
+}
+
+/* Greška: izdignuta ploča s trakom u boji greške lijevo. Poruka unutra ne treba svoju podlogu. */
 .nije-ucitano {
 	display: grid;
 	justify-items: start;
 	gap: var(--razmak-16);
 	max-width: 560px;
-	padding: var(--razmak-16) var(--razmak-24) var(--razmak-24);
-	background: var(--povrsina);
-	border-left: var(--razmak-4) solid var(--greska);
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: var(--dubina-2), inset var(--razmak-4) 0 0 var(--greska);
 }
 
-/* Prazno stanje: isprekidan obris, isti kao prazna karta u kalendaru. Kaže šta se može dalje. */
+.nije-ucitano .greska-forme {
+	padding: 0;
+	background: none;
+	box-shadow: none;
+}
+
+/* Prazno: isprekidan obris, kao prazna karta u kalendaru, s otiskom žetona koji tu fali.
+   Tekst kaže šta se može dalje. */
 .prazno {
 	display: grid;
 	justify-items: start;
@@ -36,10 +52,26 @@
 	margin: 0 0 var(--razmak-24);
 	padding: var(--razmak-24);
 	color: var(--tekst);
-	border: 2px dashed var(--linija);
+	border: 2px dashed var(--linija-jaka);
 	border-radius: var(--zaobljenje-karta);
+}
+
+.prazno::before {
+	content: '';
+	width: 44px;
+	height: 32px;
+	margin-bottom: var(--razmak-8);
+	border-radius: var(--zaobljenje);
+	box-shadow: var(--utisnuto);
+	background: var(--podloga);
 }
 
 .prazno p {
 	margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.kostur span {
+		animation: none;
+	}
 }

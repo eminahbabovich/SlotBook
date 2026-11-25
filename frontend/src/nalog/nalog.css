@@ -1,15 +1,38 @@
-/* Oznaka i vrijednost kao oznaka polja u formi, bez uvlačenja koje browser daje za <dd> */
+/* Ime i email kao dvije pilule s oznakom iznad, bez uvlačenja koje browser daje za <dd> */
+.podaci-naloga {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+	gap: var(--razmak-12);
+	max-width: 640px;
+	margin: 0;
+}
+
+.podaci-naloga > div {
+	padding: var(--razmak-16) var(--razmak-24);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: inset 0 0 0 1px var(--linija);
+}
+
 .podaci-naloga dt {
-	font-weight: 600;
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
 }
 
 .podaci-naloga dd {
-	margin: 0 0 var(--razmak-12);
+	margin: 0;
+	font-weight: 700;
+	overflow-wrap: anywhere;
 }
 
-/* Izvoz i brisanje su odvojene radnje, pa ih dijeli isti razmak kao dijelove statistike */
+/* Svaki dio naloga je svoja ploča (section > .forma u forma.css), a brisanje ima traku u boji
+   greške lijevo, jer se ne može vratiti */
 .nalog-dio {
-	margin-top: var(--razmak-32);
+	margin-top: var(--razmak-24);
+}
+
+form.nalog-dio {
+	box-shadow: var(--dubina-2), inset var(--razmak-4) 0 0 var(--greska);
 }
 
 /* Dugme i link (ili dva dugmeta) u jednom redu, a na uskom ekranu jedno ispod drugog */

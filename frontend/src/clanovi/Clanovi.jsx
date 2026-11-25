@@ -10,6 +10,7 @@ import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Pozivnica } from './Pozivnica.jsx'
 import '../organizacije/organizacije.css'
+import { emajlResursa } from '../resursi/emajl.js'
 
 const PORUKE = {
 	serverNeOdgovara: 'Organizacija se nije učitala, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -77,9 +78,9 @@ function ListaClanova({ organizacija }) {
 			{data.ukupnoStranica === 1 && data.clanovi.length === 1 && (
 				<p className="napomena-blok">Za sada si jedini član. Kad neko prihvati pozivnicu, pojavit će se ovdje.</p>
 			)}
-			<ul className="tabla" aria-label="Članovi">
+			<ul className="tabla tabla-zbijena" aria-label="Članovi">
 				{data.clanovi.map((c) => (
-					<li key={c.id} className="tabla-red">
+					<li key={c.id} className="tabla-red" style={{ '--emajl': emajlResursa(c.id) }}>
 						<span>
 							<span className="tabla-naziv">{c.ime}</span>
 							{c.id === korisnik.id && ' (ti)'}{' '}

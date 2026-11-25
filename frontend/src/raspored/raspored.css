@@ -8,7 +8,23 @@
 .raspored-dani {
 	display: flex;
 	justify-content: space-between;
-	margin-top: var(--razmak-16);
+	gap: var(--razmak-12);
+	margin-top: var(--razmak-24);
+}
+
+/* Prethodni i sljedeći dan kao pilule, iste kao mjeseci u statistici */
+.raspored-dani .dugme-tekst {
+	padding: 0 var(--razmak-16);
+	font-weight: 600;
+	text-decoration: none;
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: inset 0 0 0 1px var(--linija);
+}
+
+.raspored-dani .dugme-tekst:hover {
+	background: var(--izdignuto);
+	box-shadow: var(--dubina-1);
 }
 
 .rezervacija .potvrda-dugmad {

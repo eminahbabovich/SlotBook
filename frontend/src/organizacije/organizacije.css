@@ -106,3 +106,54 @@
 	gap: var(--razmak-8) var(--razmak-12);
 	margin: var(--razmak-24) 0;
 }
+
+/* Članovi i izuzeci: zbijene pločice, jer ih ima više i ne vode nigdje. Emajl je mala tačka lijevo,
+   tekst desno od nje, a sporedno (uloga, dugme Ukloni) ispod. */
+.tabla-zbijena {
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+	gap: var(--razmak-12);
+}
+
+.tabla-zbijena > li.tabla-red {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: start;
+	gap: var(--razmak-4) var(--razmak-16);
+	min-height: 0;
+	padding: var(--razmak-16) var(--razmak-24) var(--razmak-16) var(--razmak-16);
+	box-shadow: var(--dubina-1), inset 0 -3px 0 var(--emajl);
+}
+
+.tabla-zbijena > li.tabla-red:hover {
+	transform: none;
+	box-shadow: var(--dubina-1), inset 0 -3px 0 var(--emajl);
+}
+
+.tabla-zbijena .tabla-red::before {
+	grid-row: span 2;
+	width: 20px;
+	height: 20px;
+	margin: 2px 0 0;
+}
+
+.tabla-zbijena .tabla-naziv {
+	font-size: var(--velicina-vrijeme);
+}
+
+.tabla-zbijena span > .tabla-uloga {
+	display: block;
+	overflow-wrap: anywhere;
+}
+
+.tabla-zbijena .dugme-tekst {
+	justify-self: start;
+	grid-column: 2;
+	min-height: 0;
+	padding: var(--razmak-4) 0;
+	font-size: var(--velicina-sitno);
+}
+
+/* Izuzetak znači da resurs ne radi, pa je emajl šipak, isti za sve */
+.tabla-izuzeci > li {
+	--emajl: var(--emajl-sipak);
+}

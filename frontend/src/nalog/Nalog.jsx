@@ -11,10 +11,14 @@ export function Nalog() {
 		<section>
 			<h1>Moj nalog</h1>
 			<dl className="podaci-naloga">
-				<dt>Ime</dt>
-				<dd>{korisnik.ime}</dd>
-				<dt>Email</dt>
-				<dd>{korisnik.email}</dd>
+				<div>
+					<dt>Ime</dt>
+					<dd>{korisnik.ime}</dd>
+				</div>
+				<div>
+					<dt>Email</dt>
+					<dd>{korisnik.email}</dd>
+				</div>
 			</dl>
 			<PretplataNaKalendar />
 			<IzvozPodataka />

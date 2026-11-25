@@ -63,7 +63,7 @@ export function Izuzeci({ resursId, zona }) {
 		sadrzaj = <p className="prazno">Nema izuzetaka. Kad resurs ne radi zbog godišnjeg, praznika ili kvara, upiši to ovdje.</p>
 	} else {
 		sadrzaj = (
-			<ul className="tabla" aria-label="Izuzeci">
+			<ul className="tabla tabla-zbijena tabla-izuzeci" aria-label="Izuzeci">
 				{lista.data.map((i) => {
 					const opis = `${opisTrenutka(i.od, zona)} do ${opisTrenutka(i.do, zona)}`
 					return (

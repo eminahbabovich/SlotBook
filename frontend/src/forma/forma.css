@@ -4,6 +4,34 @@
 	max-width: var(--sirina-forme);
 }
 
+/* Forma koja stoji sama na ekranu (nalog, članovi, resurs, radno vrijeme) je izdignuta ploča, a
+   polja su udubljena u nju. Forma u prijavi je već u svojoj ploči, pa ovo ne dobija. */
+section > .forma {
+	box-sizing: border-box;
+	max-width: 640px;
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-2);
+}
+
+@media (min-width: 600px) {
+	section > .forma {
+		padding: var(--razmak-32);
+	}
+}
+
+section > .forma + .forma,
+section > .forma + section {
+	margin-top: var(--razmak-24);
+}
+
+/* Naslov je prvi vidljivi red ploče i kad ispred njega stoji prazan status za čitač ekrana */
+.forma > h2,
+.forma > h3 {
+	margin-top: 0;
+}
+
 /* U gridu se margine ne sabijaju, pa bi donja margina naslova došla povrh razmaka grida */
 .forma > h2 {
 	margin-bottom: 0;
@@ -117,8 +145,10 @@
    ekrana najavi kad se upiše, a prazna se ne vidi. */
 .forma [role='status'] {
 	margin: 0;
-	padding: var(--razmak-8) var(--razmak-12);
-	border-left: var(--razmak-4) solid var(--tekst);
+	padding: var(--razmak-12) var(--razmak-16);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje);
+	box-shadow: inset var(--razmak-4) 0 0 var(--tekst);
 }
 
 .forma [role='status']:empty {
