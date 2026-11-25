@@ -336,15 +336,16 @@
 	}
 }
 
-/* Tamna sekcija: uvijek noćna, i u svijetloj temi, preko cijele širine ekrana */
-.tamna {
+/* Kako radi: jedina obojena traka preko cijele širine. Danju porculan s malo mjedi, noću tamnija od
+   podloge. Koraci su kartice na njoj. */
+.kako-radi {
 	margin-inline: calc(50% - 50vw);
 	padding: var(--razmak-96) var(--razmak-16);
-	color: var(--noc-tekst);
-	background: var(--zrno), var(--noc-podloga);
+	background: var(--zrno), color-mix(in srgb, var(--moje) 10%, var(--povrsina));
+	box-shadow: inset 0 1px 0 var(--linija), inset 0 -1px 0 var(--linija);
 }
 
-.tamna-unutra {
+.kako-radi-unutra {
 	display: grid;
 	gap: var(--razmak-48);
 	max-width: 1200px;
@@ -353,7 +354,7 @@
 
 .koraci {
 	display: grid;
-	gap: var(--razmak-32);
+	gap: var(--razmak-16);
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -363,10 +364,14 @@
 	display: grid;
 	gap: var(--razmak-12);
 	align-content: start;
+	justify-items: start;
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-ploca);
 }
 
 .koraci p {
-	color: var(--noc-sporedni);
+	color: var(--tekst-sporedni);
 	line-height: var(--prored-tekst);
 }
 
@@ -378,9 +383,10 @@
 	height: 44px;
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
-	color: var(--dan-tekst);
-	background: var(--mjed-noc);
+	color: var(--tekst-na-moje);
+	background: var(--moje);
 	border-radius: var(--zaobljenje-zeton);
+	box-shadow: var(--dubina-1);
 }
 
 @media (min-width: 760px) {
@@ -810,16 +816,13 @@
 	}
 }
 
-
-/* U tamnoj temi je cijela stranica noćna, pa se "Kako radi" izdvaja tonom površine i linijama */
-:root[data-tema='tamna'] .tamna {
-	background: var(--zrno), var(--povrsina);
-	box-shadow: inset 0 1px 0 var(--linija), inset 0 -1px 0 var(--linija);
+/* Noću je cijela stranica tamna, pa je traka "Kako radi" tamnija od podloge, a ne svjetlija */
+:root[data-tema='tamna'] .kako-radi {
+	background: var(--zrno), var(--sjena-noc);
 }
 
 @media (prefers-color-scheme: dark) {
-	:root:not([data-tema='svijetla']) .tamna {
-		background: var(--zrno), var(--povrsina);
-		box-shadow: inset 0 1px 0 var(--linija), inset 0 -1px 0 var(--linija);
+	:root:not([data-tema='svijetla']) .kako-radi {
+		background: var(--zrno), var(--sjena-noc);
 	}
 }

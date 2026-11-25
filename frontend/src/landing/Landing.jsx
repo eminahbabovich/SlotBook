@@ -122,8 +122,8 @@ export default function Landing() {
 					</div>
 				</section>
 
-				<section className="tamna" aria-labelledby="koraci-naslov">
-					<div className="tamna-unutra">
+				<section className="kako-radi" aria-labelledby="koraci-naslov">
+					<div className="kako-radi-unutra">
 						<h2 id="koraci-naslov" className="sekcija-naslov">
 							Kako radi
 						</h2>
