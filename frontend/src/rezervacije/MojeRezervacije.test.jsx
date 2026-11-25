@@ -58,7 +58,9 @@ describe('lista', () => {
 		await userEvent.setup().click(await screen.findByRole('link', { name: 'Moje rezervacije' }))
 
 		expect(await screen.findByRole('heading', { name: 'Moje rezervacije' })).toBeTruthy()
-		expect(lista('Nadolazeće').map((li) => li.querySelector('time').textContent)).toEqual([
+		// Karta ima dan i put od-do kao zasebne dijelove, pa se sastave u rečenicu
+		const vrijeme = (li) => `${li.querySelector('.karta-dan').textContent}, ${[...li.querySelectorAll('.karta-put time')].map((t) => t.textContent).join(' do ')}`
+		expect(lista('Nadolazeće').map(vrijeme)).toEqual([
 			'subota, 17. novembar, 16:00 do 17:00',
 			'ponedjeljak, 19. novembar, 09:00 do 10:00',
 			'utorak, 20. novembar, 10:00 do 11:30',
@@ -66,7 +68,10 @@ describe('lista', () => {
 		expect(lista('Prošle i otkazane')).toHaveLength(1)
 		expect(within(redSa('Sala 1')).getByText('otkazana')).toBeTruthy()
 		expect(within(redSa('Grupna soba 2')).getByText('čeka potvrdu')).toBeTruthy()
-		expect(within(redSa('Sto 4')).getByText('Sto 4, tihi dio · Čitaonica PMF')).toBeTruthy()
+		expect(within(redSa('Sto 4')).getByText('Sto 4, tihi dio')).toBeTruthy()
+		expect(within(redSa('Sto 4')).getByText('Čitaonica PMF')).toBeTruthy()
+		// Svaka rezervacija je karta s brojem iz svog ID-ja
+		expect(within(redSa('Sto 4')).getByRole('article').getAttribute('aria-label')).toMatch(/^Karta [0-9A-Z-]+$/)
 		expect(window.location.pathname).toBe('/rezervacije')
 	})
 
@@ -103,7 +108,7 @@ describe('lista', () => {
 		expect((await screen.findByRole('button', { name: 'Novije' })).disabled).toBe(true)
 		await korisnik.click(screen.getByRole('button', { name: 'Starije' }))
 
-		expect(await screen.findByText('Sala 3 · Teretana Ilidža')).toBeTruthy()
+		expect(await screen.findByText('Sala 3')).toBeTruthy()
 		expect(screen.getByRole('button', { name: 'Starije' }).disabled).toBe(true)
 		expect(fetch.mock.calls.some(([putanja]) => putanja === '/api/bookings/mine?page=1&size=20')).toBe(true)
 	})
@@ -251,7 +256,7 @@ describe('plaćanje', () => {
 		await userEvent.setup().click(await screen.findByRole('button', { name: 'Plati 15 KM' }))
 
 		const red = redSa('Sala za jogu')
-		expect(red.querySelector('.rezervacija-status').textContent).toBe('čeka uplatu')
+		expect(red.querySelector('.zig').textContent).toBe('čeka uplatu')
 		expect(red.textContent).toContain('Rok za uplatu: subota, 17. novembar, 11:30. Poslije toga se termin oslobađa.')
 		await waitFor(() => expect(idiNaStripe).toHaveBeenCalledWith(STRIPE))
 		expect(fetch.mock.calls.filter(([putanja]) => putanja === '/api/bookings/b5/pay')).toHaveLength(1)
@@ -280,7 +285,7 @@ describe('plaćanje', () => {
 		await userEvent.setup().click(await screen.findByRole('button', { name: 'Plati 15 KM' }))
 
 		expect((await screen.findByText(/Ova rezervacija se ne plaća/)).getAttribute('role')).toBe('status')
-		await waitFor(() => expect(redSa('Sala za jogu').querySelector('.rezervacija-status').textContent).toBe('istekla, nije plaćena na vrijeme'))
+		await waitFor(() => expect(redSa('Sala za jogu').querySelector('.zig').textContent).toBe('istekla, nije plaćena na vrijeme'))
 		expect(screen.queryByRole('button', { name: /Plati/ })).toBeNull()
 	})
 
@@ -298,7 +303,7 @@ describe('plaćanje', () => {
 		otvori('/rezervacije?uplata=uspjeh')
 
 		expect((await screen.findByRole('status')).textContent).toContain('Uplata je prošla')
-		await waitFor(() => expect(redSa('Sala za jogu').querySelector('.rezervacija-status').textContent).toBe('potvrđena'), { timeout: 4000 })
+		await waitFor(() => expect(redSa('Sala za jogu').querySelector('.zig').textContent).toBe('potvrđena'), { timeout: 4000 })
 		expect(screen.queryByRole('button', { name: /Plati/ })).toBeNull()
 	})
 

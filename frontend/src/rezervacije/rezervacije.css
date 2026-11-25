@@ -1,16 +1,69 @@
-/* Rezervacija je red kao termin u kalendaru: vrijeme gore u brojevnom fontu, mjesto i stanje ispod. */
-.rezervacije {
+/* Moje rezervacije su karte (karta/karta.css), jedna ispod druge. Stanje je žig na kuponu, a uz
+   njega i oblik: na čekanju isprekidana ivica, potvrđena žig od žara, otkazana precrtano vrijeme,
+   završena rupa od kondukterskih kliješta. */
+.karte {
+	display: grid;
+	gap: var(--razmak-16);
+	max-width: 720px;
 	margin: 0 0 var(--razmak-32);
 	padding: 0;
 	list-style: none;
-	border-top: 1px solid var(--tekst);
+}
+
+.karta-stavka .dugme-tekst {
+	justify-self: start;
+}
+
+.karta-pending .karta {
+	border-style: dashed;
+}
+
+/* Tvoje je žar, kao u kalendaru, ali samo na žigu: cijeli kupon od žara na svakoj karti bi listu
+   pretvorio u niz narandžastih traka. Ugalj na žaru ima 4,82:1. */
+.karta-confirmed .zig {
+	color: var(--tekst-na-moje);
+	background: var(--moje);
+}
+
+.karta-cancelled .karta,
+.karta-rejected .karta,
+.karta-expired .karta {
+	color: var(--tekst-sporedni);
+}
+
+.karta-cancelled .karta-put time,
+.karta-rejected .karta-put time,
+.karta-expired .karta-put time {
+	text-decoration: line-through;
+}
+
+/* Rupa kroz kupon: krug u boji podloge s tamnim rubom, vidi se i bez boje */
+.karta-completed .karta-kupon {
+	background: radial-gradient(circle at 50% var(--razmak-24), var(--podloga) 0 9px, var(--tekst) 9px 10px, transparent 10px);
+}
+
+.karta-stavka .potvrda {
+	margin-top: var(--razmak-8);
+	padding-left: var(--razmak-16);
+	border-left: var(--razmak-4) solid var(--tekst);
+}
+
+/* Raspored i lista čekanja su redovi kao termin u kalendaru: limene ploče s procjepom od podloge */
+.rezervacije {
+	display: grid;
+	gap: 2px;
+	margin: 0 0 var(--razmak-32);
+	padding: 0;
+	list-style: none;
 }
 
 .rezervacija {
 	display: grid;
 	gap: var(--razmak-4);
-	padding: var(--razmak-12) 0;
-	border-bottom: 1px solid var(--linija);
+	padding: var(--razmak-12) var(--razmak-16);
+	background: var(--povrsina);
+	/* Prozirna traka, da tekst stoji isto i kad red nema traku od žara (otkazana) */
+	border-left: var(--razmak-4) solid transparent;
 }
 
 .rezervacija time {
@@ -45,20 +98,17 @@
 	color: var(--tekst-sporedni);
 }
 
-/* Stanje i bez boje: moja potvrđena ima žutu traku lijevo, kao "MOJE" u kalendaru */
+/* Stanje i bez boje: potvrđena ima traku od žara lijevo, kao "tvoje" u kalendaru */
 .rezervacija-confirmed {
-	padding-left: var(--razmak-12);
 	border-left: var(--razmak-4) solid var(--moje);
 }
 
 .rezervacija-pending {
-	padding-left: var(--razmak-12);
 	border-left: var(--razmak-4) dashed var(--moje);
 }
 
-/* Termin s liste čekanja koji je sad moj do roka: ista žuta traka kao potvrđena rezervacija */
+/* Termin s liste čekanja koji je sad moj do roka: ista traka od žara kao potvrđena rezervacija */
 .upis-ponudjen {
-	padding-left: var(--razmak-12);
 	border-left: var(--razmak-4) solid var(--moje);
 }
 

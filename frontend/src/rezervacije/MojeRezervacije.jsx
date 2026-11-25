@@ -2,10 +2,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { mojeRezervacije } from '../api/rezervacije.js'
+import { Karta } from '../karta/Karta.jsx'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { opisTermina, opisTrenutka } from '../vrijeme/opis.js'
-import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
 import { MojaListaCekanja } from './MojaListaCekanja.jsx'
 import { Otkazivanje } from './Otkazivanje.jsx'
 import { Plati } from './Plati.jsx'
@@ -118,7 +118,7 @@ export function MojeRezervacije() {
 				{nadolazece.length > 0 && (
 					<>
 						<h2>Nadolazeće</h2>
-						<ul className="rezervacije" aria-label="Nadolazeće">
+						<ul className="karte" aria-label="Nadolazeće">
 							{nadolazece.map(red)}
 						</ul>
 					</>
@@ -126,7 +126,7 @@ export function MojeRezervacije() {
 				{ostale.length > 0 && (
 					<>
 						<h2>Prošle i otkazane</h2>
-						<ul className="rezervacije" aria-label="Prošle i otkazane">
+						<ul className="karte" aria-label="Prošle i otkazane">
 							{ostale.map(red)}
 						</ul>
 					</>
@@ -167,41 +167,36 @@ function Red({ rezervacija: r, sada, otvorena, naOtvori, naOdbijenuUplatu, child
 	const rokVazi = Date.parse(r.rokOtkazivanja) >= sada
 
 	return (
-		<li className={`rezervacija rezervacija-${r.status.toLowerCase()}`}>
-			<time dateTime={r.pocetak}>
-				<span className="rezervacija-dan">{nazivDana(danUZoni(r.pocetak, r.zona))}, </span>
-				<span className="rezervacija-sat">{opisTermina(r, r.zona, { bezDana: true })}</span>
-			</time>
-			<p className="rezervacija-mjesto">
-				{r.resurs} · {r.organizacija}
-			</p>
-			<p className="rezervacija-status">{opisStatusa(r)}</p>
-			{r.rokUplate && Date.parse(r.rokUplate) > sada && (
-				<>
-					<p className="napomena">Rok za uplatu: {opisTrenutka(r.rokUplate, r.zona)}. Poslije toga se termin oslobađa.</p>
-					<Plati rezervacijaId={r.id} cijenaFeninga={r.cijenaFeninga} naOdbijeno={naOdbijenuUplatu} />
-				</>
-			)}
-			{drziTermin && rokVazi && (
-				<>
+		<li className={`karta-stavka karta-${r.status.toLowerCase()}`}>
+			{/* Stanje je žig na kuponu, riječima, pa se čita i bez boje */}
+			<Karta id={r.id} pocetak={r.pocetak} kraj={r.kraj} zona={r.zona} resurs={r.resurs} mjesto={r.organizacija} zig={opisStatusa(r)}>
+				{r.rokUplate && Date.parse(r.rokUplate) > sada && (
+					<>
+						<p className="napomena">Rok za uplatu: {opisTrenutka(r.rokUplate, r.zona)}. Poslije toga se termin oslobađa.</p>
+						<Plati rezervacijaId={r.id} cijenaFeninga={r.cijenaFeninga} naOdbijeno={naOdbijenuUplatu} />
+					</>
+				)}
+				{drziTermin && rokVazi && (
+					<>
+						<p className="napomena">
+							{r.rokOtkazivanja === r.pocetak
+								? 'Otkazati možeš do početka termina.'
+								: // "do ponedjeljak" nije bosanski, a sklanjanje dana nije vrijedno koda, pa ide dvotačka
+									`Rok za otkazivanje: ${opisTrenutka(r.rokOtkazivanja, r.zona)}.`}
+						</p>
+						<button className="dugme-tekst" type="button" data-rezervacija={r.id} aria-expanded={otvorena} onClick={naOtvori}>
+							Otkaži
+						</button>
+					</>
+				)}
+				{drziTermin && !rokVazi && (
 					<p className="napomena">
-						{r.rokOtkazivanja === r.pocetak
-							? 'Otkazati možeš do početka termina.'
-							: // "do ponedjeljak" nije bosanski, a sklanjanje dana nije vrijedno koda, pa ide dvotačka
-								`Rok za otkazivanje: ${opisTrenutka(r.rokOtkazivanja, r.zona)}.`}
+						Rok za otkazivanje je bio {opisTrenutka(r.rokOtkazivanja, r.zona)}. Ako ne možeš doći, javi se osobi koja vodi termin.
 					</p>
-					<button className="dugme-tekst" type="button" data-rezervacija={r.id} aria-expanded={otvorena} onClick={naOtvori}>
-						Otkaži
-					</button>
-				</>
-			)}
-			{drziTermin && !rokVazi && (
-				<p className="napomena">
-					Rok za otkazivanje je bio {opisTrenutka(r.rokOtkazivanja, r.zona)}. Ako ne možeš doći, javi se osobi koja vodi termin.
-				</p>
-			)}
-			{r.status === 'CONFIRMED' && Date.parse(r.kraj) > sada && <QrDolaska rezervacija={r} />}
-			{children}
+				)}
+				{r.status === 'CONFIRMED' && Date.parse(r.kraj) > sada && <QrDolaska rezervacija={r} />}
+				{children}
+			</Karta>
 		</li>
 	)
 }
