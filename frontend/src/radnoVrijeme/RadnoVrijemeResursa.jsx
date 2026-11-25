@@ -56,7 +56,7 @@ export function RadnoVrijemeResursa() {
 			<Link to={`/o/${slug}/r/${resurs.id}/uredi`}>Izmjena: {resurs.naziv}</Link>
 			<h1>Radno vrijeme: {resurs.naziv}</h1>
 			<p className="napomena-blok">
-				Sati su po zoni {org.organizacija.zona}. Kalendar nudi termine samo unutar radnog vremena, a u izuzecima ni tada.
+				Termini se nude samo unutar radnog vremena, a u danima iz izuzetaka nikako.
 			</p>
 			<Pravila resursId={resurs.id} />
 			<Izuzeci resursId={resurs.id} zona={org.organizacija.zona} />

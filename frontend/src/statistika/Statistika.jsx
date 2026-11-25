@@ -102,7 +102,7 @@ function StatistikaOrganizacije({ organizacija }) {
 				{organizacija.naziv}
 			</Link>
 			<h1>Statistika: {organizacija.naziv}</h1>
-			<p className="napomena-blok">{`${opis} Dani i sati su po zoni ${organizacija.zona}.`}</p>
+			<p className="napomena-blok">{opis}</p>
 			<nav className="mjesec" aria-label="Mjesec">
 				<Link to={`?mjesec=${dodajMjesece(mjesec, -1)}`}>Prethodni mjesec</Link>
 				<h2>{nazivMjeseca(mjesec)}</h2>

@@ -41,7 +41,7 @@ export function Organizacija() {
 			</h1>
 			<div className="organizacija-podaci">
 				<p>Tvoja uloga: {ULOGE[organizacija.uloga] ?? organizacija.uloga}.</p>
-				<p>Vrijeme termina je po zoni {organizacija.zona}.</p>
+				<p>Vrijeme: {organizacija.zona.split('/').pop().replace('_', ' ')}</p>
 			</div>
 			{(organizacija.uloga === 'ADMIN' || mozeDodatiResurs(organizacija)) && (
 				<p className="organizacija-veze">

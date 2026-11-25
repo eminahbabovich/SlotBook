@@ -61,7 +61,7 @@ describe('radno vrijeme', () => {
 		expect(within(dan('ponedjeljak')).getByLabelText('ponedjeljak, 1. interval, od').value).toBe('08:00')
 		expect(within(dan('ponedjeljak')).getByLabelText('ponedjeljak, 2. interval, do').value).toBe('16:00')
 		expect(within(dan('utorak')).getByText('Ne radi.')).toBeTruthy()
-		expect(screen.getByText(/Europe\/Sarajevo/)).toBeTruthy()
+		expect(screen.getByText(/samo unutar radnog vremena/)).toBeTruthy()
 	})
 
 	test('dodan subotnji interval i uklonjen popodnevni ponedjeljak idu jednim PUT-om, po redu dana', async () => {
