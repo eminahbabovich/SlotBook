@@ -135,16 +135,20 @@ Fokus je okvir od 3 px u boji `--tekst` (grafit), odmaknut 2 px od elementa (`--
 
 ## Stanja termina
 
-Svako stanje se razlikuje i bez boje: po ivici, šrafuri, tekstu i oznaci.
+Termin je žeton u mreži na ploči (`.termini`, `auto-fill` od 148 px: dva u redu na telefonu, četiri na desktopu), a ne red u listi. Svako stanje se razlikuje i bez boje: po debljini, šrafuri, okviru, ikoni i tekstu. `--emajl` je boja resursa (`resursi/emajl.js`, iz ID-ja resursa), ista na pločici uz naslov, na izabranom danu i na rubu slobodnih žetona.
 
-- **slobodno:** limena ploča, prazan krug od 14 px s ivicom od 2 px na kraju reda i riječ "slobodno";
-- **izabran:** ploča se izdigne 2 px (`--trajanje-brzo`), dobije grafitnu ivicu lijevo (`--razmak-4`) i tamnu liniju ispod, a krug postane pun. Ispod se otvori potvrda;
-- **zauzeto:** šrafura preko podloge, bez ploče, precrtano vrijeme i riječ "zauzeto";
-- **tvoje:** puna ploča od žara s ivicom od uglja (2 px) i ikonom karte umjesto kruga, tekst u `--tekst-na-moje` i riječ "tvoje";
-- **tvoje na čekanju:** limena ploča s isprekidanom ivicom od žara (3 px) i riječ "čeka potvrdu". Isprekidan žar na limu ima samo 2,91:1, pa stanje nosi tekst;
-- **ponuđen tebi s liste čekanja** (Faza 10): limena ploča s punom trakom od žara lijevo (`--razmak-4`) i oznaka "ponuđen tebi danas do 17:30" (ili "sutra", kad je ponuda stigla pred ponoć). Termin je tvoj samo do roka, pa nije cijela ploča od žara kao potvrđena rezervacija;
-- **tvoje, čeka uplatu** (Faza 11): isto kao na čekanju (isprekidana ivica od žara), samo oznaka kaže "čeka uplatu". Plaćenu ne potvrđuje osoba nego uplata, pa riječ mora reći ko je na potezu;
-- **zauzeto, a na listi sam:** isto kao zauzeto (šrafura, precrtano vrijeme), uz tekst "zauzeto, na listi si". Razlika je samo u riječima, jer termin i dalje nije tvoj.
+- **slobodno:** žeton stoji (`--dubina-2`), s emajl rubom od 3 px odozdo, prazan krug od 14 px u gornjem desnom uglu i riječ "slobodno". Hover ga digne 2 px, pritisak spusti 1 px;
+- **izabran:** žeton odleti u kartu (View Transition, ime `zeton-leti`, `--trajanje-karta`), a na ploči ostaje obris od 2 px s punim krugom. U kuponu karte je isti žeton s riječi "biraš";
+- **zauzeto:** udubljen (`--utisnuto`) i šrafiran, bez debljine, precrtano vrijeme i riječ "zauzeto";
+- **tvoje:** mjeden žeton (`--metal`), ikona karte u uglu, tekst u `--tekst-na-moje` i riječ "tvoje";
+- **tvoje na čekanju:** žeton s isprekidanim okvirom od 2 px u `--tekst-mjed` i riječ "čeka potvrdu" u istoj boji;
+- **ponuđen tebi s liste čekanja** (Faza 10): kao slobodan, uz mjedenu traku lijevo (`--razmak-4`) i oznaku "ponuđen tebi danas do 17:30". Termin je tvoj samo do roka, pa nije cijeli od mjedi;
+- **tvoje, čeka uplatu** (Faza 11): isto kao na čekanju, samo oznaka kaže "čeka uplatu";
+- **zauzeto, a na listi sam:** isto kao zauzeto, uz tekst "zauzeto, na listi si".
+
+Dani su udubljena traka, a izabran dan se digne iz nje kao žeton s emajl rubom. Dan s mojim terminom ima mjedenu tačku ispod broja. Strelice idu kroz slobodne žetone redom: lijevo i gore na prethodni, desno i dolje na sljedeći.
+
+Karta u nastajanju (potvrda) nema foliju. Folija dođe tek kad server kaže da je rezervacija napravljena: karta se odštampa, folija jednom prođe svjetlom, i od tada se naginje prema kursoru ili prstu. Ispod je "Sačuvaj kartu kao sliku" (PNG, dvostruka gustina, `html-to-image` se učitava tek na klik). Dugme "Rezerviši" u karti je mjedeno, jer je to glavna akcija ekrana.
 
 Oznake stanja su malim slovima, a kod tvojih termina podebljane. Ranije su bile verzalom ("MOJE"), ali verzal s razmakom je jedan od znakova AI dizajna iz `REDESIGN.md`.
 

@@ -4,7 +4,7 @@ import { ApiError } from '../api/apiFetch.js'
 import { Karta } from '../karta/Karta.jsx'
 import { rezervisi, rezervisiSeriju } from '../api/rezervacije.js'
 import { porukaGreske, serverNeOdgovara } from '../forma/porukaGreske.js'
-import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
+import { danUZoni, nazivDana, satUZoni } from '../vrijeme/vrijeme.js'
 import { feningeUKm } from '../resursi/cijena.js'
 import { opisTermina, rokPonude } from '../vrijeme/opis.js'
 
@@ -140,7 +140,20 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 			{greska409 ? (
 				sadrzaj
 			) : (
-				<Karta pocetak={termin.pocetak} kraj={termin.kraj} zona={zona} resurs={naziv} className="karta-nova">
+				<Karta
+					pocetak={termin.pocetak}
+					kraj={termin.kraj}
+					zona={zona}
+					resurs={naziv}
+					className="karta-nova"
+					kupon={
+						// Mjesto na koje sleti žeton s ploče (isto ime prelaza kao žeton u kalendaru)
+						<span className="kupon-zeton" data-let="zeton-leti" style={{ viewTransitionName: 'zeton-leti' }} aria-hidden="true">
+							<span>{satUZoni(termin.pocetak, zona)}</span>
+							<span className="kupon-zeton-oznaka">biraš</span>
+						</span>
+					}
+				>
 					{sadrzaj}
 				</Karta>
 			)}

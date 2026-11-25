@@ -28,7 +28,7 @@ export function Zaglavlje() {
 
 	return (
 		<header className="zaglavlje">
-			<div className="zaglavlje-red">
+			<div className={status === 'prijavljen' ? 'zaglavlje-red zaglavlje-red-prijavljen' : 'zaglavlje-red'}>
 				<Link to="/" className="znak">
 					<Znak />
 					<span className="znak-ime">SlotBook</span>
@@ -37,7 +37,7 @@ export function Zaglavlje() {
 					{status === 'prijavljen' && (
 						<div className="zaglavlje-nalog">
 							<Link to="/rezervacije">Moje rezervacije</Link>
-							{/* Ime je ujedno link na nalog: četiri stavke se na telefonu lome u dva reda */}
+							{/* Ime je ujedno link na nalog. Na telefonu ove tri stavke idu u drugi red zaglavlja. */}
 							<Link to="/nalog">{korisnik.ime}</Link>
 							<button className="dugme-tekst" type="button" onClick={odjaviSe} disabled={salje}>
 								{salje ? 'Odjava u toku' : 'Odjavi se'}

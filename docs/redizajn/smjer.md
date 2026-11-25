@@ -40,7 +40,7 @@ Sva tri imaju latin-ext (č, ć, š, đ, ž), provjereno u `files/` paketa.
 ## Tri spektakularna momenta
 
 1. **Hero na landingu.** Ogroman naslov u Anybody, čija slova mijenjaju širinu i težinu prema kursoru (na telefonu prema skrolu), i pored njega pravi mini demo: ploča sa žetonima za sutra u čitaonici, klik uzme termin i odštampa kartu. To je prve tri sekunde, i to je ono što aplikacija stvarno radi.
-2. **Uzimanje termina.** Žeton se odvoji od ploče i preleti u kartu (motion `layoutId`), karta se odštampa, a folija jednom prođe svjetlom. Ovo je trenutak zbog kojeg se aplikacija pamti, pa dobija najviše pažnje.
+2. **Uzimanje termina.** Žeton se odvoji od ploče i preleti u kartu, karta se odštampa, a folija jednom prođe svjetlom. Ovo je trenutak zbog kojeg se aplikacija pamti, pa dobija najviše pažnje. Na landingu let radi motion (`layoutId`), a u kalendaru View Transition (`tema/prelaz.js`): motion bi u glavni bundle donio oko 50 kB, a View Transition ne košta ništa. Kalendar je s njim narastao 2 kB. Browser bez View Transitions samo promijeni stanje, bez leta.
 3. **Prelazi između ekrana.** View Transitions: naziv resursa i njegova emajl boja prelaze s liste na kalendar, karta iz Mojih rezervacija se otvori iz liste. Gdje browser to ne zna, ekran se samo promijeni.
 
 Sve ostalo je mirno. Hover samo gdje nešto znači (žeton, dugme, karta). `prefers-reduced-motion` gasi letove, nagib i prelaze, a stanja ostaju ista.

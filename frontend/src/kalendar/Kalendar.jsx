@@ -4,6 +4,8 @@ import { kalendarResursa } from '../api/termini.js'
 import { Karta } from '../karta/Karta.jsx'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { Plati } from '../rezervacije/Plati.jsx'
+import { SacuvajKartu } from '../karta/SacuvajKartu.jsx'
+import { uzPrelaz } from '../tema/prelaz.js'
 import { feningeUKm } from '../resursi/cijena.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from '../vrijeme/vrijeme.js'
@@ -83,12 +85,20 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 		izaberiDan(novi)
 	}
 
+	// Izabran žeton preleti s ploče u kartu (View Transition). Kad se termin bira iz poruke
+	// "Najbliži slobodan", žeton se nađe u listi po početku, pa leti i tada.
 	function izaberiTermin(termin) {
-		setDan(danUZoni(termin.pocetak, zona))
-		setIzabran({ termin, kljuc: crypto.randomUUID() })
-		setPoruka(null)
-		setZaUplatu(null)
-		setKarta(null)
+		const zeton = lista.current?.querySelector(`button[data-termin="${termin.pocetak}"]`)
+		uzPrelaz(
+			() => {
+				setDan(danUZoni(termin.pocetak, zona))
+				setIzabran({ termin, kljuc: crypto.randomUUID() })
+				setPoruka(null)
+				setZaUplatu(null)
+				setKarta(null)
+			},
+			{ vrsta: 'zeton', let: zeton && { element: zeton, ime: 'zeton-leti' } },
+		)
 	}
 
 	// Fokus se vraća na termin s kojeg je potvrda otvorena, da tastatura ne krene od vrha stranice
@@ -224,15 +234,18 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 							/>
 						))}
 					{karta && (
-						<Karta
-							id={karta.id}
-							pocetak={karta.pocetak}
-							kraj={karta.kraj}
-							zona={zona}
-							resurs={naziv}
-							zig={karta.zig}
-							className="karta-odstampana"
-						/>
+						<SacuvajKartu id={karta.id}>
+							<Karta
+								id={karta.id}
+								pocetak={karta.pocetak}
+								kraj={karta.kraj}
+								zona={zona}
+								resurs={naziv}
+								zig={karta.zig}
+								nagib
+								className="karta-odstampana"
+							/>
+						</SacuvajKartu>
 					)}
 					<p role="status" className="poruka-rezervacije" ref={porukaRef} tabIndex={-1}>
 						{poruka}
@@ -240,7 +253,7 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 					{zaUplatu && <Plati rezervacijaId={zaUplatu} cijenaFeninga={cijenaFeninga} naOdbijeno={nijeZaUplatu} />}
 					{/* Samo kad su termini stigli: dok se učitavaju ili kad se nisu učitali, nema šta birati */}
 					{data && !izabran && !karta && !poruka && (
-						<p className="karta-prazna">Izaberi slobodan termin, a ovdje se pojavi karta: dan, vrijeme i šta rezervišeš.</p>
+						<p className="karta-prazna">Izaberi slobodan žeton s ploče, a ovdje se odštampa karta: dan, vrijeme i šta rezervišeš.</p>
 					)}
 				</div>
 			</div>
@@ -332,12 +345,12 @@ function Sadrzaj({ termin, zona, cijena = 0 }) {
 	)
 }
 
-// Gore i dolje idu kroz slobodne termine (samo su oni dugmad), Home i End na prvi i zadnji.
-// Tab i dalje radi, strelice su samo brži put kroz dug dan.
+// Strelice idu kroz slobodne termine redom (samo su oni dugmad), i u mreži žetona: lijevo i gore na
+// prethodni, desno i dolje na sljedeći. Home i End na prvi i zadnji. Tab i dalje radi.
 function strelice(dogadjaj) {
 	const dugmad = [...dogadjaj.currentTarget.querySelectorAll('button[data-pocetak]')]
 	const trenutno = dugmad.indexOf(document.activeElement)
-	const novo = { ArrowDown: trenutno + 1, ArrowUp: trenutno - 1, Home: 0, End: dugmad.length - 1 }[dogadjaj.key]
+	const novo = { ArrowDown: trenutno + 1, ArrowRight: trenutno + 1, ArrowUp: trenutno - 1, ArrowLeft: trenutno - 1, Home: 0, End: dugmad.length - 1 }[dogadjaj.key]
 	if (trenutno === -1 || novo === undefined || dugmad[novo] === undefined) return
 	dogadjaj.preventDefault()
 	dugmad[novo].focus()

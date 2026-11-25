@@ -1,23 +1,73 @@
-/* Stanja termina iz DIZAJN.md: svako se razlikuje i bez boje (ivica, šrafura, tekst, oznaka). */
-.sedmica {
+/* Kalendar resursa: ploča sa žetonima i karta pored nje (docs/redizajn/smjer.md). Stanja termina se
+   razlikuju i bez boje: debljina, šrafura, ikona, okvir i tekst. --emajl je boja resursa. */
+.resurs-stranica {
+	--emajl: var(--emajl-tirkiz);
+}
+
+.nazad {
+	font-weight: 600;
+	color: var(--tekst-sporedni);
+}
+
+.resurs-naslov {
 	display: flex;
-	justify-content: space-between;
+	align-items: center;
 	gap: var(--razmak-16);
-	margin: var(--razmak-16) 0 var(--razmak-8);
+	margin: var(--razmak-8) 0 var(--razmak-16);
+	font-size: var(--velicina-naslov-1);
+	line-height: var(--prored-naslov);
+}
+
+/* Pločica emajla uz naslov: ista boja kao rub slobodnih žetona ispod */
+.resurs-plocica {
+	flex: none;
+	width: 0.7em;
+	height: 0.7em;
+	background: var(--emajl);
+	border-radius: var(--zaobljenje);
+	box-shadow: var(--dubina-2), inset 0 2px 0 var(--odsjaj);
 }
 
 .resurs-podaci {
-	margin: calc(-1 * var(--razmak-16)) 0 var(--razmak-16);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--razmak-8);
+	margin: 0 0 var(--razmak-16);
+	padding: 0;
+	list-style: none;
 	font-weight: 600;
 	font-variant-numeric: tabular-nums;
 }
 
-/* Dani su traka kao lenjir: podioci između dana i debela crta ispod izabranog, a ne sedam kutija */
+.resurs-podaci li {
+	padding: var(--razmak-4) var(--razmak-12);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: inset 0 0 0 1px var(--linija);
+}
+
+.resurs-opis {
+	max-width: 60ch;
+	color: var(--tekst-sporedni);
+}
+
+.sedmica {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--razmak-16);
+	margin: var(--razmak-24) 0 var(--razmak-8);
+}
+
+/* Dani: udubljena traka, a izabran dan se digne iz nje kao žeton */
 .dani {
 	display: grid;
 	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: var(--razmak-4);
 	margin-bottom: var(--razmak-24);
-	border-bottom: 1px solid var(--tekst);
+	padding: var(--razmak-4);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: var(--utisnuto);
 }
 
 /* Dan i broj uvijek u dva reda, da sve kolone na telefonu izgledaju isto */
@@ -27,53 +77,55 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	min-height: var(--red-min-visina);
-	padding: var(--razmak-16) 0 var(--razmak-12);
+	gap: 2px;
+	min-height: calc(var(--red-min-visina) + var(--razmak-16));
+	padding: var(--razmak-8) 0 var(--razmak-12);
 	font: inherit;
 	font-size: var(--velicina-sitno);
-	line-height: 1.2;
-	color: var(--tekst);
+	line-height: 1.1;
+	color: var(--tekst-sporedni);
 	background: transparent;
 	border: 0;
-	border-left: 1px solid var(--linija);
+	border-radius: var(--zaobljenje-zeton);
 	cursor: pointer;
-	transition: box-shadow var(--trajanje-brzo) ease-out;
-}
-
-.dan:first-child {
-	border-left: 0;
+	transition: background-color var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
 }
 
 .dan span:nth-child(2) {
-	font-size: var(--velicina-vrijeme);
-	font-weight: 600;
-	font-variant-numeric: tabular-nums;
+	font-family: var(--font-brojevi);
+	font-stretch: var(--sirina-brojevi);
+	font-size: var(--velicina-naslov-3);
+	font-weight: 800;
+	color: var(--tekst);
 }
 
-.dan:hover span:nth-child(2) {
-	text-decoration: underline;
+.dan:hover {
+	background: color-mix(in srgb, var(--izdignuto) 60%, transparent);
 }
 
-/* Izabran dan: debela crta ispod i podebljan tekst, ne samo druga boja */
+/* Izabran dan: izdignut, s emajl rubom odozdo i podebljanim tekstom, ne samo druga boja */
 .dan[aria-pressed='true'] {
 	font-weight: 700;
-	box-shadow: inset 0 calc(-1 * var(--razmak-4)) 0 var(--tekst);
+	color: var(--tekst);
+	background: var(--izdignuto);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl);
 }
 
-/* Tačkica od žara na danu s mojim terminom. Prsten od uglja, jer žar na podlozi ima samo 2,42:1. */
+/* Mjedena tačka na danu s mojim terminom, s prstenom od tinte da se vidi i na svijetloj podlozi.
+   Ispod broja, na sredini: u uskoj koloni na telefonu u uglu bi prekrila cifre. */
 .dan-tacka {
 	position: absolute;
-	top: var(--razmak-4);
+	bottom: var(--razmak-4);
 	left: calc(50% - 4px);
 	width: 8px;
 	height: 8px;
-	background: var(--moje);
+	background: var(--metal);
 	border-radius: 50%;
-	box-shadow: 0 0 0 1px var(--tekst-na-moje);
+	box-shadow: 0 0 0 2px var(--tekst-na-moje);
 }
 
-/* Lista lijevo, karta desno. Na telefonu je karta ispod liste i prikovana za dno ekrana dok je
-   termin izabran, pa se potvrda vidi bez skrolanja i ne gura listu. */
+/* Ploča lijevo, karta desno. Na telefonu je karta ispod ploče i prikovana za dno ekrana dok je
+   termin izabran, pa se potvrda vidi bez skrolanja. */
 .kalendar-karta {
 	display: grid;
 	gap: var(--razmak-12);
@@ -83,9 +135,12 @@
 .kalendar-karta-otvorena {
 	position: sticky;
 	bottom: 0;
-	padding: var(--razmak-12) 0;
-	background: var(--podloga);
-	border-top: 1px solid var(--tekst);
+	z-index: 2;
+	margin-inline: calc(-1 * var(--razmak-16));
+	padding: var(--razmak-16);
+	background: var(--zrno), var(--podloga);
+	border-radius: var(--zaobljenje-ploca) var(--zaobljenje-ploca) 0 0;
+	box-shadow: 0 -1px 0 var(--linija), 0 -16px 32px -16px var(--sjena-jaka);
 }
 
 .karta-prazna {
@@ -95,28 +150,32 @@
 @media (min-width: 900px) {
 	.kalendar-tijelo {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+		grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
 		align-items: start;
 		gap: var(--razmak-32);
 	}
 
+	/* Ispod plutajućeg zaglavlja */
 	.kalendar-karta,
 	.kalendar-karta-otvorena {
 		position: sticky;
-		top: var(--razmak-16);
+		top: var(--razmak-96);
 		bottom: auto;
-		margin-top: 0;
+		margin: 0;
 		padding: 0;
-		border-top: 0;
+		background: none;
+		border-radius: 0;
+		box-shadow: none;
 	}
 
-	/* Prazna karta na desktopu: isprekidan obris iste veličine, da se zna gdje će se pojaviti */
+	/* Prazna karta: isprekidan obris karte s linijom kupona, da se zna gdje će se odštampati */
 	.karta-prazna {
 		display: block;
 		margin: 0;
-		padding: var(--razmak-48) var(--razmak-24);
+		padding: var(--razmak-48) calc(var(--razmak-96) + var(--razmak-32)) var(--razmak-48) var(--razmak-24);
 		color: var(--tekst-sporedni);
-		border: 2px dashed var(--linija);
+		background: linear-gradient(var(--linija-jaka), var(--linija-jaka)) right var(--razmak-96) top / 2px 100% no-repeat;
+		border: 2px dashed var(--linija-jaka);
 		border-radius: var(--zaobljenje-karta);
 	}
 }
@@ -129,80 +188,102 @@
 	}
 
 	.karta-nova .karta-glavno {
-		padding: var(--razmak-12) var(--razmak-16) var(--razmak-16);
+		padding: var(--razmak-16);
 	}
 }
 
-/* Termini su limene ploče s procjepom od podloge između. Zauzet nema ploču, nego šrafuru
-   preko podloge, pa izgleda kao udubljenje: tu se ne može stati. */
+/* Ploča sa žetonima: mreža, ne lista. Na telefonu dva žetona u redu, na desktopu tri ili četiri. */
 .termini {
 	display: grid;
-	gap: 2px;
+	grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+	gap: var(--razmak-12);
 	margin: 0;
-	padding: 0;
+	padding: var(--razmak-16);
 	list-style: none;
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-1);
+}
+
+.termin {
+	display: grid;
 }
 
 .termin-red {
+	position: relative;
 	box-sizing: border-box;
-	display: flex;
-	align-items: center;
-	gap: var(--razmak-16);
+	display: grid;
+	align-content: space-between;
+	gap: var(--razmak-8);
 	width: 100%;
-	min-height: var(--red-min-visina);
-	padding: var(--razmak-8) var(--razmak-16);
+	min-height: calc(var(--red-min-visina) + var(--razmak-24));
+	padding: var(--razmak-12) var(--razmak-32) var(--razmak-12) var(--razmak-12);
 	font: inherit;
 	color: var(--tekst);
 	text-align: left;
-	background: var(--povrsina);
+	background: var(--izdignuto);
 	border: 0;
-	transition: transform var(--trajanje-brzo) ease-out, box-shadow var(--trajanje-brzo) ease-out;
+	border-radius: var(--zaobljenje-zeton);
 }
 
 .termin time {
+	font-family: var(--font-brojevi);
+	font-stretch: var(--sirina-brojevi);
 	font-size: var(--velicina-vrijeme);
-	font-weight: 600;
-	/* Vrijeme se nikad ne lomi. Kad je oznaka duga (rok ponude), ona ide u dva reda. */
+	font-weight: 800;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+	/* Vrijeme se nikad ne lomi. Kad je oznaka duga (rok ponude), ona ide u više redova. */
 	white-space: nowrap;
 }
 
-/* Oznaka ide skroz desno, uz krug ili ikonu karte, a ne na sredinu između vremena i kruga */
 .termin-desno {
-	margin-left: auto;
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: flex-end;
-	align-items: center;
-	gap: var(--razmak-4) var(--razmak-12);
+	justify-content: space-between;
+	align-items: baseline;
+	gap: var(--razmak-4) var(--razmak-8);
 }
 
 .termin-oznaka {
 	font-size: var(--velicina-sitno);
-	text-align: right;
+	line-height: 1.25;
+	color: var(--tekst-sporedni);
 }
 
 .termin-cijena {
 	font-size: var(--velicina-sitno);
-	font-weight: 600;
+	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 }
 
-.termin-slobodno button,
-.termin-ponudjen button,
-.termin-zauzeto button {
+/* Slobodan i ponuđen: žeton stoji iznad ploče, s emajl rubom odozdo. Hover ga digne, pritisak spusti. */
+.termin-slobodno .termin-red,
+.termin-ponudjen .termin-red {
 	cursor: pointer;
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl);
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
 }
 
-.termin-slobodno button:hover time,
-.termin-ponudjen button:hover time {
-	text-decoration: underline;
+.termin-slobodno .termin-red:hover,
+.termin-ponudjen .termin-red:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--dubina-3), inset 0 -3px 0 var(--emajl);
 }
 
-/* Krug na kraju reda: prazan je slobodan, pun je izabran. Razlika je u obliku, ne u boji. */
+.termin-slobodno .termin-red:active,
+.termin-ponudjen .termin-red:active {
+	transform: translateY(1px);
+	box-shadow: var(--dubina-1), inset 0 -2px 0 var(--emajl);
+}
+
+/* Krug u uglu: prazan je slobodan, pun je izabran. Razlika je u obliku, ne u boji. */
 .termin-slobodno .termin-red::after,
 .termin-ponudjen .termin-red::after {
 	content: '';
-	flex: none;
+	position: absolute;
+	top: var(--razmak-12);
+	right: var(--razmak-12);
 	width: 14px;
 	height: 14px;
 	box-sizing: border-box;
@@ -210,57 +291,70 @@
 	border-radius: 50%;
 }
 
+/* Izabran: žeton je "u ruci" (odletio je u kartu), pa na ploči ostaje obris s punim krugom */
+.termin .termin-red[aria-expanded='true'],
+.termin .termin-red[aria-expanded='true']:hover {
+	transform: none;
+	background: transparent;
+	box-shadow: inset 0 0 0 2px var(--tekst);
+}
+
 .termin-red[aria-expanded='true']::after {
 	background: var(--tekst);
 }
 
-/* Izabran termin se izdigne iz trake, kao komad koji uzimaš: pomak gore, grafitna ivica lijevo
-   i tamna linija ispod, ista "utisnuta" ivica kao kod dugmeta. */
-.termin-red[aria-expanded='true'] {
-	transform: translateY(-2px);
-	box-shadow: inset var(--razmak-4) 0 0 var(--tekst), 0 2px 0 var(--tekst-na-moje);
+/* Zauzet: udubljen u ploču i šrafiran, bez debljine. Otvara listu čekanja, pa hover podvlači oznaku. */
+.termin-zauzeto .termin-red {
+	color: var(--tekst-sporedni);
+	background: repeating-linear-gradient(-45deg, var(--sraf) 0 6px, transparent 6px 12px), var(--povrsina);
+	box-shadow: var(--utisnuto);
 }
 
-/* Zauzet termin se otvara (lista čekanja), pa hover podvlači oznaku, jer je vrijeme već precrtano */
+.termin-zauzeto button {
+	cursor: pointer;
+}
+
 .termin-zauzeto button:hover .termin-oznaka {
 	text-decoration: underline;
 }
 
-.termin-zauzeto .termin-red {
-	color: var(--tekst-sporedni);
-	background: repeating-linear-gradient(135deg, var(--linija) 0 var(--razmak-4), transparent var(--razmak-4) var(--razmak-12));
-}
-
 .termin-zauzeto time {
 	text-decoration: line-through;
+	text-decoration-thickness: 2px;
 }
 
-/* Ponuđen s liste čekanja: termin je tvoj samo do roka, pa žar samo kao traka lijevo */
+/* Ponuđen s liste čekanja: tvoj je samo do roka, pa mjed samo kao traka lijevo */
 .termin-ponudjen .termin-red {
-	border-left: var(--razmak-4) solid var(--moje);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl), inset var(--razmak-4) 0 0 var(--moje);
 }
 
-/* Tvoje: puna ploča od žara s ivicom od uglja (žar na podlozi ima samo 2,42:1) i ikonom karte.
-   Grafit na žaru ima 3,51:1, ugalj 4,82:1. */
+/* Tvoje: mjeden žeton s ikonom karte u uglu */
 .termin-moje .termin-red {
 	color: var(--tekst-na-moje);
-	background: var(--moje);
-	box-shadow: inset 0 0 0 2px var(--tekst-na-moje);
+	background: var(--metal);
+	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj);
+}
+
+.termin-moje .termin-oznaka {
+	color: var(--tekst-na-moje);
 }
 
 .termin-moje .termin-red::after {
 	content: '';
-	flex: none;
+	position: absolute;
+	top: var(--razmak-8);
+	right: var(--razmak-8);
 	width: 20px;
 	height: 20px;
 	background: currentColor;
 	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M2 6h20v4a2 2 0 0 0 0 4v4H2v-4a2 2 0 0 0 0-4z'/%3E%3Cpath d='M15 6v12' stroke-dasharray='2 2'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
-/* Tvoje na čekanju (potvrda ili uplata): isprekidana ivica od žara, ploča ostaje lim.
-   Stanje nosi tekst, jer isprekidan žar na limu ima samo 2,91:1. */
+/* Tvoje na čekanju (potvrda ili uplata): žeton s isprekidanim mjedenim okvirom. Stanje nosi i tekst. */
 .termin-ceka .termin-red {
-	border: 3px dashed var(--moje);
+	box-shadow: var(--dubina-1);
+	outline: 2px dashed var(--tekst-mjed);
+	outline-offset: -2px;
 }
 
 .termin-moje .termin-oznaka,
@@ -269,10 +363,17 @@
 	font-weight: 700;
 }
 
-/* Kostur ima oblik pravih redova i polako "diše", da se vidi da se nešto dešava */
+.termin-ceka .termin-oznaka,
+.termin-ponudjen .termin-oznaka {
+	color: var(--tekst-mjed);
+}
+
+/* Kostur ima oblik pravih žetona i polako "diše", da se vidi da se nešto dešava */
 .termin-kostur {
-	min-height: var(--red-min-visina);
-	background: var(--povrsina);
+	min-height: calc(var(--red-min-visina) + var(--razmak-24));
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-zeton);
+	box-shadow: var(--dubina-1);
 	animation: disanje var(--trajanje-disanje) ease-in-out infinite alternate;
 }
 
@@ -296,6 +397,53 @@
 	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--razmak-8) var(--razmak-24);
+}
+
+/* Glavna akcija u karti je mjedena: Rezerviši je trenutak zbog kojeg je kalendar tu */
+.karta-nova .potvrda-dugmad .dugme {
+	color: var(--tekst-na-moje);
+	background: var(--metal);
+	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj);
+}
+
+/* Žeton u kuponu karte u nastajanju: tu sleti žeton s ploče */
+.kupon-zeton {
+	display: grid;
+	justify-items: center;
+	gap: 2px;
+	padding: var(--razmak-8) var(--razmak-12);
+	font-family: var(--font-brojevi);
+	font-stretch: var(--sirina-brojevi);
+	font-size: var(--velicina-vrijeme);
+	font-weight: 800;
+	line-height: 1;
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-zeton);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl);
+}
+
+.kupon-zeton-oznaka {
+	font-family: var(--font-tekst);
+	font-stretch: 100%;
+	font-size: var(--velicina-sitno);
+	font-weight: 600;
+	color: var(--tekst-sporedni);
+}
+
+/* Let žetona u kartu: grupa prelaza ide istom krivom kao karta, a ostatak ekrana se samo pretopi */
+::view-transition-group(zeton-leti) {
+	z-index: 3;
+	animation-duration: var(--trajanje-karta);
+	animation-timing-function: var(--kriva-izlaz);
+}
+
+.sacuvaj-kartu .dugme-tekst {
+	justify-self: start;
+}
+
+.sacuvaj-kartu {
+	display: grid;
+	gap: var(--razmak-12);
 }
 
 /* Prazna poruka se ne sakriva s display: none: focus() se zove prije nego React upiše tekst, a

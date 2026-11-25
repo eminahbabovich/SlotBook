@@ -165,6 +165,11 @@
 
 /* Karta izlazi iz automata: otkriva se odozgo prema dole i klizne na mjesto, a folija jednom
    prođe svjetlom. Pokreće je korisnik klikom na Rezerviši. */
+/* Karta u nastajanju još nema foliju: folija dođe tek sa štampom, zajedno s prolazom svjetla */
+.karta-nova .karta-folija {
+	display: none;
+}
+
 .karta-odstampana .karta-tijelo {
 	animation: izlazak-karte var(--trajanje-karta) var(--kriva-izlaz);
 }
@@ -195,6 +200,20 @@
 	}
 }
 
+/* Karta dok se pravi slika (SacuvajKartu): mirna, bez nagiba i animacije, s pozadinom bez zrna */
+.karta[data-slika],
+.karta[data-slika] * {
+	animation: none !important;
+}
+
+.karta[data-slika] {
+	transform: none;
+}
+
+.karta[data-slika] .karta-tijelo {
+	background: var(--izdignuto);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.karta-nagib {
 		transform: none;
@@ -203,8 +222,13 @@
 
 /* Na uskom telefonu kupon i vremena se smanje, da pruga između dva vremena ostane vidljiva */
 @media (max-width: 480px) {
+	/* Kupon mora primiti pečat "potvrđena" i nakrivljen */
 	.karta {
-		--kupon: 92px;
+		--kupon: 108px;
+	}
+
+	.zig {
+		padding: var(--razmak-4);
 	}
 
 	.karta-glavno {
