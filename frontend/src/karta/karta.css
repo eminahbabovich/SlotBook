@@ -1,0 +1,145 @@
+/* Karta za voz, potpisni element iz docs/redizajn/smjer.md. Ivica je tamna linija kao na
+   odštampanom papiru, bez sjene. Zarezi na perforaciji su krugovi u boji podloge, a pola
+   kruga koje viri van karte odsiječe overflow. */
+.karta {
+	position: relative;
+	display: flex;
+	overflow: hidden;
+	color: var(--tekst);
+	background: var(--povrsina);
+	border: 1px solid var(--tekst);
+	border-radius: var(--zaobljenje-karta);
+}
+
+.karta p {
+	margin: 0;
+}
+
+.karta-glavno {
+	flex: 1;
+	min-width: 0;
+	display: grid;
+	gap: var(--razmak-8);
+	padding: var(--razmak-16) var(--razmak-24) var(--razmak-24);
+}
+
+.karta-zaglavlje {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: var(--razmak-4) var(--razmak-16);
+	font-family: var(--font-karta);
+	font-size: var(--velicina-sitno);
+}
+
+.karta-dan {
+	font-weight: 600;
+}
+
+/* Put od-do: stvarno trajanje termina, dvije stanice i pruga između */
+.karta-put {
+	display: flex;
+	align-items: center;
+	gap: var(--razmak-12);
+}
+
+.karta-put time {
+	font-family: var(--font-karta);
+	font-size: var(--velicina-naslov-3);
+}
+
+.karta-linija {
+	position: relative;
+	flex: 1;
+	height: 2px;
+	background: var(--tekst);
+}
+
+.karta-linija::before,
+.karta-linija::after {
+	content: '';
+	position: absolute;
+	top: -4px;
+	width: 10px;
+	height: 10px;
+	background: var(--tekst);
+	border-radius: 50%;
+}
+
+.karta-linija::before {
+	left: 0;
+}
+
+.karta-linija::after {
+	right: 0;
+}
+
+.karta-resurs {
+	font-size: var(--velicina-vrijeme);
+	font-weight: 700;
+}
+
+.karta-mjesto {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+.karta-kupon {
+	position: relative;
+	flex: none;
+	display: grid;
+	align-content: center;
+	justify-items: center;
+	gap: var(--razmak-12);
+	width: 112px;
+	padding: var(--razmak-16) var(--razmak-8);
+	border-left: 2px dashed var(--linija);
+}
+
+.karta-kupon::before,
+.karta-kupon::after {
+	content: '';
+	position: absolute;
+	left: -10px;
+	width: 18px;
+	height: 18px;
+	background: var(--podloga);
+	border: 1px solid var(--tekst);
+	border-radius: 50%;
+}
+
+.karta-kupon::before {
+	top: -10px;
+}
+
+.karta-kupon::after {
+	bottom: -10px;
+}
+
+/* Žig: stanje riječima u dvostrukom okviru, malo nakrivljen kao udaren rukom. Čita se i bez boje. */
+.zig {
+	padding: var(--razmak-4) var(--razmak-8);
+	font-family: var(--font-karta);
+	font-size: var(--velicina-sitno);
+	text-align: center;
+	border: 3px double currentColor;
+	border-radius: var(--zaobljenje);
+	transform: rotate(-8deg);
+}
+
+/* Karta izlazi iz automata: otkriva se odozgo prema dole i klizne na mjesto. Jedini orkestriran
+   pokret u aplikaciji, i pokreće ga korisnik klikom na Rezerviši. */
+.karta-odstampana {
+	animation: izlazak-karte var(--trajanje-karta) ease-out;
+}
+
+@keyframes izlazak-karte {
+	from {
+		clip-path: inset(0 0 100% 0);
+		transform: translateY(calc(-1 * var(--razmak-16)));
+	}
+	to {
+		clip-path: inset(0);
+		transform: none;
+	}
+}

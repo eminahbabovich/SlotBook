@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { kalendarResursa } from '../api/termini.js'
+import { Karta } from '../karta/Karta.jsx'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { Plati } from '../rezervacije/Plati.jsx'
 import { feningeUKm } from '../resursi/cijena.js'
@@ -41,7 +42,7 @@ const MOZE_REZERVISATI = ['slobodno', 'ponudjen']
 // Jedan dan kao lista, i na telefonu i na desktopu. Sedmica se učitava odjednom (jedan poziv),
 // a traka s danima bira koji se dan prikazuje.
 // cijenaFeninga je cijena resursa: plaćen termin se ne ponavlja i čeka uplatu, ne potvrdu.
-export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
+export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 	const queryClient = useQueryClient()
 	// "Danas" je dan u zoni organizacije. U 00:30 po Sarajevu je za browser u Londonu još jučer.
 	// Računa se jednom, pri otvaranju: kalendar otvoren preko ponoći ostaje na istoj sedmici.
@@ -53,6 +54,7 @@ export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
 	const [poruka, setPoruka] = useState(null)
 	// Id upravo napravljene rezervacije koja čeka uplatu, za dugme ispod poruke
 	const [zaUplatu, setZaUplatu] = useState(null)
+	const [karta, setKarta] = useState(null)
 	const lista = useRef(null)
 	const porukaRef = useRef(null)
 	const dani = sedmicaOd(pocetak)
@@ -62,6 +64,8 @@ export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
 		queryKey: kljucKalendara,
 		queryFn: () => kalendarResursa(resursId, pocetak, dodajDane(pocetak, 7)),
 	})
+	// Dani u kojima imam termin (potvrđen ili na čekanju) dobiju tačkicu od žara u traci dana
+	const mojiDani = new Set((data?.termini ?? []).filter((t) => ['moje', 'ceka'].includes(t.stanje)).map((t) => danUZoni(t.pocetak, zona)))
 	// Kad neko drugi rezerviše ili otkaže, termini se osvježe bez ponovnog učitavanja stranice
 	const najavaPromjene = useZivKalendar(resursId)
 
@@ -70,6 +74,7 @@ export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
 		setIzabran(null)
 		setPoruka(null)
 		setZaUplatu(null)
+		setKarta(null)
 	}
 
 	function pomjeriSedmicu(smjer) {
@@ -83,6 +88,7 @@ export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
 		setIzabran({ termin, kljuc: crypto.randomUUID() })
 		setPoruka(null)
 		setZaUplatu(null)
+		setKarta(null)
 	}
 
 	// Fokus se vraća na termin s kojeg je potvrda otvorena, da tastatura ne krene od vrha stranice
@@ -96,6 +102,7 @@ export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
 		setIzabran(null)
 		setPoruka(tekst)
 		setZaUplatu(null)
+		setKarta(null)
 		porukaRef.current?.focus()
 	}
 
@@ -111,6 +118,8 @@ export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
 		const ceka = prva.status === 'PENDING'
 		const zadnji = nazivDana(danUZoni(rezervacije.at(-1).pocetak, zona))
 		setIzabran(null)
+		// Karta se štampa za prvu rezervaciju. Kod serije poruka ispod kaže koliko ih je još.
+		setKarta({ ...izabran.termin, id: prva.id, zig: ceka ? (cijenaFeninga > 0 ? CEKA_UPLATU : 'čeka potvrdu') : 'potvrđena' })
 		if (ceka && cijenaFeninga > 0) {
 			// Plaćen termin se ne ponavlja (Potvrda ne nudi seriju), pa je rezervacija uvijek jedna
 			setPoruka(`Termin ${termin} čeka uplatu. Rok za uplatu: ${opisTrenutka(prva.rokPotvrde, zona)}. Poslije toga se termin oslobađa.`)
@@ -146,34 +155,47 @@ export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
 				</button>
 			</div>
 			<div className="dani">
-				{dani.map((d) => (
-					<button
-						key={d}
-						type="button"
-						className="dan"
-						aria-pressed={d === dan}
-						aria-label={nazivDana(d)}
-						onClick={() => izaberiDan(d)}
-					>
-						{nazivDana(d, 'kratko').split(' ').map((dio) => (
-							<span key={dio}>{dio}</span>
-						))}
-					</button>
-				))}
+				{dani.map((d) => {
+					const imamTermin = mojiDani.has(d)
+					return (
+						<button
+							key={d}
+							type="button"
+							className="dan"
+							aria-pressed={d === dan}
+							aria-label={imamTermin ? `${nazivDana(d)}, imaš termin` : nazivDana(d)}
+							onClick={() => izaberiDan(d)}
+						>
+							{nazivDana(d, 'kratko').split(' ').map((dio) => (
+								<span key={dio}>{dio}</span>
+							))}
+							{imamTermin && <span className="dan-tacka" />}
+						</button>
+					)
+				})}
 			</div>
 
-			{isPending && <Ucitavanje />}
-			{isError && <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />}
-			{data && (
-				<Dan
-					dan={dan}
-					dani={dani}
-					kalendar={cijenaFeninga > 0 ? saUplatom(data) : data}
-					cijenaFeninga={cijenaFeninga}
-					lista={lista}
-					naIzborDana={izaberiDan}
-					naIzborTermina={izaberiTermin}
-					potvrda={
+			<div className="kalendar-tijelo">
+				<div>
+					{isPending && <Ucitavanje />}
+					{isError && <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />}
+					{data && (
+						<Dan
+							dan={dan}
+							dani={dani}
+							kalendar={cijenaFeninga > 0 ? saUplatom(data) : data}
+							cijenaFeninga={cijenaFeninga}
+							lista={lista}
+							naIzborDana={izaberiDan}
+							naIzborTermina={izaberiTermin}
+							izabran={izabran?.termin}
+						/>
+					)}
+				</div>
+				{/* Karta je desno od liste (na telefonu prikovana za dno): prvo u nastajanju dok se termin
+				    potvrđuje, pa odštampana kad server kaže da je rezervacija napravljena */}
+				<div className={izabran ? 'kalendar-karta kalendar-karta-otvorena' : 'kalendar-karta'}>
+					{data &&
 						izabran &&
 						(izabran.termin.stanje === 'zauzeto' ? (
 							<ListaCekanja
@@ -198,17 +220,29 @@ export function Kalendar({ resursId, zona, cijenaFeninga = 0 }) {
 								naIzbor={izaberiTermin}
 								naUspjeh={uspjeh}
 								cijenaFeninga={cijenaFeninga}
+								naziv={naziv}
 							/>
-						))
-					}
-					izabran={izabran?.termin}
-				/>
-			)}
-
-			<p role="status" className="poruka-rezervacije" ref={porukaRef} tabIndex={-1}>
-				{poruka}
-			</p>
-			{zaUplatu && <Plati rezervacijaId={zaUplatu} cijenaFeninga={cijenaFeninga} naOdbijeno={nijeZaUplatu} />}
+						))}
+					{karta && (
+						<Karta
+							id={karta.id}
+							pocetak={karta.pocetak}
+							kraj={karta.kraj}
+							zona={zona}
+							resurs={naziv}
+							zig={karta.zig}
+							className="karta-odstampana"
+						/>
+					)}
+					<p role="status" className="poruka-rezervacije" ref={porukaRef} tabIndex={-1}>
+						{poruka}
+					</p>
+					{zaUplatu && <Plati rezervacijaId={zaUplatu} cijenaFeninga={cijenaFeninga} naOdbijeno={nijeZaUplatu} />}
+					{!izabran && !karta && !poruka && (
+						<p className="karta-prazna">Izaberi slobodan termin, a ovdje se pojavi karta: dan, vrijeme i šta rezervišeš.</p>
+					)}
+				</div>
+			</div>
 		</div>
 	)
 }
@@ -219,7 +253,7 @@ function saUplatom(kalendar) {
 	return { ...kalendar, termini: kalendar.termini.map((t) => (t.stanje === 'ceka' ? { ...t, uplata: true } : t)) }
 }
 
-function Dan({ dan, dani, kalendar, cijenaFeninga, lista, naIzborDana, naIzborTermina, potvrda, izabran }) {
+function Dan({ dan, dani, kalendar, cijenaFeninga, lista, naIzborDana, naIzborTermina, izabran }) {
 	const { zona, termini } = kalendar
 	const zaDan = termini.filter((t) => danUZoni(t.pocetak, zona) === dan)
 
@@ -247,41 +281,38 @@ function Dan({ dan, dani, kalendar, cijenaFeninga, lista, naIzborDana, naIzborTe
 			)}
 			<ul className="termini" aria-label={`Termini, ${nazivDana(dan)}`} onKeyDown={strelice} ref={lista}>
 				{zaDan.map((t) => (
-					<Red key={t.pocetak} termin={t} zona={zona} cijenaFeninga={cijenaFeninga} naIzbor={naIzborTermina} potvrda={t.pocetak === izabran?.pocetak && potvrda} />
+					<Red key={t.pocetak} termin={t} zona={zona} cijenaFeninga={cijenaFeninga} naIzbor={naIzborTermina} otvoren={t.pocetak === izabran?.pocetak} />
 				))}
 			</ul>
 		</>
 	)
 }
 
-// Potvrda ide u svoj red odmah ispod termina, da se na telefonu vidi bez skrolanja.
+// Potvrda je u karti pored liste, a red samo kaže da je otvoren (aria-expanded).
 // data-pocetak imaju samo termini koji se rezervišu (po njima idu strelice), a data-termin svi
 // koji se mogu otvoriti, da se fokus vrati na pravi red.
-function Red({ termin, zona, cijenaFeninga, naIzbor, potvrda }) {
+function Red({ termin, zona, cijenaFeninga, naIzbor, otvoren }) {
 	const rezervise = MOZE_REZERVISATI.includes(termin.stanje)
 	return (
-		<>
-			<li className={`termin termin-${termin.stanje}`}>
-				{rezervise || termin.stanje === 'zauzeto' ? (
-					<button
-						type="button"
-						className="termin-red"
-						data-pocetak={rezervise ? termin.pocetak : undefined}
-						data-termin={termin.pocetak}
-						aria-label={`${opisTermina(termin, zona)}, ${oznaka(termin, zona)}`}
-						aria-expanded={Boolean(potvrda)}
-						onClick={() => naIzbor(termin)}
-					>
-						<Sadrzaj termin={termin} zona={zona} cijena={rezervise ? cijenaFeninga : 0} />
-					</button>
-				) : (
-					<div className="termin-red">
-						<Sadrzaj termin={termin} zona={zona} />
-					</div>
-				)}
-			</li>
-			{potvrda && <li className="termin-potvrda">{potvrda}</li>}
-		</>
+		<li className={`termin termin-${termin.stanje}`}>
+			{rezervise || termin.stanje === 'zauzeto' ? (
+				<button
+					type="button"
+					className="termin-red"
+					data-pocetak={rezervise ? termin.pocetak : undefined}
+					data-termin={termin.pocetak}
+					aria-label={`${opisTermina(termin, zona)}, ${oznaka(termin, zona)}`}
+					aria-expanded={otvoren}
+					onClick={() => naIzbor(termin)}
+				>
+					<Sadrzaj termin={termin} zona={zona} cijena={rezervise ? cijenaFeninga : 0} />
+				</button>
+			) : (
+				<div className="termin-red">
+					<Sadrzaj termin={termin} zona={zona} />
+				</div>
+			)}
+		</li>
 	)
 }
 

@@ -70,6 +70,22 @@ test('potvrđen termin postaje moj, a zahtjev nosi Idempotency-Key', async () =>
 	expect(kljuc(pozivi(fetch)[0])).toMatch(UUID)
 })
 
+test('poslije rezervacije izlazi karta s brojem iz ID-ja, danom, vremenom i resursom', async () => {
+	kalendarSaRezervacijom((tijelo) => potvrda(tijelo.startTime))
+	otvori('/o/citaonica-pmf/r/r1')
+	const korisnik = userEvent.setup()
+
+	await korisnik.click(await screen.findByRole('button', { name: /08:00 do 09:00, slobodno/ }))
+	await korisnik.click(screen.getByRole('button', { name: 'Rezerviši' }))
+
+	const karta = await screen.findByRole('article', { name: 'Karta B1' })
+	expect(karta.textContent).toContain('ponedjeljak, 19. novembar')
+	expect(karta.textContent).toContain('08:00')
+	expect(karta.textContent).toContain('09:00')
+	expect(karta.textContent).toContain('Sto 4, tihi dio')
+	expect(karta.textContent).toContain('potvrđena')
+})
+
 test('rezervacija na čekanju kaže do kada je treba potvrditi', async () => {
 	kalendarSaRezervacijom((tijelo) => potvrda(tijelo.startTime, 'PENDING', '2035-11-19T10:00:00Z'))
 	otvori('/o/citaonica-pmf/r/r1')
@@ -102,7 +118,7 @@ test('dupli klik šalje jednu rezervaciju, a ponovni pokušaj poslije pada mrež
 
 	await korisnik.click(await screen.findByRole('button', { name: /08:00 do 09:00, slobodno/ }))
 	await korisnik.dblClick(screen.getByRole('button', { name: 'Rezerviši' }))
-	expect(screen.getByRole('button', { name: 'Rezervacija se šalje' }).disabled).toBe(true)
+	expect(screen.getByRole('button', { name: 'Rezervišem...' }).disabled).toBe(true)
 	pusti()
 
 	expect((await screen.findByRole('alert')).textContent).toMatch(/Nije jasno da li je rezervacija stigla/)

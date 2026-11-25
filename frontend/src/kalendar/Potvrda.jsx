@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useId, useRef, useState } from 'react'
 import { ApiError } from '../api/apiFetch.js'
+import { Karta } from '../karta/Karta.jsx'
 import { rezervisi, rezervisiSeriju } from '../api/rezervacije.js'
 import { porukaGreske, serverNeOdgovara } from '../forma/porukaGreske.js'
 import { danUZoni, nazivDana } from '../vrijeme/vrijeme.js'
@@ -15,9 +16,9 @@ const PORUKE = {
 	opsta: 'Rezervacija nije uspjela zbog greške na serveru. Pokušaj ponovo za minutu.',
 }
 
-// Potvrda ispod izabranog termina. kljuc (Idempotency-Key) je napravljen kad je termin izabran,
+// Potvrda izabranog termina, kao karta u nastajanju. kljuc (Idempotency-Key) je napravljen kad je termin izabran,
 // pa ga nose i dupli klik i "Pokušaj ponovo". Drugi termin je nova namjera i dobija novi ključ.
-export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini, naOdustani, naIzbor, naUspjeh, cijenaFeninga = 0 }) {
+export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini, naOdustani, naIzbor, naUspjeh, cijenaFeninga = 0, naziv }) {
 	const queryClient = useQueryClient()
 	const naslov = useId()
 	const poljeSedmica = useId()
@@ -56,18 +57,8 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 	const nisuSlobodne = zauzeteSedmice(slanje.error)
 	const najblizi = greska409 ? najbliziSlobodan(termini, termin) : null
 
-	return (
-		<div
-			className="potvrda"
-			role="group"
-			aria-labelledby={naslov}
-			onKeyDown={(d) => {
-				if (d.key === 'Escape') naOdustani()
-			}}
-		>
-			<p id={naslov} className="potvrda-pitanje">
-				{greska409 ? `Termin ${opisTermina(termin, zona)} je zauzet.` : `Rezervisati ${opisTermina(termin, zona)}?`}
-			</p>
+	const sadrzaj = (
+		<>
 			{termin.stanje === 'ponudjen' && !greska409 && (
 				<p className="napomena">
 					Termin se oslobodio i ponuđen je tebi s liste čekanja {rokPonude(termin.rokPonude, zona)}. Poslije toga ide sljedećem
@@ -109,7 +100,7 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 				{!greska409 && (
 					<button ref={dugme} className="dugme" type="button" onClick={() => slanje.mutate()} disabled={slanje.isPending}>
 						{slanje.isPending
-							? 'Rezervacija se šalje'
+							? 'Rezervišem...'
 							: serverNeOdgovara(slanje.error)
 								? 'Pokušaj ponovo'
 								: sedmica === 1
@@ -129,6 +120,30 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 					{greska409 ? 'Zatvori' : 'Odustani'}
 				</button>
 			</div>
+		</>
+	)
+
+	return (
+		<div
+			className="potvrda"
+			role="group"
+			aria-labelledby={naslov}
+			onKeyDown={(d) => {
+				if (d.key === 'Escape') naOdustani()
+			}}
+		>
+			{/* Pitanje je ime grupe za čitač ekrana. Vidi se samo kad je termin zauzet, jer inače
+			    karta ispod kaže isto: dan, vrijeme i resurs. */}
+			<p id={naslov} className={greska409 ? 'potvrda-pitanje' : 'skriveno'}>
+				{greska409 ? `Termin ${opisTermina(termin, zona)} je zauzet.` : `Rezervisati ${opisTermina(termin, zona)}?`}
+			</p>
+			{greska409 ? (
+				sadrzaj
+			) : (
+				<Karta pocetak={termin.pocetak} kraj={termin.kraj} zona={zona} resurs={naziv} className="karta-nova">
+					{sadrzaj}
+				</Karta>
+			)}
 		</div>
 	)
 }

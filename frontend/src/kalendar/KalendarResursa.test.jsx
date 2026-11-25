@@ -47,6 +47,9 @@ test('iz organizacije se bira resurs, a kalendar otvara današnji dan u zoni org
 
 	expect(await screen.findByRole('heading', { name: 'Sto 4, tihi dio' })).toBeTruthy()
 	expect(screen.getByRole('button', { name: /ponedjeljak, 19. novembar/, pressed: true })).toBeTruthy()
+	// Tačkica od žara na danu s mojim terminom se čuje i na čitaču ekrana
+	expect(screen.getByRole('button', { name: 'ponedjeljak, 19. novembar, imaš termin' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'utorak, 20. novembar' })).toBeTruthy()
 	expect(window.location.pathname).toBe('/o/citaonica-pmf/r/r1')
 	expect(fetch.mock.calls.some(([putanja]) => putanja === '/api/resources/r1/slots?from=2035-11-19&to=2035-11-26')).toBe(true)
 })

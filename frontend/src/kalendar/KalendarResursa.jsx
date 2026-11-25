@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { porukaGreske } from '../forma/porukaGreske.js'
+import { feningeUKm } from '../resursi/cijena.js'
 import { OrganizacijaNijeDostupna } from '../organizacije/Organizacija.jsx'
 import { useOrganizacija, useResursi } from '../organizacije/upiti.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
@@ -43,8 +44,13 @@ export function KalendarResursa() {
 		<section>
 			<Link to={`/o/${slug}`}>{org.organizacija.naziv}</Link>
 			<h1>{resurs.naziv}</h1>
+			{/* Ono što se pita prije izbora termina: koliko traje, koliko košta, koliko ljudi stane */}
+			<p className="resurs-podaci">
+				{resurs.trajanjeMinuta} min · {resurs.cijenaFeninga > 0 ? `${feningeUKm(resurs.cijenaFeninga)} KM` : 'besplatno'}
+				{resurs.brojMjesta > 1 && ` · mjesta: ${resurs.brojMjesta}`}
+			</p>
 			{resurs.opis && <p>{resurs.opis}</p>}
-			<Kalendar resursId={resurs.id} zona={org.organizacija.zona} cijenaFeninga={resurs.cijenaFeninga} />
+			<Kalendar resursId={resurs.id} naziv={resurs.naziv} zona={org.organizacija.zona} cijenaFeninga={resurs.cijenaFeninga} />
 		</section>
 	)
 }
