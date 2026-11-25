@@ -4,7 +4,7 @@ const SATI = ['00', '01', '02', '03', '04']
 
 export function NocPomjeranja() {
 	return (
-		<article className="oslonac-kartica">
+		<article className="oslonac-kartica kartica">
 			<div className="noc-traka" aria-hidden="true">
 				{SATI.map((sat) => (
 					<span key={sat} className={sat === '02' ? 'noc-rupa' : undefined}>

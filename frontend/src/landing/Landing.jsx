@@ -103,7 +103,7 @@ export default function Landing() {
 						Umjesto Viber grupe i papira na vratima
 					</h2>
 					<div className="prije-poslije">
-						<div className="prije">
+						<div className="prije kartica">
 							<h3>Danas</h3>
 							<ul>
 								{DANAS.map((t) => (
@@ -111,7 +111,7 @@ export default function Landing() {
 								))}
 							</ul>
 						</div>
-						<div className="poslije">
+						<div className="poslije kartica">
 							<h3>Sa SlotBookom</h3>
 							<ul>
 								{SLOTBOOK.map((t) => (
@@ -129,7 +129,7 @@ export default function Landing() {
 						</h2>
 						<ol className="koraci">
 							{KORACI.map(([naslov, opis], i) => (
-								<li key={naslov}>
+								<li key={naslov} className="kartica">
 									<span className="korak-broj" aria-hidden="true">
 										{i + 1}
 									</span>
@@ -147,7 +147,7 @@ export default function Landing() {
 					</h2>
 					<ul className="mogucnosti">
 						{MOGUCNOSTI.map(([ikona, naslov, opis]) => (
-							<li key={naslov}>
+							<li key={naslov} className="kartica">
 								<Ikona ime={ikona} />
 								<h3>{naslov}</h3>
 								<p>{opis}</p>

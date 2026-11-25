@@ -2,7 +2,7 @@
 // s API rutama i statusom 403, a to je za README, ne za vlasnika teretane.
 export function TudjaVrata() {
 	return (
-		<article className="oslonac-kartica">
+		<article className="oslonac-kartica kartica">
 			<div className="vrata" aria-hidden="true">
 				<span className="vrata-org vrata-teretana">Teretana Ilidža</span>
 				<span className="vrata-zid" />

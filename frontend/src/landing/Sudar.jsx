@@ -34,7 +34,7 @@ export function Sudar() {
 	const gotovo = faza === 'gotovo'
 
 	return (
-		<article className="oslonac-kartica oslonac-sudar">
+		<article className="oslonac-kartica oslonac-sudar kartica">
 			<div className="sudar-polje" aria-hidden="true" ref={polje}>
 				<div className={`sudar-termin ${gotovo ? 'sudar-termin-uzet' : ''}`}>
 					<time>10:00</time>
