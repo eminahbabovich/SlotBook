@@ -65,9 +65,9 @@ Greška cijele forme i greška polja imaju ikonu prekinutog kruga s uzvičnikom 
 
 Trajanja su `--trajanje-brzo` (150 ms, odgovor na klik), `--trajanje-srednje` (220 ms, promjena stanja) i `--trajanje-karta` (300 ms). Uz `prefers-reduced-motion` su svi prelazi i animacije 0 ms: stanje se i dalje promijeni, samo bez pokreta.
 
-Lista organizacija je kao tabla s polascima: red po organizaciji, naziv lijevo, uloga desno sitnijim sivim slovima, tanka linija (`--linija`) između redova i puna tamna linija iznad prvog. Red je visok najmanje `--red-min-visina`, cijeli je link i na hover podvlači naziv. Nema kartica ni sjene.
+Liste (organizacije, resursi, članovi, izuzeci) su ploče lima, iste kao red termina: svaki red je `--povrsina`, a između redova je procjep od 2 px kroz koji se vidi podloga. Nema kartica, sjene ni linije iznad liste. Naziv je `--velicina-vrijeme` (20 px) i težak 700, jer se po njemu traži, a uloga ili trajanje su sitno desno u `--tekst-sporedni`. Red je visok najmanje `--red-min-visina`, cijela ploča je link i na hover podvlači naziv. Kod resursa koji korisnik vodi, "Raspored" i "Uredi" su podvučene veze na istoj ploči, desno.
 
-Kalendar je jedan dan kao lista, i na telefonu i na desktopu. Iznad je traka sa sedam dana (kratki naziv i broj u dva reda), a izabran dan ima tamnu ivicu od 3 px i podebljan tekst. Termin je red visine `--red-min-visina`: vrijeme lijevo u `--font-brojevi` veličine `--velicina-vrijeme`, oznaka stanja desno. Šrafura zauzetog termina je `--linija` pod 135 stepeni, 4 px pruga na svakih 12 px (`--razmak-4`, `--razmak-12`). Moja na čekanju ima isprekidanu žutu ivicu od 3 px. Žuta ivica na podlozi ima kontrast samo 1,61:1, pa stanje ne nosi ivica nego tekst "ČEKA POTVRDU". Isključeno tekst-dugme (npr. "Prethodnih 7 dana" na prvoj sedmici) je sivo i bez podvlake.
+Kalendar je jedan dan kao lista, i na telefonu i na desktopu. Iznad je traka sa sedam dana (kratki naziv i broj u dva reda), a izabran dan ima tamnu ivicu od 3 px i podebljan tekst. Termin je limena ploča visine `--red-min-visina`, s procjepom od 2 px do sljedeće: vrijeme lijevo u `--velicina-vrijeme`, težine 600 i s tabularnim ciframa, a desno oznaka stanja, cijena (samo kod plaćenog resursa i samo na terminu koji se može rezervisati, npr. "15 KM") i krug ili ikona. Šrafura zauzetog termina je `--linija` pod 135 stepeni, 4 px pruga na svakih 12 px, preko podloge, bez ploče, pa zauzet termin izgleda kao udubljenje. Kostur dok se termini učitavaju su četiri prazne ploče koje polako "dišu" (prozirnost od 1 do 0,5 za `--trajanje-disanje`, 1200 ms), a uz `prefers-reduced-motion` stoje mirno. Isključeno tekst-dugme (npr. "Prethodnih 7 dana" na prvoj sedmici) je sivo i bez podvlake.
 
 Potvrda rezervacije nije modal, nego red odmah ispod izabranog termina, s tamnom linijom lijevo (`--razmak-4`, `--tekst`), isto kao greška forme, samo tamna. Pitanje je podebljano ("Rezervisati ponedjeljak, 19. novembar, 08:00 do 09:00?"), ispod su glavno dugme i "Odustani" kao tekst. Na telefonu se tako vidi bez skrolanja, a pored termina na koji se odnosi. Raspored providera koristi istu listu, samo umjesto resursa i organizacije piše ime klijenta, a ispod su dugmad za promjenu. Glavna akcija (Potvrdi, Upiši dolazak) je puno dugme, a ona koja se ne može vratiti (Odbij, Upiši nedolazak) je tekst-dugme i traži drugi klik.
 
@@ -91,13 +91,16 @@ Fokus je okvir od 3 px u boji `--tekst` (grafit), odmaknut 2 px od elementa (`--
 
 Svako stanje se razlikuje i bez boje: po ivici, šrafuri, tekstu i oznaci.
 
-- **slobodno:** red s tankom ivicom, vrijeme i riječ "slobodno";
-- **zauzeto:** siva kosa šrafura preko reda, precrtano vrijeme i riječ "zauzeto";
-- **moja rezervacija:** puna žuta traka, tamni tekst i oznaka "MOJE";
-- **moja na čekanju:** žuta isprekidana ivica bez punjenja i oznaka "ČEKA POTVRDU".
-- **ponuđen meni s liste čekanja** (Faza 10): puna žuta traka lijevo (`--razmak-4`), red bez punjenja i oznaka "PONUĐEN TEBI DANAS DO 17:30" (ili "SUTRA", kad je ponuda stigla pred ponoć). Termin je moj samo do roka, pa nije cijeli red žut kao potvrđena rezervacija, ali žuta i dalje znači "ovo je za tebe";
-- **moja koja čeka uplatu** (Faza 11): isto kao moja na čekanju (isprekidana žuta ivica), samo oznaka kaže "ČEKA UPLATU". Plaćenu ne potvrđuje osoba nego uplata, pa riječ mora reći ko je na potezu;
-- **zauzeto, a na listi sam:** isto kao zauzeto (šrafura, precrtano vrijeme), uz tekst "zauzeto, na listi si". Razlika je samo u riječima, jer termin i dalje nije moj.
+- **slobodno:** limena ploča, prazan krug od 14 px s ivicom od 2 px na kraju reda i riječ "slobodno";
+- **izabran:** ploča se izdigne 2 px (`--trajanje-brzo`), dobije grafitnu ivicu lijevo (`--razmak-4`) i tamnu liniju ispod, a krug postane pun. Ispod se otvori potvrda;
+- **zauzeto:** šrafura preko podloge, bez ploče, precrtano vrijeme i riječ "zauzeto";
+- **tvoje:** puna ploča od žara s ivicom od uglja (2 px) i ikonom karte umjesto kruga, tekst u `--tekst-na-moje` i riječ "tvoje";
+- **tvoje na čekanju:** limena ploča s isprekidanom ivicom od žara (3 px) i riječ "čeka potvrdu". Isprekidan žar na limu ima samo 2,91:1, pa stanje nosi tekst;
+- **ponuđen tebi s liste čekanja** (Faza 10): limena ploča s punom trakom od žara lijevo (`--razmak-4`) i oznaka "ponuđen tebi danas do 17:30" (ili "sutra", kad je ponuda stigla pred ponoć). Termin je tvoj samo do roka, pa nije cijela ploča od žara kao potvrđena rezervacija;
+- **tvoje, čeka uplatu** (Faza 11): isto kao na čekanju (isprekidana ivica od žara), samo oznaka kaže "čeka uplatu". Plaćenu ne potvrđuje osoba nego uplata, pa riječ mora reći ko je na potezu;
+- **zauzeto, a na listi sam:** isto kao zauzeto (šrafura, precrtano vrijeme), uz tekst "zauzeto, na listi si". Razlika je samo u riječima, jer termin i dalje nije tvoj.
+
+Oznake stanja su malim slovima, a kod tvojih termina podebljane. Ranije su bile verzalom ("MOJE"), ali verzal s razmakom je jedan od znakova AI dizajna iz `REDESIGN.md`.
 
 Zauzet termin se može otvoriti (Faza 10). Ispod njega se otvori isti red kao potvrda rezervacije, s pitanjem i dugmetom "Javi mi ako se oslobodi", a kad sam na listi, s dugmetom "Ispiši me sa liste". Strelice i dalje idu samo kroz termine koji se rezervišu (slobodan i ponuđen meni), a do zauzetog se dolazi Tabom. U "Mojim rezervacijama" je dio "Lista čekanja" iste vrste liste. Ponuđen termin tamo ima žutu traku i link "Rezerviši u kalendaru", a ispis traži drugi klik, jer se mjesto na listi gubi. Vrijeme termina se nikad ne lomi u dva reda (`white-space: nowrap`), a duga oznaka ide u dva reda, poravnata desno. Nove boje, fontove ni razmake ovo ne uvodi.
 

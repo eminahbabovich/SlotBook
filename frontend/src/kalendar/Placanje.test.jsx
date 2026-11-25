@@ -51,6 +51,17 @@ afterEach(() => {
 	vi.unstubAllGlobals()
 })
 
+test('slobodan termin plaćenog resursa pokazuje cijenu u redu, prije nego što se izabere', async () => {
+	salaZaJogu()
+	otvori('/o/citaonica-pmf/r/r1')
+
+	await screen.findByRole('list', { name: /Termini/ })
+
+	expect(red('08:00').textContent).toBe('08:00–09:00slobodno15 KM')
+	// Čitač ekrana i dalje čuje stanje kao do sada, a cijenu čuje u potvrdi
+	expect(screen.getByRole('button', { name: 'ponedjeljak, 19. novembar, 08:00 do 09:00, slobodno' })).toBeTruthy()
+})
+
 test('potvrda plaćenog termina kaže cijenu i ne nudi ponavljanje', async () => {
 	salaZaJogu()
 	otvori('/o/citaonica-pmf/r/r1')

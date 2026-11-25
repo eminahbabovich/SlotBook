@@ -9,7 +9,7 @@ const STO = { id: 'r1', organizationId: 'o1', providerId: 'u9', name: 'Sto 4, ti
 const RESURSI = { '/api/organizations/o1/resources?size=100': () => json({ content: [STO], page: 0, size: 100, totalElements: 1, totalPages: 1 }) }
 const slobodan = (start, end) => ({ start, end })
 
-// Ponedjeljak 19.11.2035: 08 slobodno, 09 moje, 10 čeka potvrdu, 11 tuđe, 12 slobodno.
+// Ponedjeljak 19.11.2035: 08 slobodno, 09 tvoje, 10 čeka potvrdu, 11 tuđe, 12 slobodno.
 // Utorak nema ništa, srijeda ima jedan slobodan termin.
 const SEDMICA = {
 	timezone: 'Europe/Sarajevo',
@@ -59,7 +59,7 @@ test('četiri stanja termina se razlikuju i tekstom, ne samo bojom', async () =>
 
 	expect(redovi().map((red) => red.textContent)).toEqual([
 		'08:00–09:00slobodno',
-		'09:00–10:00moje',
+		'09:00–10:00tvoje',
 		'10:00–11:00čeka potvrdu',
 		'11:00–12:00zauzeto',
 		'12:00–13:00slobodno',
@@ -69,7 +69,7 @@ test('četiri stanja termina se razlikuju i tekstom, ne samo bojom', async () =>
 	expect(screen.getAllByRole('button', { name: /slobodno$/ })).toHaveLength(2)
 })
 
-// Grupni trening s 5 mjesta: slobodan kaže koliko je mjesta ostalo, pun je "popunjeno", a moje ostaje moje
+// Grupni trening s 5 mjesta: slobodan kaže koliko je mjesta ostalo, pun je "popunjeno", a tvoje ostaje tvoje
 test('grupni termin pokazuje koliko je mjesta ostalo, a pun je popunjen', async () => {
 	backend({
 		...PRIJAVLJENA,
@@ -96,7 +96,7 @@ test('grupni termin pokazuje koliko je mjesta ostalo, a pun je popunjen', async 
 	expect(redovi().map((red) => red.textContent)).toEqual([
 		'08:00–09:00slobodno, još 5 mjesta',
 		'09:00–10:00slobodno, još 1 mjesto',
-		'10:00–11:00moje',
+		'10:00–11:00tvoje',
 		'11:00–12:00popunjeno',
 		'12:00–13:00popunjeno, na listi si',
 	])

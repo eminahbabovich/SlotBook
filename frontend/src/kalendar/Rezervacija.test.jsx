@@ -65,7 +65,7 @@ test('potvrđen termin postaje moj, a zahtjev nosi Idempotency-Key', async () =>
 	await korisnik.click(within(grupa).getByRole('button', { name: 'Rezerviši' }))
 
 	expect((await screen.findByText(/Termin je tvoj/)).textContent).toBe('Termin je tvoj: ponedjeljak, 19. novembar, 08:00 do 09:00.')
-	await waitFor(() => expect(red('08:00').textContent).toMatch(/moje$/))
+	await waitFor(() => expect(red('08:00').textContent).toMatch(/tvoje$/))
 	expect(JSON.parse(pozivi(fetch)[0][1].body)).toEqual({ startTime: '2035-11-19T07:00:00Z' })
 	expect(kljuc(pozivi(fetch)[0])).toMatch(UUID)
 })

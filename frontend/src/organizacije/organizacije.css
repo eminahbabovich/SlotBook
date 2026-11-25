@@ -1,9 +1,11 @@
-/* Lista kao tabla s polascima: red po organizaciji, naziv lijevo, uloga desno. */
+/* Lista kao ploče lima, iste kao red termina: procjep od podloge između, bez kartica i sjene.
+   Naziv je veći i teži, jer se po njemu traži, a uloga ili trajanje su sitno desno. */
 .tabla {
+	display: grid;
+	gap: 2px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
-	border-top: 1px solid var(--tekst);
 }
 
 .tabla-red {
@@ -13,14 +15,15 @@
 	align-items: center;
 	gap: var(--razmak-4) var(--razmak-16);
 	min-height: var(--red-min-visina);
-	padding: var(--razmak-8) 0;
-	border-bottom: 1px solid var(--linija);
+	padding: var(--razmak-12) var(--razmak-16);
 	color: var(--tekst);
 	text-decoration: none;
+	background: var(--povrsina);
 }
 
 .tabla-naziv {
-	font-weight: 600;
+	font-size: var(--velicina-vrijeme);
+	font-weight: 700;
 }
 
 .tabla-red:hover .tabla-naziv {
@@ -32,17 +35,19 @@
 	color: var(--tekst-sporedni);
 }
 
-/* Red s resursom koji korisnik vodi: link na kalendar lijevo, raspored desno, oba vlastita meta */
+/* Red s resursom koji korisnik vodi: cijela ploča vodi na kalendar, a Raspored i Uredi su
+   sporedne veze na istoj ploči, desno */
 .tabla-stavka {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
-	gap: var(--razmak-16);
-	border-bottom: 1px solid var(--linija);
+	gap: var(--razmak-4) var(--razmak-16);
+	padding-right: var(--razmak-16);
+	background: var(--povrsina);
 }
 
 .tabla-stavka .tabla-red {
 	flex: 1;
-	border-bottom: 0;
 }
 
 /* Veze za admina i providera ispod naslova, jedna do druge, a na uskom ekranu jedna ispod druge */

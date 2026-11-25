@@ -307,5 +307,5 @@ test('u grupnoj sobi s dva mjesta klijent vidi da je ostalo jedno mjesto i rezer
 	await termin(page, '08:00 do 09:00', 'slobodno, još 1 mjesto').click()
 	await page.getByRole('button', { name: 'Rezerviši' }).click()
 	await expect(page.getByText(/^Termin je tvoj: .*08:00 do 09:00\.$/)).toBeVisible()
-	await expect(page.getByRole('list', { name: /Termini/ }).getByRole('listitem').filter({ hasText: '08:00–09:00' })).toContainText('moje')
+	await expect(page.getByRole('list', { name: /Termini/ }).getByRole('listitem').filter({ hasText: '08:00–09:00' })).toContainText('tvoje')
 })
