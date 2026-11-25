@@ -112,7 +112,9 @@ test('klijent se prijavi, rezerviše termin i otkaže ga, pa je termin opet slob
 	await page.getByRole('link', { name: 'Moje rezervacije' }).click()
 	const nadolazece = page.getByRole('list', { name: 'Nadolazeće' })
 	await expect(nadolazece.getByRole('listitem')).toHaveCount(1)
-	await expect(nadolazece.getByRole('listitem')).toContainText(`08:00 do 09:00${RESURS} · ${ORGANIZACIJA}potvrđena`)
+	// Karta: put od-do, resurs i organizacija jedno ispod drugog, a stanje je žig na kuponu
+	await expect(nadolazece.getByRole('listitem')).toContainText(`08:00 do 09:00${RESURS}${ORGANIZACIJA}`)
+	await expect(nadolazece.getByRole('listitem').locator('.zig')).toHaveText('potvrđena')
 	await nadolazece.getByRole('button', { name: 'Otkaži' }).click()
 	await page.getByRole('button', { name: 'Otkaži rezervaciju' }).click()
 
