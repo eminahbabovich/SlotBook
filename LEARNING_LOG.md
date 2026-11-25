@@ -416,3 +416,17 @@ Granica pokušaja je ispala gore nego što smo mislili. Mislio sam da će svi po
 Za mail je plan bio port 465. Prije podešavanja smo pročitali stranicu o besplatnom planu na Renderu: od septembra 2025 blokira 25, 465 i 587. Brevo prima i 2525, pa je dodan STARTTLS u `application-prod.properties`. `smtps` ne, jer timeouti važe za `mail.smtp.*`, a `smtps` čita `mail.smtps.*`.
 
 Prvi mail nije ni krenuo. U `MAIL_FROM` sam upisao `SlotBook adresa@gmail.com`, bez `< >`, i dobio od Sentryja `IllegalStateException: Mail za obavijest ... se ne može sastaviti`. Smiješno je da je to prvi pravi događaj koji je ikad stigao u Sentry, tri dana poslije povezivanja. Sa zagradama mail stiže, link vodi na Vercel i prijava radi. Samo završi u spamu, jer šalje Brevo, a pošiljalac je Gmail.
+
+## srijeda, 25. novembar 2026. u 20:28
+
+Redizajn ispočetka, ovaj put bez prototipova. Smjer je Mjed i emajl: termin je žeton, rezervacija je karta s mjedenom folijom. Landing i kalendar su gotovi.
+
+Na prvom screenshotu landinga naslov "Termin je tvoj." se proširio preko ploče s terminima. Slova se šire prema kursoru, a ja sam ih pustio do 148 % širine na fontu od 184 px. Smanjio sam font i dodao `overflow-x: clip` na kolonu s tekstom.
+
+Folija na karti je pravila tanak šav preko kupona. Prvo sam mislio da je kriv `soft-light` preko poluprozirnog kupona i skratio sam foliju samo na glavni dio. Šav je ostao. Pravi uzrok je bilo ponavljanje pozadine: gradijent od 260 % se pomjerao do 120 %, pa se na rubu vidio početak sljedeće kopije. `background-repeat: no-repeat` i pomak do 80 % su ga riješili.
+
+"Sačuvaj kartu kao sliku" je prvi put dao PNG na kojem je karta odsječena i prozirna. `html-to-image` prepisuje izračunate stilove u kopiju, pa se u kopiji ponovo pokrenula animacija štampe (`clip-path` od nule), a pozadina sa SVG zrnom se nije prenijela. Dok se pravi slika, karta sad dobije `data-slika`, koji gasi animaciju i zrno.
+
+U kalendaru žeton preleti u kartu preko View Transitions, a ne preko motion `layoutId` kao na landingu. Motion bi u glavni bundle donio oko 50 kB, a ovako je kalendar narastao 2 kB. Zamka: ime prelaza mora biti jedinstveno u starom izgledu, a stara karta ga već nosi kad se klikne drugi žeton. Zato se staroj karti ime ugasi prije prelaza.
+
+Sedam testova u `App.test.jsx` je palo jer `/` za odjavljene više nije prijava nego landing. Testovi prijave sad otvaraju `/prijava`, a test odjave provjerava da se vidi landing i da sesije nema. jsdom nema `matchMedia` ni `ResizeObserver`, pa je dodan `src/test/postavka.js`.
