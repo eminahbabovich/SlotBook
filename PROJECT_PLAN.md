@@ -432,6 +432,15 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    rezervaciju preko pravog webhooka, a otkazivanje je vratilo cijeli iznos. Na Renderu plaćanje
    još nije podešeno.
 
+## Faza 12 po koracima
+
+1. **Redizajn frontenda** (počeo 25.11.2026). Prije deploya, da screenshotovi i GIF pokazuju konačan
+   izgled. Pravila su u `REDESIGN.md`: inventar i screenshotovi "prije", 2-3 smjera, moj izbor, pa
+   tokeni, tok rezervacije, početna i ostali ekrani. Backend i API se ne diraju. Novi smjer se upisuje
+   u `docs/DIZAJN.md`.
+2. Ostali koraci (Vercel, Stripe na Renderu, demo seed, screenshotovi, GIF, README) se planiraju
+   poslije redizajna.
+
 ## Faza 14 po koracima
 
 Svaki korak je jedna sesija ili manje. Domen ostaje naš: "alat za usluge" je kod nas
