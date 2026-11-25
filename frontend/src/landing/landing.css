@@ -1,6 +1,12 @@
 /* Landing za odjavljene (Redizajn 3): miran ritam proizvoda. Hero s pravim UI-jem u prozoru, traka
    "za koga", prije i poslije, tamna sekcija s koracima, mogućnosti, oslonac, pitanja, demo i poziv.
    Jedan font, umjereni naslovi, mjed samo kao akcent. */
+/* Mreža hera i traka Kako radi idu do ruba ekrana; bez ovoga širina trake za skrol napravi
+   vodoravni skrol od par piksela */
+body:has(.landing) {
+	overflow-x: clip;
+}
+
 .landing {
 	display: grid;
 	gap: var(--razmak-96);
@@ -9,10 +15,28 @@
 
 /* Hero: tekst lijevo, prozor aplikacije desno. Na telefonu prozor ispod teksta. */
 .hero {
+	position: relative;
+	isolation: isolate;
 	display: grid;
 	gap: var(--razmak-48);
 	align-items: center;
 	padding-top: var(--razmak-32);
+	padding-bottom: var(--razmak-32);
+}
+
+/* Pozadina hera: blaga mreža termina (red od 48 px kao žeton) preko cijele širine, koja se gubi prema dnu */
+.hero::before {
+	content: '';
+	position: absolute;
+	inset: calc(-1 * var(--razmak-96)) calc(50% - 50vw) 0;
+	z-index: -1;
+	background-image:
+		linear-gradient(var(--linija) 1px, transparent 1px),
+		linear-gradient(90deg, var(--linija) 1px, transparent 1px);
+	background-size: 112px 48px;
+	opacity: 0.6;
+	mask-image: linear-gradient(to bottom, var(--tekst) 10%, transparent 90%);
+	pointer-events: none;
 }
 
 .hero-tekst {
@@ -61,16 +85,32 @@
 }
 
 /* Prozor aplikacije: traka s znakom i nazivom organizacije, ispod pravi mini kalendar */
+/* Prozor s demom je podignut iznad stranice: meka duga sjena, a iza njega diskretan mjedeni sjaj */
 .prozor {
+	position: relative;
 	min-width: 0;
 	background: var(--povrsina);
 	border-radius: var(--zaobljenje-ploca);
-	box-shadow: var(--dubina-3), inset 0 0 0 1px var(--linija);
-	overflow: hidden;
+	box-shadow: var(--dubina-3), 0 40px 80px -32px var(--sjena-jaka), inset 0 0 0 1px var(--linija);
+}
+
+.prozor-scena {
+	position: relative;
+	min-width: 0;
+}
+
+.prozor-scena::before {
+	content: '';
+	position: absolute;
+	inset: -12% -10%;
+	z-index: -1;
+	background: radial-gradient(closest-side, color-mix(in srgb, var(--mjed) 30%, transparent), transparent);
+	pointer-events: none;
 }
 
 .prozor-traka {
 	display: flex;
+	border-radius: var(--zaobljenje-ploca) var(--zaobljenje-ploca) 0 0;
 	align-items: center;
 	gap: var(--razmak-8);
 	padding: var(--razmak-12) var(--razmak-16);

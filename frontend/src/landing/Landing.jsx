@@ -47,14 +47,23 @@ const PITANJA = [
 		'Šta ako dvoje klikne na isti termin?',
 		'Termin dobije samo jedno. Drugo odmah vidi da je zauzet i dobije prijedlog najbližeg slobodnog termina.',
 	],
-	['Moram li sam potvrđivati svaku rezervaciju?', 'Ne moraš. Za svaki resurs biraš da li se rezervacija potvrdi sama ili je potvrđuješ ti.'],
+	[
+		'Moram li sam potvrđivati svaku rezervaciju?',
+		'Ne moraš. Za svaki resurs biraš da li se rezervacija potvrdi sama ili je potvrđuješ ti.',
+	],
 	['Može li se otkazati u zadnji čas?', 'Za svaki resurs upišeš rok za otkazivanje u satima. Poslije roka termin se ne može sam otkazati.'],
 	['Šta kad neko otkaže?', 'Termin se oslobodi. Ako je neko na listi čekanja, termin se prvo ponudi njemu.'],
 	['Mogu li dobiti svoje podatke?', 'Možeš. U nalogu je izvoz svih podataka u jedan fajl, a nalog se može i obrisati.'],
 ]
 
-// Ulaz hera: tekst i prozor aplikacije se pojave jednom, kratko. Uz smanjen pokret (MotionConfig) samo stoje.
-const ULAZ = { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 } }
+// Ulaz hera je jedan orkestriran trenutak: naslov, pa rečenica, pa dugmad, pa prozor s demom, svaki
+// 90 ms poslije prethodnog. Uz smanjen pokret (MotionConfig) ostaje samo pretapanje, bez pomjeranja.
+const KRIVA = [0.2, 0.7, 0.2, 1]
+const NIZ = { skriven: {}, vidljiv: { transition: { staggerChildren: 0.09 } } }
+const DIO = {
+	skriven: { opacity: 0, y: 16 },
+	vidljiv: { opacity: 1, y: 0, transition: { duration: 0.5, ease: KRIVA } },
+}
 
 // Prvi ekran za odjavljene. Učitava se posebno (lazy u App.jsx), pa motion i lenis ne idu u
 // bundle aplikacije za prijavljene dok ih ona sama ne zatreba.
@@ -65,28 +74,39 @@ export default function Landing() {
 		<MotionConfig reducedMotion="user">
 			<div className="landing">
 				<section className="hero" aria-labelledby="hero-naslov">
-					<motion.div className="hero-tekst" {...ULAZ} transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}>
-						<h1 id="hero-naslov" className="hero-naslov">
+					<motion.div className="hero-tekst" variants={NIZ} initial="skriven" animate="vidljiv">
+						<motion.h1 id="hero-naslov" className="hero-naslov" variants={DIO}>
 							Termini za čitaonice, teretane i konsultacije
-						</h1>
-						<p className="hero-recenica">Ljudi sami vide slobodne termine i rezervišu ih s telefona, a ti više ne odgovaraš na poruke.</p>
-						<div className="akcije">
+						</motion.h1>
+						<motion.p className="hero-recenica" variants={DIO}>
+							Ljudi sami vide slobodne termine i rezervišu ih s telefona, a ti više ne odgovaraš na poruke.
+						</motion.p>
+						<motion.div className="akcije" variants={DIO}>
 							<a className="dugme dugme-mjed" href="#demo">
 								Probaj demo
 							</a>
 							<Link className="dugme dugme-sporedno" to="/registracija">
 								Napravi organizaciju
 							</Link>
-						</div>
-						<p className="hero-napomena">Demo je bez registracije, s izmišljenom čitaonicom i teretanom.</p>
+						</motion.div>
+						<motion.p className="hero-napomena" variants={DIO}>
+							Demo je bez registracije, s izmišljenom čitaonicom i teretanom.
+						</motion.p>
 					</motion.div>
-					<motion.div className="prozor" {...ULAZ} transition={{ duration: 0.6, delay: 0.12, ease: [0.2, 0.7, 0.2, 1] }}>
-						<div className="prozor-traka" aria-hidden="true">
-							<Znak />
-							<span>SlotBook</span>
-						</div>
-						<HeroDemo />
-					</motion.div>
+					<div className="prozor-scena">
+						<motion.div
+							className="prozor"
+							initial={{ opacity: 0, y: 32, scale: 0.97 }}
+							animate={{ opacity: 1, y: 0, scale: 1 }}
+							transition={{ duration: 0.7, delay: 0.4, ease: KRIVA }}
+						>
+							<div className="prozor-traka" aria-hidden="true">
+								<Znak />
+								<span>SlotBook</span>
+							</div>
+							<HeroDemo />
+						</motion.div>
+					</div>
 				</section>
 
 				<section className="za-koga" aria-label="Za koga je">
