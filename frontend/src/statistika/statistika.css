@@ -1,12 +1,124 @@
-/* Tabela kao red vožnje: puna linija iznad, tanke između redova, brojevi desno i poravnati */
-.statistika-dio {
-	margin-top: var(--razmak-32);
+/* Statistika: brojke gore, pa ploče s tabelama i mreža gužve. Svaki dio je ploča, a brojevi su u
+   uskom Anybody fontu kao vremena u kalendaru. Trake i mreža narastu jednom, kad stignu podaci. */
+.statistika-ploce {
+	display: grid;
+	gap: var(--razmak-24);
+	margin-top: var(--razmak-24);
 }
 
+/* Četiri brojke: dvije u redu na telefonu, sve četiri na desktopu */
+.brojke {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--razmak-12);
+	margin: 0;
+}
+
+@media (min-width: 960px) {
+	.brojke {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: var(--razmak-24);
+	}
+}
+
+.brojka {
+	display: grid;
+	align-content: start;
+	gap: var(--razmak-8);
+	padding: var(--razmak-16);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: var(--dubina-2);
+}
+
+@media (min-width: 600px) {
+	.brojka {
+		padding: var(--razmak-24);
+	}
+}
+
+.brojka dt {
+	font-size: var(--velicina-sitno);
+	font-weight: 600;
+	color: var(--tekst-sporedni);
+}
+
+.brojka dd {
+	margin: 0;
+	font-family: var(--font-brojevi);
+	font-stretch: var(--sirina-brojevi);
+	font-size: var(--velicina-naslov-1);
+	font-weight: 800;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 600px) {
+	.brojka dd {
+		font-size: var(--velicina-naslov-0);
+	}
+}
+
+.brojka .brojka-opis {
+	font-family: var(--font-tekst);
+	font-stretch: 100%;
+	font-size: var(--velicina-sitno);
+	font-weight: 400;
+	line-height: 1.3;
+	color: var(--tekst-sporedni);
+}
+
+/* Popunjenost je glavni broj za onoga ko vodi prostor, pa je jedina na mjedi */
+.brojka-mjed {
+	color: var(--tekst-na-moje);
+	background: var(--metal);
+	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj);
+}
+
+.brojka-mjed dt,
+.brojka-mjed .brojka-opis {
+	color: var(--tekst-na-moje);
+}
+
+.statistika-mreza {
+	display: grid;
+	gap: var(--razmak-24);
+	align-items: start;
+}
+
+@media (min-width: 960px) {
+	.statistika-mreza {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.statistika-mreza-guzva {
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+	}
+}
+
+.statistika-dio {
+	min-width: 0;
+	padding: var(--razmak-16);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-1);
+}
+
+@media (min-width: 600px) {
+	.statistika-dio {
+		padding: var(--razmak-24);
+	}
+}
+
+.statistika-dio h2 {
+	margin: 0 0 var(--razmak-16);
+	font-size: var(--velicina-naslov-3);
+}
+
+/* Tabela kao red vožnje: tanke linije između redova, brojevi desno i poravnati */
 .statistika-tabela {
 	width: 100%;
 	border-collapse: collapse;
-	border-top: 1px solid var(--tekst);
 }
 
 .statistika-tabela th,
@@ -35,10 +147,16 @@
 	font-weight: 400;
 }
 
+.statistika-tabela tbody tr:last-child th,
+.statistika-tabela tbody tr:last-child td {
+	border-bottom: 0;
+}
+
 .statistika-tabela tfoot th,
 .statistika-tabela tfoot td {
 	font-weight: 600;
-	border-bottom: 1px solid var(--tekst);
+	border-top: 2px solid var(--tekst);
+	border-bottom: 0;
 }
 
 .statistika-tabela .broj,
@@ -49,48 +167,60 @@
 
 .statistika-tabela .broj {
 	font-family: var(--font-brojevi);
+	font-stretch: var(--sirina-brojevi);
+	font-size: var(--velicina-vrijeme);
+	font-weight: 800;
 	font-variant-numeric: tabular-nums;
 }
 
-/* Traka ispod naziva: siva podloga je cijela, tamni dio je udio */
+/* Traka ispod naziva: udubljen žlijeb je cijela, puni dio je udio. Naraste slijeva kad stignu podaci. */
 .traka {
 	display: block;
-	height: var(--razmak-8);
-	margin-top: var(--razmak-4);
-	background: var(--linija);
-	border-radius: var(--zaobljenje);
+	height: 10px;
+	margin-top: var(--razmak-8);
+	background: var(--podloga);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: var(--utisnuto);
 }
 
 .traka-puna {
 	display: block;
 	height: 100%;
 	background: var(--tekst);
-	border-radius: var(--zaobljenje);
+	border-radius: var(--zaobljenje-puno);
+	transform-origin: left;
+	animation: rast-trake 700ms var(--kriva-izlaz) both;
 }
 
-/* Po stanju, isto kao u kalendaru: održana i potvrđena su žar, a ono što se nije desilo (otkazana,
-   odbijena, istekla, nedolazak) je šrafura. Na čekanju ostaje grafit. Broj piše u redu, pa traka ne
-   nosi značenje sama. */
+@keyframes rast-trake {
+	from {
+		transform: scaleX(0);
+	}
+}
+
+/* Po stanju, isto kao u kalendaru: održana i potvrđena su mjed, a ono što se nije desilo
+   (otkazana, odbijena, istekla, nedolazak) je šrafura. Na čekanju ostaje tinta. Broj piše u
+   redu, pa traka ne nosi značenje sama. */
 .stanje-confirmed .traka-puna,
 .stanje-completed .traka-puna {
-	background: var(--moje);
-	box-shadow: inset 0 0 0 1px var(--tekst-na-moje);
+	background: var(--metal);
 }
 
 .stanje-cancelled .traka-puna,
 .stanje-rejected .traka-puna,
 .stanje-expired .traka-puna,
 .stanje-no_show .traka-puna {
-	background: repeating-linear-gradient(135deg, var(--tekst) 0 2px, transparent 2px var(--razmak-4));
-	box-shadow: inset 0 0 0 1px var(--tekst);
+	background: repeating-linear-gradient(135deg, var(--tekst-sporedni) 0 2px, transparent 2px 5px);
+	box-shadow: inset 0 0 0 1px var(--tekst-sporedni);
 }
 
-/* Mjesec iznad, a ispod njega prethodni lijevo i sljedeći desno. U jednom redu bi se na
-   telefonu sve troje prelomilo u po dva reda. */
+/* Mjesec: na telefonu naziv iznad, prethodni lijevo i sljedeći desno ispod. Na desktopu sve
+   troje u jednom redu, naziv u sredini. */
 .mjesec {
 	display: grid;
 	grid-template-columns: 1fr auto;
-	gap: var(--razmak-8);
+	align-items: center;
+	gap: var(--razmak-12);
 	margin-top: var(--razmak-24);
 }
 
@@ -100,11 +230,41 @@
 	margin: 0;
 }
 
+.mjesec a {
+	justify-self: start;
+	padding: var(--razmak-8) var(--razmak-16);
+	font-weight: 600;
+	text-decoration: none;
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: inset 0 0 0 1px var(--linija);
+}
+
+.mjesec a:last-child {
+	justify-self: end;
+}
+
+.mjesec a:hover {
+	background: var(--izdignuto);
+	box-shadow: var(--dubina-1);
+}
+
+@media (min-width: 720px) {
+	.mjesec {
+		grid-template-columns: auto 1fr auto;
+	}
+
+	.mjesec h2 {
+		grid-column: auto;
+		order: 0;
+		text-align: center;
+	}
+}
+
 /* Zauzeto od ponuđenog, ispod trake, sitnije */
 .statistika-sati {
 	display: block;
 	margin-top: var(--razmak-4);
-	font-family: var(--font-brojevi);
 	font-size: var(--velicina-sitno);
 	font-variant-numeric: tabular-nums;
 	color: var(--tekst-sporedni);
@@ -112,4 +272,103 @@
 
 .statistika-tabela tfoot .statistika-sati {
 	font-weight: 600;
+}
+
+/* Mreža gužve: jedna boja, mjed. Prazna ćelija je udubljena, a što više rezervacija, to više mjedi
+   (na noći to znači svjetlije, jer mjed sija na tinti). Broj je u ćeliji za čitač ekrana, a oku ga
+   kaže opis kad se pređe mišem. */
+.guzva-okvir {
+	overflow-x: auto;
+}
+
+.guzva-tabela {
+	width: 100%;
+	min-width: calc(var(--kolona) * 22px + 40px);
+	border-collapse: separate;
+	border-spacing: 3px;
+	table-layout: fixed;
+}
+
+.guzva-tabela thead td {
+	width: 40px;
+}
+
+.guzva-tabela th {
+	font-size: var(--velicina-sitno);
+	font-weight: 400;
+	color: var(--tekst-sporedni);
+	font-variant-numeric: tabular-nums;
+}
+
+.guzva-tabela tbody th {
+	padding-right: var(--razmak-8);
+	text-align: left;
+	font-weight: 600;
+}
+
+.guzva-tabela td {
+	position: relative;
+	height: 28px;
+	background: color-mix(in oklab, var(--moje) calc(28% + var(--udio) * 72%), var(--izdignuto));
+	border-radius: calc(var(--zaobljenje) / 2);
+	animation: pojava-celije 500ms var(--kriva-izlaz) both;
+	animation-delay: calc(var(--kolona-i) * 25ms + var(--red) * 15ms);
+}
+
+.guzva-tabela td.guzva-prazno {
+	background: var(--podloga);
+	box-shadow: var(--utisnuto);
+}
+
+@keyframes pojava-celije {
+	from {
+		opacity: 0;
+		transform: scale(0.6);
+	}
+}
+
+/* Opis ćelije pri prelazu mišem, iznad nje */
+.guzva-tabela td:hover::after {
+	content: attr(data-opis);
+	position: absolute;
+	bottom: calc(100% + var(--razmak-8));
+	left: 50%;
+	z-index: 2;
+	padding: var(--razmak-4) var(--razmak-8);
+	font-size: var(--velicina-sitno);
+	white-space: nowrap;
+	color: var(--podloga);
+	background: var(--tekst);
+	border-radius: var(--zaobljenje);
+	box-shadow: var(--dubina-2);
+	transform: translateX(-50%);
+	pointer-events: none;
+}
+
+.guzva-tabela td:hover {
+	outline: 2px solid var(--tekst);
+	outline-offset: 1px;
+}
+
+.guzva-legenda {
+	display: flex;
+	align-items: center;
+	gap: var(--razmak-8);
+	margin: var(--razmak-12) 0 0;
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+.guzva-skala {
+	width: 120px;
+	height: 10px;
+	background: linear-gradient(90deg, color-mix(in oklab, var(--moje) 28%, var(--izdignuto)), var(--moje));
+	border-radius: var(--zaobljenje-puno);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.traka-puna,
+	.guzva-tabela td {
+		animation: none;
+	}
 }

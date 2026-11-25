@@ -10,6 +10,7 @@ import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { dodajMjesece, mjesecUZoni, nazivMjeseca } from '../vrijeme/vrijeme.js'
 import { CsvIzvoz } from './CsvIzvoz.jsx'
+import { Brojke, Guzva } from './Pregled.jsx'
 import { Najtrazeniji, Popunjenost, PoStanju } from './Tabele.jsx'
 import './statistika.css'
 
@@ -75,22 +76,31 @@ function StatistikaOrganizacije({ organizacija }) {
 		sadrzaj = <NijeUcitano poruka={porukaGreske(error, PORUKE)} ponovo={() => refetch()} />
 	} else {
 		sadrzaj = (
-			<>
-				<PoStanju poStanju={data.poStanju} mjesec={nazivMjeseca(mjesec)} />
-				<Popunjenost
-					popunjenost={data.popunjenost}
-					nemaResursa={admin ? 'Organizacija još nema resursa, pa nema ni popunjenosti.' : 'Ne vodiš nijedan resurs, pa nema ni popunjenosti.'}
-					csv={<CsvIzvoz orgId={organizacija.id} od={od} doDana={doDana} />}
-				/>
-				<Najtrazeniji poDanuISatu={data.poDanuISatu} />
-			</>
+			// key: kad se promijeni mjesec, trake i mreža ponovo narastu, da se vidi da su brojke nove
+			<div className="statistika-ploce" key={mjesec}>
+				<Brojke poStanju={data.poStanju} popunjenost={data.popunjenost} />
+				<div className="statistika-mreza">
+					<PoStanju poStanju={data.poStanju} mjesec={nazivMjeseca(mjesec)} />
+					<Popunjenost
+						popunjenost={data.popunjenost}
+						nemaResursa={admin ? 'Organizacija još nema resursa, pa nema ni popunjenosti.' : 'Ne vodiš nijedan resurs, pa nema ni popunjenosti.'}
+						csv={<CsvIzvoz orgId={organizacija.id} od={od} doDana={doDana} />}
+					/>
+				</div>
+				<div className="statistika-mreza statistika-mreza-guzva">
+					<Guzva poDanuISatu={data.poDanuISatu} />
+					<Najtrazeniji poDanuISatu={data.poDanuISatu} />
+				</div>
+			</div>
 		)
 	}
 
 	const opis = admin ? 'Sve rezervacije i svi resursi organizacije.' : 'Samo resursi koje vodiš.'
 	return (
-		<section>
-			<Link to={`/o/${organizacija.slug}`}>{organizacija.naziv}</Link>
+		<section className="statistika">
+			<Link className="nazad" to={`/o/${organizacija.slug}`}>
+				{organizacija.naziv}
+			</Link>
 			<h1>Statistika: {organizacija.naziv}</h1>
 			<p className="napomena-blok">{`${opis} Dani i sati su po zoni ${organizacija.zona}.`}</p>
 			<nav className="mjesec" aria-label="Mjesec">
