@@ -36,6 +36,8 @@ Faza 11 je plaćanje preko Stripea u test modu. Resurs ima cijenu, a rezervacija
 
 Faza 12 je počela redizajnom frontenda, prije deploya, da screenshotovi pokazuju konačan izgled. Smjer se zove "Čelik i žar": siva podloga kao lim, grafitni tekst, i jedna topla boja koja uvijek znači "tvoje". Potpis aplikacije je karta za voz: poslije rezervacije se odštampa karta s brojem rezervacije i žigom stanja, a Moje rezervacije su niz takvih karata. Backend i API nisu dirani. Prije i poslije, s brojkama i onim što nije urađeno, je u [docs/redizajn/poslije.md](docs/redizajn/poslije.md), a pravila dizajna u [docs/DIZAJN.md](docs/DIZAJN.md).
 
+Taj prvi redizajn je ispao ravan, pa je istog dana zamijenjen drugim: "Mjed i emajl". Termin je žeton na ploči, rezervacija je karta s mjedenom folijom koja se naginje za kursorom, svaki resurs ima svoju emajl boju, a aplikacija ima svijetlu i tamnu temu. Odjavljeni prvo vide landing na kojem se mogu probati tri teška problema. Opet bez promjena na backendu, s jednim commitom po ekranu. Smjer je u [docs/redizajn/smjer.md](docs/redizajn/smjer.md), a pravila u [docs/DIZAJN.md](docs/DIZAJN.md).
+
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |
@@ -135,13 +137,17 @@ Tok ispod je lokalni backend s profilom `demo`: ulaz kao Hana jednim klikom, sto
 
 ![Tok rezervacije: demo prijava, kalendar, karta, moje rezervacije](docs/tok-rezervacije.gif)
 
-Screenshotovi su pravi ekrani, uslikani Playwrightom na lokalnom backendu s probnim podacima. Svi, i oni od prije redizajna, su u [docs/redizajn/](docs/redizajn/).
+GIF je još iz prvog redizajna, novi tok nije snimljen.
 
-| Kalendar i karta u nastajanju | Moje rezervacije |
+Screenshotovi su pravi ekrani drugog redizajna, uslikani Playwrightom na lokalnom backendu s profilom `demo`. Svi, i oni od prije oba redizajna, su u [docs/redizajn/](docs/redizajn/).
+
+| Landing | Kalendar i karta |
 |---|---|
-| ![Kalendar stola u čitaonici, izabran termin i karta desno](docs/redizajn/poslije/13-kalendar-sto-odabran-desktop.png) | ![Moje rezervacije kao karte sa žigom stanja](docs/redizajn/poslije/16-moje-rezervacije-desktop.png) |
-| **Statistika organizacije** | **Telefon: kalendar** |
-| ![Statistika s rezervacijama po stanju i popunjenošću](docs/redizajn/poslije/37-statistika-desktop.png) | ![Kalendar na telefonu](docs/redizajn/poslije/13-kalendar-sto-odabran-mobitel.png) |
+| ![Landing: Termin je tvoj, s pločom termina](docs/redizajn/redizajn-2/landing-hero-desktop-svijetla.png) | ![Kalendar stola u čitaonici sa žetonima i kartom desno](docs/redizajn/redizajn-2/kal-karta-desktop-svijetla.png) |
+| **Moje rezervacije, tamna tema** | **Statistika organizacije** |
+| ![Moje rezervacije kao karte sa žigom stanja](docs/redizajn/redizajn-2/rez-desktop-tamna.png) | ![Statistika s brojkama, trakama i mrežom gužve](docs/redizajn/redizajn-2/stat-desktop-svijetla.png) |
+| **Telefon: kalendar** | **Telefon: organizacije** |
+| ![Kalendar na telefonu s izabranim terminom](docs/redizajn/redizajn-2/kal-izabran-mobitel-svijetla.png) | ![Organizacije kao pločice s emajl bojom](docs/redizajn/redizajn-2/org-mobitel-svijetla.png) |
 
 ## Licenca
 

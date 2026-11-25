@@ -430,3 +430,17 @@ Folija na karti je pravila tanak šav preko kupona. Prvo sam mislio da je kriv `
 U kalendaru žeton preleti u kartu preko View Transitions, a ne preko motion `layoutId` kao na landingu. Motion bi u glavni bundle donio oko 50 kB, a ovako je kalendar narastao 2 kB. Zamka: ime prelaza mora biti jedinstveno u starom izgledu, a stara karta ga već nosi kad se klikne drugi žeton. Zato se staroj karti ime ugasi prije prelaza.
 
 Sedam testova u `App.test.jsx` je palo jer `/` za odjavljene više nije prijava nego landing. Testovi prijave sad otvaraju `/prijava`, a test odjave provjerava da se vidi landing i da sesije nema. jsdom nema `matchMedia` ni `ResizeObserver`, pa je dodan `src/test/postavka.js`.
+
+## srijeda, 25. novembar 2026. u 21:07
+
+Ostatak redizajna: moje rezervacije, statistika, prijava, organizacije, nalog, članovi, forme i prelaz između ekrana. Svaki ekran je dobio svoj commit.
+
+Na kraju je jedan test u `App.test.jsx` pao, pa prošao, pa opet pao. "Unable to find role="link" and name "Napravi nalog"", a u `<main>` je stajalo samo "Učitava se". Landing je lijeno učitan, a test registracije je i dalje otvarao `/`. Kad se pokrene sam, landing se učita za manje od sekunde. Uz cijeli suite treba duže, a `findByRole` čeka tačno sekundu. Greška je iz landing commita: testove prijave sam tada prebacio na `/prijava`, a ovaj sam previdio. Sad i on kreće s `/prijava`, a dva testa koja baš provjeravaju landing čekaju do 5 s.
+
+Skripta za screenshotove je stala na `waitForLoadState('networkidle')`: kalendar drži SSE vezu otvorenom, pa mreža nikad nije mirna.
+
+Za prelaz između ekrana sam mislio da je dovoljno dodati `viewTransition` na `Link`. U izvoru React Routera 8.5 se vidi da to radi samo uz `RouterProvider`, a mi imamo `BrowserRouter`. Napravio sam `PrelazLink` od petnaest linija. Ime prelaza ne smije biti na tekstu koji se prelomi u dva reda, zato naslov dobija `inline-block`.
+
+Dok sam pisao o fokusu u `DIZAJN.md`, izračunao sam kontrast umjesto da prepišem stari: svijetli okvir na mjedenom žetonu noću ima 1,69:1. Vidi se samo zato što je odmaknut 3 px, pa stoji na ploči, a ne na mjedi.
+
+Naslov "Termin je tvoj." u prijavi je imao jedan preliv preko oba reda, pa je mjed počinjala na donjem rubu riječi "Termin" i izgledalo je kao greška u štampi. Sad je svaki red obojen posebno. Iznad "Novi izuzetak" je bio višak razmaka, jer je tamo `h3`, a pravilo je hvatalo samo `h2`.
