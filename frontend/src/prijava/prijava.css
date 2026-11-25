@@ -1,66 +1,154 @@
-/* Prijava kao početni ekran: lijevo šta je SlotBook i primjer karte, desno forma. Na telefonu
-   je prvo rečenica, pa forma, a karta ispod, da se prijava vidi bez skrolanja. */
+/* Prijava i registracija: lijevo tamna ploča sa šta je SlotBook i primjerom karte, desno forma na
+   izdignutoj ploči. Tamna ploča je uvijek noćna, i u svijetloj temi, kao noć pomjeranja sata na
+   landingu: na njoj mjed najviše sija. Na telefonu je prvo forma, pa ploča, da se prijava vidi
+   bez skrolanja. */
 .pocetna {
 	display: grid;
-	gap: var(--razmak-32);
+	gap: var(--razmak-24);
 }
 
 .uvod {
-	display: contents;
+	order: 1;
+	display: grid;
+	align-content: start;
+	gap: var(--razmak-24);
+	padding: var(--razmak-24);
+	color: var(--noc-tekst);
+	background: var(--zrno), var(--noc-podloga);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-3), inset 0 0 0 1px var(--odsjaj-noc);
+	overflow: hidden;
+	/* Tamna ploča nosi noćne vrijednosti, da karta u njoj izgleda kao noću, bez obzira na temu */
+	--izdignuto: var(--noc-izdignuto);
+	--tekst: var(--noc-tekst);
+	--tekst-sporedni: var(--noc-sporedni);
+	--moje: var(--mjed-noc);
+	--odsjaj: var(--odsjaj-noc);
+	--sjena: var(--sjena-noc);
+	--sjena-jaka: var(--sjena-noc-jaka);
+	--linija-jaka: color-mix(in srgb, var(--noc-tekst) 32%, transparent);
+	--folija-jacina: 0.28;
+}
+
+.uvod-naslov {
+	margin: 0;
+	font-family: var(--font-naslov);
+	font-stretch: 100%;
+	font-size: var(--velicina-naslov-0);
+	font-weight: 800;
+	line-height: 0.95;
+	letter-spacing: -0.02em;
+	color: var(--noc-tekst);
+}
+
+.uvod-naslov span {
+	display: block;
+}
+
+.uvod-naslov-mjed {
+	color: transparent;
+	background: linear-gradient(170deg, var(--mjed-sjaj), var(--mjed) 55%, var(--mjed-sjena));
+	background-clip: text;
 }
 
 .uvod-recenica {
+	max-width: 40ch;
 	margin: 0;
-	font-family: var(--font-naslov);
-	font-stretch: var(--sirina-naslov);
-	font-size: var(--velicina-naslov-3);
-	font-weight: 800;
-	line-height: var(--prored-naslov);
+	font-size: var(--velicina-vrijeme);
+	line-height: var(--prored-tekst);
+	color: var(--noc-sporedni);
 }
 
 .uvod-primjer {
-	order: 1;
 	display: grid;
-	gap: var(--razmak-8);
+	gap: var(--razmak-12);
 	max-width: 560px;
 	margin: 0;
 }
 
 .uvod-primjer figcaption {
 	font-size: var(--velicina-sitno);
-	color: var(--tekst-sporedni);
+	color: var(--noc-sporedni);
+}
+
+.pocetna-forma {
+	display: grid;
+	align-content: start;
+	gap: var(--razmak-16);
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-2);
+}
+
+.pocetna-forma h1 {
+	margin: 0;
+}
+
+.pocetna-forma .forma {
+	max-width: none;
+}
+
+.pocetna-forma .dugme {
+	justify-self: stretch;
+	color: var(--tekst-na-moje);
+	background: var(--metal);
+	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj);
+}
+
+/* Na uskom telefonu ploča daje karti svaki piksel, da pruga između vremena ostane vidljiva */
+@media (max-width: 480px) {
+	.uvod {
+		padding: var(--razmak-16);
+	}
+
+	.uvod-naslov,
+	.uvod-recenica {
+		padding: var(--razmak-8) var(--razmak-8) 0;
+	}
+
+	.uvod .karta-mjesto {
+		display: none;
+	}
+}
+
+@media (min-width: 600px) {
+	.uvod,
+	.pocetna-forma {
+		padding: var(--razmak-32);
+	}
 }
 
 @media (min-width: 900px) {
 	.pocetna {
-		grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-		align-items: start;
-		gap: var(--razmak-48);
-		padding-top: var(--razmak-32);
+		grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+		align-items: stretch;
+		gap: var(--razmak-32);
+		padding-top: var(--razmak-16);
 	}
 
 	.uvod {
-		display: grid;
-		gap: var(--razmak-32);
-	}
-
-	.uvod-recenica {
-		font-size: var(--velicina-naslov-1);
-	}
-
-	.uvod-primjer {
 		order: 0;
+		align-content: space-between;
+		padding: var(--razmak-48);
+	}
+
+	.uvod-naslov {
+		font-size: var(--velicina-hero);
+	}
+
+	.pocetna-forma {
+		padding: var(--razmak-48) var(--razmak-32);
 	}
 }
 
-/* Demo računi su ploče kao termini u kalendaru: lim, procjep od podloge, cijeli red je dugme */
+/* Demo računi su žetoni s emajl rubom, kao na landingu: cijeli žeton je dugme */
 .demo {
 	display: grid;
 	gap: var(--razmak-12);
-	max-width: var(--sirina-forme);
-	margin-top: var(--razmak-24);
+	margin-top: var(--razmak-8);
 	padding-top: var(--razmak-24);
-	border-top: 1px solid var(--tekst);
+	border-top: 1px solid var(--linija);
 }
 
 .demo h2 {
@@ -74,7 +162,7 @@
 
 .demo-racuni {
 	display: grid;
-	gap: 2px;
+	gap: var(--razmak-8);
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -83,24 +171,37 @@
 .demo-racun {
 	box-sizing: border-box;
 	display: grid;
-	gap: var(--razmak-4);
+	gap: 2px;
 	width: 100%;
 	min-height: var(--red-min-visina);
-	padding: var(--razmak-8) var(--razmak-16);
+	padding: var(--razmak-12) var(--razmak-16);
 	font: inherit;
 	color: var(--tekst);
 	text-align: left;
-	background: var(--povrsina);
+	background: var(--izdignuto);
 	border: 0;
+	border-radius: var(--zaobljenje-zeton);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl, var(--emajl-tirkiz));
 	cursor: pointer;
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
 }
 
-.demo-racun:hover .demo-ime {
-	text-decoration: underline;
+.demo-racuni li:nth-child(1) .demo-racun {
+	--emajl: var(--emajl-lapis);
+}
+
+.demo-racuni li:nth-child(3) .demo-racun {
+	--emajl: var(--emajl-sipak);
+}
+
+.demo-racun:hover:not(:disabled) {
+	transform: translateY(-2px);
+	box-shadow: var(--dubina-3), inset 0 -3px 0 var(--emajl, var(--emajl-tirkiz));
 }
 
 .demo-racun:disabled {
 	cursor: wait;
+	opacity: 0.6;
 }
 
 .demo-ime {

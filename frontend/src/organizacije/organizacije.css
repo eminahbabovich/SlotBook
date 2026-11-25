@@ -1,33 +1,65 @@
-/* Lista kao ploče lima, iste kao red termina: procjep od podloge između, bez kartica i sjene.
-   Naziv je veći i teži, jer se po njemu traži, a uloga ili trajanje su sitno desno. */
+/* Organizacije i resursi su pločice u mreži, svaka sa svojom emajl bojom (resursi/emajl.js): ista
+   boja dočeka korisnika i u kalendaru tog resursa. Cijela pločica vodi dalje, a Raspored i Uredi
+   su sporedne veze na dnu iste pločice. */
 .tabla {
 	display: grid;
-	gap: 2px;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+	gap: var(--razmak-16);
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
-.tabla-red {
+.tabla > li {
+	--emajl: var(--emajl-tirkiz);
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: space-between;
 	align-items: center;
-	gap: var(--razmak-4) var(--razmak-16);
-	min-height: var(--red-min-visina);
-	padding: var(--razmak-12) var(--razmak-16);
+	column-gap: var(--razmak-16);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: var(--dubina-2), inset 0 -4px 0 var(--emajl);
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
+}
+
+.tabla > li:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--dubina-3), inset 0 -4px 0 var(--emajl);
+}
+
+.tabla-red {
+	flex: 1 1 100%;
+	display: grid;
+	align-content: start;
+	gap: var(--razmak-8);
+	min-height: calc(var(--red-min-visina) * 2);
+	padding: var(--razmak-24);
 	color: var(--tekst);
 	text-decoration: none;
-	background: var(--povrsina);
+}
+
+/* Pločica emajla: boja organizacije ili resursa */
+.tabla-red::before {
+	content: '';
+	width: 28px;
+	height: 28px;
+	margin-bottom: var(--razmak-8);
+	background: var(--emajl);
+	border-radius: var(--zaobljenje);
+	box-shadow: var(--dubina-1), inset 0 2px 0 var(--odsjaj);
 }
 
 .tabla-naziv {
-	font-size: var(--velicina-vrijeme);
-	font-weight: 700;
+	font-family: var(--font-naslov);
+	font-stretch: 112%;
+	font-size: var(--velicina-naslov-3);
+	font-weight: 800;
+	line-height: 1.1;
 }
 
 .tabla-red:hover .tabla-naziv {
 	text-decoration: underline;
+	text-decoration-thickness: 2px;
 }
 
 .tabla-uloga {
@@ -35,24 +67,42 @@
 	color: var(--tekst-sporedni);
 }
 
-/* Red s resursom koji korisnik vodi: cijela ploča vodi na kalendar, a Raspored i Uredi su
-   sporedne veze na istoj ploči, desno */
-.tabla-stavka {
+/* Resurs koji korisnik vodi: veze ispod naziva, a pločica dobije donji red za njih */
+.tabla-stavka:has(.tabla-raspored) .tabla-red {
+	padding-bottom: var(--razmak-8);
+}
+
+.tabla-raspored {
+	padding: var(--razmak-8) 0 var(--razmak-24);
+	font-size: var(--velicina-sitno);
+	font-weight: 600;
+}
+
+.tabla-red + .tabla-raspored {
+	margin-left: var(--razmak-24);
+}
+
+/* Podaci o organizaciji kao pilule ispod naslova, a veze za admina i providera kao dugmad */
+.organizacija-podaci {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--razmak-4) var(--razmak-16);
-	padding-right: var(--razmak-16);
+	gap: var(--razmak-8);
+	margin: 0 0 var(--razmak-16);
+}
+
+.organizacija-podaci p {
+	margin: 0;
+	padding: var(--razmak-4) var(--razmak-12);
+	font-size: var(--velicina-sitno);
+	font-weight: 600;
 	background: var(--povrsina);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: inset 0 0 0 1px var(--linija);
 }
 
-.tabla-stavka .tabla-red {
-	flex: 1;
-}
-
-/* Veze za admina i providera ispod naslova, jedna do druge, a na uskom ekranu jedna ispod druge */
 .organizacija-veze {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--razmak-8) var(--razmak-24);
+	gap: var(--razmak-8) var(--razmak-12);
+	margin: var(--razmak-24) 0;
 }

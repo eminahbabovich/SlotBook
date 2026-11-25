@@ -3,6 +3,7 @@ import { porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
+import { emajlResursa } from '../resursi/emajl.js'
 import { NovaOrganizacija } from './NovaOrganizacija.jsx'
 import { ULOGE, useMojeOrganizacije } from './upiti.js'
 import './organizacije.css'
@@ -33,7 +34,7 @@ export function Organizacije() {
 			{organizacije?.length > 0 && (
 				<ul className="tabla">
 					{organizacije.map((o) => (
-						<li key={o.id}>
+						<li key={o.id} style={{ '--emajl': emajlResursa(o.id) }}>
 							<Link to={`/o/${o.slug}`} className="tabla-red">
 								<span className="tabla-naziv">{o.naziv}</span>
 								<span className="tabla-uloga">{ULOGE[o.uloga] ?? o.uloga}</span>

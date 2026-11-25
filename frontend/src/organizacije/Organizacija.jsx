@@ -5,6 +5,7 @@ import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { ULOGE, useOrganizacija, useResursi } from './upiti.js'
+import { emajlResursa } from '../resursi/emajl.js'
 
 const PORUKE = {
 	serverNeOdgovara: 'Organizacija se nije učitala, server ne odgovara. Pokušaj ponovo za minutu.',
@@ -33,13 +34,27 @@ export function Organizacija() {
 	return (
 		<section>
 			<h1>{organizacija.naziv}</h1>
-			<p>Tvoja uloga: {ULOGE[organizacija.uloga] ?? organizacija.uloga}.</p>
-			<p className="napomena-blok">Vrijeme termina je po zoni {organizacija.zona}.</p>
+			<div className="organizacija-podaci">
+				<p>Tvoja uloga: {ULOGE[organizacija.uloga] ?? organizacija.uloga}.</p>
+				<p>Vrijeme termina je po zoni {organizacija.zona}.</p>
+			</div>
 			{(organizacija.uloga === 'ADMIN' || mozeDodatiResurs(organizacija)) && (
 				<p className="organizacija-veze">
-					{organizacija.uloga === 'ADMIN' && <Link to={`/o/${organizacija.slug}/clanovi`}>Članovi i pozivnice</Link>}
-					{mozeDodatiResurs(organizacija) && <Link to={`/o/${organizacija.slug}/resursi/novi`}>Novi resurs</Link>}
-					{mozeDodatiResurs(organizacija) && <Link to={`/o/${organizacija.slug}/statistika`}>Statistika</Link>}
+					{organizacija.uloga === 'ADMIN' && (
+						<Link className="veza-pilula" to={`/o/${organizacija.slug}/clanovi`}>
+							Članovi i pozivnice
+						</Link>
+					)}
+					{mozeDodatiResurs(organizacija) && (
+						<Link className="veza-pilula" to={`/o/${organizacija.slug}/resursi/novi`}>
+							Novi resurs
+						</Link>
+					)}
+					{mozeDodatiResurs(organizacija) && (
+						<Link className="veza-pilula" to={`/o/${organizacija.slug}/statistika`}>
+							Statistika
+						</Link>
+					)}
 				</p>
 			)}
 			<Resursi organizacija={organizacija} />
@@ -70,7 +85,7 @@ function Resursi({ organizacija }) {
 	return (
 		<ul className="tabla">
 			{resursi.map((r) => (
-				<li key={r.id} className="tabla-stavka">
+				<li key={r.id} className="tabla-stavka" style={{ '--emajl': emajlResursa(r.id) }}>
 					<Link to={`/o/${organizacija.slug}/r/${r.id}`} className="tabla-red">
 						<span className="tabla-naziv">{r.naziv}</span>
 						<span className="tabla-uloga">

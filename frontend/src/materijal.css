@@ -162,3 +162,24 @@ code {
 	background: var(--sraf);
 	border-radius: var(--zaobljenje);
 }
+
+/* Veza koja vodi na drugi ekran, a stoji kao dugme (Članovi, Novi resurs, Statistika): pilula od
+   površine s tankim rubom, da se ne miješa s glavnom akcijom ekrana */
+.veza-pilula {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--red-min-visina);
+	padding: 0 var(--razmak-16);
+	font-weight: 600;
+	color: var(--tekst);
+	text-decoration: none;
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: inset 0 0 0 1px var(--linija-jaka);
+	transition: background-color var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
+}
+
+.veza-pilula:hover {
+	background: var(--izdignuto);
+	box-shadow: var(--dubina-2);
+}

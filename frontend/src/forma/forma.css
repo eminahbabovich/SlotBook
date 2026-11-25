@@ -15,7 +15,8 @@
 	margin-bottom: var(--razmak-4);
 }
 
-/* Puna tamna ivica: ivica polja treba kontrast 3:1, a --linija (20 %) ga nema. */
+/* Polje je udubljeno u ploču. Ivica u sporednoj boji ima kontrast iznad 3:1 na obje podloge,
+   koliko polje traži, a --linija (14 %) ga nema. */
 .polje input,
 .polje select,
 .polje textarea {
@@ -25,9 +26,17 @@
 	padding: 0 var(--razmak-12);
 	font: inherit;
 	color: var(--tekst);
-	background: var(--povrsina);
-	border: 1px solid var(--tekst);
+	background: var(--podloga);
+	border: 1px solid var(--tekst-sporedni);
 	border-radius: var(--zaobljenje);
+	box-shadow: inset 0 2px 4px var(--sjena);
+	transition: border-color var(--trajanje-brzo) var(--kriva-izlaz), background-color var(--trajanje-brzo) var(--kriva-izlaz);
+}
+
+.polje input:hover,
+.polje select:hover,
+.polje textarea:hover {
+	border-color: var(--tekst);
 }
 
 /* Neispravno polje se razlikuje i bez boje: deblja ivica i tekst greške ispod. */
@@ -78,9 +87,11 @@
 
 .greska-forme {
 	margin: 0;
-	padding: var(--razmak-12);
+	padding: var(--razmak-12) var(--razmak-16);
 	color: var(--greska);
-	border-left: var(--razmak-4) solid var(--greska);
+	background: color-mix(in srgb, var(--greska) 8%, transparent);
+	border-radius: var(--zaobljenje);
+	box-shadow: inset var(--razmak-4) 0 0 var(--greska);
 }
 
 /* Dugme koje izgleda kao link: vodi na drugi ekran, ne šalje podatke. */
