@@ -1,19 +1,39 @@
 /* Fontovi iz docs/DIZAJN.md, self-hostani preko Fontsource paketa. */
-@import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource-variable/anybody/standard.css';
+@import '@fontsource-variable/hanken-grotesk/wght.css';
 @import '@fontsource/ibm-plex-mono/400.css';
 @import './tokeni.css';
+@import './materijal.css';
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--podloga);
+}
 
 body {
 	margin: 0;
-	padding: var(--razmak-16);
-	background: var(--podloga);
+	min-height: 100dvh;
+	background: var(--zrno), var(--podloga);
 	color: var(--tekst);
 	font-family: var(--font-tekst);
 	font-size: var(--velicina-tekst);
 	line-height: var(--prored-tekst);
+	-webkit-font-smoothing: antialiased;
+	transition: background-color var(--trajanje-srednje) ease-out, color var(--trajanje-srednje) ease-out;
 }
 
-/* Široka teška slova, kao utisnuta u lim. Ista porodica kao tekst, samo druga širina. */
+main {
+	width: min(100% - 2 * var(--razmak-16), var(--sirina-sadrzaja));
+	margin-inline: auto;
+	padding-bottom: var(--razmak-96);
+}
+
+/* Široka teška slova. Ista porodica kao velike cifre, samo druga širina. */
 h1,
 h2,
 h3 {
@@ -21,9 +41,12 @@ h3 {
 	font-stretch: var(--sirina-naslov);
 	font-weight: 800;
 	line-height: var(--prored-naslov);
+	letter-spacing: -0.01em;
+	text-wrap: balance;
 }
 
 h1 {
+	margin: 0 0 var(--razmak-24);
 	font-size: var(--velicina-naslov-1);
 }
 
@@ -33,6 +56,10 @@ h2 {
 
 h3 {
 	font-size: var(--velicina-naslov-3);
+}
+
+p {
+	text-wrap: pretty;
 }
 
 /* Kostur dok se nešto učitava polako "diše" (kalendar i stanja/stanja.css) */
@@ -52,61 +79,108 @@ h3 {
 	*::after {
 		transition-duration: 0ms !important;
 		animation-duration: 0ms !important;
+		scroll-behavior: auto !important;
 	}
 }
 
-/* Grafitni okvir, ne žar: žar na podlozi ima kontrast 2,42:1, a okvir fokusa treba 3:1. */
 :focus-visible {
 	outline: var(--fokus);
 	outline-offset: var(--fokus-odmak);
+	border-radius: var(--zaobljenje);
 }
 
-h1 {
-	margin: 0 0 var(--razmak-24);
+a {
+	color: var(--tekst);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
 }
 
-/* Traka s imenom na vrhu, kao natpis iznad table s polascima. */
+a:hover {
+	text-decoration-thickness: 2px;
+}
+
+/* Zaglavlje: ploča koja lebdi iznad sadržaja, kao natpis na izlogu */
 .zaglavlje {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	padding: var(--razmak-12) var(--razmak-16);
 	margin-bottom: var(--razmak-32);
-	border-bottom: 1px solid var(--tekst);
 }
 
 .zaglavlje-red {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	justify-content: space-between;
 	align-items: center;
 	gap: var(--razmak-8) var(--razmak-16);
-	padding-bottom: var(--razmak-8);
+	width: min(100%, var(--sirina-sadrzaja));
+	margin-inline: auto;
+	padding: var(--razmak-8) var(--razmak-8) var(--razmak-8) var(--razmak-16);
+	background: color-mix(in srgb, var(--izdignuto) 88%, transparent);
+	backdrop-filter: saturate(1.4) blur(14px);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: var(--dubina-2);
 }
 
 .zaglavlje-nalog {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--razmak-4) var(--razmak-16);
+}
+
+.zaglavlje-nalog a {
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.zaglavlje-nalog a:hover {
+	text-decoration: underline;
+}
+
+.zaglavlje-desno {
 	display: flex;
 	align-items: center;
 	gap: var(--razmak-12);
 }
 
 .znak {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--razmak-8);
 	color: var(--tekst);
 	text-decoration: none;
 	font-family: var(--font-naslov);
-	font-stretch: var(--sirina-naslov);
+	font-stretch: 140%;
 	font-size: var(--velicina-naslov-3);
-	font-weight: 800;
-	text-transform: uppercase;
+	font-weight: 850;
+	letter-spacing: -0.02em;
 }
 
-a {
-	color: var(--tekst);
+.znak-ime {
+	white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+	.znak {
+		font-size: var(--velicina-vrijeme);
+		font-stretch: 120%;
+	}
+}
+
+.znak-zeton {
+	width: 28px;
+	height: 28px;
+	flex: none;
 }
 
 .napomena-blok {
 	color: var(--tekst-sporedni);
 }
 
-/* Vremena i datumi: cifre iste širine, da se 08:00 i 11:00 poravnaju kao polasci. */
+/* Vremena i datumi: cifre iste širine, da se 08:00 i 11:00 poravnaju. */
 time {
-	font-family: var(--font-brojevi);
 	font-variant-numeric: tabular-nums;
 }
 
@@ -124,4 +198,36 @@ time {
 .stranice {
 	display: flex;
 	justify-content: space-between;
+}
+
+/* Prelaz između ekrana (View Transitions): staro se malo spusti i izblijedi, novo dođe odozdo.
+   Elementi s view-transition-name (naziv resursa, karta) prelete sami, preko ovoga. */
+::view-transition-old(root) {
+	animation: var(--trajanje-srednje) var(--kriva-izlaz) both ekran-odlazi;
+}
+
+::view-transition-new(root) {
+	animation: var(--trajanje-karta) var(--kriva-izlaz) both ekran-dolazi;
+}
+
+@keyframes ekran-odlazi {
+	to {
+		opacity: 0;
+		transform: translateY(-8px) scale(0.99);
+	}
+}
+
+@keyframes ekran-dolazi {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
 }

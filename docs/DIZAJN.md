@@ -1,59 +1,79 @@
 # Dizajn
 
-Smjer je **Čelik i žar**, izabran 25.11.2026 za redizajn u Fazi 12. Zamijenio je smjer **Red vožnje** iz Faze 7 (15.11.2026), koji je bio čitljiv, ali bez lica: krem papir, crni tekst i linkovi umjesto dugmadi. Prijedlog s razlozima, skicama i samokritikom je u [redizajn/smjer.md](redizajn/smjer.md), a stanje prije u [redizajn/inventar-prije.md](redizajn/inventar-prije.md).
+Smjer je **Mjed i emajl**, izabran 25.11.2026 za drugi redizajn u Fazi 12. Zamijenio je **Čelik i žar** (prvi redizajn, isti dan), koji je ispao ravan: jedna siva površina, 3 px zaobljenja na svemu, jedan font i jedna boja. Ideja, potpisni elementi i tri spektakularna momenta su u [redizajn/smjer.md](redizajn/smjer.md).
 
-Redizajn ide korak po korak (`REDESIGN.md`, sekcija 9). Boje, fontovi i veličine ispod već važe. Sekcije od "Razmaci i oblik" naniže još opisuju komponente iz Faze 7 i prepisuju se kad dođe red na svaku. Gdje tamo piše "žuta", sad je žar.
+Redizajn ide ekran po ekran: landing, kalendar i rezervacija, dashboard, ostalo. Boje, fontovi, veličine i oblik ispod već važe. Sekcije od "Forme i dugmad" naniže još opisuju prvi redizajn i prepisuju se kad dođe red na svaki ekran.
 
 Pravilo: boja, font, razmak ili zaobljenje kojeg ovdje nema ne ulazi u UI. Ako nešto zatreba, prvo se dopiše ovdje, pa tek onda u kod. Vrijednosti u kodu su CSS varijable na jednom mjestu.
 
 ## Ideja
 
-Zenica je grad čelika i željeznički čvor: sivi lim, utisnuta slova na natpisnim pločicama mašina i vagona, kartonska karta za voz koju kondukter probuši. Podloga je hladan čelik, naslovi su široka teška slova, a rezervacija je karta. Jedina topla boja je žar i znači samo jedno: ovo je tvoje.
+Kazandžiluk, ulica kazandžija na Baščaršiji: mjed koja se kuje čekićem i emajl kojim se boje značke. Termin je emajlirani žeton koji uzmeš s ploče, a rezervacija je karta s mjedenom folijom. Sve što se dodiruje ima debljinu. Mjed znači "tvoje", a četiri emajl boje razlikuju resurse.
 
 ## Boje
 
-Paleta je s Color Hunta ([37353e 44444e 715a5a d3dad9](https://colorhunt.co/palette/37353e44444e715a5ad3dad9) i žar iz [524646 a8a492 fcf2e5 ec5b38](https://colorhunt.co/palette/524646a8a492fcf2e5ec5b38)). Površina i tekst na žaru su izvedeni iz nje, a sporedni tekst je zatamnjen da prođe AA. Kontrast je po WCAG formuli za relativnu luminansu.
+Dvije teme, svaka napravljena posebno: dan je hladan porculan, noć je tamna tinta. Tema prati sistem, a u zaglavlju se može izabrati ručno. Kontrast je po WCAG formuli za relativnu luminansu (AA: 4,5 za tekst, 3 za ivice i oblike).
 
 | Varijabla | Hex | Uloga | Kontrast |
 |---|---|---|---|
-| `--podloga` | `#D3DAD9` | čelik, pozadina svega | |
-| `--povrsina` | `#E9EDEC` | lim: polja, red termina, karta | |
-| `--tekst` | `#37353E` | grafit: tekst, linije, glavno dugme | 8,50 na podlozi, 10,22 na površini |
-| `--tekst-na-moje` | `#1F1E24` | ugalj: tekst na žaru | 4,82 na žaru |
-| `--tekst-sporedni` | `#5E4A4A` | oksid: napomene, datum ispod naslova | 5,79 na podlozi, 6,96 na površini |
-| `--moje` | `#EC5B38` | žar: samo moja rezervacija | 2,42 na podlozi, zato nikad tekst |
-| `--greska` | `#9A2A22` | greška, uvijek uz ikonu i tekst | 5,42 na podlozi |
+| `--dan-podloga` | `#E7EAF1` | dan: porculan, pozadina | |
+| `--dan-povrsina` | `#F6F7FA` | dan: ploče, polja | |
+| `--dan-izdignuto` | `#FFFFFF` | dan: žeton, karta, meni | |
+| `--dan-tekst` | `#151933` | dan: tinta, sav tekst; i tekst na mjedi u obje teme | 14,31 na podlozi, 17,23 na izdignutom |
+| `--dan-sporedni` | `#4B5172` | dan: napomene | 6,41 na podlozi, 7,72 na izdignutom |
+| `--dan-greska` | `#B42318` | dan: greška, uvijek uz ikonu i tekst | 5,46 na podlozi |
+| `--dan-mjed-tekst` | `#7A5A12` | dan: mjed kao tekst (link "moje") | 5,29 na podlozi, 6,37 na izdignutom |
+| `--noc-podloga` | `#121735` | noć: tinta, pozadina | |
+| `--noc-povrsina` | `#1A2045` | noć: ploče, polja | |
+| `--noc-izdignuto` | `#232A56` | noć: žeton, karta, meni | |
+| `--noc-tekst` | `#ECEEF8` | noć: sav tekst | 15,13 na podlozi, 11,81 na izdignutom |
+| `--noc-sporedni` | `#A4AACB` | noć: napomene | 7,66 na podlozi, 5,98 na izdignutom |
+| `--noc-greska` | `#FF8A80` | noć: greška | 7,67 na podlozi |
+| `--mjed` | `#C9A04E` | dan: moje, glavno dugme, folija | tinta na mjedi 7,07; mjed na podlozi 2,02, zato nikad tekst |
+| `--mjed-noc` | `#D9B566` | noć: moje, i mjed kao tekst | tinta na mjedi 8,82; na noćnoj podlozi 8,96 |
+| `--mjed-sjaj` | `#F3DFA6` | svijetla strana metalnog preliva | |
+| `--mjed-sjena` | `#8A6A24` | tamna strana metalnog preliva | |
+| `--emajl-sipak` | `#E5484D` | resurs, kao površina ili rub | 3,25 na dnevnoj podlozi |
+| `--emajl-safran` | `#F2B530` | resurs, kao površina ili rub | tinta na šafranu 9,38 |
+| `--emajl-tirkiz` | `#12A594` | resurs, kao površina ili rub | 2,55 na dnevnoj podlozi, zato uvijek s tintanim rubom |
+| `--emajl-lapis` | `#3E6AE6` | resurs, kao površina ili rub | 3,95 na dnevnoj podlozi |
 
-Žar se ne koristi za dugmad, linkove ni ukras. Glavno dugme je grafit. Greška i žar su bliske boje, pa se greška nikad ne prepoznaje samo po boji.
+Emajl nikad nije tekst i nikad jedini znak stanja: boja kaže koji je resurs, a oblik i tekst kažu stanje. Mjed je samo za "moje" i glavnu akciju. Greška u noći je svijetlo crvena, da ne potone u tintu.
+
+Senke su od tinte, ne od crne (`--sjena-boja`, u noći `--sjena-noc`), i imaju tri nivoa: `--dubina-1` (ploča leži), `--dubina-2` (žeton stoji), `--dubina-3` (karta lebdi). Svaki nivo ima i tanak svijetli gornji rub (`--odsjaj`), kao rub izdignute ploče. Udubljeno (zauzet termin, polje) je `--utisnuto`. Gradijent postoji samo kao `--metal`, na mjedi i foliji, gdje glumi metal.
 
 ## Fontovi
 
-**Archivo** (`@fontsource-variable/archivo`, osa širine 62 do 125) je za sve osim karte. Naslovi su široki i teški (`--sirina-naslov` 125 %, težina 800), tekst normalne širine. Vremena su isti font s `tabular-nums`, pa monospace više ne treba. **IBM Plex Mono** je samo na karti (`--font-karta`), kao otisak štampača na blagajni. Big Shoulders i Plex Sans su izbačeni.
+**Anybody** (`@fontsource-variable/anybody`, širina 50 do 150 %, težina 100 do 900) je za naslove i velike cifre. Naslovi su široki (`--sirina-naslov`, 128 %), cifre vremena uske i visoke (`--sirina-brojevi`, 82 %, `tabular-nums`). Na landingu širina i težina slova prate kursor. **Hanken Grotesk** (`@fontsource-variable/hanken-grotesk`) je sav tekst, forme i dugmad. **IBM Plex Mono** je samo na karti (`--font-karta`), kao otisak.
 
-Provjereno 25.11.2026 u Edgeu: svih deset slova č, ć, š, đ, ž crta Archivo, a ne rezervni font (canvas, isto mjerenje kao u Fazi 7). Uz `tabular-nums` su "11:11" i "00:00" iste širine (104 px), a bez njega nisu (96 i 104). Plex Mono je provjeren 15.11.2026.
+Latin-ext (č, ć, š, đ, ž) imaju sva tri, provjereno 25.11.2026 po fajlovima `*-latin-ext-*.woff2` u paketima.
 
-Veličine teksta (skala 1,25). Osnova je 16 px, a ispod 14 px se ne ide:
+Veličine teksta. Osnova je 16 px, ispod 14 px se ne ide:
 
 | Varijabla | Veličina | Gdje |
 |---|---|---|
 | `--velicina-sitno` | `14px` | napomene, oznake stanja |
 | `--velicina-tekst` | `16px` | sav ostali tekst, dugmad, polja forme |
-| `--velicina-vrijeme` | `20px` | vrijeme u redu termina, težina 600 |
+| `--velicina-vrijeme` | `20px` | vrijeme na žetonu |
 | `--velicina-naslov-3` | `25px` | naslov dana, podnaslov |
 | `--velicina-naslov-2` | `31px` | naslov dijela ekrana |
-| `--velicina-naslov-1` | `39px` | naslov ekrana, jedan po ekranu |
+| `--velicina-naslov-1` | `44px` | naslov ekrana, jedan po ekranu |
+| `--velicina-naslov-0` | `68px` | naslovi sekcija na landingu, velike brojke na dashboardu |
+| `--velicina-hero` | `clamp(76px, 9.6vw, 148px)` | samo naslov u heru landinga |
 
-Prored je 1,5 za tekst (`--prored-tekst`) i 1,05 za naslove (`--prored-naslov`), jer široka teška slova s velikim proredom izgledaju kao dva odvojena reda.
+Prored je 1,55 za tekst i 1 za naslove: široka teška slova s većim proredom izgledaju kao dva odvojena reda.
 
 ## Razmaci i oblik
 
-Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48). Red termina je visok najmanje 48 px, da se lako pogodi prstom. Zaobljenje ima hijerarhiju: redovi i trake 0, polja i dugmad 3 px (`--zaobljenje`), karta 12 px (`--zaobljenje-karta`). Sjena se ne koristi, a granice prave linije od 1 px (`--tekst` na 20 % ili puna kod naslova dana).
+Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48, 64, 96). Žeton je visok najmanje 48 px. Zaobljenje raste s nivoom, nije isto na svemu: polje i dugme 10 px (`--zaobljenje`), žeton 14 px (`--zaobljenje-zeton`), karta 20 px (`--zaobljenje-karta`), ploča 28 px (`--zaobljenje-ploca`), a pilula (prekidač teme, oznaka) puna (`--zaobljenje-puno`). Podloga ima fino zrno (`--zrno`), kao kucana mjed.
+
+## Pokret
+
+Odgovor na akciju traje 160 do 260 ms (`--trajanje-brzo`, `--trajanje-srednje`), karta 420 ms (`--trajanje-karta`), kriva `--kriva-izlaz`. Animira se samo `transform` i `opacity`. Tri spektakularna momenta (hero, uzimanje termina, prelazi između ekrana) su opisana u `redizajn/smjer.md`, a sve ostalo je mirno. `prefers-reduced-motion` gasi letove, nagib i prelaze, a stanja ostaju.
 
 ## U kodu
 
-Sve vrijednosti su u `frontend/src/tokeni.css`, kao CSS varijable. Boje se zovu kao u tabeli iznad. Fontovi su `--font-naslov`, `--font-tekst` i `--font-brojevi`, razmaci `--razmak-4` do `--razmak-48` (broj je vrijednost u px), a tu su još `--zaobljenje` (3 px), `--zaobljenje-karta` (12 px), `--linija` (`--tekst` na 20 %) i `--red-min-visina` (48 px). Test `tokeni.test.js` pada kad se boje u `tokeni.css` razlikuju od tabele u ovom fajlu i kad neki drugi fajl u `frontend/src` napiše boju direktno (hex, `rgb()`, `hsl()`).
-
-Isti test provjerava i veličine teksta: tabela veličina ovdje i `tokeni.css` moraju se slagati, a `font-size` i `fontSize` s brojem van `tokeni.css` obaraju test.
+Sve vrijednosti su u `frontend/src/tokeni.css`. Primitive su imenovane po temi (`--dan-*`, `--noc-*`, `--mjed*`, `--emajl-*`), a komponente koriste samo semantičke varijable (`--podloga`, `--povrsina`, `--izdignuto`, `--tekst`, `--tekst-sporedni`, `--moje`, `--greska`, `--linija`...), koje tema prebaci. Test `tokeni.test.js` pada kad se hex vrijednosti u `tokeni.css` razlikuju od tabele u ovom fajlu, kad neki drugi fajl u `frontend/src` napiše boju direktno (hex, `rgb()`, `hsl()`) i kad se veličine teksta ne slažu s tabelom ili se `font-size` piše brojem van `tokeni.css`.
 
 ## Forme i dugmad
 

@@ -1,35 +1,89 @@
-/* Karta za voz, potpisni element iz docs/redizajn/smjer.md. Ivica je tamna linija kao na
-   odštampanom papiru, bez sjene. Zarezi na perforaciji su krugovi u boji podloge, a pola
-   kruga koje viri van karte odsiječe overflow. */
+/* Karta s mjedenom folijom, potpisni element iz docs/redizajn/smjer.md. Vanjski element nosi sjenu
+   i nagib, a tijelo ima pravu perforaciju: zarezi su izrezani maskom, pa kroz njih se vidi šta je
+   ispod karte, a ne krug u boji podloge. */
 .karta {
+	--nx: 0;
+	--ny: 0;
+	--kupon: 116px;
 	position: relative;
-	display: flex;
-	overflow: hidden;
 	color: var(--tekst);
-	background: var(--povrsina);
-	border: 1px solid var(--tekst);
-	border-radius: var(--zaobljenje-karta);
+	filter: drop-shadow(0 2px 3px var(--sjena)) drop-shadow(0 18px 28px var(--sjena-jaka));
+	transition: transform var(--trajanje-srednje) var(--kriva-izlaz);
+}
+
+.karta-nagib {
+	transform: perspective(900px) rotateX(calc(var(--ny) * -14deg)) rotateY(calc(var(--nx) * 16deg));
+	touch-action: pan-y;
+}
+
+/* Dok prst ili miš vodi kartu, nagib ide odmah za njim, a kad pusti, vrati se polako */
+.karta-nagib[data-nagnuta] {
+	transition: none;
 }
 
 .karta p {
 	margin: 0;
 }
 
+.karta-tijelo {
+	position: relative;
+	display: flex;
+	overflow: hidden;
+	background: var(--zrno), var(--izdignuto);
+	border-radius: var(--zaobljenje-karta);
+	mask:
+		radial-gradient(circle at calc(100% - var(--kupon)) 0, transparent 11px, black 11.5px) top / 100% 51% no-repeat,
+		radial-gradient(circle at calc(100% - var(--kupon)) 100%, transparent 11px, black 11.5px) bottom / 100% 51% no-repeat;
+}
+
+/* Mjedena traka na vrhu: karta se po njoj prepozna i kad je mala, na listi */
+.karta-tijelo::before {
+	content: '';
+	position: absolute;
+	inset: 0 0 auto;
+	height: 6px;
+	background: var(--metal);
+}
+
+/* Folija: preliv koji klizi po nagibu. Na karti koja se ne naginje stoji mirno, kao odsjaj. */
+.karta-folija {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background: linear-gradient(
+		115deg,
+		transparent 30%,
+		var(--mjed-sjaj) 42%,
+		var(--emajl-tirkiz) 50%,
+		var(--emajl-sipak) 56%,
+		var(--mjed-sjaj) 62%,
+		transparent 74%
+	);
+	/* Bez ponavljanja i s pomakom unutar 0 do 100 %, inače se na rubu ponovljene slike vidi šav */
+	background-size: 260% 260%;
+	background-repeat: no-repeat;
+	background-position: calc(50% + var(--nx) * 80%) calc(50% + var(--ny) * 80%);
+	mix-blend-mode: soft-light;
+	opacity: 0.55;
+}
+
 .karta-glavno {
 	flex: 1;
 	min-width: 0;
 	display: grid;
+	align-content: start;
 	gap: var(--razmak-8);
-	padding: var(--razmak-16) var(--razmak-24) var(--razmak-24);
+	padding: var(--razmak-24) var(--razmak-24) var(--razmak-24);
 }
 
 .karta-zaglavlje {
 	font-family: var(--font-karta);
 	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
 }
 
 .karta-dan {
-	font-weight: 600;
+	font-weight: 700;
 }
 
 /* Put od-do: stvarno trajanje termina, dvije stanice i pruga između */
@@ -40,15 +94,18 @@
 }
 
 .karta-put time {
-	font-family: var(--font-karta);
-	font-size: var(--velicina-naslov-3);
+	font-family: var(--font-brojevi);
+	font-stretch: var(--sirina-brojevi);
+	font-size: var(--velicina-naslov-2);
+	font-weight: 800;
+	line-height: 1;
 }
 
 .karta-linija {
 	position: relative;
 	flex: 1;
 	height: 2px;
-	background: var(--tekst);
+	background: repeating-linear-gradient(90deg, var(--tekst) 0 6px, transparent 6px 10px);
 }
 
 .karta-linija::before,
@@ -58,7 +115,8 @@
 	top: -4px;
 	width: 10px;
 	height: 10px;
-	background: var(--tekst);
+	background: var(--moje);
+	border: 2px solid var(--tekst);
 	border-radius: 50%;
 }
 
@@ -73,6 +131,7 @@
 .karta-resurs {
 	font-size: var(--velicina-vrijeme);
 	font-weight: 700;
+	line-height: 1.25;
 }
 
 .karta-mjesto {
@@ -87,29 +146,10 @@
 	align-content: center;
 	justify-items: center;
 	gap: var(--razmak-12);
-	width: 112px;
-	padding: var(--razmak-16) var(--razmak-8);
-	border-left: 2px dashed var(--linija);
-}
-
-.karta-kupon::before,
-.karta-kupon::after {
-	content: '';
-	position: absolute;
-	left: -10px;
-	width: 18px;
-	height: 18px;
-	background: var(--podloga);
-	border: 1px solid var(--tekst);
-	border-radius: 50%;
-}
-
-.karta-kupon::before {
-	top: -10px;
-}
-
-.karta-kupon::after {
-	bottom: -10px;
+	width: var(--kupon);
+	padding: var(--razmak-24) var(--razmak-8) var(--razmak-16);
+	background: color-mix(in srgb, var(--moje) 14%, transparent);
+	border-left: 2px dashed var(--linija-jaka);
 }
 
 /* Žig: stanje riječima u dvostrukom okviru, malo nakrivljen kao udaren rukom. Čita se i bez boje. */
@@ -123,16 +163,20 @@
 	transform: rotate(-8deg);
 }
 
-/* Karta izlazi iz automata: otkriva se odozgo prema dole i klizne na mjesto. Jedini orkestriran
-   pokret u aplikaciji, i pokreće ga korisnik klikom na Rezerviši. */
-.karta-odstampana {
-	animation: izlazak-karte var(--trajanje-karta) ease-out;
+/* Karta izlazi iz automata: otkriva se odozgo prema dole i klizne na mjesto, a folija jednom
+   prođe svjetlom. Pokreće je korisnik klikom na Rezerviši. */
+.karta-odstampana .karta-tijelo {
+	animation: izlazak-karte var(--trajanje-karta) var(--kriva-izlaz);
+}
+
+.karta-odstampana .karta-folija {
+	animation: prolaz-svjetla 1100ms var(--kriva-izlaz) 200ms both;
 }
 
 @keyframes izlazak-karte {
 	from {
 		clip-path: inset(0 0 100% 0);
-		transform: translateY(calc(-1 * var(--razmak-16)));
+		transform: translateY(calc(-1 * var(--razmak-24)));
 	}
 	to {
 		clip-path: inset(0);
@@ -140,17 +184,35 @@
 	}
 }
 
+@keyframes prolaz-svjetla {
+	from {
+		background-position: 100% 100%;
+		opacity: 0.9;
+	}
+	to {
+		background-position: 0% 0%;
+		opacity: 0.55;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.karta-nagib {
+		transform: none;
+	}
+}
+
 /* Na uskom telefonu kupon i vremena se smanje, da pruga između dva vremena ostane vidljiva */
 @media (max-width: 480px) {
+	.karta {
+		--kupon: 92px;
+	}
+
 	.karta-glavno {
-		padding: var(--razmak-12) var(--razmak-16) var(--razmak-16);
+		padding: var(--razmak-16);
+		padding-top: var(--razmak-24);
 	}
 
 	.karta-put time {
-		font-size: var(--velicina-vrijeme);
-	}
-
-	.karta-kupon {
-		width: 88px;
+		font-size: var(--velicina-naslov-3);
 	}
 }

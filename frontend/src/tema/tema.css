@@ -1,0 +1,74 @@
+/* Prekidač teme: utisnuta staza i mjeden žeton koji klizi, isti materijal kao termini */
+.prekidac-teme {
+	display: inline-flex;
+	padding: 0;
+	background: none;
+	border: 0;
+	border-radius: var(--zaobljenje-puno);
+	cursor: pointer;
+	color: var(--tekst);
+}
+
+.prekidac-staza {
+	position: relative;
+	display: block;
+	width: 60px;
+	height: 34px;
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: var(--utisnuto);
+}
+
+.prekidac-zeton {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	display: grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	background: var(--metal);
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: var(--dubina-2);
+	color: var(--tekst-na-moje);
+	transition: transform var(--trajanje-srednje) var(--kriva-izlaz);
+}
+
+.prekidac-teme[aria-checked='true'] .prekidac-zeton {
+	transform: translateX(26px);
+}
+
+.prekidac-ikona {
+	width: 16px;
+	height: 16px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+}
+
+.prekidac-teme[aria-checked='true'] .prekidac-ikona {
+	fill: currentColor;
+	stroke: none;
+}
+
+.znak-sjaj {
+	stop-color: var(--mjed-sjaj);
+}
+
+.znak-mjed {
+	stop-color: var(--mjed);
+}
+
+.znak-sjena {
+	stop-color: var(--mjed-sjena);
+}
+
+.znak-rub {
+	stroke: var(--mjed-sjena);
+	opacity: 0.6;
+}
+
+.znak-prorez {
+	fill: var(--dan-tekst);
+}

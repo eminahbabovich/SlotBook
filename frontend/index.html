@@ -4,7 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="description" content="Rezervacija termina bez preklapanja: čitaonica, konsultacije, sala za trening." />
     <title>SlotBook</title>
+    <!-- Tema izabrana ručno se postavi prije prvog crtanja, da ekran ne bljesne svijetlim -->
+    <script>
+      try {
+        var t = localStorage.getItem('slotbook-tema')
+        if (t === 'svijetla' || t === 'tamna') document.documentElement.dataset.tema = t
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

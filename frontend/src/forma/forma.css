@@ -83,47 +83,6 @@
 	border-left: var(--razmak-4) solid var(--greska);
 }
 
-.dugme {
-	justify-self: start;
-	min-height: var(--red-min-visina);
-	padding: 0 var(--razmak-24);
-	font: inherit;
-	font-weight: 600;
-	color: var(--povrsina);
-	background: var(--tekst);
-	border: 1px solid var(--tekst-na-moje);
-	border-bottom-width: var(--ivica-dugmeta);
-	border-radius: var(--zaobljenje);
-	cursor: pointer;
-	transition: transform var(--trajanje-brzo) ease-out, background-color var(--trajanje-brzo) ease-out;
-}
-
-.dugme:hover {
-	background: var(--tekst-na-moje);
-}
-
-/* Ploča se pritisne: spusti se za 1 px, a donja ivica se stanji, pa visina ostane ista */
-.dugme:active:not(:disabled) {
-	transform: translateY(1px);
-	border-bottom-width: calc(var(--ivica-dugmeta) - 1px);
-}
-
-.dugme:disabled {
-	background: var(--tekst-sporedni);
-	border-color: var(--tekst-sporedni);
-	cursor: wait;
-}
-
-/* Radnja koja se ne može vratiti (brisanje naloga, otkazivanje): ista ploča, ali u boji greške,
-   da se ne zamijeni sa "Rezerviši". Lim na grešci ima 6,52:1. Dok se šalje, siva je kao svako. */
-.dugme-opasno:not(:disabled) {
-	background: var(--greska);
-}
-
-.dugme-opasno:not(:disabled):hover {
-	background: var(--tekst-na-moje);
-}
-
 /* Dugme koje izgleda kao link: vodi na drugi ekran, ne šalje podatke. */
 .dugme-tekst {
 	min-height: var(--red-min-visina);

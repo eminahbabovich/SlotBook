@@ -1,30 +1,88 @@
-/* Jedino mjesto s vrijednostima iz docs/DIZAJN.md. Komponente koriste samo ove varijable,
-   a nova boja, font ili razmak se prvo dopiše u DIZAJN.md. */
+/* Jedino mjesto s vrijednostima iz docs/DIZAJN.md (smjer "Mjed i emajl", docs/redizajn/smjer.md).
+   Komponente koriste samo semantičke varijable, a nova boja, font ili razmak se prvo dopiše u DIZAJN.md.
+   Primitive (hex) su imenovane po temi, a semantičke varijable ispod ih biraju za dan ili noć. */
 :root {
-	--podloga: #d3dad9;
-	--povrsina: #e9edec;
-	--tekst: #37353e;
-	--tekst-na-moje: #1f1e24;
-	--tekst-sporedni: #5e4a4a;
-	--moje: #ec5b38;
-	--greska: #9a2a22;
+	/* Dan: hladan porculan, ne papir */
+	--dan-podloga: #e7eaf1;
+	--dan-povrsina: #f6f7fa;
+	--dan-izdignuto: #ffffff;
+	--dan-tekst: #151933;
+	--dan-sporedni: #4b5172;
+	--dan-greska: #b42318;
+	--dan-mjed-tekst: #7a5a12;
 
-	--linija: color-mix(in srgb, var(--tekst) 20%, transparent);
+	/* Noć: tinta nad čaršijom, ne crna */
+	--noc-podloga: #121735;
+	--noc-povrsina: #1a2045;
+	--noc-izdignuto: #232a56;
+	--noc-tekst: #eceef8;
+	--noc-sporedni: #a4aacb;
+	--noc-greska: #ff8a80;
 
-	--font-naslov: 'Archivo Variable', sans-serif;
-	--font-tekst: 'Archivo Variable', sans-serif;
-	--font-brojevi: 'Archivo Variable', sans-serif;
+	/* Mjed: moje, folija, glavno dugme. Svijetla i tamna strana za metalni preliv. */
+	--mjed: #c9a04e;
+	--mjed-noc: #d9b566;
+	--mjed-sjaj: #f3dfa6;
+	--mjed-sjena: #8a6a24;
+
+	/* Emajl: boja resursa. Uvijek površina ili rub, nikad tekst na podlozi. */
+	--emajl-sipak: #e5484d;
+	--emajl-safran: #f2b530;
+	--emajl-tirkiz: #12a594;
+	--emajl-lapis: #3e6ae6;
+
+	/* Senke: tinta, ne crna, da sjena pripada istom svijetu kao tekst */
+	--sjena-boja: rgb(21 25 51 / 0.14);
+	--sjena-boja-jaka: rgb(21 25 51 / 0.24);
+	--sjena-noc: rgb(4 6 18 / 0.55);
+	--sjena-noc-jaka: rgb(4 6 18 / 0.75);
+	--odsjaj-dan: rgb(255 255 255 / 0.9);
+	--odsjaj-noc: rgb(255 255 255 / 0.09);
+
+	/* Semantičke boje, dan */
+	--podloga: var(--dan-podloga);
+	--povrsina: var(--dan-povrsina);
+	--izdignuto: var(--dan-izdignuto);
+	--tekst: var(--dan-tekst);
+	--tekst-sporedni: var(--dan-sporedni);
+	--tekst-na-moje: var(--dan-tekst);
+	--tekst-mjed: var(--dan-mjed-tekst);
+	--moje: var(--mjed);
+	--greska: var(--dan-greska);
+	--odsjaj: var(--odsjaj-dan);
+	--sjena: var(--sjena-boja);
+	--sjena-jaka: var(--sjena-boja-jaka);
+	--linija: color-mix(in srgb, var(--tekst) 14%, transparent);
+	--linija-jaka: color-mix(in srgb, var(--tekst) 32%, transparent);
+	--sraf: color-mix(in srgb, var(--tekst) 9%, transparent);
+
+	/* Tri nivoa dubine: ploča leži, žeton stoji, karta lebdi */
+	--dubina-1: 0 1px 0 var(--odsjaj) inset, 0 1px 2px var(--sjena);
+	--dubina-2: 0 1px 0 var(--odsjaj) inset, 0 2px 4px var(--sjena), 0 8px 20px -6px var(--sjena-jaka);
+	--dubina-3: 0 1px 0 var(--odsjaj) inset, 0 4px 10px var(--sjena), 0 24px 48px -12px var(--sjena-jaka);
+	--utisnuto: inset 0 2px 4px var(--sjena), inset 0 0 0 1px var(--linija);
+	--metal: linear-gradient(160deg, var(--mjed-sjaj) 0%, var(--mjed) 38%, var(--mjed-sjena) 100%);
+
+	/* Zrno: fino kucana površina mjedi, samo na podlozi i karti */
+	--zrno: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='z'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23z)'/%3E%3C/svg%3E");
+
+	--font-naslov: 'Anybody Variable', sans-serif;
+	--font-tekst: 'Hanken Grotesk Variable', sans-serif;
+	--font-brojevi: 'Anybody Variable', sans-serif;
 	--font-karta: 'IBM Plex Mono', monospace;
-	--sirina-naslov: 125%;
+	--sirina-naslov: 128%;
+	--sirina-brojevi: 82%;
 
 	--velicina-sitno: 14px;
 	--velicina-tekst: 16px;
 	--velicina-vrijeme: 20px;
 	--velicina-naslov-3: 25px;
 	--velicina-naslov-2: 31px;
-	--velicina-naslov-1: 39px;
-	--prored-tekst: 1.5;
-	--prored-naslov: 1.05;
+	--velicina-naslov-1: 44px;
+	--velicina-naslov-0: 68px;
+	--velicina-hero: clamp(76px, 9.6vw, 148px);
+	--prored-tekst: 1.55;
+	--prored-naslov: 1;
 
 	--razmak-4: 4px;
 	--razmak-8: 8px;
@@ -33,18 +91,61 @@
 	--razmak-24: 24px;
 	--razmak-32: 32px;
 	--razmak-48: 48px;
+	--razmak-64: 64px;
+	--razmak-96: 96px;
 
-	--zaobljenje: 3px;
-	--zaobljenje-karta: 12px;
-	--ivica-dugmeta: 3px;
+	/* Zaobljenje raste s nivoom, nije isto na svemu */
+	--zaobljenje: 10px;
+	--zaobljenje-zeton: 14px;
+	--zaobljenje-karta: 20px;
+	--zaobljenje-ploca: 28px;
+	--zaobljenje-puno: 999px;
+	--ivica-dugmeta: 2px;
 
-	--trajanje-brzo: 150ms;
-	--trajanje-srednje: 220ms;
-	--trajanje-karta: 300ms;
+	--trajanje-brzo: 160ms;
+	--trajanje-srednje: 260ms;
+	--trajanje-karta: 420ms;
 	--trajanje-disanje: 1200ms;
+	--kriva-izlaz: cubic-bezier(0.2, 0.8, 0.2, 1);
 	--red-min-visina: 48px;
-	--sirina-forme: 400px;
+	--sirina-forme: 420px;
+	--sirina-sadrzaja: 1200px;
 
 	--fokus: 3px solid var(--tekst);
-	--fokus-odmak: 2px;
+	--fokus-odmak: 3px;
+
+	color-scheme: light;
+}
+
+/* Noć prati sistem, osim kad je korisnik izabrao dan u zaglavlju */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-tema='svijetla']) {
+		--podloga: var(--noc-podloga);
+		--povrsina: var(--noc-povrsina);
+		--izdignuto: var(--noc-izdignuto);
+		--tekst: var(--noc-tekst);
+		--tekst-sporedni: var(--noc-sporedni);
+		--tekst-mjed: var(--mjed-noc);
+		--moje: var(--mjed-noc);
+		--greska: var(--noc-greska);
+		--odsjaj: var(--odsjaj-noc);
+		--sjena: var(--sjena-noc);
+		--sjena-jaka: var(--sjena-noc-jaka);
+		color-scheme: dark;
+	}
+}
+
+:root[data-tema='tamna'] {
+	--podloga: var(--noc-podloga);
+	--povrsina: var(--noc-povrsina);
+	--izdignuto: var(--noc-izdignuto);
+	--tekst: var(--noc-tekst);
+	--tekst-sporedni: var(--noc-sporedni);
+	--tekst-mjed: var(--mjed-noc);
+	--moje: var(--mjed-noc);
+	--greska: var(--noc-greska);
+	--odsjaj: var(--odsjaj-noc);
+	--sjena: var(--sjena-noc);
+	--sjena-jaka: var(--sjena-noc-jaka);
+	color-scheme: dark;
 }

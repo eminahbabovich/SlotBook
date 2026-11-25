@@ -1,0 +1,164 @@
+/* Materijal iz docs/DIZAJN.md: ploča, žeton i mjedeno dugme. Dijele ih landing, kalendar i ostali
+   ekrani, pa su ovdje, a ne uz jednu komponentu. */
+
+/* Ploča: leži na podlozi, najveće zaobljenje, tanak svijetli gornji rub */
+.ploca {
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-1);
+}
+
+/* Žeton: termin kao emajlirana pločica koja stoji. --emajl je boja resursa (rub i tačka). */
+.zeton {
+	--emajl: var(--emajl-tirkiz);
+	position: relative;
+	display: grid;
+	align-content: center;
+	gap: 2px;
+	min-height: var(--red-min-visina);
+	padding: var(--razmak-8) var(--razmak-12);
+	font: inherit;
+	text-align: left;
+	color: var(--tekst);
+	background: var(--izdignuto);
+	border: 0;
+	border-radius: var(--zaobljenje-zeton);
+}
+
+.zeton time {
+	font-family: var(--font-brojevi);
+	font-stretch: var(--sirina-brojevi);
+	font-size: var(--velicina-vrijeme);
+	font-weight: 800;
+	line-height: 1;
+}
+
+.zeton-oznaka {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+	line-height: 1.2;
+}
+
+/* Slobodan: stoji iznad ploče, s emajl rubom odozdo. Na hover se malo digne, na pritisak spusti. */
+.zeton-slobodan {
+	cursor: pointer;
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl);
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
+}
+
+.zeton-slobodan:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--dubina-3), inset 0 -3px 0 var(--emajl);
+}
+
+/* Zauzet: udubljen u ploču i šrafiran, bez debljine. Razlikuje se i bez boje. */
+.zeton-zauzet {
+	color: var(--tekst-sporedni);
+	background: repeating-linear-gradient(-45deg, var(--sraf) 0 6px, transparent 6px 12px), var(--povrsina);
+	box-shadow: var(--utisnuto);
+}
+
+.zeton-zauzet time {
+	text-decoration: line-through;
+	text-decoration-thickness: 2px;
+}
+
+/* Moj: mjed. Najdeblji, sa sjajem, tekst je tinta. */
+.zeton-moj {
+	color: var(--tekst-na-moje);
+	background: var(--metal);
+	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj);
+}
+
+.zeton-moj .zeton-oznaka {
+	color: var(--tekst-na-moje);
+	font-weight: 700;
+}
+
+/* Mjesto s kojeg je žeton uzet: ostaje otisak, da ploča ne preskoči */
+.zeton-prazan {
+	background: transparent;
+	box-shadow: inset 0 0 0 2px var(--linija);
+}
+
+/* Dugme: tintana pilula s debljinom. Glavna akcija na ekranu je mjedena (.dugme-mjed). */
+.dugme {
+	justify-self: start;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--razmak-8);
+	min-height: var(--red-min-visina);
+	padding: 0 var(--razmak-24);
+	font: inherit;
+	font-weight: 700;
+	color: var(--podloga);
+	background: var(--tekst);
+	border: 0;
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: var(--dubina-2), inset 0 1px 0 var(--odsjaj);
+	cursor: pointer;
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
+}
+
+.dugme:hover:not(:disabled) {
+	transform: translateY(-1px);
+	box-shadow: var(--dubina-3), inset 0 1px 0 var(--odsjaj);
+}
+
+/* Pritisak: dugme se spusti i sjena se skrati, kao da je utisnuto u ploču */
+.dugme:active:not(:disabled) {
+	transform: translateY(1px);
+	box-shadow: var(--dubina-1);
+}
+
+.dugme:disabled {
+	opacity: 0.6;
+	cursor: wait;
+}
+
+/* Radnja koja se ne može vratiti (brisanje naloga, otkazivanje): ista pilula, ali u boji greške,
+   da se ne zamijeni sa "Rezerviši". Dok se šalje, blijeda je kao svako. */
+.dugme-opasno:not(:disabled) {
+	color: var(--podloga);
+	background: var(--greska);
+}
+
+/* Glavna akcija: mjed. Jedna po ekranu. */
+.dugme.dugme-mjed {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--tekst-na-moje);
+	text-decoration: none;
+	background: var(--metal);
+	border: 0;
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: var(--dubina-2), inset 0 1px 0 var(--mjed-sjaj), inset 0 -2px 0 var(--mjed-sjena);
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz), filter var(--trajanje-brzo);
+}
+
+.dugme.dugme-mjed:hover:not(:disabled) {
+	filter: brightness(1.06);
+	transform: translateY(-1px);
+	box-shadow: var(--dubina-3), inset 0 1px 0 var(--mjed-sjaj), inset 0 -2px 0 var(--mjed-sjena);
+}
+
+.dugme.dugme-mjed:active:not(:disabled) {
+	transform: translateY(1px);
+	box-shadow: var(--dubina-1), inset 0 1px 0 var(--mjed-sjaj);
+}
+
+.dugme.dugme-mjed:disabled {
+	filter: saturate(0.4);
+	opacity: 0.7;
+	cursor: wait;
+}
+
+code {
+	font-family: var(--font-karta);
+	font-size: var(--velicina-sitno);
+	padding: 1px var(--razmak-4);
+	background: var(--sraf);
+	border-radius: var(--zaobljenje);
+}

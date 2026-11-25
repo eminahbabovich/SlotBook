@@ -1,158 +1,61 @@
-# Redizajn: smjer Čelik i žar (prijedlog, 25.11.2026)
+# Redizajn 2: smjer Mjed i emajl (25.11.2026)
 
-Korak 1 iz `REDESIGN.md`. Ovo je prijedlog, ne odluka. Kad ga odobrim, vrijednosti idu u `docs/DIZAJN.md` i `tokeni.css`.
+Prvi redizajn ("Čelik i žar") je bio previše ravan i bezličan: jedna siva površina, zaobljenje od 3 px na svemu, jedan font, jedna boja. Ovaj put sam smjer izabrao sam, po smjernicama iz moje poruke od 25.11. (reference: Airbnb 2025, Amie, Family, landonorris.com, Linear). Ovaj fajl je za to da se smjer ne raspline usput.
 
 ## Ideja
 
-Zenica je grad čelika i željeznički čvor: sivi lim, utisnuta slova na natpisnim pločicama mašina i vagona, i kartonska karta za voz koju kondukter probuši. SlotBook preuzima tri stvari. Podloga je hladan čelik, a ne papir. Naslovi su široka, teška slova, kao utisnuta u lim. Rezervacija je karta. Jedina topla boja je žar, i znači samo jedno: ovo je tvoje.
+Kazandžiluk, ulica kazandžija na Baščaršiji: mjed koja se kuje čekićem, i emajl kojim se boje ploče i značke. Termin je emajlirani žeton koji uzmeš s ploče, a rezervacija je karta s mjedenom folijom koju nosiš u džepu. Sve što se može dodirnuti ima debljinu: žeton se pritisne, karta se nagne prema prstu, ploče leže jedna na drugoj. Mjed znači "tvoje", a četiri emajl boje razlikuju resurse, kao šareni blokovi u Amie kalendaru.
 
-## Boje
+Lokalno je u materijalu, a ne u ukrasu: nema minareta, sebilja ni ćilima na ekranu. Vidi se u imenima (Čitaonica PMF, Teretana Ilidža), u zoni `Europe/Sarajevo`, i na jednom mjestu u priči o vremenu: Sahat-kula na Baščaršiji i danas pokazuje vrijeme po zalasku sunca.
 
-Paleta [37353e 44444e 715a5a d3dad9](https://colorhunt.co/palette/37353e44444e715a5ad3dad9) i žar `#EC5B38` s Color Hunta. Lim i ugalj su izvedeni iz nje, a oksid je zatamnjen da prođe AA.
+## Paleta
 
-| Token | Hex | Uloga | Kontrast |
+Dvije teme, svaka dizajnirana posebno. Dan je hladan porculan, ne papir i ne krem. Noć je tamna tinta nad čaršijom, a ne crna, i u njoj mjed najviše sija.
+
+| Ime | Dan | Noć | Uloga |
 |---|---|---|---|
-| `--celik` | `#D3DAD9` | podloga svega | |
-| `--lim` | `#E9EDEC` | površine: polja, red termina, karta | |
-| `--grafit` | `#37353E` | tekst, linije, glavno dugme | 8,50 na čeliku, 10,22 na limu |
-| `--ugalj` | `#1F1E24` | tekst na žaru, pritisnuto dugme | 4,82 na žaru |
-| `--oksid` | `#5E4A4A` | sporedni tekst, napomene | 5,79 na čeliku, 6,96 na limu |
-| `--zar` | `#EC5B38` | samo moja rezervacija, nikad tekst | 2,42 na čeliku, zato uvijek s ivicom od ugljena |
-| `--greska` | `#9A2A22` | greška, uz ikonu | 5,42 na čeliku |
+| podloga | `#E7EAF1` porculan | `#121735` tinta | pozadina |
+| površina | `#F6F7FA` | `#1A2045` | ploče, polja |
+| izdignuto | `#FFFFFF` | `#232A56` | žeton, karta, meni |
+| tekst | `#151933` tinta | `#ECEEF8` | sav tekst |
+| sporedni | `#4B5172` | `#A4AACB` | napomene |
+| mjed | `#C9A04E` | `#D9B566` | moje, folija, glavno dugme |
 
-Žar ne ide na dugmad, linkove ni ukras. Glavno dugme je grafit. Greška i žar su bliske boje, pa se greška nikad ne prepoznaje samo po boji: uvijek ima ikonu prekinutog kruga i tekst.
+Emajl za resurse: šipak `#E5484D`, šafran `#F2B530`, tirkiz `#12A594`, lapis `#3E6AE6`. Emajl je površina ili rub, nikad tekst na podlozi. Kontrasti su u `docs/DIZAJN.md`.
 
-## Tipografija
+## Fontovi
 
-**Archivo** (Omnibus-Type, OFL, `@fontsource-variable/archivo`) za sve osim karte. Ima osu širine od 62 do 125, pa je jedna porodica i za naslove i za tekst: naslovi su široki i teški (`wdth 125`, `wght 800`), kao utisnuti u lim, a tekst je normalne širine. Provjereno u Edgeu 25.11.2026: svih deset slova č, ć, š, đ, ž crta sam font (canvas, isto mjerenje kao u Fazi 7), a uz `tabular-nums` su "11:11" i "00:00" iste širine (104 px), bez njega nisu (96 i 104). Zato vremena u kalendaru više ne trebaju monospace.
+- **Anybody** (variable, širina 50 do 150 %, težina 100 do 900): naslovi i velike cifre. Širina je potpis: na landingu se slova šire i skupljaju prema kursoru, u aplikaciji su naslovi široki i teški, a cifre vremena uske i visoke.
+- **Hanken Grotesk** (variable): sav tekst, forme, dugmad. Miran, čitljiv, s tabularnim ciframa.
+- **IBM Plex Mono**: samo na karti, jer je karta odštampana.
 
-**IBM Plex Mono** ostaje samo na karti: broj karte i vremena polaska, kao otisak štampača na blagajni. Već je u projektu i provjeren za latin-ext. Big Shoulders i Plex Sans izlaze.
+Sva tri imaju latin-ext (č, ć, š, đ, ž), provjereno u `files/` paketa.
 
-| Uloga | Veličina | Širina / težina | Prored |
-|---|---|---|---|
-| naslov prijave | 49 px (mobitel 39) | 125 / 800 | 1,0 |
-| naslov stranice | 39 px (mobitel 31) | 125 / 800 | 1,05 |
-| podnaslov | 25 px | 112 / 700 | 1,15 |
-| vrijeme termina | 20 px | 100 / 600, tabularne | 1,2 |
-| tekst | 16 px | 100 / 400 | 1,5 |
-| oznake, napomene | 14 px | 100 / 500 | 1,45 |
+## Potpisni elementi
 
-Skala je 1,25. Ispod 14 px se ne ide. Bez verzala s razmakom.
+1. **Žeton.** Slobodan termin je emajlirani žeton s debljinom (svijetao gornji rub, sjena ispod). Na pritisak se spusti, uzet termin "odleti" s ploče u kartu. Zauzet je udubljen i šrafiran, bez debljine. Moj je mjeden. Razlikuju se i bez boje: debljina, šrafura, ikona i tekst.
+2. **Karta s folijom.** Karta iz prvog redizajna ostaje, ali bogatija: mjedena folija s prelivom koji prati nagib, 3D nagib prema kursoru ili prstu (na telefonu na dodir, bez dozvole za žiroskop), QR za dolazak i dugme "Sačuvaj kao sliku".
+3. **Slojevi.** Tri nivoa dubine (podloga, ploča, izdignuto) i različita zaobljenja po nivou, umjesto jednog radijusa svuda: polje 10 px, žeton 14 px, karta 20 px, ploča 28 px.
 
-## Oblici, razmaci, pokret
+## Tri spektakularna momenta
 
-Zaobljenje ima hijerarhiju: redovi termina i trake su ravni (0), dugmad i polja 3 px, karta 12 px s polukružnim urezima na perforaciji. Razmaci: 4, 8, 12, 16, 24, 32, 48, 64. Sjena postoji samo na karti i na izdignutom terminu, kao utisnut lim: svijetla linija gore i tamna dole, ne siva mrlja.
+1. **Hero na landingu.** Ogroman naslov u Anybody, čija slova mijenjaju širinu i težinu prema kursoru (na telefonu prema skrolu), i pored njega pravi mini demo: ploča sa žetonima za sutra u čitaonici, klik uzme termin i odštampa kartu. To je prve tri sekunde, i to je ono što aplikacija stvarno radi.
+2. **Uzimanje termina.** Žeton se odvoji od ploče i preleti u kartu (motion `layoutId`), karta se odštampa, a folija jednom prođe svjetlom. Ovo je trenutak zbog kojeg se aplikacija pamti, pa dobija najviše pažnje.
+3. **Prelazi između ekrana.** View Transitions: naziv resursa i njegova emajl boja prelaze s liste na kalendar, karta iz Mojih rezervacija se otvori iz liste. Gdje browser to ne zna, ekran se samo promijeni.
 
-Trajanja: 150 ms za odgovor na klik, 220 ms za promjenu stanja, 300 ms za kartu. Sve preko `transform` i `opacity`. Uz `prefers-reduced-motion` nema pomjeranja, samo promjena.
+Sve ostalo je mirno. Hover samo gdje nešto znači (žeton, dugme, karta). `prefers-reduced-motion` gasi letove, nagib i prelaze, a stanja ostaju ista.
 
-## Stanja termina
+## Landing (prvi ekran za odjavljene)
 
-Svako stanje se razlikuje i bez boje (oblik i tekst):
+Hero s demom, pa tri teška problema kao sekcije koje se mogu probati, pa ulaz u demo:
 
-| Stanje | Oblik | Tekst |
-|---|---|---|
-| slobodno | red na limu, prazan krug ○ desno | slobodno, cijena ako je ima |
-| odabrano | red izdignut 2 px, lijeva ivica 4 px grafit, pun krug ● | odabrano |
-| tvoje | puna površina žar, ivica od ugljena, ikona karte | tvoje |
-| čeka potvrdu / čeka uplatu | isprekidana ivica žar, pola reda šrafirano | čeka potvrdu / plati do 12:03 |
-| ponuđen tebi (lista čekanja) | puna ivica žar, ikona sata | ponuđen tebi do 14:20 |
-| zauzeto | šrafura, precrtano vrijeme | zauzeto |
+- **Dvadeset ruku, jedan termin.** Dugme pošalje 20 žetona na isti termin, jedan se zaključa, 19 se odbije sa `409`. Ispod: šta to čuva (`EXCLUDE` u bazi) i koji test to dokazuje.
+- **Sat koji preskoči.** Noć 28. marta 2027, kad sat sa 02:00 skoči na 03:00. Klizač kroz noć, termin od 02:00 ne postoji, a termin u 08:00 ostaje u 08:00. Ovdje je Sahat-kula.
+- **Tuđa vrata.** Čitaonica i teretana kao dvije ploče. Admin teretane pokuša 33 zahtjeva u čitaonicu, svi se vrate sa `403`, a u bazi se ništa ne promijeni.
+- **Uđi kao Hana**, Mirza ili Amila jednim klikom.
 
-## Raspored
+Pravi 3D (WebGL) ne koristim. Odlučio sam da je jedini 3D karta, napravljena CSS transformacijama: radi na svakom uređaju, nema three.js u bundleu, a izgleda bolje od polovičnog 3D objekta. Budžet za JS: aplikacija iza prijave najviše +80 kB. Landing je poseban chunk koji se učitava samo za odjavljene. Poslije landinga (25.11.2026): glavni bundle 426 kB (prije 421), landing 152 kB (51 kB gzip, najviše motion) i lenis 19 kB. To je više od 120 kB koje sam planirao za landing, pa je kandidat za `LazyMotion` kad bude jasno koje funkcije motion aplikacija stvarno koristi.
 
-Kalendar, desktop 1440:
+## Šta ne radimo
 
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│ SLOTBOOK▮                                  Moje karte   Hana Šehić   Odjava│
-╞════════════════════════════════════════════════════════════════════════════╡
-│ Čitaonica PMF                                                              │
-│ STO 4, TIHI DIO                               60 min · besplatno · 1 mjesto│
-│ Četvrti sprat, bez razgovora.                                              │
-│                                                                            │
-│  ‹  sri 25 │ ČET 26 │ pet 27 │ sub 28 │ ned 29 │ pon 30 │ uto 1  ›          │
-│ ─┴─────────┴━━━━━━━━┴────────┴────────┴────────┴────────┴───────┴──────    │
-├───────────────────────────────────────────┬────────────────────────────────┤
-│ 08:00–09:00                     slobodno ○│  ╭──────────────────────────╮  │
-│▓09:00–10:00▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ tvoje ▣ ▓│  │ četvrtak, 26. novembar   │  │
-│█10:00–11:00                     odabrano ●│  │ 10:00 ●━━━━━━━━━━● 11:00 │  │
-│ 11:00–12:00 ╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱ zauzeto ╱│  │ Sto 4, tihi dio          │  │
-│ 12:00–13:00 ╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱ zauzeto ╱│  │ Ponavljanje: samo jednom │  │
-│ 13:00–14:00                     slobodno ○│  │ [ Rezerviši termin ]     │  │
-│ ...                                       │  ╰──────────────────────────╯  │
-└───────────────────────────────────────────┴────────────────────────────────┘
-```
-
-Dani su traka kao lenjir, s crtom ispod izabranog dana, a ne sedam jednakih kutija. Dan u kojem imam rezervaciju ima tačkicu od žara. Desno je karta u nastajanju: šta ću dobiti ako kliknem.
-
-Kalendar, mobitel 390:
-
-```
-┌──────────────────────────────┐
-│ SLOTBOOK▮              ☰     │
-╞══════════════════════════════╡
-│ Čitaonica PMF                │
-│ STO 4, TIHI DIO              │
-│ 60 min · besplatno           │
-│ sri 25│ČET 26│pet 27│sub 2 → │  traka se pomjera prstom
-│ ──────┴━━━━━━┴──────┴─────── │
-│ 08:00–09:00       slobodno ○ │
-│▓09:00–10:00▓▓▓▓▓▓▓▓ tvoje ▣ ▓│
-│█10:00–11:00       odabrano ● │
-│ 11:00–12:00 ╱╱╱╱╱╱ zauzeto ╱ │
-│ ...                          │
-├──────────────────────────────┤
-│ ╭──────────────────────────╮ │  karta je prikovana za dno
-│ │ 10:00 ●━━━━━━━━━● 11:00  │ │  i ne gura listu
-│ │ [ Rezerviši termin ]     │ │
-│ ╰──────────────────────────╯ │
-└──────────────────────────────┘
-```
-
-Prijava postaje početni ekran, bez nove rute: lijevo jedna rečenica šta je SlotBook i primjer karte, desno forma. Na mobitelu je karta iznad forme, manja.
-
-## Potpisni element: karta
-
-```
-╭──────────────────────────────────────┬─────────────╮
-│ SLOTBOOK         KARTA № C16C-3710   ┊ ▓▓▓▓▓▓▓▓▓▓▓ │
-│                                      ┊ ▓▓  QR   ▓▓ │
-│ četvrtak, 26. novembar               ┊ ▓▓▓▓▓▓▓▓▓▓▓ │
-│ 09:00 ●━━━━━━━━━━━━━━━━━━━━━● 10:00  ┊             │
-│ Sto 4, tihi dio                      ┊  ╭───────╮  │
-│ Čitaonica PMF · Europe/Sarajevo      ┊  │POTVRĐ.│  │  žig
-╰──────────────────────────────────────┴──╰───────╯──╯
-```
-
-Moje rezervacije su karte, a ne kartice teksta. Lijevi dio je put od početka do kraja termina, desni je kupon s QR kodom za dolazak (već postoji od Faze 10), odvojen perforacijom. Broj karte je prvih osam znakova ID-ja rezervacije. Stanje je žig na kuponu: potvrđena, čeka potvrdu, čeka uplatu (uz dugme Plati). Otkazana karta je precrtana žigom "otkazana". Iskorištena (dolazak upisan) ima rupu od kondukterskih kliješta, krug izrezan kroz kartu. Rupa i žig se vide i bez boje.
-
-Karta se ne crta kao slika. To je HTML s CSS-om, pa je čitljiva čitaču ekrana i tekst se može kopirati.
-
-## Kako se ponaša
-
-Odabir termina: red se izdigne za 2 px i dobije lijevu ivicu (150 ms), a karta desno (ili dole na mobitelu) upiše novo vrijeme. Pokazuje šta će se desiti prije klika.
-
-Rezervacija: kad server potvrdi, karta "izađe iz automata", klizne iz proreza za 300 ms, a red u kalendaru postane žar. To je jedini orkestriran momenat, i pokreće ga korisnik.
-
-Otkazivanje: žig "otkazana" se utisne (skala 1,1 na 1, 150 ms).
-
-Prijava: primjer karte je na mjestu od početka, bez animacije ulaska.
-
-Forme: greška se pokaže kad korisnik napusti polje, ne dok kuca.
-
-## Gdje se ne slažem s REDESIGN.md
-
-Optimistic UI za rezervaciju ne bih radio. Glavna tvrdnja projekta je da od 20 istih zahtjeva prođe tačno jedan. Optimistic prikaz bi kod ostalih 19 na sekundu napisao "tvoje" pa to povukao, a to je laž baš na mjestu gdje projekat dokazuje istinu. Umjesto toga dugme odmah kaže "Rezervišem..." i zaključa se, a odgovor stiže za manje od 105 ms (p95 iz k6 testa u Fazi 9, na laptopu, ne na Renderu). Optimistic ide tamo gdje je jeftino i povratno: "Javi mi ako se oslobodi", otvaranje QR koda.
-
-## Samokritika
-
-Šta je u prvoj verziji ličilo na bilo koju booking aplikaciju, i šta sam promijenio:
-
-1. Tamna traka zaglavlja preko cijele širine, kao svaki SaaS. Sad je zaglavlje na čeliku, odvojeno dvostrukom linijom (tanka i debela), kao spoj dvije ploče lima.
-2. Karta s QR-om je bila skoro ista kao shot s Dribbblea (Nixtio). Naše je ono što tamo nema: žig za stanje, rupa za iskorištenu, broj iz stvarnog ID-ja i put od-do koji je stvarno trajanje termina. Bar-kod kao ukras je izbačen.
-3. Sedam jednakih kutija za dane je u svakom kalendaru na Dribbbleu. Sad je to traka kao lenjir.
-4. Žar je bio i na glavnom dugmetu. Izbačen, jer bi onda značio i "klikni" i "tvoje".
-5. Animacija ulaska karte na prijavi i animacija štampanja poslije rezervacije su bile dva orkestrirana momenta. Prijava je sad mirna.
-6. "Skidam jedan aksesoar": bila je i tekstura brušenog metala na podlozi. Izbačena, jer je to tačno tematski park iz sekcije 4.
-
-Rizik koji ostaje: siva podloga s grafitom može djelovati hladno i tmurno. Ako na prvom ekranu (tokeni i dugmad) tako izgleda, prvo se mijenja `--celik` prema toplijoj sivoj, a ne dodaje se boja.
+Lista iz `REDESIGN.md` sekcija 5 i dalje važi. Posebno: nema ljubičasto-plavih gradijenata, glassmorphisma ni blur blobova; gradijent je dozvoljen samo na mjedu i foliji, gdje glumi metal; sjene su slojevite i nose informaciju o nivou, nisu ista siva sjena ispod svega.

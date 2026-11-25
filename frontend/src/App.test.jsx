@@ -18,9 +18,9 @@ afterEach(() => {
 })
 
 describe('prijava', () => {
-	test('bez sesije se prikaže prijava, a poslije prijave lista organizacija s ulogom', async () => {
+	test('prijava vodi na listu organizacija s ulogom, na početnu adresu', async () => {
 		const fetch = backend({ ...PRIJAVLJENA, '/api/auth/refresh': BEZ_SESIJE, '/api/auth/login': TOKEN })
-		otvori('/')
+		otvori('/prijava')
 
 		await prijaviSe(userEvent.setup())
 
@@ -46,7 +46,7 @@ describe('prijava', () => {
 			'/api/auth/refresh': BEZ_SESIJE,
 			'/api/auth/login': () => problem(401, { detail: 'Email ili lozinka nisu tačni. Provjeri ih i pokušaj ponovo.' }),
 		})
-		otvori('/')
+		otvori('/prijava')
 
 		await prijaviSe(userEvent.setup())
 
@@ -60,7 +60,7 @@ describe('prijava', () => {
 			'/api/auth/login': () =>
 				problem(400, { detail: 'Neki podaci nisu ispravni.', greske: [{ polje: 'password', poruka: 'Unesi lozinku.' }] }),
 		})
-		otvori('/')
+		otvori('/prijava')
 		const korisnik = userEvent.setup()
 
 		await korisnik.type(await screen.findByLabelText('Email'), 'hana@primjer.ba')
@@ -79,7 +79,7 @@ describe('prijava', () => {
 			'/api/auth/refresh': BEZ_SESIJE,
 			'/api/auth/login': () => new Promise((resolve) => (pusti = () => resolve(TOKEN()))),
 		})
-		otvori('/')
+		otvori('/prijava')
 
 		await prijaviSe(userEvent.setup())
 
@@ -90,7 +90,7 @@ describe('prijava', () => {
 
 	test('kad server ne odgovara, poruka to kaže umjesto opće greške', async () => {
 		backend({ '/api/auth/refresh': BEZ_SESIJE, '/api/auth/login': () => new Response('Bad Gateway', { status: 502 }) })
-		otvori('/')
+		otvori('/prijava')
 
 		await prijaviSe(userEvent.setup())
 
@@ -203,11 +203,38 @@ describe('organizacije', () => {
 	})
 })
 
+describe('početna za odjavljene', () => {
+	test('bez sesije / pokazuje landing s prijavom, bez liste organizacija', async () => {
+		backend({ '/api/auth/refresh': BEZ_SESIJE, '/api/demo': () => problem(404, {}) })
+		otvori('/')
+
+		expect(await screen.findByRole('heading', { name: 'Termin je tvoj.' })).toBeTruthy()
+		expect(screen.getAllByRole('link', { name: /Prijav/ }).length).toBeGreaterThan(0)
+		expect(screen.queryByLabelText('Lozinka')).toBeNull()
+		expect(window.location.pathname).toBe('/')
+	})
+
+	test('na demu se s landinga ulazi jednim klikom, kao Hana', async () => {
+		const fetch = backend({
+			...PRIJAVLJENA,
+			'/api/auth/refresh': BEZ_SESIJE,
+			'/api/auth/login': TOKEN,
+			'/api/demo': () => json({ lozinka: 'sebilj-na-bascarsiji', racuni: [{ email: 'klijent@slotbook.test', ime: 'Hana Šehić', opis: 'rezerviše sto' }] }),
+		})
+		otvori('/')
+
+		await userEvent.setup().click(await screen.findByRole('button', { name: /Uđi kao Hana/ }))
+
+		expect(await screen.findByRole('link', { name: /Čitaonica PMF/ })).toBeTruthy()
+		expect(tijelo(fetch, 'POST /api/auth/login')).toEqual({ email: 'klijent@slotbook.test', password: 'sebilj-na-bascarsiji' })
+	})
+})
+
 describe('sesija', () => {
 	test('kad server ne odgovara pri otvaranju, piše to i nudi ponovni pokušaj', async () => {
 		let radi = false
 		backend({ ...PRIJAVLJENA, '/api/auth/refresh': () => (radi ? TOKEN() : new Response('', { status: 502 })) })
-		otvori('/')
+		otvori('/o/citaonica-pmf')
 
 		expect((await screen.findByRole('alert')).textContent).toMatch(/server ne odgovara/)
 		radi = true
@@ -216,7 +243,7 @@ describe('sesija', () => {
 		expect(await screen.findByText('Hana Šehić')).toBeTruthy()
 	})
 
-	test('neuspjela odjava ostavlja sesiju i kaže zašto, a uspješna vodi na prijavu', async () => {
+	test('neuspjela odjava ostavlja sesiju i kaže zašto, a uspješna vodi na početnu za odjavljene', async () => {
 		let odjavaRadi = false
 		backend({
 			...PRIJAVLJENA,
@@ -231,8 +258,9 @@ describe('sesija', () => {
 
 		odjavaRadi = true
 		await korisnik.click(screen.getByRole('button', { name: 'Odjavi se' }))
-		expect(await screen.findByLabelText('Lozinka')).toBeTruthy()
-		expect(window.location.pathname).toBe('/prijava')
+		expect(await screen.findByRole('heading', { name: 'Termin je tvoj.' })).toBeTruthy()
+		expect(screen.queryByText('Hana Šehić')).toBeNull()
+		expect(screen.queryByRole('link', { name: /Čitaonica PMF/ })).toBeNull()
 	})
 
 	// Lista za drugu osobu namjerno čeka. Da keš nije obrisan, za to vrijeme bi se

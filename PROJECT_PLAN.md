@@ -449,7 +449,11 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    `MAIL_*` i `SPRING_MAIL_*` na Renderu. Provjera: nov nalog na Vercelu dobije mail za potvrdu,
    link iz maila vodi na Vercel adresu i prijava poslije potvrde prolazi. Dok ovoga nema, nov nalog
    se ne može potvrditi, pa na demu rade samo tri demo računa.
-6. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (✅ 25.11.2026, rezultat u
+6. **Redizajn 2: Mjed i emajl** (u izradi od 25.11.2026). Prvi redizajn mi se ne sviđa, previše je ravan.
+   Smjer je u `docs/redizajn/smjer.md`: landing za odjavljene s tri teška problema koja se mogu probati,
+   žetoni umjesto redova termina, karta s folijom i nagibom, svijetla i tamna tema. Redom: landing,
+   kalendar i rezervacija, dashboard, ostali ekrani, commit po ekranu, svi Vitest i e2e testovi prolaze.
+7. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (✅ 25.11.2026, rezultat u
    `docs/RUNBOOK.md` i `docs/ODLUKE.md`: granica po IP-u kroz Vercel ne radi), live link (✅) i GIF
    toka u README, status faze.
 

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { BrowserRouter, Link, Route, Routes } from 'react-router'
 import { Clanovi } from './clanovi/Clanovi.jsx'
 import { DolazakSKodom } from './dolazak/DolazakSKodom.jsx'
@@ -19,6 +19,7 @@ import { IzmjenaResursa } from './resursi/IzmjenaResursa.jsx'
 import { NoviResurs } from './resursi/NoviResurs.jsx'
 import { MojeRezervacije } from './rezervacije/MojeRezervacije.jsx'
 import { Cuvar } from './sesija/Cuvar.jsx'
+import { useSesija } from './sesija/sesija.js'
 import { SesijaProvider } from './sesija/SesijaProvider.jsx'
 import { Zaglavlje } from './Zaglavlje.jsx'
 
@@ -42,12 +43,12 @@ export default function App() {
 					<Zaglavlje />
 					<main>
 						<Routes>
+							<Route path="/" element={<Pocetna />} />
 							<Route element={<Cuvar za="odjavljene" />}>
 								<Route path="/prijava" element={<Prijava />} />
 								<Route path="/registracija" element={<Registracija />} />
 							</Route>
 							<Route element={<Cuvar za="prijavljene" />}>
-								<Route path="/" element={<Organizacije />} />
 								<Route path="/o/:slug" element={<Organizacija />} />
 								<Route path="/o/:slug/clanovi" element={<Clanovi />} />
 								<Route path="/o/:slug/resursi/novi" element={<NoviResurs />} />
@@ -69,6 +70,20 @@ export default function App() {
 				</BrowserRouter>
 			</SesijaProvider>
 		</QueryClientProvider>
+	)
+}
+
+const Landing = lazy(() => import('./landing/Landing.jsx'))
+
+// Početna: prijavljeni vide svoje organizacije, a svi ostali landing. Landing ne treba server,
+// pa se vidi i dok se sesija još provjerava ili kad backend spava.
+function Pocetna() {
+	const { status } = useSesija()
+	if (status === 'prijavljen') return <Organizacije />
+	return (
+		<Suspense fallback={<p aria-live="polite">Učitava se</p>}>
+			<Landing />
+		</Suspense>
 	)
 }
 

@@ -38,14 +38,14 @@ describe('vrijednosti iz docs/DIZAJN.md', () => {
 	test('tokeni imaju tačno boje iz tabele u DIZAJN.md, ni jednu više ni manje', () => {
 		const boje = izDizajna(jeBoja)
 
-		expect(Object.keys(boje)).toHaveLength(7)
+		expect(Object.keys(boje)).toHaveLength(21)
 		expect(izTokena(jeBoja)).toEqual(boje)
 	})
 
 	test('tokeni imaju tačno veličine teksta iz tabele u DIZAJN.md', () => {
 		const velicine = izDizajna(jeVelicina)
 
-		expect(Object.keys(velicine)).toHaveLength(6)
+		expect(Object.keys(velicine)).toHaveLength(8)
 		expect(izTokena(jeVelicina)).toEqual(velicine)
 	})
 
