@@ -448,3 +448,14 @@ Naslov "Termin je tvoj." u prijavi je imao jedan preliv preko oba reda, pa je mj
 Novi GIF je prvi put imao narandžaste mrlje na mjedenim žetonima. Skripta od prvog redizajna pravi jednu paletu od 64 boje za sve okvire, da žar bude isti u svakom. Mjed, četiri emajla i tinta u to ne stanu, pa su se šipak i mjed stopili u istu narandžastu. Sad svaki okvir ima svoju paletu od 256 boja. GIF je zato narastao s 214 kB na 2,7 MB.
 
 Dva puta isti dan mi je putanja `/c/Users/...` iz Git Basha završila kao `C:\c\Users\...`, jer je Windows Python ne razumije kao bash. Za Python iz Basha pišem `C:/Users/...`.
+
+## Srijeda, 25. novembar 2026, 21:42
+
+Treći redizajn, u jednom potezu. Izbacio sam Anybody i stavio Hanken Grotesk svuda. Mislio sam da će naslovi bez širokog fonta izgledati prazno, a izgledaju kao proizvod, ne kao plakat.
+
+Skripta koja je Sudar.jsx prepravljala tražila je prvi `return (` u fajlu i našla onaj unutar useEffecta, pa je pojela pola komponente. Oxlint je javio "Expected ) but found EOF". Vratio sam izrezani dio iz git show HEAD.
+
+Kad sam skratio "Vrijeme termina je po zoni Europe/Sarajevo" u "Vrijeme: Sarajevo", pala su dva testa koja su tražila /Europe\/Sarajevo/. Testovi nisu bili pogrešni, tekst se namjerno promijenio, pa sad traže novi tekst i i dalje provjeravaju da se zona vidi.
+
+U tamnoj temi je sekcija "Kako radi" nestala, jer je "tamna sekcija" na tamnoj stranici ista boja kao sve oko nje. Vidio sam to tek na screenshotu.
+

@@ -38,6 +38,8 @@ Faza 12 je počela redizajnom frontenda, prije deploya, da screenshotovi pokazuj
 
 Taj prvi redizajn je ispao ravan, pa je istog dana zamijenjen drugim: "Mjed i emajl". Termin je žeton na ploči, rezervacija je karta s mjedenom folijom koja se naginje za kursorom, svaki resurs ima svoju emajl boju, a aplikacija ima svijetlu i tamnu temu. Odjavljeni prvo vide landing na kojem se mogu probati tri teška problema. Opet bez promjena na backendu, s jednim commitom po ekranu. Smjer je u [docs/redizajn/smjer.md](docs/redizajn/smjer.md), pravila u [docs/DIZAJN.md](docs/DIZAJN.md), a brojke i ono što nije urađeno na kraju [docs/redizajn/poslije.md](docs/redizajn/poslije.md).
 
+Treći redizajn (25.11.) je zadržao materijal, a stišao ostalo: jedan font (Hanken Grotesk), mirniji naslovi, mjed bez preliva na dugmadima, i landing koji za par sekundi kaže šta je SlotBook i za koga je, bez statusnih kodova i imena testova. Screenshotovi landinga su u [docs/redizajn/redizajn-3/](docs/redizajn/redizajn-3/), a ostali ekrani ispod su još iz drugog redizajna.
+
 | Faza | Šta | Status |
 |---|---|---|
 | 1 | Temelji i infrastruktura | gotovo |
