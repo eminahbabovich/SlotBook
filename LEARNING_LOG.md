@@ -444,3 +444,7 @@ Za prelaz između ekrana sam mislio da je dovoljno dodati `viewTransition` na `L
 Dok sam pisao o fokusu u `DIZAJN.md`, izračunao sam kontrast umjesto da prepišem stari: svijetli okvir na mjedenom žetonu noću ima 1,69:1. Vidi se samo zato što je odmaknut 3 px, pa stoji na ploči, a ne na mjedi.
 
 Naslov "Termin je tvoj." u prijavi je imao jedan preliv preko oba reda, pa je mjed počinjala na donjem rubu riječi "Termin" i izgledalo je kao greška u štampi. Sad je svaki red obojen posebno. Iznad "Novi izuzetak" je bio višak razmaka, jer je tamo `h3`, a pravilo je hvatalo samo `h2`.
+
+Novi GIF je prvi put imao narandžaste mrlje na mjedenim žetonima. Skripta od prvog redizajna pravi jednu paletu od 64 boje za sve okvire, da žar bude isti u svakom. Mjed, četiri emajla i tinta u to ne stanu, pa su se šipak i mjed stopili u istu narandžastu. Sad svaki okvir ima svoju paletu od 256 boja. GIF je zato narastao s 214 kB na 2,7 MB.
+
+Dva puta isti dan mi je putanja `/c/Users/...` iz Git Basha završila kao `C:\c\Users\...`, jer je Windows Python ne razumije kao bash. Za Python iz Basha pišem `C:/Users/...`.
