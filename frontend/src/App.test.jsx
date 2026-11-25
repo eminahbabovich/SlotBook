@@ -119,7 +119,7 @@ describe('registracija', () => {
 					? problem(400, { detail: 'Neki podaci nisu ispravni.', greske: [{ polje: 'password', poruka: 'Lozinka mora imati najmanje 8 znakova.' }] })
 					: new Response(null, { status: 202 }),
 		})
-		otvori('/')
+		otvori('/prijava')
 		const korisnik = userEvent.setup()
 
 		await korisnik.click(await screen.findByRole('link', { name: 'Napravi nalog' }))
@@ -203,12 +203,16 @@ describe('organizacije', () => {
 	})
 })
 
+// Landing je lijeno učitan dio (lazy), pa uz cijeli suite zna čekati duže od podrazumijevane
+// sekunde. Duže čekanje je samo za prvi element landinga, ostalo je kao svuda.
+const LANDING = { timeout: 5000 }
+
 describe('početna za odjavljene', () => {
 	test('bez sesije / pokazuje landing s prijavom, bez liste organizacija', async () => {
 		backend({ '/api/auth/refresh': BEZ_SESIJE, '/api/demo': () => problem(404, {}) })
 		otvori('/')
 
-		expect(await screen.findByRole('heading', { name: 'Termin je tvoj.' })).toBeTruthy()
+		expect(await screen.findByRole('heading', { name: 'Termin je tvoj.' }, LANDING)).toBeTruthy()
 		expect(screen.getAllByRole('link', { name: /Prijav/ }).length).toBeGreaterThan(0)
 		expect(screen.queryByLabelText('Lozinka')).toBeNull()
 		expect(window.location.pathname).toBe('/')
@@ -223,7 +227,7 @@ describe('početna za odjavljene', () => {
 		})
 		otvori('/')
 
-		await userEvent.setup().click(await screen.findByRole('button', { name: /Uđi kao Hana/ }))
+		await userEvent.setup().click(await screen.findByRole('button', { name: /Uđi kao Hana/ }, LANDING))
 
 		expect(await screen.findByRole('link', { name: /Čitaonica PMF/ })).toBeTruthy()
 		expect(tijelo(fetch, 'POST /api/auth/login')).toEqual({ email: 'klijent@slotbook.test', password: 'sebilj-na-bascarsiji' })
@@ -258,7 +262,7 @@ describe('sesija', () => {
 
 		odjavaRadi = true
 		await korisnik.click(screen.getByRole('button', { name: 'Odjavi se' }))
-		expect(await screen.findByRole('heading', { name: 'Termin je tvoj.' })).toBeTruthy()
+		expect(await screen.findByRole('heading', { name: 'Termin je tvoj.' }, LANDING)).toBeTruthy()
 		expect(screen.queryByText('Hana Šehić')).toBeNull()
 		expect(screen.queryByRole('link', { name: /Čitaonica PMF/ })).toBeNull()
 	})
