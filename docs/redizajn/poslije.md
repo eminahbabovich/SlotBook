@@ -37,3 +37,43 @@ Poslije rezervacije fokus je trebao preći na poruku "Termin je tvoj...", ali je
 ## Šta nije urađeno
 
 Polja za vrijeme (`input type=time`) i dalje pokazuju AM/PM kad je browser na engleskom. Žig "otkazana" se ne utiskuje animacijom, jer bi se utiskivao pri svakom otvaranju liste. Forme za admina (novi resurs, radno vrijeme, članovi) imaju nove tokene, ali raspored im je isti kao prije: uska kolona na širokom ekranu. Na desktopu je dosta ekrana i dalje u lijevoj polovini. Ništa od ovoga nije provjereno na pravom telefonu, samo u Edge-u s veličinom telefona, i nije provjereno čitačem ekrana, samo testovima po ulozi i imenu.
+
+# Drugi redizajn: Mjed i emajl (25.11.2026, uveče)
+
+Prvi redizajn je ispao ravan: jedna siva površina, isto zaobljenje na svemu i jedna topla boja. Isti dan sam ga zamijenio drugim smjerom, opisanim u `smjer.md`. Termin je žeton na ploči, rezervacija je karta s mjedenom folijom koja se naginje za kursorom, a svaki resurs ima svoju emajl boju (tirkiz, lapis, šafran ili šipak, iz ID-ja). Aplikacija ima svijetlu i tamnu temu. Pravila i vrijednosti su u `docs/DIZAJN.md`, a commit je jedan po ekranu, od `5736fef` do `68a9264`.
+
+Slike su u `redizajn-2/`. Nisu uslikane skriptom `screenshotovi.mjs`, nego kraćom skriptom po ekranu, na demo backendu (profil `demo` na e2e bazi, port 5434), pa se ne mogu porediti jedna do druge s `prije/` i `poslije/` kao prvi redizajn.
+
+## Šta se promijenilo
+
+Odjavljeni na `/` vide landing: "Termin je tvoj." i ploču s terminima na kojoj se može uzeti termin bez servera, pa tri teška problema (dva klika u istoj sekundi, pomjeranje sata, tuđa organizacija) koja se mogu probati. Prijava i registracija su dvije ploče: lijevo tamna sa istim naslovom i primjerom karte, desno forma s mjedenim dugmetom.
+
+Kalendar je ploča sa žetonima u mreži, ne lista. Izabran žeton odleti u kupon karte (View Transition), a karta se poslije rezervacije odštampa i folija jednom prođe svjetlom. Karta se može sačuvati kao PNG. Moje rezervacije su karte u mreži, najbliža je velika i jedina se naginje, a prošle leže na stolu bez folije. Statistika ima četiri brojke na vrhu i mrežu "Kad je gužva" (dan × sat). Organizacije, resursi i članovi su pločice s emajl bojom, forme su izdignute ploče s udubljenim poljima, a naziv resursa preleti s pločice u naslov kalendara.
+
+## Brojke
+
+`npm run build` poslije prvog i poslije drugog redizajna:
+
+| | prvi redizajn | drugi redizajn |
+|---|---|---|
+| glavni JS | 420,07 kB (127,98 kB gzip) | 432,80 kB (132,33 kB gzip) |
+| glavni CSS | 22,34 kB (5,01 kB gzip) | 53,28 kB (11,79 kB gzip) |
+| landing (samo za odjavljene) | nema | 151,63 kB JS (50,97 kB gzip), 9,03 kB CSS, Lenis 18,64 kB |
+| slika karte (tek na klik) | nema | 12,85 kB (`html-to-image`) |
+| fontovi | Archivo (latin 90 kB, latin-ext 86 kB), Plex Mono | Anybody (latin 56,9 kB, latin-ext 45,5 kB), Hanken Grotesk (latin 34,7 kB, latin-ext 19,6 kB), Plex Mono |
+
+Glavni JS je narastao samo 13 kB, jer motion (animacije landinga) ide u poseban dio koji prijavljen korisnik nikad ne skine, a let žetona i prelaz ekrana su View Transitions iz browsera, bez biblioteke. CSS je više nego dupliran: dvije teme, sjene u tri nivoa i stanja žetona.
+
+Testovi: 273 Vitest i 8 Playwright testova prolaze. Testovi vezani za stari izgled su prepisani tako da provjeravaju isto ponašanje (npr. prijava sad kreće s `/prijava`, jer je `/` landing). Novi testovi: brojke statistike (popunjenost iz minuta, ne prosjek procenata), mreža gužve, emajl boja iz ID-ja, čuvanje karte kao slike, `PrelazLink`.
+
+Provjereno u Edge-u (Playwright) na 390 i 1440 px, u obje teme. Let žetona i prelaz ekrana su provjereni u pravom browseru: sva tri prelaza završe, u konzoli nema grešaka osim očekivanog 401 pri osvježavanju sesije bez kolačića.
+
+## Greške usput
+
+Test registracije je padao otprilike svaki drugi put. Landing je lijeno učitan, a test je otvarao `/` i čekao link sekundu. Pojedinačno prolazi, uz cijeli suite ne. Greška je iz landing commita, popravljena u `a5f59b2`.
+
+Kontrast fokusa sam za `DIZAJN.md` izračunao ponovo: svijetli okvir na mjedenom žetonu noću ima 1,69:1. Vidi se samo zato što je odmaknut 3 px od žetona, pa stoji na ploči.
+
+## Šta nije urađeno
+
+Emajl pločica ne preleti zajedno s nazivom resursa, jer je na listi `::before`. Karta se ne otvara iz Mojih rezervacija, jer nema ekran jedne karte. Dugme nazad u browseru nema prelaz. Polja za vrijeme i dalje pokazuju AM/PM kad je browser na engleskom. Browser bez View Transitions samo promijeni ekran, i to nisam provjerio u Firefoxu ni Safariju. Ništa nije provjereno na pravom telefonu ni čitačem ekrana.

@@ -36,7 +36,7 @@ Faza 11 je plaćanje preko Stripea u test modu. Resurs ima cijenu, a rezervacija
 
 Faza 12 je počela redizajnom frontenda, prije deploya, da screenshotovi pokazuju konačan izgled. Smjer se zove "Čelik i žar": siva podloga kao lim, grafitni tekst, i jedna topla boja koja uvijek znači "tvoje". Potpis aplikacije je karta za voz: poslije rezervacije se odštampa karta s brojem rezervacije i žigom stanja, a Moje rezervacije su niz takvih karata. Backend i API nisu dirani. Prije i poslije, s brojkama i onim što nije urađeno, je u [docs/redizajn/poslije.md](docs/redizajn/poslije.md), a pravila dizajna u [docs/DIZAJN.md](docs/DIZAJN.md).
 
-Taj prvi redizajn je ispao ravan, pa je istog dana zamijenjen drugim: "Mjed i emajl". Termin je žeton na ploči, rezervacija je karta s mjedenom folijom koja se naginje za kursorom, svaki resurs ima svoju emajl boju, a aplikacija ima svijetlu i tamnu temu. Odjavljeni prvo vide landing na kojem se mogu probati tri teška problema. Opet bez promjena na backendu, s jednim commitom po ekranu. Smjer je u [docs/redizajn/smjer.md](docs/redizajn/smjer.md), a pravila u [docs/DIZAJN.md](docs/DIZAJN.md).
+Taj prvi redizajn je ispao ravan, pa je istog dana zamijenjen drugim: "Mjed i emajl". Termin je žeton na ploči, rezervacija je karta s mjedenom folijom koja se naginje za kursorom, svaki resurs ima svoju emajl boju, a aplikacija ima svijetlu i tamnu temu. Odjavljeni prvo vide landing na kojem se mogu probati tri teška problema. Opet bez promjena na backendu, s jednim commitom po ekranu. Smjer je u [docs/redizajn/smjer.md](docs/redizajn/smjer.md), pravila u [docs/DIZAJN.md](docs/DIZAJN.md), a brojke i ono što nije urađeno na kraju [docs/redizajn/poslije.md](docs/redizajn/poslije.md).
 
 | Faza | Šta | Status |
 |---|---|---|
@@ -133,11 +133,9 @@ Aplikacija je na **https://slot-book-delta.vercel.app** (od 25.11.2026). Vercel 
 
 Demo se pali profilom `demo`. Na prijavi su tada tri računa (klijent, provider i admin) i ulazi se jednim klikom, bez registracije. Podaci su čitaonica i teretana s četiri sedmice rezervacija, a jednom dnevno se sami vrate na početak. Profil na pokretanju obriše cijelu bazu, pa se pali samo na bazi koja služi za demo. Zašto i kako je u [docs/ODLUKE.md](docs/ODLUKE.md). Na Renderu je uključen od 25.11.2026. Može se napraviti i svoj nalog: mail za potvrdu šalje Brevo preko porta 2525 (Render na besplatnom planu blokira 465 i 587), ali zasad završi u spamu, jer je pošiljalac Gmail adresa, a ne vlastiti domen. Svoj nalog nestane kad se demo vrati na početak, jer demo prazni cijelu bazu.
 
-Tok ispod je lokalni backend s profilom `demo`: ulaz kao Hana jednim klikom, sto u čitaonici, slobodan termin, rezervacija i karta, pa Moje rezervacije. Okviri su Playwright screenshotovi pojedinih koraka, složeni u GIF.
+Tok ispod je lokalni backend s profilom `demo`: landing, ulaz kao Hana jednim klikom, Čitaonica PMF, sto u čitaonici (naziv preleti s pločice u naslov), slobodan žeton koji odleti u kartu, rezervacija i odštampana karta, pa Moje rezervacije. Okviri su Playwright screenshotovi pojedinih koraka, složeni u GIF, pa pokret između okvira nije gladak kao u aplikaciji.
 
 ![Tok rezervacije: demo prijava, kalendar, karta, moje rezervacije](docs/tok-rezervacije.gif)
-
-GIF je još iz prvog redizajna, novi tok nije snimljen.
 
 Screenshotovi su pravi ekrani drugog redizajna, uslikani Playwrightom na lokalnom backendu s profilom `demo`. Svi, i oni od prije oba redizajna, su u [docs/redizajn/](docs/redizajn/).
 

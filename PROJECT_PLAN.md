@@ -455,8 +455,8 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    kalendar i rezervacija, dashboard, ostali ekrani, commit po ekranu, svi Vitest i e2e testovi prolaze.
    Gotovo 25.11.: landing (5736fef), kalendar i rezervacija (bb19224), moje rezervacije (22684d4),
    statistika (2e6d752), prijava i organizacije (a55280b), forme, nalog, članovi i stanja (4d8aeba),
-   prelaz između ekrana (68a9264). 273 Vitest i 8 e2e prolaze. Ostalo: novi GIF toka za README
-   (sadašnji je iz prvog redizajna) i `docs/redizajn/poslije.md` za drugi redizajn.
+   prelaz između ekrana (68a9264). 273 Vitest i 8 e2e prolaze. Novi GIF toka i drugi dio
+   `docs/redizajn/poslije.md` su urađeni isto veče, pa pushano na GitHub i Vercel.
 7. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (✅ 25.11.2026, rezultat u
    `docs/RUNBOOK.md` i `docs/ODLUKE.md`: granica po IP-u kroz Vercel ne radi), live link (✅) i GIF
    toka u README, status faze.
