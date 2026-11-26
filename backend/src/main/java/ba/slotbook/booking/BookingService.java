@@ -50,6 +50,7 @@ public class BookingService {
 	private final BookingRepository bookings;
 	private final WaitlistEntryRepository waitlist;
 	private final SlobodnaMjesta slobodnaMjesta;
+	private final BookingRules pravila;
 	private final BookingEventRepository events;
 	private final ResourceRepository resources;
 	private final UserRepository users;
@@ -65,7 +66,7 @@ public class BookingService {
 	private final Counter sudari;
 
 	public BookingService(BookingRepository bookings, WaitlistEntryRepository waitlist, SlobodnaMjesta slobodnaMjesta,
-			BookingEventRepository events,
+			BookingRules pravila, BookingEventRepository events,
 			ResourceRepository resources, UserRepository users, SlotService slotService,
 			NotificationService notifications, ApplicationEventPublisher objave, Clock clock,
 			@Value("${slotbook.booking.pending-hours}") int satiZaPotvrdu,
@@ -75,6 +76,7 @@ public class BookingService {
 		this.bookings = bookings;
 		this.waitlist = waitlist;
 		this.slobodnaMjesta = slobodnaMjesta;
+		this.pravila = pravila;
 		this.events = events;
 		this.resources = resources;
 		this.users = users;
@@ -115,6 +117,8 @@ public class BookingService {
 		TimeRange termin = slotService.offered(resourceId, start)
 				.orElseThrow(() -> new InvalidFieldException("startTime",
 						"Ovaj termin se ne nudi. Izaberi jedan od slobodnih termina u kalendaru."));
+		// Pravila prije mjesta: blokiran član ne treba čuti "termin je zauzet", nego zašto ne može nigdje
+		pravila.provjeri(resurs, clientId, List.of(termin), sada);
 		// Mjesto bira Java pod lockom resursa, a EXCLUDE ne pusti dvije rezervacije na isto mjesto.
 		// Prednost s liste čekanja čuva samo Java: ponuda nije rezervacija i ne ulazi u EXCLUDE.
 		SlobodnaMjesta.Stanje stanje = slobodnaMjesta.za(resurs, clientId, termin, sada);
@@ -172,6 +176,8 @@ public class BookingService {
 		if (!nisuSlobodni.isEmpty()) {
 			throw new SeriesConflictException(nisuSlobodni);
 		}
+		// Sve sedmice zajedno: četiri sedmice uz granicu od tri buduće rezervacije ne prolaze ni djelimično
+		pravila.provjeri(resurs, clientId, termini, sada);
 		UUID serija = UUID.randomUUID();
 		List<BookingResponse> napravljeneSerije = new ArrayList<>();
 		for (int i = 0; i < termini.size(); i++) {

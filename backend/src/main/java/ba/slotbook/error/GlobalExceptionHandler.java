@@ -38,6 +38,7 @@ import ba.slotbook.booking.IdempotencyKeyReusedException;
 import ba.slotbook.booking.NoShowTooEarlyException;
 import ba.slotbook.booking.SeriesConflictException;
 import ba.slotbook.booking.SlotOfferedException;
+import ba.slotbook.booking.BookingRuleException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.booking.WaitlistNotNeededException;
 import ba.slotbook.organization.AlreadyMemberException;
@@ -200,6 +201,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Već imaš rezervaciju u ovom terminu. Jedna osoba može zauzeti samo jedno mjesto.");
 		problem.setTitle("Već imaš ovaj termin");
+		return problem;
+	}
+
+	// 422, a ne 409: termin nije zauzet, nego ga baš ovaj član po pravilu ne smije uzeti
+	@ExceptionHandler(BookingRuleException.class)
+	ProblemDetail praviloRezervacije(BookingRuleException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getPoruka());
+		problem.setTitle(ex.getPravilo() == BookingRuleException.Pravilo.BLOCKED ? "Rezervacije su blokirane"
+				: "Pravilo rezervacije");
+		problem.setProperty("pravilo", ex.getPravilo().name());
+		if (ex.getBlokiranDo() != null) {
+			problem.setProperty("blokiranDo", ex.getBlokiranDo());
+		}
 		return problem;
 	}
 

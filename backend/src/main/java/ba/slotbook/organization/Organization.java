@@ -30,6 +30,15 @@ public class Organization {
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
+	@Column(name = "no_show_limit")
+	private Integer noShowLimit;
+
+	@Column(name = "no_show_window_days")
+	private Integer noShowWindowDays;
+
+	@Column(name = "no_show_block_days")
+	private Integer noShowBlockDays;
+
 	protected Organization() {
 	}
 
@@ -54,6 +63,16 @@ public class Organization {
 
 	public String getTimezone() {
 		return timezone;
+	}
+
+	public NoShowRules getNedolasci() {
+		return new NoShowRules(noShowLimit, noShowWindowDays, noShowBlockDays);
+	}
+
+	void promijeniNedolaske(NoShowRules pravila) {
+		this.noShowLimit = pravila.limit();
+		this.noShowWindowDays = pravila.windowDays();
+		this.noShowBlockDays = pravila.blockDays();
 	}
 
 }

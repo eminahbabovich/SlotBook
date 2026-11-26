@@ -15,6 +15,12 @@ function izOdgovora(r, putanja) {
 		brojMjesta: r.capacity,
 		cijenaFeninga: r.priceCents,
 		aktivan: r.active,
+		// Pravila korištenja, null kad pravila nema
+		pravila: {
+			najviseAktivnih: r.maxActivePerMember ?? null,
+			danaUnaprijed: r.maxDaysAhead ?? null,
+			minutaPrije: r.minNoticeMinutes ?? null,
+		},
 	}
 }
 
@@ -41,6 +47,9 @@ const zahtjev = (r) => ({
 	cancelNoticeHours: broj(r.rokOtkazivanjaSati),
 	capacity: broj(r.brojMjesta),
 	priceCents: r.cijenaFeninga,
+	maxActivePerMember: broj(r.najviseAktivnih ?? ''),
+	maxDaysAhead: broj(r.danaUnaprijed ?? ''),
+	minNoticeMinutes: broj(r.minutaPrije ?? ''),
 })
 
 export async function noviResurs(organizacijaId, resurs) {

@@ -36,13 +36,27 @@ public record ResourceRequest(
 		// Bez polja je besplatno. U feninzima, granice su iste kao CHECK u V38.
 		@Min(value = 0, message = "Cijena ne može biti negativna. Za besplatan termin pošalji 0.")
 		@Max(value = 100000, message = "Cijena termina može biti najviše 1000 KM (100000 feninga).")
-		Integer priceCents) {
+		Integer priceCents,
+		// Pravila korištenja, sva opciona. Granice su iste kao CHECK u V43.
+		@Min(value = 1, message = "Najmanje jedna rezervacija po članu. Bez ograničenja ostavi polje prazno.")
+		@Max(value = 100, message = "Najviše 100 budućih rezervacija po članu.")
+		Integer maxActivePerMember,
+		@Min(value = 1, message = "Rezerviše se najmanje dan unaprijed. Bez ograničenja ostavi polje prazno.")
+		@Max(value = 365, message = "Najviše 365 dana unaprijed.")
+		Integer maxDaysAhead,
+		@Min(value = 1, message = "Najmanje minut prije početka. Bez ograničenja ostavi polje prazno.")
+		@Max(value = 10080, message = "Najviše 10080 minuta (sedmica) prije početka.")
+		Integer minNoticeMinutes) {
 
 	public ResourceRequest {
 		autoConfirm = autoConfirm == null ? Boolean.TRUE : autoConfirm;
 		cancelNoticeHours = cancelNoticeHours == null ? 0 : cancelNoticeHours;
 		capacity = capacity == null ? 1 : capacity;
 		priceCents = priceCents == null ? 0 : priceCents;
+	}
+
+	ResourceRules pravila() {
+		return new ResourceRules(maxActivePerMember, maxDaysAhead, minNoticeMinutes);
 	}
 
 }

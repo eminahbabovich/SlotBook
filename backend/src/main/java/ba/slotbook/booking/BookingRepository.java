@@ -47,6 +47,20 @@ interface BookingRepository extends JpaRepository<Booking, UUID> {
 			order by b.startTime, b.id""")
 	List<Booking> findForCalendar(UUID clientId, Collection<BookingStatus> statusi, Instant od);
 
+	// Pravilo "najviše N budućih rezervacija po članu" na jednom resursu. Zove se pod lockom resursa.
+	@Query("""
+			select count(b) from Booking b
+			where b.resource.id = :resourceId and b.client.id = :clientId and b.status in :statusi
+			and b.startTime > :sada""")
+	long countFutureOnResource(UUID resourceId, UUID clientId, Collection<BookingStatus> statusi, Instant sada);
+
+	// Nedolasci člana u organizaciji, s početkom u (od, sada]. Indeks bookings_nedolasci (V43).
+	@Query("""
+			select new ba.slotbook.booking.Nedolasci(count(b), max(b.startTime)) from Booking b
+			where b.resource.organization.id = :organizationId and b.client.id = :clientId
+			and b.status = ba.slotbook.booking.BookingStatus.NO_SHOW and b.startTime > :od and b.startTime <= :sada""")
+	Nedolasci noShows(UUID organizationId, UUID clientId, Instant od, Instant sada);
+
 	// Buduće rezervacije jednog člana u jednoj organizaciji, kad ga admin ukloni
 	@Query("""
 			select b from Booking b join fetch b.resource r join fetch r.organization o

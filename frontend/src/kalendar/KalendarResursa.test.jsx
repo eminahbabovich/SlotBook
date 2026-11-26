@@ -247,3 +247,24 @@ test('danas ploča kaže da se termini koji su počeli ne vide, a drugi dan ne',
 	await korisnik.click(screen.getByRole('button', { name: /srijeda, 21. novembar/ }))
 	expect(screen.queryByText('Danas se vide samo termini koji još nisu počeli.')).toBeNull()
 })
+
+// Sada je 07:00 po Sarajevu, a sto se rezerviše najkasnije dva sata ranije: 08:00 se klijentu ne nudi
+test('klijentu se ne nude termini van pravila resursa, a admin ih vidi', async () => {
+	const SA_PRAVILOM = { ...STO, minNoticeMinutes: 120, maxActivePerMember: 2 }
+	const resursi = { '/api/organizations/o1/resources?size=100': () => json({ content: [SA_PRAVILOM], page: 0, size: 100, totalElements: 1, totalPages: 1 }) }
+	const kaoKlijent = { '/api/me/organizations': () => json([{ id: 'o1', name: 'Čitaonica PMF', slug: 'citaonica-pmf', timezone: 'Europe/Sarajevo', role: 'CLIENT' }]) }
+	backend({ ...PRIJAVLJENA, ...kaoKlijent, ...resursi, ...KALENDAR })
+	otvori('/o/citaonica-pmf/r/r1')
+
+	await screen.findByRole('list', { name: /Termini/ })
+	expect(screen.getByText('najkasnije 2 h prije')).toBeTruthy()
+	expect(screen.getByText('najviše 2 unaprijed po osobi')).toBeTruthy()
+	// Svoj, na čekanju i tuđi termin ostaju, slobodan u 12 isto
+	expect(redovi().map((r) => r.textContent.slice(0, 5))).toEqual(['09:00', '10:00', '11:00', '12:00'])
+
+	cleanup()
+	backend({ ...PRIJAVLJENA, ...resursi, ...KALENDAR })
+	otvori('/o/citaonica-pmf/r/r1')
+	await screen.findByRole('list', { name: /Termini/ })
+	expect(redovi()).toHaveLength(5)
+})

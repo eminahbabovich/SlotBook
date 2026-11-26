@@ -51,6 +51,14 @@ const PUTANJE = {
 			<path d="M14 10a4 4 0 0 1 0 5.6l-2.4 2.4a4 4 0 0 1-5.6-5.6l1.2-1.2" />
 		</>
 	),
+	// Pješčani sat: pravilo koliko unaprijed i do kad se rezerviše
+	pravila: (
+		<>
+			<path d="M7 3.5h10M7 20.5h10" />
+			<path d="M8 3.5c0 4 4 5 4 8.5s-4 4.5-4 8.5M16 3.5c0 4-4 5-4 8.5s4 4.5 4 8.5" />
+			<path d="M10 18.5h4" />
+		</>
+	),
 }
 
 export function Ikona({ ime }) {

@@ -161,6 +161,17 @@ public class DemoPodaci {
 		narednaSedmica(danas, sada, hana, ostali, sto, soba, konsultacije, trening);
 		hanineProsle(danas, sada, hana, sto);
 		pozivi(citaonica, amila, sada);
+		pravila(citaonica, sto, konsultacije);
+	}
+
+	// Pravila koja se vide u demu: sto se drži najviše dvaput unaprijed i dvije sedmice naprijed, a
+	// konsultacije se zakazuju najkasnije dva sata ranije. Tri nedolaska u mjesec dana blokiraju sedmicu.
+	// Hana nema nedolazaka, pa nije blokirana.
+	private void pravila(UUID citaonica, Resurs sto, Resurs konsultacije) {
+		jdbc.update("update resources set max_active_per_member = 2, max_days_ahead = 14 where id = ?", sto.id());
+		jdbc.update("update resources set min_notice_minutes = 120 where id = ?", konsultacije.id());
+		jdbc.update("update organizations set no_show_limit = 3, no_show_window_days = 30, no_show_block_days = 7 "
+				+ "where id = ?", citaonica);
 	}
 
 	// Admin odmah vidi pozivni link s plakatom (7 od 40 mjesta iskorišteno) i jednu pozivnicu koja čeka.

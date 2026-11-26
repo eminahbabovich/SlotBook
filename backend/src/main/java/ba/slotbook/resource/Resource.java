@@ -58,6 +58,15 @@ public class Resource {
 	@Column(name = "price_cents", nullable = false)
 	private int priceCents;
 
+	@Column(name = "max_active_per_member")
+	private Integer maxActivePerMember;
+
+	@Column(name = "max_days_ahead")
+	private Integer maxDaysAhead;
+
+	@Column(name = "min_notice_minutes")
+	private Integer minNoticeMinutes;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -87,6 +96,16 @@ public class Resource {
 		this.cancelNoticeHours = cancelNoticeHours;
 		this.capacity = capacity;
 		this.priceCents = priceCents;
+	}
+
+	void promijeniPravila(ResourceRules pravila) {
+		this.maxActivePerMember = pravila.maxActivePerMember();
+		this.maxDaysAhead = pravila.maxDaysAhead();
+		this.minNoticeMinutes = pravila.minNoticeMinutes();
+	}
+
+	public ResourceRules getPravila() {
+		return new ResourceRules(maxActivePerMember, maxDaysAhead, minNoticeMinutes);
 	}
 
 	void changeProvider(User provider) {

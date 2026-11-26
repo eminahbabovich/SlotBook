@@ -234,3 +234,21 @@
 		gap: var(--razmak-16);
 	}
 }
+
+/* Blokada zbog nedolazaka: ista traka u boji greške kao pitanje za otkazivanje, uz tekst koji kaže
+   do kad i šta raditi, pa se razumije i bez boje */
+.blokade {
+	display: grid;
+	gap: var(--razmak-8);
+	max-width: 720px;
+	margin: 0 0 var(--razmak-24);
+	padding: 0;
+	list-style: none;
+}
+
+.blokade li {
+	padding: var(--razmak-16);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje);
+	box-shadow: inset var(--razmak-4) 0 0 var(--greska);
+}

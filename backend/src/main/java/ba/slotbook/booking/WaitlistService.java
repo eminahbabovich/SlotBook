@@ -3,6 +3,7 @@ package ba.slotbook.booking;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +34,7 @@ public class WaitlistService {
 
 	private final WaitlistEntryRepository entries;
 	private final SlobodnaMjesta slobodnaMjesta;
+	private final BookingRules pravila;
 	private final ResourceRepository resources;
 	private final UserRepository users;
 	private final SlotService slotService;
@@ -41,12 +43,14 @@ public class WaitlistService {
 	private final Clock clock;
 	private final String appUrl;
 
-	public WaitlistService(WaitlistEntryRepository entries, SlobodnaMjesta slobodnaMjesta, ResourceRepository resources,
+	public WaitlistService(WaitlistEntryRepository entries, SlobodnaMjesta slobodnaMjesta, BookingRules pravila,
+			ResourceRepository resources,
 			UserRepository users, SlotService slotService, NotificationService notifications,
 			ApplicationEventPublisher objave, Clock clock,
 			@Value("${slotbook.app-url}") String appUrl) {
 		this.entries = entries;
 		this.slobodnaMjesta = slobodnaMjesta;
+		this.pravila = pravila;
 		this.resources = resources;
 		this.users = users;
 		this.slotService = slotService;
@@ -78,6 +82,9 @@ public class WaitlistService {
 		if (stanje.mjesto().isPresent()) {
 			throw new WaitlistNotNeededException(Razlog.SLOBODAN);
 		}
+		// Ista pravila kao za rezervaciju: ponuda blokiranom članu bi 30 minuta držala termin uzalud.
+		// Granica budućih rezervacija se ponovo provjerava kad prihvati ponudu, jer se do tada promijeni.
+		pravila.provjeri(resurs, clientId, List.of(termin), sada);
 		return WaitlistEntryResponse.from(entries.save(new WaitlistEntry(resurs, users.getReferenceById(clientId),
 				termin, sada)));
 	}

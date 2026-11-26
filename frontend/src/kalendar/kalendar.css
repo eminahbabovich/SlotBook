@@ -41,6 +41,14 @@
 	box-shadow: inset 0 0 0 1px var(--linija);
 }
 
+/* Pravilo nije podatak o terminu nego ograničenje: isprekidan rub, bez podloge, da se razlikuje i bez boje */
+.resurs-podaci li.resurs-pravilo {
+	font-weight: 400;
+	background: none;
+	box-shadow: none;
+	border: 1px dashed var(--tekst-sporedni);
+}
+
 .resurs-opis {
 	max-width: 60ch;
 	color: var(--tekst-sporedni);

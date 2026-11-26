@@ -7,6 +7,7 @@ import { useOrganizacija, useResursi } from '../organizacije/upiti.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Kalendar } from './Kalendar.jsx'
+import { opisiPravila } from './pravila.js'
 import './kalendar.css'
 import { Mrvice } from '../tema/Mrvice.jsx'
 
@@ -57,9 +58,20 @@ export function KalendarResursa() {
 				<li>{resurs.trajanjeMinuta} min</li>
 				<li>{resurs.cijenaFeninga > 0 ? `${feningeUKm(resurs.cijenaFeninga)} KM` : 'besplatno'}</li>
 				{resurs.brojMjesta > 1 && <li>mjesta: {resurs.brojMjesta}</li>}
+				{opisiPravila(resurs.pravila).map((opis) => (
+					<li key={opis} className="resurs-pravilo">
+						{opis}
+					</li>
+				))}
 			</ul>
 			{resurs.opis && <p className="resurs-opis">{resurs.opis}</p>}
-			<Kalendar resursId={resurs.id} naziv={resurs.naziv} zona={org.organizacija.zona} cijenaFeninga={resurs.cijenaFeninga} />
+			<Kalendar
+				resursId={resurs.id}
+				naziv={resurs.naziv}
+				zona={org.organizacija.zona}
+				cijenaFeninga={resurs.cijenaFeninga}
+				pravila={org.organizacija.uloga === 'CLIENT' ? resurs.pravila : null}
+			/>
 		</section>
 	)
 }

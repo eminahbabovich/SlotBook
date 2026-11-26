@@ -16,6 +16,10 @@ export function ResursForma({ pocetno, mutacija, dugme, dugmeSalje, poruke, uspj
 		brojMjesta: String(pocetno.brojMjesta),
 		// Besplatan termin ima prazno polje, ne "0"
 		cijenaKM: pocetno.cijenaFeninga === 0 ? '' : feningeUKm(pocetno.cijenaFeninga),
+		// Prazno polje znači da pravila nema
+		najviseAktivnih: String(pocetno.pravila?.najviseAktivnih ?? ''),
+		danaUnaprijed: String(pocetno.pravila?.danaUnaprijed ?? ''),
+		minutaPrije: String(pocetno.pravila?.minutaPrije ?? ''),
 	}))
 	const [losaCijena, setLosaCijena] = useState(false)
 	const promijeni = (polje) => (vrijednost) => setR((staro) => ({ ...staro, [polje]: vrijednost }))
@@ -84,6 +88,37 @@ export function ResursForma({ pocetno, mutacija, dugme, dugmeSalje, poruke, uspj
 				greska={poPoljima.cancelNoticeHours}
 				napomena="Koliko sati prije termina klijent još može sam otkazati. 0 znači do samog početka."
 			/>
+			<fieldset className="pravila-forme">
+				<legend>Pravila za klijente</legend>
+				<p className="napomena">Sva su opciona: prazno polje znači da pravila nema. Admin i ko vodi termine ih ne moraju poštovati.</p>
+				<Polje
+					oznaka="Najviše budućih rezervacija po osobi"
+					ime="maxActivePerMember"
+					tip="number"
+					vrijednost={r.najviseAktivnih}
+					promjena={promijeni('najviseAktivnih')}
+					greska={poPoljima.maxActivePerMember}
+					napomena="Npr. 2: niko ne drži sto svaki dan u sedmici."
+				/>
+				<Polje
+					oznaka="Koliko dana unaprijed"
+					ime="maxDaysAhead"
+					tip="number"
+					vrijednost={r.danaUnaprijed}
+					promjena={promijeni('danaUnaprijed')}
+					greska={poPoljima.maxDaysAhead}
+					napomena="Npr. 14: termini kasnije od dvije sedmice se ne nude."
+				/>
+				<Polje
+					oznaka="Najkasnije minuta prije početka"
+					ime="minNoticeMinutes"
+					tip="number"
+					vrijednost={r.minutaPrije}
+					promjena={promijeni('minutaPrije')}
+					greska={poPoljima.minNoticeMinutes}
+					napomena="Npr. 120: konsultacije se ne zakazuju u zadnji čas."
+				/>
+			</fieldset>
 			<button className="dugme" type="submit" disabled={mutacija.isPending}>
 				{mutacija.isPending ? dugmeSalje : dugme}
 			</button>

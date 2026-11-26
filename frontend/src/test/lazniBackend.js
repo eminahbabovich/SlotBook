@@ -46,6 +46,7 @@ export const PRIJAVLJENA = {
 	'/api/organizations/o2/resources?size=100': () => json({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 }),
 	'/api/waitlist/mine?page=0&size=20': () => json({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 }),
 	'GET /api/me/calendar-feed': () => json({ active: false, createdAt: null, token: null }),
+	'/api/me/blocks': () => json([]),
 }
 
 export function otvori(adresa) {

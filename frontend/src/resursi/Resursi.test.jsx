@@ -62,6 +62,7 @@ describe('novi resurs', () => {
 		await korisnik.clear(screen.getByLabelText('Broj mjesta u terminu'))
 		await korisnik.type(screen.getByLabelText('Broj mjesta u terminu'), '4')
 		await korisnik.type(screen.getByLabelText('Cijena termina u KM'), '7,50')
+		await korisnik.type(screen.getByLabelText('Najviše budućih rezervacija po osobi'), '2')
 		// Bilježi svaki naslov koji se pojavi, i onaj koji odmah nestane
 		const naslovi = []
 		const posmatrac = new MutationObserver(() => document.querySelectorAll('h1').forEach((h) => naslovi.push(h.textContent)))
@@ -75,7 +76,7 @@ describe('novi resurs', () => {
 		expect(window.location.pathname).toBe('/o/citaonica-pmf/r/r-novi/radno-vrijeme')
 		expect(tijelo(fetch, 'POST /api/organizations/o1/resources')).toEqual({
 			name: 'Grupna soba 2', description: 'Za četvoro, s tablom.', slotMinutes: 90, autoConfirm: false, cancelNoticeHours: 12,
-			capacity: 4, priceCents: 750,
+			capacity: 4, priceCents: 750, maxActivePerMember: 2, maxDaysAhead: null, minNoticeMinutes: null,
 		})
 	})
 
@@ -153,7 +154,7 @@ describe('izmjena', () => {
 		expect((await screen.findByText(/^Promjene su sačuvane/)).getAttribute('role')).toBe('status')
 		expect(tijelo(fetch, 'PUT /api/organizations/o3/resources/r5')).toEqual({
 			name: 'Termin konsultacija', description: 'Kabinet 214', slotMinutes: 30, autoConfirm: false, cancelNoticeHours: 24,
-			capacity: 3, priceCents: 1500,
+			capacity: 3, priceCents: 1500, maxActivePerMember: null, maxDaysAhead: null, minNoticeMinutes: null,
 		})
 		await korisnik.click(screen.getByRole('link', { name: 'Konsultacije, prof. Đulić' }))
 		expect(await screen.findByText('termini po 30 min')).toBeTruthy()

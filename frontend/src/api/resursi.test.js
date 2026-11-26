@@ -6,7 +6,7 @@ const json = (tijelo, status = 200) => new Response(JSON.stringify(tijelo), { st
 
 // Oblik kao ResourceResponse u ResourceApiTest
 const STO = { id: 'r1', organizationId: 'o1', providerId: 'u1', name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, capacity: 1, priceCents: 0, active: true, hasImage: false }
-const STO_ZA_UI = { id: 'r1', naziv: 'Sto 4, tihi dio', opis: null, trajanjeMinuta: 60, vodi: 'u1', autoPotvrda: false, rokOtkazivanjaSati: 24, brojMjesta: 1, cijenaFeninga: 0, aktivan: true }
+const STO_ZA_UI = { id: 'r1', naziv: 'Sto 4, tihi dio', opis: null, trajanjeMinuta: 60, vodi: 'u1', autoPotvrda: false, rokOtkazivanjaSati: 24, brojMjesta: 1, cijenaFeninga: 0, aktivan: true, pravila: { najviseAktivnih: null, danaUnaprijed: null, minutaPrije: null } }
 
 afterEach(() => {
 	vi.unstubAllGlobals()
@@ -56,7 +56,7 @@ test('novi resurs šalje brojeve kao brojeve, a prazan opis kao null', async () 
 	expect(resurs).toEqual(STO_ZA_UI)
 	expect(poziv(fetch)).toEqual({
 		zahtjev: 'POST /api/organizations/o1/resources',
-		tijelo: { name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, capacity: 1, priceCents: 0 },
+		tijelo: { name: 'Sto 4, tihi dio', description: null, slotMinutes: 60, autoConfirm: false, cancelNoticeHours: 24, capacity: 1, priceCents: 0, maxActivePerMember: null, maxDaysAhead: null, minNoticeMinutes: null },
 	})
 })
 
@@ -65,11 +65,11 @@ test('izmjena šalje sva polja, i ona koja se nisu mijenjala', async () => {
 	const fetch = vi.fn(async () => json(STO))
 	vi.stubGlobal('fetch', fetch)
 
-	await izmijeniResurs('o1', 'r1', { naziv: 'Sto 4', opis: 'Uz prozor.', trajanjeMinuta: 90, autoPotvrda: false, rokOtkazivanjaSati: 24, brojMjesta: 5, cijenaFeninga: 750 })
+	await izmijeniResurs('o1', 'r1', { naziv: 'Sto 4', opis: 'Uz prozor.', trajanjeMinuta: 90, autoPotvrda: false, rokOtkazivanjaSati: 24, brojMjesta: 5, cijenaFeninga: 750, najviseAktivnih: '2', danaUnaprijed: '14', minutaPrije: '' })
 
 	expect(poziv(fetch)).toEqual({
 		zahtjev: 'PUT /api/organizations/o1/resources/r1',
-		tijelo: { name: 'Sto 4', description: 'Uz prozor.', slotMinutes: 90, autoConfirm: false, cancelNoticeHours: 24, capacity: 5, priceCents: 750 },
+		tijelo: { name: 'Sto 4', description: 'Uz prozor.', slotMinutes: 90, autoConfirm: false, cancelNoticeHours: 24, capacity: 5, priceCents: 750, maxActivePerMember: 2, maxDaysAhead: 14, minNoticeMinutes: null },
 	})
 })
 

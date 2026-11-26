@@ -493,7 +493,7 @@ poruku prije slanja.
    plakat za štampu A4), stranica `/pridruzi/:token`, lista članova s ulogom i uklanjanjem, lista
    otvorenih pozivnica.
 
-**2. Pravila korištenja i nedolasci**
+**2. Pravila korištenja i nedolasci** (gotovo 26.11.)
 1. Resurs (V43): najviše aktivnih budućih rezervacija po članu, koliko dana unaprijed, najmanje
    minuta prije početka. Organizacija: N nedolazaka u zadnjih X dana daje blokadu od Y dana.
    Blokada se računa iz `NO_SHOW` rezervacija, ne čuva se.

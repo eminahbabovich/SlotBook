@@ -11,6 +11,7 @@ import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { danUZoni, dodajDane, nazivDana, rasponDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from '../vrijeme/vrijeme.js'
 import { opisTermina, opisTrenutka, rokPonude } from '../vrijeme/opis.js'
 import { ListaCekanja } from './ListaCekanja.jsx'
+import { uPravilima } from './pravila.js'
 import { Potvrda } from './Potvrda.jsx'
 import { useZivKalendar } from './useZivKalendar.js'
 
@@ -44,7 +45,8 @@ const MOZE_REZERVISATI = ['slobodno', 'ponudjen']
 // Jedan dan kao lista, i na telefonu i na desktopu. Sedmica se učitava odjednom (jedan poziv),
 // a traka s danima bira koji se dan prikazuje.
 // cijenaFeninga je cijena resursa: plaćen termin se ne ponavlja i čeka uplatu, ne potvrdu.
-export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
+// pravila su pravila resursa za klijenta, a null za admina i onoga ko vodi termine.
+export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = null }) {
 	const queryClient = useQueryClient()
 	// "Danas" je dan u zoni organizacije. U 00:30 po Sarajevu je za browser u Londonu još jučer.
 	// Računa se jednom, pri otvaranju: kalendar otvoren preko ponoći ostaje na istoj sedmici.
@@ -65,6 +67,8 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 	const { data, isPending, isError, error, refetch } = useQuery({
 		queryKey: kljucKalendara,
 		queryFn: () => kalendarResursa(resursId, pocetak, dodajDane(pocetak, 7)),
+		// Keš čuva sve termine, a klijentu se ne nude oni koje po pravilima ne može uzeti
+		select: (kalendar) => uPravilima(kalendar, pravila, new Date()),
 	})
 	// Dani u kojima imam termin (potvrđen ili na čekanju) dobiju tačkicu od žara u traci dana
 	const mojiDani = new Set((data?.termini ?? []).filter((t) => ['moje', 'ceka'].includes(t.stanje)).map((t) => danUZoni(t.pocetak, zona)))

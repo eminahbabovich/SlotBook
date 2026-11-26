@@ -27,12 +27,14 @@ import jakarta.validation.Valid;
 public class BookingController {
 
 	private final BookingService bookingService;
+	private final BookingRules pravila;
 	private final BookingAccess bookingAccess;
 	private final CheckInService checkInService;
 
 	public BookingController(BookingService bookingService, BookingAccess bookingAccess,
-			CheckInService checkInService) {
+			CheckInService checkInService, BookingRules pravila) {
 		this.bookingService = bookingService;
+		this.pravila = pravila;
 		this.bookingAccess = bookingAccess;
 		this.checkInService = checkInService;
 	}
@@ -73,6 +75,12 @@ public class BookingController {
 	@GetMapping("/api/bookings/mine")
 	public PageResponse<MyBookingResponse> mine(@AuthenticationPrincipal Jwt token, Pageable pageable) {
 		return bookingService.mine(UUID.fromString(token.getSubject()), pageable);
+	}
+
+	// Samo svoje blokade zbog nedolazaka, za traku u Mojim rezervacijama
+	@GetMapping("/api/me/blocks")
+	public List<BlockResponse> blocks(@AuthenticationPrincipal Jwt token) {
+		return pravila.blokade(UUID.fromString(token.getSubject()));
 	}
 
 	@GetMapping("/api/bookings/{bookingId}/events")

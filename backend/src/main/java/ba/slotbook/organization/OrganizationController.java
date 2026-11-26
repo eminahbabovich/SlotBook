@@ -58,6 +58,14 @@ public class OrganizationController {
 		organizationService.removeMember(id, userId, UUID.fromString(token.getSubject()));
 	}
 
+	// Tijelo bez brojeva (sva tri null) ukida pravilo
+	@PutMapping("/{id}/no-show-rules")
+	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN')")
+	public NoShowRules changeNoShowRules(@PathVariable UUID id, @AuthenticationPrincipal Jwt token,
+			@Valid @RequestBody NoShowRules request) {
+		return organizationService.changeNoShowRules(id, request, UUID.fromString(token.getSubject()));
+	}
+
 	@GetMapping("/{id}/members")
 	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN')")
 	public PageResponse<MemberResponse> listMembers(@PathVariable UUID id, Pageable pageable) {

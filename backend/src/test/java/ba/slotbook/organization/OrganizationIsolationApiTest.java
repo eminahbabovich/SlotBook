@@ -79,6 +79,8 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/members/{lejlaId}/role", """
 					{"role": "CLIENT"}
 					"""),
+			// Prazno tijelo: pravila nema ni prije ni poslije, pa admin dobije 200, a ništa se ne promijeni
+			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/no-show-rules", "{}"),
 			// Kenan je klijent bez rezervacija, samo za ovo. Prije svakog testa se vraća u čitaonicu.
 			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/members/{kenanId}", null),
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/invites", """
@@ -184,6 +186,7 @@ class OrganizationIsolationApiTest {
 			Map.entry("GET /api/me/organizations", "samo korisnik iz tokena"),
 			Map.entry("GET /api/me/export", "samo korisnik iz tokena, MyDataExportApiTest provjerava da tuđeg nema"),
 			Map.entry("GET /api/bookings/mine", "samo korisnik iz tokena"),
+			Map.entry("GET /api/me/blocks", "samo korisnik iz tokena, BookingRulesApiTest"),
 			Map.entry("GET /api/waitlist/mine", "samo korisnik iz tokena, WaitlistApiTest provjerava da tuđeg nema"),
 			Map.entry("GET /api/me/calendar-feed", "samo korisnik iz tokena"),
 			Map.entry("POST /api/me/calendar-feed", "samo korisnik iz tokena"),

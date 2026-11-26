@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Suspense, lazy, useState } from 'react'
 import { BrowserRouter, Link, Route, Routes } from 'react-router'
 import { Clanovi } from './clanovi/Clanovi.jsx'
+import { Postavke } from './postavke/Postavke.jsx'
 import { Plakat } from './clanovi/Plakat.jsx'
 import { DolazakSKodom } from './dolazak/DolazakSKodom.jsx'
 import { Nalog } from './nalog/Nalog.jsx'
@@ -57,6 +58,7 @@ export default function App() {
 								<Route path="/o/:slug" element={<Organizacija />} />
 								<Route path="/o/:slug/clanovi" element={<Clanovi />} />
 								<Route path="/o/:slug/plakat" element={<Plakat />} />
+								<Route path="/o/:slug/postavke" element={<Postavke />} />
 								<Route path="/o/:slug/resursi/novi" element={<NoviResurs />} />
 								<Route path="/o/:slug/r/:resursId/uredi" element={<IzmjenaResursa />} />
 								<Route path="/o/:slug/r/:resursId/radno-vrijeme" element={<RadnoVrijemeResursa />} />

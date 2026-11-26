@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Blokade } from './Blokade.jsx'
 import { useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { mojeRezervacije } from '../api/rezervacije.js'
@@ -157,6 +158,7 @@ export function MojeRezervacije() {
 	return (
 		<section>
 			<h1>Moje rezervacije</h1>
+			<Blokade />
 			<p role="status" className="poruka-rezervacije" ref={porukaRef} tabIndex={-1}>
 				{poruka}
 			</p>

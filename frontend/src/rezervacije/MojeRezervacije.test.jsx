@@ -328,3 +328,16 @@ describe('plaćanje', () => {
 		expect((await screen.findByText(/Rezervacija je otkazana/)).textContent).toContain('Vraća se 15,50 KM na karticu kojom je plaćeno.')
 	})
 })
+
+test('blokada zbog nedolazaka stoji iznad rezervacija s danom i satom u zoni organizacije', async () => {
+	backend({
+		...PRIJAVLJENA,
+		'/api/bookings/mine?page=0&size=20': () => json({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 }),
+		'/api/me/blocks': () => json([{ organizationId: 'o1', organizationName: 'Čitaonica PMF', timezone: 'Europe/Sarajevo', blockedUntil: '2035-11-21T17:00:00Z', noShows: 3 }]),
+	})
+	otvori('/rezervacije')
+
+	const blokada = within(await screen.findByRole('list', { name: 'Blokade zbog nedolazaka' })).getByRole('listitem')
+	expect(blokada.textContent).toContain('Čitaonica PMF:')
+	expect(blokada.textContent).toContain('ne možeš rezervisati do srijeda, 21. novembar, 18:00')
+})

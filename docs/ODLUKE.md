@@ -1179,3 +1179,19 @@ Buduće rezervacije uklonjenog člana se otkazuju (`PENDING` i `CONFIRMED` s po�
 Otvorene pozivnice na email admin sada vidi i može povući. Povučena se briše, a s njom i mail koji još nije otišao. Mail mora ići prvi, jer CHECK u `notifications` traži da pozivnica koja čeka slanje ima `invite_id`, a strani ključ je `ON DELETE SET NULL`.
 
 Šta nisam riješio: ko napravi nalog preko linka, potvrdi email u drugom tabu i tamo se prijavi, ne vrati se sam na `/pridruzi`. Mora ponovo skenirati kod ili otvoriti link. Plakat sam štampao samo u PDF iz Edgea (A4, jedna strana), ne na pravom štampaču, i QR s ekrana nisam skenirao pravim telefonom.
+
+## Pravila korištenja i nedolasci (26.11.2026)
+
+U čitaonici se dešava da jedna osoba drži sto pet dana unaprijed, a konsultacije stižu u zadnji čas. Resurs zato dobija tri opciona pravila: najviše budućih rezervacija po osobi, koliko dana unaprijed i najmanje minuta prije početka. Organizacija dobija jedno: toliko nedolazaka u zadnjih toliko dana daje blokadu od toliko dana. Sve je `NULL` kad pravila nema, a granice čuva i baza (CHECK u V43). Kod nedolazaka idu sva tri broja ili nijedan, i to je jedan CHECK, a ne tri.
+
+Blokada se ne čuva nigdje, nego se računa iz rezervacija sa statusom `NO_SHOW`: broje se one s početkom u zadnjih X dana, a blokada traje do zadnjeg nedolaska plus Y dana. Drugi put je bila tabela blokada koju posao upisuje i briše, ali tada treba paziti da se slaže s rezervacijama (provider ispravi pogrešan `NO_SHOW` i blokada mora nestati). Ovako se ispravka vidi odmah. Cijena je jedan upit više po rezervaciji, a za njega je parcijalni indeks `bookings_nedolasci` (`client_id, start_time WHERE status = 'NO_SHOW'`).
+
+"Koliko dana unaprijed" se broji po kalendaru u zoni organizacije, a ne kao 7 × 24 sata. S pravilom od 7 dana, u ponedjeljak se može rezervisati do sljedećeg ponedjeljka uključivo, u bilo koje doba dana. Inače bi termin u 15:00 za sedam dana bio dozvoljen ujutro, a popodne ne.
+
+Provjera je u `BookingRules` i zove se iz `BookingService` pod lockom resursa, poslije provjere da je termin slobodan za seriju, a prije izbora mjesta za jednu rezervaciju. Lock je bitan za granicu po osobi: bez njega dva taba iste osobe izbroje "imaš 0" i oba prođu. `BookingRulesIstovremenoTest` pusti 8 niti iste osobe na 8 različitih termina uz granicu 3 i prođu tačno 3, ostale dobiju `MAX_ACTIVE`. Serija se provjerava kao cjelina: četiri sedmice uz granicu tri ne upišu nijednu. Isto pravilo se provjerava i kod upisa na listu čekanja, jer bi ponuda blokiranoj osobi 30 minuta držala termin koji niko ne može uzeti. Kad osoba prihvati ponudu, ide kroz istu rezervaciju, pa se pravila provjere ponovo.
+
+Admin i provider nisu ograničeni. Oni rezervišu i za druge (student koji je zvao telefonom), a provider koji je bio bolestan bi inače sam sebi napravio blokadu. Greška je `422` s poljem `pravilo` (`BLOCKED`, `MAX_ACTIVE`, `TOO_FAR_AHEAD`, `TOO_SOON`) i, kod blokade, `blokiranDo`. Nije `409`, jer termin nije zauzet: slobodan je, samo ga ova osoba po pravilu ne smije uzeti.
+
+Frontend klijentu ne nudi termine koji su prerano ili predaleko (`kalendar/pravila.js`, isti račun po zoni organizacije). Granicu po osobi ne skriva, jer zavisi od rezervacija na drugim sedmicama, pa za nju stigne poruka s backenda. Blokada je traka iznad Mojih rezervacija (`GET /api/me/blocks`). Pravila se mijenjaju u formi resursa i na novoj stranici `/o/{slug}/postavke`, a promjena pravila nedolazaka ide u audit log.
+
+Šta nisam provjerio: pravila računaju od pravog trenutka, pa testovi prave termine relativno od danas. Test da se "dana unaprijed" broji po danu u Sarajevu, a ne u UTC-u (termin u 23:30 UTC je već sljedeći dan), postoji samo na frontendu (`pravila.test.js`). Backend računa isto, preko `LocalDate` u zoni organizacije, ali poseban test za to nema, a ni test preko prelaska na ljetno vrijeme.

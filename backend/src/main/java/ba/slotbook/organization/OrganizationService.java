@@ -132,6 +132,16 @@ public class OrganizationService {
 		auditLog.record(organizationId, adminId, AuditAction.MEMBER_REMOVED, userId, clan.getRole().name());
 	}
 
+	@Transactional
+	public NoShowRules changeNoShowRules(UUID organizationId, NoShowRules pravila, UUID adminId) {
+		Organization organizacija = organizations.findById(organizationId).orElseThrow();
+		organizacija.promijeniNedolaske(pravila);
+		auditLog.record(organizationId, adminId, AuditAction.ORGANIZATION_RULES_CHANGED, organizationId,
+				pravila.postoji() ? pravila.limit() + " u " + pravila.windowDays() + " dana -> " + pravila.blockDays()
+						+ " dana" : "bez pravila");
+		return organizacija.getNedolasci();
+	}
+
 	// Kao kod resursa: redoslijed određuje server, a userId razdvaja članove koji su ušli u istoj sekundi
 	@Transactional(readOnly = true)
 	public PageResponse<MemberResponse> listMembers(UUID organizationId, Pageable pageable) {

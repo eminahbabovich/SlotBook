@@ -154,3 +154,23 @@ section > .forma + section {
 .forma [role='status']:empty {
 	display: none;
 }
+
+/* Skup opcionih pravila u formi resursa: ista mreža kao forma, s tankom linijom iznad */
+.pravila-forme {
+	display: grid;
+	gap: var(--razmak-16);
+	min-width: 0;
+	margin: 0;
+	padding: var(--razmak-16) 0 0;
+	border: 0;
+	border-top: 1px solid var(--linija);
+}
+
+.pravila-forme legend {
+	padding: 0;
+	font-weight: 600;
+}
+
+.pravila-forme > .napomena {
+	margin: 0;
+}

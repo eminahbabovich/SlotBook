@@ -52,6 +52,11 @@ export function Organizacija() {
 							Članovi i pozivnice
 						</Link>
 					)}
+					{organizacija.uloga === 'ADMIN' && (
+						<Link className="veza-pilula" to={`/o/${organizacija.slug}/postavke`}>
+							Postavke
+						</Link>
+					)}
 					{mozeDodatiResurs(organizacija) && (
 						<Link className="veza-pilula" to={`/o/${organizacija.slug}/resursi/novi`}>
 							Novi resurs
