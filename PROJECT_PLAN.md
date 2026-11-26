@@ -468,7 +468,7 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
 
 ## Dodaci prije Faze 13
 
-Pet funkcija i pravilo za lozinke, dogovoreno 26.11.2026. Radim ih jednu po jednu, a poslije
+Pet funkcija i pravilo za lozinke, dogovoreno 26.11.2026. Sve je gotovo istog dana. Radim ih jednu po jednu, a poslije
 svake: backend testovi, Vitest i e2e prolaze, commit, odluke u `docs/ODLUKE.md`, README, kartica
 na landingu u "Šta još radi" i podaci u demo profilu. Svaki novi endpoint nad podacima
 organizacije ulazi u `OrganizationIsolationApiTest`, a svaka osjetljiva radnja u `audit_log`.
@@ -529,7 +529,7 @@ poruku prije slanja.
    brišu pretplatu. Događaji: ponuda s liste čekanja, potvrda i odbijanje, podsjetnik dan prije.
 5. `/nalog`: uključivanje po uređaju, probna obavijest, napomena za iPhone.
 
-**Na kraju:** novi screenshotovi u `docs/`, GIF ekrana na vratima i pozivnog linka za README, i
+**Na kraju:** (gotovo 26.11., spisak neprovjerenog je u README-ju) novi screenshotovi u `docs/`, GIF ekrana na vratima i pozivnog linka za README, i
 spisak onoga što nije urađeno ili nije provjereno na pravom telefonu.
 
 ## Faza 14 po koracima

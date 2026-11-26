@@ -494,3 +494,17 @@ Kad sam dodao put do ekrana ("Organizacije / Čitaonica PMF"), pao je test koji 
 Najviše me iznenadilo predučitavanje landinga. Dodao sam `import()` na vrhu `App.jsx` kad je adresa `/`, i odjednom je šest testova po ugao palo na isteku od 5 s. Svaki test je učitavao cijeli landing s motionom. Sad se to radi samo u buildu (`import.meta.env.PROD`).
 
 Na lapisu tinta ima 3,72:1. To je ispod 4,5, pa su inicijali na pločici 20 px podebljano, jer veliki tekst traži samo 3:1.
+
+## Četvrtak, 26. novembar 2026, 18:22
+
+Ostatak dodataka u jednom potezu: ekran na vratima, "Nađi slobodno" i push.
+
+Test ekrana je visio na "Učitava se ekran" bez ijedne greške. Upit nije pao, samo nikad nije završio. Na kraju se ispostavilo da tablet nema sesiju, refresh vrati 401, a `SesijaProvider` tada pozove `queryClient.clear()` i obriše upit ekrana dok je još u letu. Greška je bila stara, i `/pridruzi` je mogao zapeti isto, samo su tamo odgovori stizali sretnijim redom. Sad se keš briše samo kad istekne sesija nekoga ko je bio prijavljen.
+
+Na migraciji za ekrane: `there is no unique constraint matching given keys for referenced table "resources"`. Složeni strani ključ `(resource_id, organization_id)` traži `UNIQUE (id, organization_id)` na `resources`, i to prije `CREATE TABLE`, ne poslije. Pa još Hibernate: pri flushu upisuje nove redove prije izmjena, pa je novi ekran išao u bazu prije gašenja starog i padao na parcijalni indeks "jedan živ ekran". `flush()` između.
+
+Za "Nađi slobodno" sam izmjerio Hibernate statistikom: jedan resurs 9 upita, šest resursa 34. Tačno 5 po resursu, jer se svaki računa kao kalendar. Za čitaonicu je to u redu, za sto resursa ne bi bilo.
+
+Push mi je bio najzanimljiviji. Biblioteka ne prima ključ u obliku koji daje `npx web-push generate-vapid-keys`, pa sam privatni ključ sklopio iz broja d i krive P-256 preko JCA. Pravi push na telefonu nisam vidio: Playwright pokreće Edge bez push servisa i javi `Registration failed - permission denied`. Umjesto toga test radi ono što bi radio browser, dešifruje poruku po RFC 8291 i provjeri VAPID potpis. Prvi put je pao na `Expecting actual not to be null`, jer JDK `HttpServer` zaglavlje piše kao `Content-encoding`, a ja sam tražio `Content-Encoding`.
+
+Iznenadilo me da je endpoint pretplate adresa koju šalje browser, znači korisnik. Bez liste poznatih push servisa server bi slao POST gdje god mu neko kaže.

@@ -5,3 +5,6 @@ b1e9f1d520c783a93a0fda282a9e83e8676e387a:.env.example:generic-api-key:8
 # Lozinka "jajce-vodopad-1461" u JSON-u testa potvrde emaila je testna, gitleaks je vidi kao ključ.
 f8fadf6d365a6a3fe320c157b6bfdf6cb97ccee8:backend/src/test/java/ba/slotbook/auth/EmailVerificationApiTest.java:generic-api-key:51
 f8fadf6d365a6a3fe320c157b6bfdf6cb97ccee8:backend/src/test/java/ba/slotbook/auth/EmailVerificationApiTest.java:generic-api-key:78
+
+# Lozinka "kozija-cuprija-1580" u testu nove lozinke je testna, gitleaks je vidi kao ključ.
+e2fc227efc92637e5227eb37d0836e88e562c5e0:frontend/src/prijava/NovaLozinka.test.jsx:generic-api-key:29
