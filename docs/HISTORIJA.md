@@ -152,9 +152,9 @@ Screenshotovi drugog redizajna, uslikani Playwrightom na lokalnom backendu s pro
 | Landing | Kalendar i karta |
 |---|---|
 | ![Landing: Termin je tvoj, s pločom termina](redizajn/redizajn-2/landing-hero-desktop-svijetla.png) | ![Kalendar stola u čitaonici sa žetonima i kartom desno](redizajn/redizajn-2/kal-karta-desktop-svijetla.png) |
-| **Moje rezervacije, tamna tema** | **Statistika organizacije** |
+| Moje rezervacije, tamna tema | Statistika organizacije |
 | ![Moje rezervacije kao karte sa žigom stanja](redizajn/redizajn-2/rez-desktop-tamna.png) | ![Statistika s brojkama, trakama i mrežom gužve](redizajn/redizajn-2/stat-desktop-svijetla.png) |
-| **Telefon: kalendar** | **Telefon: organizacije** |
+| Telefon: kalendar | Telefon: organizacije |
 | ![Kalendar na telefonu s izabranim terminom](redizajn/redizajn-2/kal-izabran-mobitel-svijetla.png) | ![Organizacije kao pločice s emajl bojom](redizajn/redizajn-2/org-mobitel-svijetla.png) |
 
 Svi screenshotovi, i oni od prije redizajna, su u [redizajn/](redizajn/).
@@ -182,7 +182,7 @@ SlotBook je postao PWA (manifest, ikone, service worker samo za statiku, stranic
 | Nađi slobodno, telefon | Kalendar otvoren iz "Nađi slobodno" |
 |---|---|
 | ![Nađi slobodno: sutra ujutro, slobodni termini svih resursa po satu](dodaci/nadji-slobodno-svijetla-375.png) | ![Kalendar s izabranim terminom i brojem slobodnih ispod svakog dana](dodaci/kalendar-iz-nadji-slobodno-tamna-1280.png) |
-| **Postavke: nedolasci i ekran na vratima** | **Obavijesti na ovom uređaju i "nema mreže"** |
+| Postavke: nedolasci i ekran na vratima | Obavijesti na ovom uređaju i "nema mreže" |
 | ![Postavke organizacije s pravilom nedolazaka i ekranima](dodaci/postavke-svijetla-375.png) | ![Moj nalog s uključivanjem obavijesti](dodaci/nalog-obavijesti-svijetla-375.png) ![Stranica Nema mreže u tamnoj temi](dodaci/nema-mreze-tamna-375.png) |
 
 ## Faza 13: završni pregled

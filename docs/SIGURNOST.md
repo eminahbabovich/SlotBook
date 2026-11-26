@@ -1,8 +1,8 @@
 # Sigurnost
 
-Prolaz kroz OWASP Top 10:2025 (top10.owasp.org/2025), stavku po stavku. Za svaku piše šta nas štiti, koji test to dokazuje i šta nije pokriveno. Imena testova su klase iz `backend/src/test` i `frontend/src`, pa se svaka tvrdnja može pokrenuti. Stanje je od 22.11.2026, kraj Faze 8.
+OWASP Top 10:2025 (top10.owasp.org/2025), stavku po stavku: šta nas štiti, koji test to dokazuje i šta nije pokriveno. Testovi su klase iz `backend/src/test` i `frontend/src`, pa se svaka tvrdnja može pokrenuti. Pisano je na kraju Faze 8 (22.11.2026), a dopunjeno 26.11.2026, kad sam zaglavlja i CORS provjerio na produkciji.
 
-Šta ovdje nije: produkcija nije posebno napadana ni skenirana (nema pentesta ni DAST alata), a ništa od zaglavlja i IP adrese nije provjereno na Renderu. To je pobrojano na kraju.
+Produkciju nisam napadao ni skenirao (nema pentesta ni DAST alata). Šta jeste i šta nije provjereno na živoj adresi, piše na kraju.
 
 ## A01 Broken Access Control
 
@@ -18,7 +18,7 @@ Nije pokriveno: access token važi 15 minuta i ne opoziva se. Obrisan nalog ili 
 
 Dokaz: `SigurnosnaZaglavljaApiTest` (zaglavlja i na grešci iz filtera, preflight s tuđe adrese odbijen), `SecurityApiTest` (bez prijave se ne vidi koje adrese postoje, `health` je otvoren), `ProdProfilTest`.
 
-Nije pokriveno: Swagger UI i `/v3/api-docs` su javni i u produkciji. To je namjerno, jer je ovo portfolio i opis API-ja nije tajna, ali napadač tako dobija spisak svih ruta. CSP za stranice frontenda još ne postoji, dolazi s deployom frontenda u Fazi 12. Zaglavlja nisu provjerena na Renderu, nego samo kroz MockMvc.
+Nije pokriveno: Swagger UI i `/v3/api-docs` su javni i u produkciji. To je namjerno, jer je ovo portfolio i opis API-ja nije tajna, ali napadač tako dobija spisak svih ruta. Stranice frontenda na Vercelu nemaju CSP (vidi kraj fajla).
 
 ## A03 Software Supply Chain Failures
 
@@ -66,7 +66,7 @@ Dokaz: `BookingPrelaziApiTest`, `BookingTest`, `AuditLogApiTest`. Na GitHubu se 
 
 `audit_log` bilježi pravljenje organizacije, pozivnice, izmjene resursa i brisanje naloga, s akterom i vremenom. Admin ga čita za svoju organizaciju (`AuditLogApiTest`). Ponovo upotrijebljen refresh token ide u log kao upozorenje. Neočekivana greška ide u log s cijelim izuzetkom, a klijent dobija samo opštu poruku.
 
-Nije pokriveno: nema nikakvog alarma. Zaključavanja prijave, `429` i ponovljeni refresh token se vide samo u logu Rendera, a njega niko ne gleda. Zahtjevi nemaju ID u logu (to je u Fazi 9). Pogrešne prijave nisu u `audit_log`, nego samo u `login_failures`, koja se čisti.
+Nije pokriveno: od Faze 9 ERROR linije idu u Sentry, s ID-jem zahtjeva. Zaključavanja prijave, `429` i ponovljeni refresh token nisu greške, pa se vide samo u logu Rendera, a njega niko redovno ne gleda. Pogrešne prijave nisu u `audit_log`, samo u `login_failures`, koja se čisti.
 
 ## A10 Mishandling of Exceptional Conditions
 
@@ -80,8 +80,12 @@ Nije pokriveno: obavijest koja baci grešku koja nije `MailException` ostaje prv
 
 Od 22.11.2026 CodeQL (`security-extended`) analizira Javu i JavaScript na svaki push, na pull request i jednom sedmično. Nalazi su u Security > Code scanning na GitHubu. Broj nalaza iz prve analize: _(upisati poslije pregleda u GitHubu)_.
 
-## Šta nije provjereno nigdje
+## Na produkciji
 
-- Zaglavlja i CORS sam 26.11.2026 provjerio curlom i na produkciji: `/api/status` i direktno na Renderu i kroz Vercel vraća CSP `default-src 'none'; frame-ancestors 'none'`, HSTS, `nosniff`, `X-Frame-Options: DENY` i `Referrer-Policy: no-referrer`. Preflight s tuđeg origina dobije `403`, a s Vercel adrese `200` s tom adresom u `Access-Control-Allow-Origin`. IP iz `CF-Connecting-IP` kroz Vercel ne radi kako treba: granica pokušaja prijave vidi Vercelovu adresu (`docs/RUNBOOK.md`).
-- Nema pentesta ni automatskog skeniranja žive aplikacije (npr. OWASP ZAP).
-- Frontend na Vercelu i dalje nema CSP. Stranica dobija samo HSTS, koji Vercel stavlja sam (provjereno 26.11.2026). CSP bi išao u `frontend/vercel.json` kao `headers`, a treba ga probati sa service workerom, fontovima i povratkom sa Stripea, pa je zapisan u Dodacima. Produkcija za refresh kolačić (`SameSite=Strict`) traži da frontend i `/api` budu na istom sajtu.
+Zaglavlja i CORS sam 26.11.2026 provjerio curlom. `/api/status`, i direktno na Renderu i kroz Vercel, vraća CSP `default-src 'none'; frame-ancestors 'none'`, HSTS, `nosniff`, `X-Frame-Options: DENY` i `Referrer-Policy: no-referrer`. Preflight s tuđeg origina dobije `403`, a s Vercel adrese `200`, s tom adresom u `Access-Control-Allow-Origin`.
+
+Granica pokušaja prijave po IP-u kroz Vercel ne radi, jer u `CF-Connecting-IP` vidi Vercelovu adresu (`docs/RUNBOOK.md`).
+
+Frontend na Vercelu nema CSP, samo HSTS, koji Vercel stavlja sam (provjereno 26.11.2026). CSP bi išao u `frontend/vercel.json` kao `headers`, ali ga prvo treba probati sa service workerom, fontovima i povratkom sa Stripea, pa je zapisan u Dodacima. Refresh kolačić (`SameSite=Strict`) radi samo dok su frontend i `/api` na istom sajtu, što je razlog zašto Vercel prosljeđuje `/api` na Render.
+
+Pentesta ni automatskog skeniranja žive aplikacije (npr. OWASP ZAP) nema.

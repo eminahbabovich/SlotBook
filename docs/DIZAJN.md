@@ -1,8 +1,6 @@
 # Dizajn
 
-Smjer je **Mjed i emajl**, izabran 25.11.2026 za drugi redizajn u Fazi 12. Zamijenio je **Čelik i žar** (prvi redizajn, isti dan), koji je ispao ravan: jedna siva površina, 3 px zaobljenja na svemu, jedan font i jedna boja. Paleta je 26.11.2026 zamijenjena (Redizajn 4, vidi "Boje"): hladni porculan i teget tinta su djelovali staro, pa je dan sad topli kamen, a noć neutralan grafit. Ideja, potpisni elementi i tri spektakularna momenta su u [redizajn/smjer.md](redizajn/smjer.md).
-
-Redizajn ide ekran po ekran: landing, kalendar i rezervacija, dashboard, ostalo. Boje, fontovi, veličine i oblik ispod već važe. Sekcije od "Forme i dugmad" naniže još opisuju prvi redizajn i prepisuju se kad dođe red na svaki ekran.
+Smjer je Mjed i emajl, izabran 25.11.2026 za drugi redizajn u Fazi 12. Zamijenio je Čelik i žar (prvi redizajn, isti dan), koji je ispao ravan: jedna siva površina, 3 px zaobljenja na svemu, jedan font i jedna boja. Paleta je 26.11.2026 zamijenjena (Redizajn 4, vidi "Boje"): hladni porculan i teget tinta su djelovali staro, pa je dan sad topli kamen, a noć neutralan grafit. Ideja, potpisni elementi i tri glavna pokreta su u [redizajn/smjer.md](redizajn/smjer.md).
 
 Pravilo: boja, font, razmak ili zaobljenje kojeg ovdje nema ne ulazi u UI. Ako nešto zatreba, prvo se dopiše ovdje, pa tek onda u kod. Vrijednosti u kodu su CSS varijable na jednom mjestu.
 
@@ -44,7 +42,7 @@ Senke su od boje teksta (`--sjena-boja`, u noći `--sjena-noc`), mekše nego pri
 
 ## Fontovi
 
-**Hanken Grotesk** (`@fontsource-variable/hanken-grotesk`, težina 100 do 900) je jedini font za naslove, tekst, cifre i dugmad (Redizajn 3, 25.11.2026). Naslovi su 700, normalne širine, s razmakom slova -0,02em (`--tezina-naslov`, `--razmak-slova-naslov`) i proredom 1,15. Cifre vremena su `tabular-nums`, pa se 08:00 i 11:00 poravnaju. Anybody s osom širine i slova koja se šire prema kursoru su izbačeni: upadali su u oči, ali nisu djelovali ozbiljno. Latin-ext (č, ć, š, đ, ž) Hanken ima u posebnom podskupu koji browser skine samo kad treba. **IBM Plex Mono** (`--font-kod`) je ostao samo za kod u tekstu i demo lozinke. Na karti je bio do 26.11.2026, ali je sitni mono u zaglavlju karte bio teži za čitanje od ostatka, pa je i karta sad u Hankenu.
+Hanken Grotesk (`@fontsource-variable/hanken-grotesk`, težina 100 do 900) je jedini font za naslove, tekst, cifre i dugmad (Redizajn 3, 25.11.2026). Naslovi su 700, normalne širine, s razmakom slova -0,02em (`--tezina-naslov`, `--razmak-slova-naslov`) i proredom 1,15. Cifre vremena su `tabular-nums`, pa se 08:00 i 11:00 poravnaju. Anybody s osom širine i slova koja se šire prema kursoru su izbačeni: upadali su u oči, ali nisu djelovali ozbiljno. Latin-ext (č, ć, š, đ, ž) Hanken ima u posebnom podskupu koji browser skine samo kad treba. IBM Plex Mono (`--font-kod`) je ostao samo za kod u tekstu i demo lozinke. Na karti je bio do 26.11.2026, ali je sitni mono u zaglavlju karte bio teži za čitanje od ostatka, pa je i karta sad u Hankenu.
 
 Fontova su tačno dva: Hanken Grotesk za sve i IBM Plex Mono za kod i demo lozinke. Archivo je bio ostao u `package.json` iz prvog redizajna, iako se nigdje nije učitavao, pa je izbačen 26.11.2026. Latin-ext (č, ć, š, đ, ž) imaju oba, provjereno 25.11.2026 po fajlovima `*-latin-ext-*.woff2` u paketima.
 
@@ -69,9 +67,15 @@ Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48, 64, 96). Žeton je visok
 
 ## Pokret
 
-Odgovor na akciju traje 160 do 260 ms (`--trajanje-brzo`, `--trajanje-srednje`), karta 420 ms (`--trajanje-karta`), kriva `--kriva-izlaz`. Animira se samo `transform` i `opacity`. Tri spektakularna momenta (hero, uzimanje termina, prelazi između ekrana) su opisana u `redizajn/smjer.md`, a sve ostalo je mirno. `prefers-reduced-motion` gasi letove, nagib i prelaze, a stanja ostaju.
+Odgovor na akciju traje 160 do 260 ms (`--trajanje-brzo`, `--trajanje-srednje`), karta 420 ms (`--trajanje-karta`), kriva `--kriva-izlaz`. Animira se samo `transform` i `opacity`. Tri glavna pokreta (hero, uzimanje termina, prelazi između ekrana) su opisana u `redizajn/smjer.md`, a sve ostalo je mirno. `prefers-reduced-motion` gasi letove, nagib i prelaze, a stanja ostaju.
 
-Na landingu (26.11.2026) ima još pet malih pokreta, svi ugašeni uz `prefers-reduced-motion`. Kartica ima reflektor: ispod miša je blaga mjedena svjetlost (18 % mjedi, krug od 340 px), ispod teksta, pa ne kvari kontrast. Položaj daje `landing/reflektor.js`, jedan slušač na cijeloj stranici, a prst ga ne pali. Naslovi sekcija, kartice, pitanja, demo i završni poziv izrone (32 px odozdo, `scale` 0,97 do 1) kad uđu u ekran. Prozor s demom se udalji (do `scale` 0,92 i 35 % vidljivosti) dok hero izlazi s ekrana. Na vrhu je mjedena linija od 3 px koja raste sa skrolom. Ova tri su CSS `animation-timeline` (`view()` i `scroll()`), bez JavaScripta. Gdje ga browser ne zna (Firefox za sada), sve je samo vidljivo, a linije napretka nema. Animira se `translate`, `scale` i `opacity`, ne `transform`, jer `transform` već koristi hover kartice, pa bi se svađali. Peto: preko mjedenog dugmeta na hover jednom pređe traka svjetla (`--trajanje-odsjaj`, 700 ms), ispod teksta. Vraća se bez animacije, da ne ide unazad.
+Na landingu (26.11.2026) ima još pet malih pokreta, svi ugašeni uz `prefers-reduced-motion`.
+
+Kartica ima reflektor: ispod miša je blaga mjedena svjetlost (18 % mjedi, krug od 340 px), ispod teksta, pa ne kvari kontrast. Položaj daje `landing/reflektor.js`, jedan slušač na cijeloj stranici, a prst ga ne pali.
+
+Tri pokreta prate skrol. Naslovi sekcija, kartice, pitanja, demo i završni poziv izrone kad uđu u ekran (32 px odozdo, `scale` od 0,97 do 1). Prozor s demom se udalji dok hero izlazi s ekrana (do `scale` 0,92 i 35 % vidljivosti). Na vrhu je mjedena linija od 3 px koja raste sa skrolom. Sva tri su CSS `animation-timeline` (`view()` i `scroll()`), bez JavaScripta. Gdje browser to ne zna (zasad Firefox), sve je odmah vidljivo, a linije napretka nema. Animiraju se `translate`, `scale` i `opacity`, ne `transform`, jer `transform` već koristi hover kartice, pa bi se svađali.
+
+Preko mjedenog dugmeta na hover jednom pređe traka svjetla (`--trajanje-odsjaj`, 700 ms), ispod teksta. Nazad ide bez animacije, da svjetlo ne putuje unazad.
 
 Prelaz između ekrana ide preko `tema/PrelazLink.jsx`: link koji navigaciju pokrene kroz `uzPrelaz` s `data-prelaz="ekran"`. Stari ekran se malo digne i izblijedi, novi dođe odozdo, a naziv organizacije ili resursa preleti s pločice u naslov sljedećeg ekrana (ime prelaza `org-<id>` i `resurs-<id>`). Nazivi ostalih pločica, koji na novom ekranu nemaju par, odu za `--trajanje-brzo`, da ne vise preko novog ekrana. Koriste ga pločice organizacija i resursa, veza nazad iz kalendara i linkovi u zaglavlju. React Router ima `viewTransition` na linku samo uz data router, a mi imamo `BrowserRouter`, pa je ovo petnaest linija umjesto prelaska na drugi router. Ctrl, Shift i srednji klik ostaju browseru, a bez podrške u browseru je to običan link. Dugme nazad u browseru nema prelaz.
 
@@ -83,7 +87,7 @@ Sve vrijednosti su u `frontend/src/tokeni.css`. Primitive su imenovane po temi (
 
 Polje je udubljeno u ploču: pozadina je `--podloga`, s unutrašnjom sjenom odozgo i ivicom od 1 px u `--tekst-sporedni`. Ivica polja treba kontrast 3:1, a sporedna boja ima 6,06:1 na dnevnoj podlozi i 6,38:1 na noćnoj izdignutoj ploči. `--linija` bi bila preslaba. Na hover ivica postane `--tekst`. Neispravno polje dobije ivicu od 3 px u boji `--greska` i tekst greške ispod, pa se razlikuje i bez boje. Oznaka je iznad polja, nikad samo placeholder. Zaobljenje polja je `--zaobljenje` (10 px).
 
-Dugme je pilula od tinte (`--tekst` s tekstom u `--podloga`, 15,85:1 danju), a noću obrnuto: svijetla pilula s tamnim tekstom. Ima sjenu `--dubina-2` i tanak svijetli rub gore, pa stoji iznad ploče. Na hover se digne za 1 px, a na klik spusti i sjena se skrati, sve za `--trajanje-brzo`. Dok čeka odgovor, blijedo je (60 %) i kaže šta radi ("Prijava u toku"). Glavna akcija ekrana je mjedena (`.dugme-mjed`, puna `--moje` s tekstom `--tekst-na-moje`, 8,53:1 danju i 10,17:1 noću). Od Redizajna 3 dugme nema metalni preliv: preliv `--metal` je samo na karti i na mom žetonu, da mjed ostane znak za "tvoje", a ne ukras: "Rezerviši" u karti i "Prijavi se". Jedna po ekranu. Veza na drugi ekran koja mora stajati kao dugme (Članovi i pozivnice, Novi resurs, Statistika) je pilula od površine s tankim rubom (`.veza-pilula`), da se ne miješa s akcijom. Prelaz koji je samo rečenica ("Napravi nalog" ispod prijave) ostaje podvučen tekst.
+Dugme je pilula od tinte (`--tekst` s tekstom u `--podloga`, 15,85:1 danju), a noću obrnuto: svijetla pilula s tamnim tekstom. Ima sjenu `--dubina-2` i tanak svijetli rub gore, pa stoji iznad ploče. Na hover se digne za 1 px, a na klik spusti i sjena se skrati, sve za `--trajanje-brzo`. Dok čeka odgovor, blijedo je (60 %) i kaže šta radi ("Prijava u toku"). Glavna akcija ekrana je mjedena (`.dugme-mjed`, puna `--moje` s tekstom `--tekst-na-moje`, 8,53:1 danju i 10,17:1 noću). Mjedena akcija je jedna po ekranu, npr. "Rezerviši" u karti ili "Prijavi se". Od Redizajna 3 dugme nema metalni preliv. `--metal` je samo na karti i na mom žetonu, da mjed ostane znak za "tvoje". Veza na drugi ekran koja mora stajati kao dugme (Članovi i pozivnice, Novi resurs, Statistika) je pilula od površine s tankim rubom (`.veza-pilula`), da se ne miješa s akcijom. Prelaz koji je samo rečenica ("Napravi nalog" ispod prijave) ostaje podvučen tekst.
 
 Greška cijele forme i greška polja imaju ikonu prekinutog kruga s uzvičnikom ispred teksta, jer se greška ne smije prepoznavati samo po boji (šipak iz emajla je blizu boje greške). Ikona je CSS maska u boji teksta, pa u SVG-u nema upisane boje. Greška forme je još i ploča s 8 % boje greške i trakom od 4 px lijevo. Poruka o uspjehu u formi je ista ploča, samo od površine i s trakom od tinte.
 
@@ -99,7 +103,11 @@ Karta je izdignuta (`--dubina-3`), sa zaobljenjem `--zaobljenje-karta`, mjedenom
 
 Potvrda rezervacije nije modal, nego karta u nastajanju: pitanje, ponavljanje i dugmad su u njoj, pored ploče s koje je termin izabran. Raspored providera je lista izdignutih ploča sa stanjem kao trakom lijevo (puna mjed za potvrđenu, isprekidana za onu na čekanju), s imenom klijenta, a ispod su dugmad za promjenu. Glavna akcija (Potvrdi, Upiši dolazak) je puno dugme, a ona koja se ne može vratiti (Odbij, Upiši nedolazak) je tekst-dugme i traži drugi klik. Prethodni i sljedeći dan su pilule, iste kao mjeseci u statistici.
 
-Moje rezervacije su karte (iste kao u kalendaru) u mreži od dvije kolone (`minmax(440px, 1fr)`, na telefonu jedna). Najbliži termin je prva karta, preko cijelog reda do 720 px, s vremenima od 44 px, i jedina se naginje prema kursoru ili prstu: to je karta s kojom se ide na ulaz. Prošle i otkazane leže na stolu: bez sjene, bez folije, siva traka umjesto mjedene. Stanje je žig na kuponu, riječima, a uz njega i oblik: potvrđena ima mjedeni žig, na čekanju tijelo karte ima isprekidan okvir u `--tekst-mjed`, otkazana, odbijena i istekla imaju sivi tekst, precrtana vremena i žig u boji greške, a završena ima rupu kroz kupon, kao od kondukterskih kliješta. "Otkaži" i "QR kod za dolazak" stoje u jednom redu, a pitanje za otkazivanje i QR se otvore ispod, preko cijele širine. QR je uvijek na bijeloj ploči s tamnim modulima, i u tamnoj temi, jer kamera traži kontrast. Uz potvrđenu nadolazeću kartu je "Sačuvaj kartu kao sliku". Folija je noću slabija (`--folija-jacina` 0,28 umjesto 0,55), jer isti preliv na tamnoj karti udara duplo jače. Raspored (za onoga ko vodi resurs) i lista čekanja su izdignute ploče, s mjedenom trakom lijevo za potvrđenu (puna) i onu na čekanju (isprekidana).
+Moje rezervacije su karte (iste kao u kalendaru) u mreži od dvije kolone (`minmax(440px, 1fr)`, na telefonu jedna). Najbliži termin je prva karta, preko cijelog reda do 720 px, s vremenima od 44 px. Samo se ona naginje prema kursoru ili prstu, jer se s njom ide na ulaz. Prošle i otkazane leže na stolu: bez sjene, bez folije, sa sivom trakom umjesto mjedene.
+
+Stanje je žig na kuponu, riječima, a uz njega ide i oblik. Potvrđena ima mjedeni žig. Na čekanju tijelo karte ima isprekidan okvir u `--tekst-mjed`. Otkazana, odbijena i istekla imaju sivi tekst, precrtana vremena i žig u boji greške. Završena ima rupu kroz kupon, kao od kondukterskih kliješta.
+
+"Otkaži" i "QR kod za dolazak" stoje u jednom redu, a pitanje za otkazivanje i QR se otvore ispod, preko cijele širine. QR je uvijek na bijeloj ploči s tamnim modulima, i u tamnoj temi, jer kamera traži kontrast. Uz potvrđenu nadolazeću kartu je "Sačuvaj kartu kao sliku". Folija je noću slabija (`--folija-jacina` 0,28 umjesto 0,55), jer isti preliv na tamnoj karti udara duplo jače. Raspored (za onoga ko vodi resurs) i lista čekanja su izdignute ploče, s mjedenom trakom lijevo za potvrđenu (puna) i onu na čekanju (isprekidana).
 
 Poruka poslije uspjeha je podebljan tekst ispod liste, bez ikone i zelene boje, jer zelene u paleti nema.
 
@@ -127,7 +135,11 @@ Prazno stanje je isprekidan obris (`--linija-jaka`, 2 px) sa zaobljenjem karte, 
 
 Radnja koja se ne može vratiti ("Obriši nalog") je ista pilula kao dugme, ali u boji `--greska` (5,20:1 danju, 8,45:1 noću), da se ne zamijeni s glavnom radnjom. Dok se šalje, blijeda je kao svako dugme.
 
-Statistika ima četiri brojke na vrhu (rezervacije, popunjenost, održane i potvrđene, nedolasci), sve izračunate iz istog odgovora kao tabele ispod, pa broj gore i broj u tabeli ne mogu reći različito. Popunjenost je jedina na mjedi, jer je to glavni broj za onoga ko vodi prostor. Ispod su ploče: po stanju i popunjenost jedna pored druge, pa "Kad je gužva" i najtraženiji termini. Trake su udubljen žlijeb s punim dijelom koji naraste slijeva kad stignu podaci (700 ms, bez toga uz smanjen pokret). Po stanju nose značenje kao kalendar: potvrđena i završena su mjed, ono što se nije desilo (otkazana, odbijena, istekla, nedolazak) je šrafura, a na čekanju tinta. "Kad je gužva" je mreža dan × sat u jednoj boji: što više rezervacija, to više mjedi (od 28 % do 100 %, `color-mix` u oklab), a sat bez ijedne je udubljen. Noću to znači svjetlije, jer mjed sija na tinti. Mreža je prava tabela s brojem u svakoj ćeliji za čitač ekrana, a oku broj kaže opis pri prelazu mišem. Ćelije se pojave kolonu po kolonu. Broj uvijek piše i u tabeli, pa boja nije jedini nosilac podatka.
+Statistika ima četiri brojke na vrhu (rezervacije, popunjenost, održane i potvrđene, nedolasci), sve izračunate iz istog odgovora kao tabele ispod, pa broj gore i broj u tabeli ne mogu reći različito. Popunjenost je jedina na mjedi, jer je to glavni broj za onoga ko vodi prostor. Ispod su ploče: po stanju i popunjenost jedna pored druge, pa "Kad je gužva" i najtraženiji termini.
+
+Trake su udubljen žlijeb s punim dijelom koji naraste slijeva kad stignu podaci (700 ms, bez toga uz smanjen pokret). Po stanju nose značenje kao kalendar: potvrđena i završena su mjed, ono što se nije desilo (otkazana, odbijena, istekla, nedolazak) je šrafura, a na čekanju tinta. "Kad je gužva" je mreža dan × sat u jednoj boji: što više rezervacija, to više mjedi (od 28 % do 100 %, `color-mix` u oklab), a sat bez ijedne je udubljen. Noću to znači svjetlije, jer mjed sija na tinti.
+
+Mreža je prava tabela s brojem u svakoj ćeliji za čitač ekrana, a oku broj kaže opis pri prelazu mišem. Ćelije se pojave kolonu po kolonu. Broj uvijek piše i u tabeli, pa boja nije jedini nosilac podatka.
 
 Ikona u tabu (`public/favicon.svg`) je isti mjeden žeton s prorezom kao znak u zaglavlju (`tema/Znak.jsx`). SVG u tabu ne čita CSS varijable, pa su tu hex vrijednosti iz tabele boja (`--mjed-sjaj`, `--mjed`, `--mjed-sjena`, `--dan-tekst`), a `tokeni.test.js` gleda samo `src/`.
 
@@ -135,20 +147,20 @@ Nije urađeno: polja za vrijeme (`input type=time`) i dalje pokazuju AM/PM kad j
 
 ## Fokus
 
-Fokus je okvir od 3 px u boji `--tekst`, odmaknut 3 px od elementa (`--fokus`, `--fokus-odmak`). WCAG traži najmanje 3:1 za okvir fokusa prema onome pored čega stoji. Zbog odmaka okvir stoji na ploči, ne na elementu: danju tinta ima 15,85:1 na podlozi i 17,72:1 na izdignutoj ploči, a noću svijetli tekst 16,40:1 na podlozi i 14,01:1 na izdignutoj. Na mjedenom žetonu bi noću imao samo 1,48:1, pa odmak tu nije ukras, nego razlog zašto se fokus vidi.
+Fokus je okvir od 3 px u boji `--tekst`, odmaknut 3 px od elementa (`--fokus`, `--fokus-odmak`). WCAG traži najmanje 3:1 za okvir fokusa prema onome pored čega stoji. Zbog odmaka okvir stoji na ploči, ne na elementu: danju tinta ima 15,85:1 na podlozi i 17,72:1 na izdignutoj ploči, a noću svijetli tekst 16,40:1 na podlozi i 14,01:1 na izdignutoj. Na mjedenom žetonu bi noću imao samo 1,48:1, pa se fokus tamo vidi samo zahvaljujući odmaku.
 
 ## Stanja termina
 
 Termin je žeton u mreži na ploči (`.termini`, `auto-fill` od 148 px: dva u redu na telefonu, četiri na desktopu), a ne red u listi. Svako stanje se razlikuje i bez boje: po debljini, šrafuri, okviru, ikoni i tekstu. `--emajl` je boja resursa (`resursi/emajl.js`, iz ID-ja resursa), ista na pločici uz naslov, na izabranom danu i na rubu slobodnih žetona.
 
-- **slobodno:** žeton stoji (`--dubina-2`), s mjedenim rubom od 3 px odozdo (do 26.11.2026 je rub bio u emajl boji resursa, ali zeleni rub nije pripadao ostatku stranice), prazan krug od 14 px u gornjem desnom uglu i riječ "slobodno". Hover ga digne 2 px, pritisak spusti 1 px;
-- **izabran:** žeton odleti u kartu (View Transition, ime `zeton-leti`, `--trajanje-karta`), a na ploči ostaje obris od 2 px s punim krugom. U kuponu karte je isti žeton s riječi "biraš";
-- **zauzeto:** udubljen (`--utisnuto`) u boji podloge, s tankom šrafurom (linija 1 px na 7 px), bez debljine, katanac od 14 px u gornjem desnom uglu i riječ "zauzeto". Vrijeme nije precrtano, nego u sporednoj boji i težini 600, jer se precrtano vrijeme teško čitalo;
-- **tvoje:** mjeden žeton (`--metal`), ikona karte u uglu, tekst u `--tekst-na-moje` i riječ "tvoje";
-- **tvoje na čekanju:** žeton s isprekidanim okvirom od 2 px u `--tekst-mjed` i riječ "čeka potvrdu" u istoj boji;
-- **ponuđen tebi s liste čekanja** (Faza 10): kao slobodan, uz mjedenu traku lijevo (`--razmak-4`) i oznaku "ponuđen tebi danas do 17:30". Termin je tvoj samo do roka, pa nije cijeli od mjedi;
-- **tvoje, čeka uplatu** (Faza 11): isto kao na čekanju, samo oznaka kaže "čeka uplatu";
-- **zauzeto, a na listi sam:** isto kao zauzeto, uz tekst "zauzeto, na listi si".
+- slobodno: žeton stoji (`--dubina-2`), s mjedenim rubom od 3 px odozdo (do 26.11.2026 je rub bio u emajl boji resursa, ali zeleni rub nije pripadao ostatku stranice), prazan krug od 14 px u gornjem desnom uglu i riječ "slobodno". Hover ga digne 2 px, pritisak spusti 1 px;
+- izabran: žeton odleti u kartu (View Transition, ime `zeton-leti`, `--trajanje-karta`), a na ploči ostaje obris od 2 px s punim krugom. U kuponu karte je isti žeton s riječi "biraš";
+- zauzeto: udubljen (`--utisnuto`) u boji podloge, s tankom šrafurom (linija 1 px na 7 px), bez debljine, katanac od 14 px u gornjem desnom uglu i riječ "zauzeto". Vrijeme nije precrtano, nego u sporednoj boji i težini 600, jer se precrtano vrijeme teško čitalo;
+- tvoje: mjeden žeton (`--metal`), ikona karte u uglu, tekst u `--tekst-na-moje` i riječ "tvoje";
+- tvoje na čekanju: žeton s isprekidanim okvirom od 2 px u `--tekst-mjed` i riječ "čeka potvrdu" u istoj boji;
+- ponuđen tebi s liste čekanja (Faza 10): kao slobodan, uz mjedenu traku lijevo (`--razmak-4`) i oznaku "ponuđen tebi danas do 17:30". Termin je tvoj samo do roka, pa nije cijeli od mjedi;
+- tvoje, čeka uplatu (Faza 11): isto kao na čekanju, samo oznaka kaže "čeka uplatu";
+- zauzeto, a na listi sam: isto kao zauzeto, uz tekst "zauzeto, na listi si".
 
 Dani su udubljena traka, a izabran dan se digne iz nje kao žeton s mjedenim rubom. Emajl boja resursa ostaje na pločici uz naslov resursa i na listi resursa. Dan s mojim terminom ima mjedenu tačku ispod broja. Strelice idu kroz slobodne žetone redom: lijevo i gore na prethodni, desno i dolje na sljedeći.
 
@@ -192,14 +204,14 @@ Lokalni detalji su dio identiteta: dani i mjeseci malim slovom na bosanskom (uto
 Aplikacija govori kao osoba na šalteru koja zna posao: kratko, tačno, s vremenom i brojem. Ne govori kao marketing, a ni kao robot koji se izvinjava.
 
 Pravila:
-- **Prvo šta se desilo, pa šta sada.** Uvijek konkretno: koji termin, koje vrijeme, koji dan.
-- **Obraća se sa "ti"**, kao poruke grešaka na backendu.
-- **Rodno neutralno:** bez "rezervisao/la" i "dobrodošao/la". Piše se "Rezervacija je napravljena", "Imaš termin u 08:00".
-- **Bez uzvičnika i bez emojija.**
-- **Dugme kaže šta radi:** glagol i predmet, npr. "Rezerviši 08:00" ili "Otkaži rezervaciju", a ne "Nastavi", "Potvrdi" ili "OK".
-- **Prazno stanje kaže šta dalje:** "U utorak nema slobodnih termina. U srijedu ih ima četiri.", a ne "Nema podataka".
-- **Učitavanje kaže šta se učitava:** "Učitavaju se termini za utorak", a ne "Učitavanje...".
-- **Ne hvali se, ne zahvaljuje, ne objašnjava očito.**
+- Prvo šta se desilo, pa šta sada. Uvijek konkretno: koji termin, koje vrijeme, koji dan.
+- Obraća se sa "ti", kao poruke grešaka na backendu.
+- Rodno neutralno: bez "rezervisao/la" i "dobrodošao/la". Piše se "Rezervacija je napravljena", "Imaš termin u 08:00".
+- Bez uzvičnika i bez emojija.
+- Dugme kaže šta radi: glagol i predmet, npr. "Rezerviši 08:00" ili "Otkaži rezervaciju", a ne "Nastavi", "Potvrdi" ili "OK".
+- Prazno stanje kaže šta dalje: "U utorak nema slobodnih termina. U srijedu ih ima četiri.", a ne "Nema podataka".
+- Učitavanje kaže šta se učitava: "Učitavaju se termini za utorak", a ne "Učitavanje...".
+- Ne hvali se, ne zahvaljuje, ne objašnjava očito.
 
 Zabranjeno, jer odmah zvuči kao generisan tekst:
 - "Dobrodošli nazad", "Spremni ste", "Sve je postavljeno";
@@ -223,11 +235,22 @@ Prije i poslije:
 
 Za studenticu koja pred ispit traži sto u čitaonici, za profesora koji drži konsultacije i za osobu koja vodi salu u teretani. Niko od njih ne želi provoditi vrijeme u aplikaciji. Žele termin i da znaju da je njihov. Zato aplikacija ne požuruje i ne vara. Otkazivanje se ne skriva, nema odbrojavanja ("još samo 2 termina!") koje nije stvarno, i nema dugmeta za odbijanje koje posramljuje ("Ne, ne treba mi termin").
 
-Pristupačnost je dio poštovanja, ne dodatak: kontrast AA, sve radi tastaturom, fokus je vidljiv (tamni okvir), a čitač ekrana čita cijelu rečenicu ("utorak, 19. novembar, 08:00 do 09:00, slobodno").
+Iz istog razloga: kontrast AA, sve radi tastaturom, fokus je vidljiv (tamni okvir), a čitač ekrana čita cijelu rečenicu ("utorak, 19. novembar, 08:00 do 09:00, slobodno").
 
 ## Landing (Redizajn 3)
 
-Landing ima osam dijelova, svaki odgovara na jedno pitanje posjetioca. Hero: naslov "Termini za čitaonice, teretane i konsultacije", jedna rečenica, dugmad "Probaj demo" (mjed) i "Napravi organizaciju" (sporedno, obris), a desno pravi mini kalendar u okviru prozora aplikacije. Ispod je traka pilula "za koga" s emajl tačkama, pa prije i poslije (lijevo udubljena ploča s crticama, desno izdignuta s mjedenim kvačicama, pa se razlikuju i bez boje), pa "Kako radi" u tri koraka, jedina tamna traka preko cijele širine, u obje teme (grafit `--noc-povrsina` s blagim mjedenim sjajem na vrhu), da stranica ima kontrast u sredini. Slijedi šest mogućnosti s ikonama crtanim rukom (`landing/Ikona.jsx`, linija 1,75 px na mreži 24, mjed na pločici od 14 % mjedi s tankim mjedenim rubom; lista čekanja je red sa strelicom kod prvog), tri kartice "Na ovo se možeš osloniti" (sudar, pomjeranje sata, odvojene organizacije, bez statusnih kodova i imena testova), česta pitanja kao `<details>`, ulaz u demo, završni poziv i mala sekcija "Kako je napravljeno", poslije koje nema praznog prostora (`main` na landingu nema donji razmak), sa sporednim dugmetom od 40 px i sitnim slovima. Pokret: hero tekst i prozor se pojave jednom (500 i 600 ms), let žetona u demou i animacija sudara na klik. Lenis ostaje. Bez cjenovnika, citata, brojki korisnika i logotipa.
+Svaki dio landinga odgovara na jedno pitanje posjetioca. Redom:
+
+- Hero: naslov "Termini za čitaonice, teretane i konsultacije", jedna rečenica, dugmad "Probaj demo" (mjed) i "Napravi organizaciju" (sporedno, obris), a desno pravi mini kalendar u okviru prozora aplikacije.
+- Traka pilula "za koga", s emajl tačkama.
+- Prije i poslije: lijevo udubljena ploča s crticama, desno izdignuta s mjedenim kvačicama, pa se razlikuju i bez boje.
+- "Kako radi" u tri koraka. To je jedina tamna traka preko cijele širine, u obje teme (grafit `--noc-povrsina` s blagim mjedenim sjajem na vrhu), da stranica ima kontrast u sredini.
+- Šest mogućnosti s ikonama crtanim rukom (`landing/Ikona.jsx`, linija 1,75 px na mreži 24, mjed na pločici od 14 % mjedi s tankim mjedenim rubom). Ikona liste čekanja je red sa strelicom kod prvog.
+- Tri kartice "Na ovo se možeš osloniti": sudar, pomjeranje sata i odvojene organizacije, bez statusnih kodova i imena testova.
+- Česta pitanja kao `<details>`, ulaz u demo i završni poziv.
+- Mala sekcija "Kako je napravljeno", sa sporednim dugmetom od 40 px i sitnim slovima. Poslije nje nema praznog prostora (`main` na landingu nema donji razmak).
+
+Hero tekst i prozor se pojave jednom (500 i 600 ms), žeton u demou leti, a sudar ima animaciju na klik. Lenis ostaje. Nema cjenovnika, citata, brojki korisnika ni logotipa.
 
 Naslovi sekcija su centrirani i najviše 24ch široki. Mreže kartica uvijek imaju pune redove (šest mogućnosti u 1, 2 ili 3 kolone), a u karticama oslonca su ilustracija, naslov i tekst na srednjoj osi, s ilustracijama iste visine. U opisu kartice smije biti jedna fraza u boldu, bez druge boje.
 

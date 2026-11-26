@@ -36,15 +36,15 @@ Većina tutorijala navodi springdoc 2.8, ali to je linija za Spring Boot 3. Za B
 
 ## Skeniranje tajni: gitleaks iz Docker slike
 
-Repo je privatan, a GitHub secret scanning se za privatne repoe na besplatnom nalogu ne nudi (na stranici postavki te sekcije jednostavno nema). Zato u CI-ju pokrećem gitleaks nad cijelom git historijom, direktno iz zvanične Docker slike zakucane na verziju, a ne preko tuđe akcije. Ograničenje: Dependabot neće sam javiti novu verziju gitleaksa, pa je podižem ručno.
+Repo je privatan, a GitHub secret scanning se za privatne repoe na besplatnom nalogu ne nudi (na stranici postavki te sekcije jednostavno nema). Zato u CI-ju pokrećem gitleaks nad cijelom git historijom, direktno iz zvanične Docker slike zakucane na verziju, bez tuđe akcije između. Ograničenje: Dependabot neće sam javiti novu verziju gitleaksa, pa je podižem ručno.
 
 Gitleaks je prijavio lažni `JWT_SECRET` u `.env.example` (pravilo `generic-api-key`, commit `b1e9f1d`), i CI je od tog commita bio crven, a da to nisam primijetio. Promjena vrijednosti ne bi pomogla, jer stari commit ostaje u historiji. Zato je u `.gitleaksignore` samo taj jedan nalaz (commit, fajl, pravilo, linija), a ne cijeli `.env.example`: prava tajna upisana u taj fajl i dalje obara CI.
 
 ## Neon: direktna adresa baze, ne pooler
 
-Neon daje dvije adrese za istu bazu. Ona s `-pooler` u hostu ide kroz PgBouncer. Neon u dokumentaciji piše da taj pul ne podržava sesijske advisory lockove, a Flyway pri startu zaključava šemu advisory lockom. Zato aplikacija koristi direktnu adresu. Nisam probao pooler da vidim šta se desi, samo sam se oslonio na dokumentaciju. Pul konekcija mi ionako ne treba od Neon-a, jer ga drži Hikari unutar aplikacije.
+Neon daje dvije adrese za istu bazu. Ona s `-pooler` u hostu ide kroz PgBouncer. Neon u dokumentaciji piše da taj pul ne podržava sesijske advisory lockove, a Flyway pri startu zaključava šemu advisory lockom. Aplikacija zato koristi direktnu adresu. Nisam probao pooler da vidim šta se desi, samo sam se oslonio na dokumentaciju. Pul konekcija mi ionako ne treba od Neon-a, jer ga drži Hikari unutar aplikacije.
 
-Na Renderu se baza podešava preko tri varijable (`DB_URL`, `DB_USER`, `DB_PASSWORD`), a ne jednog stringa. Neon-ov string ima korisnika i lozinku unutar adrese, a JDBC URL ih ne treba, pa u `DB_URL` ide samo `jdbc:postgresql://HOST/neondb?sslmode=require`.
+Na Renderu se baza podešava preko tri varijable (`DB_URL`, `DB_USER`, `DB_PASSWORD`) umjesto jednog stringa. Neon-ov string ima korisnika i lozinku unutar adrese, a JDBC URL ih ne treba, pa u `DB_URL` ide samo `jdbc:postgresql://HOST/neondb?sslmode=require`.
 
 ## ID-jevi su UUID, ne bigint
 
@@ -70,7 +70,7 @@ Prijava vraća JWT koji Spring Securityjev resource server provjerava na svakom 
 
 U tokenu je samo ID korisnika (`sub`), rok i izdavač. Uloge nisu, jer su po organizaciji i mogu se promijeniti dok token još važi. Ako admin nekome oduzme ulogu, to treba važiti odmah, a ne za 15 minuta, pa se uloge čitaju iz baze kod svakog zahtjeva (korak 7).
 
-Token koji je jednom izdat ne može se poništiti dok ne istekne. Zato traje samo 15 minuta, a duže sesije drži refresh token, koji se može opozvati.
+Token koji je jednom izdat ne može se poništiti dok ne istekne. Zbog toga traje samo 15 minuta, a duže sesije drži refresh token, koji se može opozvati.
 
 Prijava za nepoznat email i za pogrešnu lozinku vraća isti odgovor. Za nepoznat email se svejedno pokrene BCrypt nad lažnim hashom, jer bi inače odgovor bio oko 100 ms brži, pa bi se mjerenjem moglo saznati ko ima nalog.
 
@@ -84,7 +84,7 @@ CSRF token ne koristim ni za `/refresh`. `SameSite=Strict` znači da browser kol
 
 U bazi je samo SHA-256 tokena. Ne BCrypt, jer token od 32 nasumična bajta se ne može pogoditi pa mu sporost ne treba, a hash mora biti uvijek isti da bih token našao u bazi.
 
-Tokeni iz jedne prijave čine porodicu (`family_id`). Kad stigne token koji je već zamijenjen, neko ga je kopirao, i ne znam da li ga šalje lopov ili vlasnik. Zato se poništi cijela porodica i oba se moraju ponovo prijaviti. Druge prijave istog korisnika (drugi uređaj) ostaju.
+Tokeni iz jedne prijave čine porodicu (`family_id`). Kad stigne token koji je već zamijenjen, neko ga je kopirao, i ne znam da li ga šalje lopov ili vlasnik. U tom slučaju se poništi cijela porodica i oba se moraju ponovo prijaviti. Druge prijave istog korisnika (drugi uređaj) ostaju.
 
 Dvije stvari sam naučio na testovima. Prva: porodicu poništim pa bacim izuzetak, a izuzetak u `@Transactional` metodi vrati sve unazad, pa i poništavanje. Bez `noRollbackFor` test pokaže da ukradena porodica i dalje radi. Druga: bez `SELECT ... FOR UPDATE` osam istovremenih zahtjeva s istim tokenom svih osam uspije, i iz jednog tokena nastane osam važećih. Sa zaključavanjem uspije tačno jedan.
 
@@ -116,7 +116,7 @@ Filter chain zna samo da li je token ispravan. Da li neko smije vidjeti članove
 
 Anotacija stoji na kontroleru, uz rutu, a ne na servisu. Tako se kod svakog endpointa vidi ko ga smije zvati, a servis se testira bez security konteksta. Cijena je da servisna metoda pozvana iz drugog mjesta nije zaštićena sama po sebi.
 
-Bez `@EnableMethodSecurity` Spring `@PreAuthorize` tiho ignoriše. Probao sam: aplikacija se normalno pokrene, a admin druge organizacije dobije `200` i tuđe emailove. Zato svaki zaštićeni endpoint ima test kroz HTTP s korisnikom iz tuđe organizacije, a ne samo test beana.
+Bez `@EnableMethodSecurity` Spring `@PreAuthorize` tiho ignoriše. Probao sam: aplikacija se normalno pokrene, a admin druge organizacije dobije `200` i tuđe emailove. Zato svaki zaštićeni endpoint ima test kroz HTTP s korisnikom iz tuđe organizacije. Test beana nije dovoljan.
 
 Ko nije član, dobije `403`, isto kao član bez uloge i kao neko ko pita za ID koji ne postoji. `404` za ne-člana bi sakrio da organizacija postoji, ali ID je UUID i ne može se pogoditi, a javni profil je ionako otvoren. `403` je ono što Spring vrati sam kad provjera odbije.
 
@@ -160,7 +160,7 @@ Provider novog resursa je uvijek onaj ko ga pravi, admin ili provider. Da zahtje
 
 Iz skice modela u tabelu nisu ušle kolone koje ova faza ne koristi: `auto_confirm` i `min_notice_hours` dolaze s rezervacijama u Fazi 4, `capacity` u Fazi 10, cijena u Fazi 11, a `image_key` s uploadom slike. Svaka kolona dolazi s kodom i testom koji je koriste, po cijenu nekoliko `ALTER TABLE` migracija više.
 
-Servis resursa dolazi do organizacije preko `OrganizationService.getReference`, a ne preko `OrganizationRepository`, koji je vidljiv samo u paketu `organization`. Drugi paketi tako ne mogu direktno pisati po organizacijama.
+Servis resursa dolazi do organizacije preko `OrganizationService.getReference`. `OrganizationRepository` je vidljiv samo u paketu `organization`, pa drugi paketi ne mogu direktno pisati po organizacijama.
 
 ## Paginacija: vlastiti oblik stranice i redoslijed koji bira server
 
@@ -220,7 +220,7 @@ Radno vrijeme vide svi koji vide resurs, a mijenjaju ga admin i provider koji ga
 
 ## Izuzeci od radnog vremena: trenuci, ne lokalno vrijeme
 
-Izuzetak (`time_off`) je konkretan period, npr. godišnji od 1. do 15. jula 2035. Zato su početak i kraj `TIMESTAMPTZ` (u Javi `Instant`), a ne lokalno vrijeme kao kod sedmičnog radnog vremena. Pravilo "ponedjeljkom 08-16" važi svake sedmice i mora ostati 08 po lokalnom satu i zimi i ljeti, a izuzetak se desi jednom i ima tačan početak.
+Izuzetak (`time_off`) je konkretan period, npr. godišnji od 1. do 15. jula 2035. Početak i kraj su zato `TIMESTAMPTZ` (u Javi `Instant`), za razliku od sedmičnog radnog vremena, koje je lokalno. Pravilo "ponedjeljkom 08-16" važi svake sedmice i mora ostati 08 po lokalnom satu i zimi i ljeti, a izuzetak se desi jednom i ima tačan početak.
 
 API prima `OffsetDateTime`, pa vrijeme mora imati pomak (`2035-07-01T08:00:00+02:00`). Vrijeme bez pomaka se odbija sa `400`, jer se ne zna da li je to 08:00 u Sarajevu ili u UTC-u. Odgovor vraća UTC (`2035-07-01T06:00:00Z`), a u zonu organizacije prevodi frontend. Kraj mora biti poslije početka, i porede se trenuci, ne sat iz teksta: `10:15+02:00` je prije `10:00+01:00`. Kad sam privremeno poredio lokalni sat (`toLocalDateTime`), oba testa za to su pala. Isto pravilo čuva i `CHECK` u bazi.
 
@@ -254,7 +254,7 @@ Test izolacije je za ovu rutu morao slati i ispravne parametre. Obavezni paramet
 
 U bazi je samo ključ slike (`image_key`), a sama slika je u skladištu iza interfacea `StorageService`. Interface ovdje ima smisla jer stvarno postoje dvije implementacije: folder na disku za lokalni rad i testove, i S3-kompatibilno skladište, jer Render nema trajni disk i slike bi nestale sa svakim deployem. Za sada postoji samo lokalna (korak 7a). Implementacija se bira preko `slotbook.storage.type`, a podrazumijevana je `local`.
 
-Slika se čita preko `GET /api/resources/{resourceId}/image`, kroz backend i uz istu provjeru `canView` kao za resurs, a ne kao javni link na skladište. Javni link bi zaobišao izolaciju organizacija. Cijena je što frontend ne može staviti adresu u `<img src>`, jer taj zahtjev ne šalje `Authorization` header, pa će sliku dohvatiti `fetch`-om i prikazati kao blob. Druga opcija su potpisani linkovi koji ističu (presigned URL), ali to je dodatni koncept, a za demo slike od par stotina KB je nepotrebno.
+Slika se čita preko `GET /api/resources/{resourceId}/image`, kroz backend i uz istu provjeru `canView` kao za resurs, umjesto javnog linka na skladište. Javni link bi zaobišao izolaciju organizacija. Cijena je što frontend ne može staviti adresu u `<img src>`, jer taj zahtjev ne šalje `Authorization` header, pa će sliku dohvatiti `fetch`-om i prikazati kao blob. Druga opcija su potpisani linkovi koji ističu (presigned URL), ali to je dodatni koncept, a za demo slike od par stotina KB je nepotrebno.
 
 Tip slike se određuje po prvim bajtovima fajla (JPEG, PNG, WebP), a ne po imenu ni `Content-Type` zaglavlju, jer njih šalje klijent. HTML preimenovan u `sala.png` dobija `400`. Kad sam privremeno pustio svaki fajl kao PNG, taj test je pao. Provjerava se samo potpis na početku, slika se ne dekodira, pa fajl s ispravnim potpisom i smećem iza prolazi. Za prikaz to nije opasno, jer se uvijek vraća s tipom slike, nikad kao HTML.
 
@@ -284,7 +284,7 @@ Preklapanje se poredi po trenutku, ne po satu iz teksta. `08:30+00` i `09:30+01`
 
 Resurs ima `auto_confirm` (V11). Kad ga nema u zahtjevu, uzima se `true`, i kod `POST` i kod `PUT`, isto kao što opis koji nije poslan postane prazan. Postojeći resursi su migracijom ostali na automatskoj potvrdi, jer su do sada tako i radili.
 
-Rezervacija prima samo početak. Servis pita `SlotService.offered` je li to jedan od termina koje kalendar nudi (poravnat na trajanje, u radnom vremenu, izvan izuzetaka, u budućnosti), a kraj uzima iz tog termina. Tako postoji jedan račun termina, a ne dva koja bi se mogla razići. Zauzetost `offered` namjerno ne gleda. Kad bi gledao, drugi od dva istovremena zahtjeva bi nekad dobio `400` "termin se ne nudi" umjesto `409`, zavisno od toga da li je prvi već commitan. Zauzet termin odbija baza, a servis grešku sa SQLSTATE `23P01` pretvara u `409`. Druge greške integriteta ostaju `500`, da se npr. pokvaren FK ne prijavi kao zauzet termin. Kad sam privremeno izbacio to prevođenje, test za zauzet termin je pao, a kad sam preskočio provjeru ponuđenog termina, pala su dva testa za neispravan početak.
+Rezervacija prima samo početak. Servis pita `SlotService.offered` je li to jedan od termina koje kalendar nudi (poravnat na trajanje, u radnom vremenu, izvan izuzetaka, u budućnosti), a kraj uzima iz tog termina. Termini se tako računaju na jednom mjestu, pa nema dva računa koja bi se mogla razići. Zauzetost `offered` namjerno ne gleda. Kad bi gledao, drugi od dva istovremena zahtjeva bi nekad dobio `400` "termin se ne nudi" umjesto `409`, zavisno od toga da li je prvi već commitan. Zauzet termin odbija baza, a servis grešku sa SQLSTATE `23P01` pretvara u `409`. Druge greške integriteta ostaju `500`, da se npr. pokvaren FK ne prijavi kao zauzet termin. Kad sam privremeno izbacio to prevođenje, test za zauzet termin je pao, a kad sam preskočio provjeru ponuđenog termina, pala su dva testa za neispravan početak.
 
 Historija statusa (`booking_events`, V12) se upisuje u istoj transakciji kao promjena, pa ne postoji rezervacija bez prvog zapisa. Nastanak je zapis bez `from_status`, i baza preko `CHECK`-a pušta samo nastanak u `PENDING` ili `CONFIRMED`. Kolonu `details` iz skice nisam napravio, jer je još ništa ne koristi.
 
@@ -292,9 +292,9 @@ Historija statusa (`booking_events`, V12) se upisuje u istoj transakciji kao pro
 
 `BookingIstovremenoApiTest` šalje kroz pravi HTTP server (ne kroz MockMvc, koji ne obećava rad iz više niti) 20 zahtjeva u istom trenutku za isti termin, od 20 različitih studenata. Prvo pokretanje: tačno jedna rezervacija u bazi, ali 19 odgovora `500`. Svih 19 je palo sa SQLSTATE `40P01`, `deadlock detected ... while checking exclusion constraint on tuple (0,1) in relation "bookings"`. Kod `EXCLUDE` constrainta Postgres prvo upiše red pa traži sukobe, pa dvije transakcije koje upišu u isto vrijeme nađu jedna drugu i čekaju jedna na drugu. To piše i u izvoru Postgresa, u komentaru na vrhu `src/backend/executor/execIndexing.c` ("There is a chance of deadlock, if two backends insert a tuple at the same time"). Pretpostavio sam da drugi zahtjev uvijek dobije `23P01`, kao kod `UNIQUE`, i to nije bilo tačno.
 
-Birao sam između tri rješenja: zaključati red resursa prije upisa, prevesti `40P01` u `409`, ili ponoviti transakciju poslije deadlocka. Uzeo sam prvo. `BookingService.create` prvo radi `SELECT ... FOR UPDATE` nad resursom (isti `findLockedById` kao kod radnog vremena), pa rezervacije istog resursa idu jedna za drugom, a drugi zahtjev vidi commitan red i dobije `23P01`. Preklapanje i dalje čuva `EXCLUDE`. Lock je tu zbog čiste greške, a ne kao zaštita. Cijena je da i rezervacije različitih termina istog resursa čekaju jedna drugu. Prevođenje `40P01` u `409` bi pretpostavljalo da je svaki deadlock zbog preklapanja, a ponavljanje bi tražilo kod izvan transakcije.
+Birao sam između tri rješenja: zaključati red resursa prije upisa, prevesti `40P01` u `409`, ili ponoviti transakciju poslije deadlocka. Uzeo sam prvo. `BookingService.create` prvo radi `SELECT ... FOR UPDATE` nad resursom (isti `findLockedById` kao kod radnog vremena), pa rezervacije istog resursa idu jedna za drugom, a drugi zahtjev vidi commitan red i dobije `23P01`. Preklapanje i dalje čuva `EXCLUDE`. Lock služi samo da drugi zahtjev dobije čistu grešku. Cijena je da i rezervacije različitih termina istog resursa čekaju jedna drugu. Prevođenje `40P01` u `409` bi pretpostavljalo da je svaki deadlock zbog preklapanja, a ponavljanje bi tražilo kod izvan transakcije.
 
-Deadlock zavisi od tajminga. Bez locka je jedna runda od 20 niti pala u prva dva pokretanja, a u sljedeća dva je prošla. Zato test sada ima 4 runde, svaku na svoj termin. Sa lockom je prošao u svakom pokretanju, a svih 76 odbijenih zahtjeva dobije `23P01`. Bez locka je pao u oba pokretanja s 4 runde, svaki put s jednom rundom od 19 × `40P01`. Da test bez locka padne svaki put, ne mogu garantovati. Sam paralelni dio sa lockom traje 0,6-0,7 s za jednu rundu na mom laptopu, a test u cjelini oko minut, najviše zbog starta konteksta i 21 BCrypt registracije.
+Deadlock zavisi od tajminga. Bez locka je jedna runda od 20 niti pala u prva dva pokretanja, a u sljedeća dva je prošla. Test zato sada ima 4 runde, svaku na svoj termin. Sa lockom je prošao u svakom pokretanju, a svih 76 odbijenih zahtjeva dobije `23P01`. Bez locka je pao u oba pokretanja s 4 runde, svaki put s jednom rundom od 19 × `40P01`. Da test bez locka padne svaki put, ne mogu garantovati. Sam paralelni dio sa lockom traje 0,6-0,7 s za jednu rundu na mom laptopu, a test u cjelini oko minut, najviše zbog starta konteksta i 21 BCrypt registracije.
 
 ## Slobodni termini bez zauzetih: SlotController prelazi u booking
 
@@ -302,7 +302,7 @@ Deadlock zavisi od tajminga. Bez locka je jedna runda od 20 niti pala u prva dva
 
 Rezervacija već zavisi od `availability` (pita `SlotService.offered`), pa da je `SlotService` počeo čitati rezervacije, paketi bi zavisili jedan od drugog. Nisam htio interface u `availability` koji bi implementirao `booking`, jer bi to bila apstrakcija samo da se zaobiđe zavisnost. Umjesto toga je `SlotController` prešao u `booking`, uz `FreeSlotService` koji uzme ponuđene termine i izbaci zauzete. `availability` zna šta nude pravila, a `booking` šta je od toga slobodno. Adresa endpointa se nije promijenila.
 
-Upit za zauzete termine je običan izvedeni upit (`startTime < do` i `endTime > od`). Ne koristi gist indeks iz constrainta, jer taj indeks radi nad `tstzrange(start_time, end_time)`. Da li to smeta, gledam u Fazi 9 s `EXPLAIN`, a ne sada.
+Upit za zauzete termine je običan izvedeni upit (`startTime < do` i `endTime > od`). Ne koristi gist indeks iz constrainta, jer taj indeks radi nad `tstzrange(start_time, end_time)`. Da li to smeta, gledam u Fazi 9 s `EXPLAIN`.
 
 ## Idempotency-Key: isti ključ vraća istu rezervaciju
 
@@ -328,7 +328,7 @@ Resurs ima `cancel_notice_hours` (V15), od 0 do 168 sati, a podrazumijevano je 0
 
 ## Moje rezervacije i historija rezervacije
 
-`GET /api/bookings/mine` vraća rezervacije prijavljenog korisnika iz svih organizacija, po stranicama. Redoslijed bira server: najkasniji termin prvo, pa id, isto kao kod resursa, gdje se sort iz zahtjeva ignoriše. Tako budući termini idu prije prošlih. Posebnog filtera za "samo buduće" nema, to ću dodati ako ga frontend bude trebao. Uz svaku rezervaciju ide naziv resursa i zona organizacije, jer klijent ima rezervacije u više organizacija, a vrijeme se prikazuje u zoni organizacije. Resurs i organizacija se učitaju istim upitom (`join fetch`), a ne po jedan upit za svaki red. Indeks `(client_id, start_time)` je u V16. Kad sam iz upita privremeno izbacio uslov za klijenta, pao je test u kojem Hana ne smije vidjeti Lamijinu rezervaciju.
+`GET /api/bookings/mine` vraća rezervacije prijavljenog korisnika iz svih organizacija, po stranicama. Redoslijed bira server: najkasniji termin prvo, pa id, isto kao kod resursa, gdje se sort iz zahtjeva ignoriše. Tako budući termini idu prije prošlih. Posebnog filtera za "samo buduće" nema, to ću dodati ako ga frontend bude trebao. Uz svaku rezervaciju ide naziv resursa i zona organizacije, jer klijent ima rezervacije u više organizacija, a vrijeme se prikazuje u zoni organizacije. Resurs i organizacija se učitaju istim upitom (`join fetch`), bez posebnog upita za svaki red. Indeks `(client_id, start_time)` je u V16. Kad sam iz upita privremeno izbacio uslov za klijenta, pao je test u kojem Hana ne smije vidjeti Lamijinu rezervaciju.
 
 `GET /api/bookings/{id}/events` vraća historiju jedne rezervacije, redom, s imenom osobe koja je promijenila status. Vidi je klijent te rezervacije i ko vodi resurs, ista provjera kao za otkazivanje (`BookingAccess.canView`). Ovo je jedina lista bez stranica, jer rezervacija ima nastanak i najviše dva-tri prelaza.
 
@@ -468,7 +468,7 @@ Provider vidi samo resurse koje vodi. Za to su posebne metode (`...ForProvider`)
 
 Dan i sat za "najtraženije termine" se računaju s `AT TIME ZONE` i zonom organizacije iz tabele `organizations`. Bez toga `extract` radi u zoni konekcije, pa bi srijeda u 9:00 prije i poslije 28.10.2035. pala u 7 i 8 po UTC-u. Test s te dvije srijede to pokazuje. Traženost broji sve statuse, i otkazane, jer je i taj termin neko htio.
 
-Popunjenost je zauzete minute kroz ponuđene minute. Zauzeto je `CONFIRMED`, `COMPLETED` i `NO_SHOW`. Nedolazak ulazi jer taj termin niko drugi nije mogao uzeti. Ponuđene minute računa isti `SlotCalculator` koji pravi kalendar, a ne poseban SQL nad pravilima. Tako postoji jedna definicija radnog vremena, s već testiranim DST-om i izuzecima. Broje se termini, ne radno vrijeme: 08:00-10:30 sa satnim terminima daje 120 minuta. Kalkulator je zato dobio `allBetween`, koji vraća i prošle termine, a stari `between` ih samo filtrira. Cijena su 2-3 upita po resursu, što ću izmjeriti s većim brojem resursa.
+Popunjenost je zauzete minute kroz ponuđene minute. Zauzeto je `CONFIRMED`, `COMPLETED` i `NO_SHOW`. Nedolazak ulazi jer taj termin niko drugi nije mogao uzeti. Ponuđene minute računa isti `SlotCalculator` koji pravi kalendar, bez posebnog SQL-a nad pravilima. Tako postoji jedna definicija radnog vremena, s već testiranim DST-om i izuzecima. Broje se termini, ne radno vrijeme: 08:00-10:30 sa satnim terminima daje 120 minuta. Kalkulator je zato dobio `allBetween`, koji vraća i prošle termine, a stari `between` ih samo filtrira. Cijena su 2-3 upita po resursu, što ću izmjeriti s većim brojem resursa.
 
 Ograničenje: radno vrijeme i deaktivacija resursa nemaju historiju. Ako admin sredinom mjeseca promijeni radno vrijeme, popunjenost za prvu polovinu se računa po novom. Deaktiviran resurs se i dalje računa po svojim pravilima, jer je u prošlom periodu možda radio, a inače bi imao zauzete minute bez ijedne ponuđene. Popunjenost zato može izaći i preko 100 %, npr. kad se radno vrijeme skrati poslije rezervacija. Ne sječem je na 100 %. Plan je da API vrati obje brojke, a ne samo procenat.
 
@@ -520,7 +520,7 @@ Lista nema stranica, iako ostale liste imaju `PageResponse`. Korisnik je član n
 
 ## Rute i učitavanje podataka: React Router i TanStack Query
 
-Za rute sam uzeo React Router (8.5), u običnom načinu s `<BrowserRouter>` i `<Routes>`, bez njegovih loadera. Adrese su `/prijava`, `/registracija`, `/` (moje organizacije) i `/o/{slug}`. Slug je u adresi, a ne ID, jer se link čita i može poslati nekome. Rute za prijavljene čuva `Cuvar`: dok se sesija provjerava ne prikazuje ništa, a odjavljenog šalje na prijavu i pamti adresu, da se poslije prijave vrati tamo. To je samo za korisnika. Podatke čuva backend, i bez čuvara.
+Za rute sam uzeo React Router (8.5), u običnom načinu s `<BrowserRouter>` i `<Routes>`, bez njegovih loadera. Adrese su `/prijava`, `/registracija`, `/` (moje organizacije) i `/o/{slug}`. U adresi je slug umjesto ID-ja, jer se link čita i može poslati nekome. Rute za prijavljene čuva `Cuvar`: dok se sesija provjerava ne prikazuje ništa, a odjavljenog šalje na prijavu i pamti adresu, da se poslije prijave vrati tamo. To je samo za korisnika. Podatke čuva backend, i bez čuvara.
 
 Za podatke sa servera sam uzeo TanStack Query (5.107), a ne vlastiti hook. Vlastiti hook bi bio dvadesetak linija za prvi ekran, ali poslije toga treba keš da lista i stranica organizacije ne zovu isti endpoint dvaput, osvježavanje poslije promjene (nova organizacija mora ući u listu) i ponovni pokušaj. To bih pisao sam i griješio u istim stvarima koje je biblioteka već riješila. Cijena je još jedan koncept za naučiti (ključ upita, keš, `invalidateQueries`) i još jedna zavisnost u buildu. Koliko je build zbog nje veći nisam mjerio. Ponovni pokušaj je ograničen na jedan, i samo kad server nije odgovorio (0, 502-504). `403` ili `404` se ponavljanjem ne mijenjaju, a podrazumijevano bi korisnik čekao grešku nekoliko sekundi.
 
@@ -578,7 +578,7 @@ Probao sam 7 mutacija na frontendu (redoslijed, "već otkazana" kao uspjeh, otka
 
 ## Raspored za providera: novi endpoint, po danima, uloga se provjerava i na frontendu
 
-Provider nije imao odakle pročitati ko je rezervisao njegov termin. `/slots` namjerno ne kaže čiji je zauzet termin, a `/bookings/mine` vraća samo moje. Zato postoji `GET /api/resources/{id}/bookings?from&to`, s istim `@PreAuthorize` kao uređivanje resursa (`canManage`: admin, ili provider koji vodi baš taj resurs). Vraća ime klijenta, ne i email, jer provideru ime treba da zna koga čeka. Period je isti kao kod slobodnih termina (do 31 dan, dani u zoni organizacije), pa nema stranica. Ime klijenta stiže kroz jedan `join fetch`, a ne upit po redu. Ruta je ušla u `OrganizationIsolationApiTest`, inače bi taj test pao, jer svaka ruta pod `/api/resources/{id}` mora biti u njemu. Kad sam `canManage` zamijenio sa `canView`, test je pao jer je studentica dobila `200` umjesto `403`.
+Provider nije imao odakle pročitati ko je rezervisao njegov termin. `/slots` namjerno ne kaže čiji je zauzet termin, a `/bookings/mine` vraća samo moje. Zato postoji `GET /api/resources/{id}/bookings?from&to`, s istim `@PreAuthorize` kao uređivanje resursa (`canManage`: admin, ili provider koji vodi baš taj resurs). Vraća ime klijenta, ne i email, jer provideru ime treba da zna koga čeka. Period je isti kao kod slobodnih termina (do 31 dan, dani u zoni organizacije), pa nema stranica. Ime klijenta stiže kroz jedan `join fetch`, bez upita po redu. Ruta je ušla u `OrganizationIsolationApiTest`, inače bi taj test pao, jer svaka ruta pod `/api/resources/{id}` mora biti u njemu. Kad sam `canManage` zamijenio sa `canView`, test je pao jer je studentica dobila `200` umjesto `403`.
 
 Na frontendu je raspored jedan dan s "Prethodni dan" i "Sljedeći dan". Za providera je bitno ko dolazi danas, a sedmica s imenima na telefonu ne stane. Link "Raspored" i sama stranica koriste isto pravilo kao `canManage`, napisano još jednom u `vodiResurs.js`. To nije sigurnost, nju čuva backend, nego da klijent ne vidi dugme koje vodi na `403`. Na adresi rasporeda klijent dobije objašnjenje i link na slobodne termine, a raspored se i ne traži.
 
@@ -598,7 +598,7 @@ Lista organizacija se osvježi prije prelaska na novu organizaciju. Test to ne m
 
 ## Resursi iz frontenda: PUT šalje sve, deaktivacija uz potvrdu
 
-Novi resurs i izmjena koriste istu formu. `PUT` na backendu postavlja cijeli resurs, a `autoConfirm` i `cancelNoticeHours` koji nisu poslani postanu podrazumijevani (automatska potvrda, bez roka). Zato forma šalje sva polja, i ona koja nisu dirana, i to čuva test. Prazno polje za broj ide kao `null`, a ne kao `Number('') = 0`, da backend kaže "Unesi trajanje" umjesto da napravi resurs od 0 minuta.
+Novi resurs i izmjena koriste istu formu. `PUT` na backendu postavlja cijeli resurs, a `autoConfirm` i `cancelNoticeHours` koji nisu poslani postanu podrazumijevani (automatska potvrda, bez roka). Forma zato šalje sva polja, i ona koja nisu dirana, i to čuva test. Prazno polje za broj ide kao `null`, a ne kao `Number('') = 0`, da backend kaže "Unesi trajanje" umjesto da napravi resurs od 0 minuta.
 
 Deaktivacija se ne može vratiti (vidi gore), pa traži drugi klik, a fokus ide na "Odustani", da Enter ne potvrdi slučajno. Rezervacije koje već postoje se ne otkazuju same, i to piše na ekranu. Osobu koja vodi resurs mijenja samo admin, i bira samo između admina i onih koji vode termine, jer bi za klijenta backend vratio `400`. Lista za izbor je prvih 100 članova, što je i najveća stranica na backendu.
 
@@ -758,7 +758,7 @@ Frontend još radi registraciju pa prijavu (`frontend/src/api/auth.js`). Prijava
 
 Spring Security sam šalje `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` i `Cache-Control: no-cache`. Dodao sam `Referrer-Policy: no-referrer` i, samo za `/api/**`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`. API vraća JSON, CSV i slike i ne treba ništa učitavati, pa je najstroža politika i najjednostavnija. Swagger UI učitava skripte i stilove i s tim CSP-om ne radi, zato ga nema van `/api`. Ovo su zaglavlja backenda. Stranice frontenda servira host frontenda, i njihov CSP (skripte, fontovi, `connect-src` prema backendu) ide s deployom u Fazi 12.
 
-HSTS Spring po defaultu šalje samo kad je zahtjev HTTPS. Render završava HTTPS ispred aplikacije i prosljeđuje običan HTTP, a Spring Boot Render ne prepoznaje kao platformu iza proxyja, pa bi `isSecure()` uvijek bio `false` i HSTS se ne bi slao nikad. Druga opcija je bila `server.forward-headers-strategy`, ali to mijenja i adresu klijenta i URL-ove u aplikaciji, a granica pokušaja iz koraka 2 ionako čita `CF-Connecting-IP`. Zato se HSTS šalje uvijek. Browser ga preko običnog HTTP-a ignoriše, pa lokalno ne smeta. Na Renderu nisam provjerio da stiže, provjera je `curl -I https://<backend>/api/status` poslije deploya.
+HSTS Spring po defaultu šalje samo kad je zahtjev HTTPS. Render završava HTTPS ispred aplikacije i prosljeđuje običan HTTP, a Spring Boot Render ne prepoznaje kao platformu iza proxyja, pa bi `isSecure()` uvijek bio `false` i HSTS se ne bi slao nikad. Druga opcija je bila `server.forward-headers-strategy`, ali to mijenja i adresu klijenta i URL-ove u aplikaciji, a granica pokušaja iz koraka 2 ionako čita `CF-Connecting-IP`. HSTS se zato šalje uvijek. Browser ga preko običnog HTTP-a ignoriše, pa lokalno ne smeta. Na Renderu nisam provjerio da stiže, provjera je `curl -I https://<backend>/api/status` poslije deploya.
 
 CORS dozvoljava samo origin iz `slotbook.app-url`, iste adrese na koju vode linkovi iz mailova, pa je adresa frontenda na jednom mjestu. Uz kolačić (`allowCredentials`) browser ionako ne prihvata `*`. Dozvoljena zaglavlja su `Authorization`, `Content-Type` i `Idempotency-Key`, a `Retry-After`, `Content-Disposition` i `Location` su izložena, jer ih JavaScript s drugog origina inače ne vidi. Preflight (`OPTIONS`) nema token, pa ga CORS filter obradi prije provjere prijave. Bez `.cors(...)` je preflight dobijao `401`. Tuđi origin dobije `403` bez `Access-Control-Allow-Origin`.
 
@@ -830,13 +830,13 @@ Poslije registracije nema više prijave. Ekran "Pogledaj inbox" kaže na koji em
 
 Prijava na `401` dobija još jedan red: nov nalog radi tek poslije potvrde emaila, s linkom na novi link. Backend namjerno daje isti `401` za pogrešnu lozinku i nepotvrđen email, pa frontend ne može znati koji je slučaj i spomene oba.
 
-Kod `429` se iz `Retry-After` doda sat sljedećeg pokušaja ("Sljedeći pokušaj je moguć u 12:27."). Sat, a ne "za 12 minuta", jer uz broj ne treba padež. Sat je u zoni browsera, ne organizacije: zaključana je prijava, a ne termin, i na ekranu prijave organizacije ni nema. Prvi tekst je bio "Ponovo možeš pokušati u...", odmah iza backendovog "Pokušaj ponovo kasnije", pa je "ponovo" stajalo dvaput. Vidio sam to tek na screenshotu.
+Kod `429` se iz `Retry-After` doda sat sljedećeg pokušaja ("Sljedeći pokušaj je moguć u 12:27."). Piše sat, ne "za 12 minuta", jer uz broj ne treba padež. Sat je u zoni browsera, ne organizacije. Zaključana je prijava, ne termin, a na ekranu prijave organizacije ni nema. Prvi tekst je bio "Ponovo možeš pokušati u...", odmah iza backendovog "Pokušaj ponovo kasnije", pa je "ponovo" stajalo dvaput. Vidio sam to tek na screenshotu.
 
 Osoba koja dođe preko pozivnice ranije se poslije registracije odmah vraćala na pozivnicu. Sad mora prvo potvrditi email, a link iz maila se otvara u novom tabu. Link "Na prijavu" na ekranu inboxa zato nosi zapamćenu adresu pozivnice, pa kad se osoba vrati u stari tab i prijavi, završi na pozivnici. Ako stari tab zatvori, mora ponovo otvoriti link pozivnice iz maila. Ovo pokriva Vitest test s lažnim backendom, ne Playwright.
 
 Na `/nalog` su izvoz i brisanje. Izvoz je fajl `slotbook-moji-podaci-<datum>.json`, jer backend ne šalje `Content-Disposition`. Brisanje traži lozinku i drugi klik, a fokus poslije prvog klika ide na "Odustani", da Enter ne obriše nalog. Kod `409` se ispod poruke nabroje organizacije i resursi iz odgovora. Poslije uspjeha `api/nalog.js` zaboravi token (kao odjava), keš se obriše, a prijava kaže "Nalog je obrisan.".
 
-Link na nalog je ime u zaglavlju, a ne posebna stavka "Moj nalog". Sa četiri stavke se zaglavlje na 375 px lomilo u dva reda.
+Link na nalog je ime u zaglavlju, bez posebne stavke "Moj nalog". Sa četiri stavke se zaglavlje na 375 px lomilo u dva reda.
 
 Četrnaest mutacija, sve padaju: `json()` na praznom tijelu, `Retry-After` se ne čita, `429` bez sata, registracija opet prijavljuje, token ostaje poslije brisanja, bez fokusa na "Odustani", brisanje na prvi klik, "Na prijavu" bez adrese pozivnice, potvrda iza čuvara, prijava bez poruke o brisanju, `401` bez podsjetnika, istekao link bez forme za novi, `409` bez spiskova, pogrešna lozinka nije na polju.
 
@@ -856,7 +856,7 @@ Frontend job pokreće Oxlint, Vitest i build na Node 26, istom kao lokalno. Prij
 
 ## OWASP Top 10:2025, a ne 2021
 
-Plan je tražio "OWASP Top 10 prolaz", bez godine. Uzeo sam listu iz 2025 (top10.owasp.org/2025), jer je novija i ima dvije stavke koje se ovdje stvarno tiču projekta: lanac zavisnosti (A03) i rukovanje greškama (A10). Prolaz je u `docs/SIGURNOST.md`, i za svaku stavku su navedeni testovi po imenu, a ne opis. Tvrdnje koje sam pisao napamet sam provjerio u kodu prije commita, i četiri su bile netačne (koja granica važi za prijavu, a koja za registraciju, actionlint u CI-ju, broj PR-ova kroz Dependency Review, broj upita).
+Plan je tražio "OWASP Top 10 prolaz", bez godine. Uzeo sam listu iz 2025 (top10.owasp.org/2025), jer je novija i ima dvije stavke koje se ovdje stvarno tiču projekta: lanac zavisnosti (A03) i rukovanje greškama (A10). Prolaz je u `docs/SIGURNOST.md`, i uz svaku stavku su testovi navedeni po imenu, bez opisa. Tvrdnje koje sam pisao napamet sam provjerio u kodu prije commita, i četiri su bile netačne (koja granica važi za prijavu, a koja za registraciju, actionlint u CI-ju, broj PR-ova kroz Dependency Review, broj upita).
 
 Prvi CodeQL na javnom repou je pao: "CodeQL analyses from advanced configurations cannot be processed when the default setup is enabled". U postavkama je bio uključen i GitHubov default setup. Poslije "Switch to advanced" i ponovnog pokretanja su obje analize zelene.
 
@@ -880,7 +880,7 @@ U Spring Bootu 4.1 su `/actuator/health/liveness` i `/actuator/health/readiness`
 
 Sad je `management.endpoint.health.group.readiness.include=readinessState,db`. Readiness kaže "šalji mi promet": ako baza ne odgovara, vrati `503`. Liveness kaže "proces je živ, ne restartuj me" i bazu namjerno ne gleda. Da je gleda, Neon koji se budi iz hladnog starta bi natjerao Render da restartuje zdravu aplikaciju, a restart bazu ne popravi.
 
-Render ima jednu adresu za health check i koristi je i za deploy (nova verzija dobije promet tek kad vrati `2xx`) i za praćenje dok radi. Zato tamo ide `/actuator/health/readiness`. Detalji (koja komponenta je pala) se ne prikazuju, ostaje samo `{"status":"UP"}`.
+Render ima jednu adresu za health check i koristi je i za deploy (nova verzija dobije promet tek kad vrati `2xx`) i za praćenje dok radi. Tamo zato ide `/actuator/health/readiness`. Detalji (koja komponenta je pala) se ne prikazuju, ostaje samo `{"status":"UP"}`.
 
 Dokaz: `HealthApiTest`. Obje adrese su otvorene bez prijave, readiness ima `db`, a liveness nema, i readiness vrati `503` kad aplikacija objavi `REFUSING_TRAFFIC`, dok liveness ostaje `200`. Mutacija: bez `readinessState` u grupi zadnji test padne s `expected:<503> but was:<200>`. Nisam provjerio šta Render radi kad readiness padne dok aplikacija već radi.
 
@@ -1034,7 +1034,7 @@ Besplatan resurs ima cijenu 0, a ne `NULL`. Tako nema trećeg stanja ("cijena ni
 
 Valuta je zasad KM za sve organizacije i nije kolona. Nisam još provjerio da li Stripe prima BAM za Checkout. To se provjerava u koraku 2, a ako ne prima, ide EUR i to se ovdje upiše. Provjereno 24.11.2026: Stripe sandbox je otvorio Checkout sesiju za 15 KM u valuti `bam`, pa ostaje KM.
 
-U formi je cijena obično tekstualno polje s `inputMode="decimal"`, a ne `type="number"`. Tako se na telefonu otvori tastatura s brojevima, a može se upisati i `7,50` sa zarezom, kako se ovdje piše. Šta `type="number"` radi sa zarezom zavisi od browsera i jezika, to nisam htio pogađati. Pretvaranje u feninge je u `resursi/cijena.js` i ne množi decimalni broj sa 100, jer je `0.29 * 100` u JavaScriptu `28.999999999999996`. Unos koji nije iznos (`15 KM`, `-5`, `7,555`) forma ne šalje, nego napiše šta treba upisati. Da je išao kao `Number('15 KM')`, to je `NaN`, JSON ga pošalje kao `null`, a backend bi od toga napravio besplatan termin.
+U formi je cijena obično tekstualno polje s `inputMode="decimal"` umjesto `type="number"`. Tako se na telefonu otvori tastatura s brojevima, a može se upisati i `7,50` sa zarezom, kako se ovdje piše. Šta `type="number"` radi sa zarezom zavisi od browsera i jezika, to nisam htio pogađati. Pretvaranje u feninge je u `resursi/cijena.js` i ne množi decimalni broj sa 100, jer je `0.29 * 100` u JavaScriptu `28.999999999999996`. Unos koji nije iznos (`15 KM`, `-5`, `7,555`) forma ne šalje, nego napiše šta treba upisati. Da je išao kao `Number('15 KM')`, to je `NaN`, JSON ga pošalje kao `null`, a backend bi od toga napravio besplatan termin.
 
 ## Plaćen termin čeka uplatu, Stripe Checkout (24.11.2026)
 
@@ -1054,7 +1054,7 @@ Serija za plaćen termin se zasad odbija (`400` za `weeks`), jer bi svaka sedmic
 
 ## Webhook: potpis i isti događaj dvaput (24.11.2026)
 
-`POST /api/stripe/webhook` je javna ruta, jer Stripe nema naš token. Pravo daje potpis: Stripe potpiše `vrijeme.tijelo` HMAC-SHA256 tajnom webhooka, a `Webhook.constructEvent` iz biblioteke to provjeri prije čitanja JSON-a. Zato kontroler prima tijelo kao `String`, tačno kako je stiglo. Da ga Jackson pročita u objekat, potpis više ne bi odgovarao. Potpis stariji od 5 minuta se odbija, da se snimljen pravi zahtjev ne može poslati ponovo, a vrijeme dolazi iz našeg `Clock` beana. Neispravan, izmijenjen ili prestar zahtjev dobija `400` i ne mijenja ništa. Bez tajne u konfiguraciji svaki webhook pada.
+`POST /api/stripe/webhook` je javna ruta, jer Stripe nema naš token. Pravo daje potpis: Stripe potpiše `vrijeme.tijelo` HMAC-SHA256 tajnom webhooka, a `Webhook.constructEvent` iz biblioteke to provjeri prije čitanja JSON-a. Kontroler zato prima tijelo kao `String`, tačno kako je stiglo. Da ga Jackson pročita u objekat, potpis više ne bi odgovarao. Potpis stariji od 5 minuta se odbija, da se snimljen pravi zahtjev ne može poslati ponovo, a vrijeme dolazi iz našeg `Clock` beana. Neispravan, izmijenjen ili prestar zahtjev dobija `400` i ne mijenja ništa. Bez tajne u konfiguraciji svaki webhook pada.
 
 Isti događaj može stići dvaput. Stripe ga šalje ponovo kad ne dobije naš `2xx`, npr. kad se odgovor izgubi, i to je normalno ponašanje, ne greška. Nisam pravio tabelu obrađenih događaja. Uplata mijenja stanje samo iz `OPEN` (u `PAID`, `REFUNDED` ili `EXPIRED`), i to pod lockom rezervacije. Drugi isti događaj čeka prvi, nađe `PAID` i ne radi ništa. Tabela s ID-jem događaja bi trebala za događaje koji ne mijenjaju stanje, a takve ne obrađujemo. Dokaz su dva testa: isti događaj poslan dvaput i pet istih dostava u istom trenutku. Kad se provjera `OPEN` izbaci, oba padnu, jer drugi događaj vidi potvrđenu rezervaciju i vrati novac.
 
@@ -1072,7 +1072,7 @@ Pravi webhook sa Stripe CLI (`stripe listen`) nisam još provjerio. Testovi potp
 
 Otkazana plaćena rezervacija vraća cijeli iznos, bez obzira ko je otkazao. Klijent otkazuje samo do roka na resursu, a poslije roka ne može ni otkazati, pa djelimičan povrat ne treba. Osoblje otkazuje i u zadnji čas (bolest, kvar), i tada klijent nije kriv. Pravilo s procentima po vremenu (npr. pola novca dan prije) nije u planu i nisam ga uvodio.
 
-Rezervacija pušta termin na četiri mjesta: otkazivanje, odbijanje, istek (posao, i pod lockom resursa kad neko rezerviše) i brisanje naloga, koje buduće rezervacije otkazuje jednim SQL-om, mimo `BookingService`. Brisanje naloga sam skoro preskočio, a tu bi plaćena rezervacija bila otkazana bez povrata. Sva četiri mjesta objave `BookingReleased`, a paket plaćanja ga sluša. Događaj, a ne poziv, jer `PaymentService` već zove `BookingService`, pa bi direktan poziv napravio krug između ta dva beana.
+Rezervacija pušta termin na četiri mjesta: otkazivanje, odbijanje, istek (posao, i pod lockom resursa kad neko rezerviše) i brisanje naloga, koje buduće rezervacije otkazuje jednim SQL-om, mimo `BookingService`. Brisanje naloga sam skoro preskočio, a tu bi plaćena rezervacija bila otkazana bez povrata. Sva četiri mjesta objave `BookingReleased`, a paket plaćanja ga sluša. Ide preko događaja, jer `PaymentService` već zove `BookingService`, pa bi direktan poziv napravio krug između ta dva beana.
 
 Slušalac radi dvije stvari u dva različita trenutka. Povrat novca je sinhron (`@EventListener`), u transakciji onoga ko je otkazao. Ako Stripe povrat odbije, otkazivanje se poništi i klijent dobije `503`, pa rezervacija ostaje potvrđena i plaćena. Obrnut redoslijed (otkaži, pa vrati novac poslije commita) bi u tom slučaju ostavio otkazanu rezervaciju s novcem kod nas i bez traga da ga treba vratiti. Cijena: Stripe poziv je unutar transakcije otkazivanja.
 
@@ -1140,7 +1140,7 @@ Rezultat (25.11.2026): Render pušta 2525. Nov nalog na Vercelu dobije mail za p
 
 CI je pao na `DemoApiTest` s `ERROR: deadlock detected` na `TRUNCATE` svih tabela. Isti kod je prošao pola sata ranije. Uzrok: `TRUNCATE` zaključava tabele jednu po jednu, a `NotificationJob` (svakih 30 s) i `BookingJob` (svake minute) ih za to vrijeme čitaju svojim redom. U Postgresovoj poruci je proces 71 (`TRUNCATE`) čekao tabelu koju drži proces 70, a 70 je čekao `AccessShareLock`, znači običan `SELECT`, na tabeli koju je `TRUNCATE` već zaključao. Koji je posao bio proces 70 nisam utvrdio, baza iz testa je već bila ugašena.
 
-Nije samo problem testa. Na Renderu demo profil radi isto vraćanje svaki sat i pri pokretanju, dok isti poslovi rade. Svaki sat bi greška samo otišla u log. Za pokretanje (`ApplicationReadyEvent`) mislim da izuzetak sruši start aplikacije, ali to nisam provjerio.
+Isto se dešava i van testa. Na Renderu demo profil radi isto vraćanje svaki sat i pri pokretanju, dok isti poslovi rade. Svaki sat bi greška samo otišla u log. Za pokretanje (`ApplicationReadyEvent`) mislim da izuzetak sruši start aplikacije, ali to nisam provjerio.
 
 Birao sam između dvije stvari. Isključiti `@Scheduled` u testovima bi dalo zelen CI za pet minuta, ali bi sakrilo grešku koja postoji u produkciji. Uzeo sam ono što Postgres i preporučuje: transakcija koja izgubi u deadlocku se ponovi. `osvjeziAkoTreba` sada ide kroz `TransactionTemplate`, s najviše tri pokušaja na `PessimisticLockingFailureException`. Petlja mora biti oko transakcije, jer je prekinuta transakcija mrtva, a `@Transactional` na metodi koja se zove iz iste klase ne bi ni prošao kroz proxy. API sam provjerio u našem `spring-tx` 7.0.10 kroz `javap`.
 
@@ -1170,7 +1170,7 @@ Token linka nije nasumičan, nego HMAC nad ID-jem linka (`LinkToken`, ključ izv
 
 Brojanje ulazaka je jedan `UPDATE invite_links SET uses = uses + 1 WHERE ... AND uses < max_uses`. Ako ažurira nula redova, link je pun, a upis članstva u istoj transakciji se vrati. Prvo se upisuje članstvo (`INSERT ... ON CONFLICT DO NOTHING`), pa se tek onda broji, da osoba koja je već član ne potroši mjesto. Ona dobije `200` s `alreadyMember: true` i poruku "već si član", a ne grešku. `InviteLinkIstovremenoTest` pusti 20 niti na link s 5 mjesta: tačno 5 uđe, 15 dobije "pun", a broj članova i `uses` su oba 5. Ulazak traži potvrđen email. Prijava ga već traži, pa je ovo druga linija odbrane.
 
-Token je u putanji (`/pridruzi/{token}`), a ne iza `#` kao kod pozivnice na email. Link s plakata je ionako javan za svakog ko stoji pred vratima. Pregled linka (`GET /api/invite-links/{token}`) i ulazak imaju granicu po IP adresi, 30 u minuti, da se tokeni ne pogađaju (`AuthRateLimitInterceptor`, sada i za javne linkove).
+Token je u putanji (`/pridruzi/{token}`), za razliku od pozivnice na email, gdje je iza `#`. Link s plakata je ionako javan za svakog ko stoji pred vratima. Pregled linka (`GET /api/invite-links/{token}`) i ulazak imaju granicu po IP adresi, 30 u minuti, da se tokeni ne pogađaju (`AuthRateLimitInterceptor`, sada i za javne linkove).
 
 Kod uloga i uklanjanja sam birao šta raditi sa zadnjim adminom i s članom koji vodi resurse. Organizacija bez admina nema ko da je vodi, pa se zadnji admin ne spušta ni ne uklanja (`409`). Dva admina koja u istom trenutku uklanjaju jedan drugog bi oba vidjela "ima još jedan admin", pa promjena prvo zaključa red organizacije (`SELECT ... FOR UPDATE`). Član koji vodi resurse se ne uklanja i ne postaje klijent dok resurse ne preda drugom (`409` sa spiskom naziva u polju `resursi`). Baza bi brisanje odbila i sama, strani ključ resursa ide na članstvo, ali kao `500` bez objašnjenja. Deaktivirani resursi se broje, jer i oni imaju taj strani ključ.
 
@@ -1178,11 +1178,11 @@ Buduće rezervacije uklonjenog člana se otkazuju (`PENDING` i `CONFIRMED` s po�
 
 Otvorene pozivnice na email admin sada vidi i može povući. Povučena se briše, a s njom i mail koji još nije otišao. Mail mora ići prvi, jer CHECK u `notifications` traži da pozivnica koja čeka slanje ima `invite_id`, a strani ključ je `ON DELETE SET NULL`.
 
-Šta nisam riješio: ko napravi nalog preko linka, potvrdi email u drugom tabu i tamo se prijavi, ne vrati se sam na `/pridruzi`. Mora ponovo skenirati kod ili otvoriti link. Plakat sam štampao samo u PDF iz Edgea (A4, jedna strana), ne na pravom štampaču, i QR s ekrana nisam skenirao pravim telefonom.
+Ostala je jedna rupa: ko napravi nalog preko linka, potvrdi email u drugom tabu i tamo se prijavi, ne vrati se sam na `/pridruzi`. Mora ponovo skenirati kod ili otvoriti link. Plakat sam štampao samo u PDF iz Edgea (A4, jedna strana), ne na pravom štampaču, i QR s ekrana nisam skenirao pravim telefonom.
 
 ## Pravila korištenja i nedolasci (26.11.2026)
 
-U čitaonici se dešava da jedna osoba drži sto pet dana unaprijed, a konsultacije stižu u zadnji čas. Resurs zato dobija tri opciona pravila: najviše budućih rezervacija po osobi, koliko dana unaprijed i najmanje minuta prije početka. Organizacija dobija jedno: toliko nedolazaka u zadnjih toliko dana daje blokadu od toliko dana. Sve je `NULL` kad pravila nema, a granice čuva i baza (CHECK u V43). Kod nedolazaka idu sva tri broja ili nijedan, i to je jedan CHECK, a ne tri.
+U čitaonici se dešava da jedna osoba drži sto pet dana unaprijed, a konsultacije stižu u zadnji čas. Resurs zato dobija tri opciona pravila: najviše budućih rezervacija po osobi, koliko dana unaprijed i najmanje minuta prije početka. Organizacija dobija jedno: toliko nedolazaka u zadnjih toliko dana daje blokadu od toliko dana. Sve je `NULL` kad pravila nema, a granice čuva i baza (CHECK u V43). Kod nedolazaka idu sva tri broja ili nijedan, i to čuva jedan CHECK za sva tri.
 
 Blokada se ne čuva nigdje, nego se računa iz rezervacija sa statusom `NO_SHOW`: broje se one s početkom u zadnjih X dana, a blokada traje do zadnjeg nedolaska plus Y dana. Drugi put je bila tabela blokada koju posao upisuje i briše, ali tada treba paziti da se slaže s rezervacijama (provider ispravi pogrešan `NO_SHOW` i blokada mora nestati). Ovako se ispravka vidi odmah. Cijena je jedan upit više po rezervaciji, a za njega je parcijalni indeks `bookings_nedolasci` (`client_id, start_time WHERE status = 'NO_SHOW'`).
 
@@ -1194,7 +1194,7 @@ Admin i provider nisu ograničeni. Oni rezervišu i za druge (student koji je zv
 
 Frontend klijentu ne nudi termine koji su prerano ili predaleko (`kalendar/pravila.js`, isti račun po zoni organizacije). Granicu po osobi ne skriva, jer zavisi od rezervacija na drugim sedmicama, pa za nju stigne poruka s backenda. Blokada je traka iznad Mojih rezervacija (`GET /api/me/blocks`). Pravila se mijenjaju u formi resursa i na novoj stranici `/o/{slug}/postavke`, a promjena pravila nedolazaka ide u audit log.
 
-Šta nisam provjerio: pravila računaju od pravog trenutka, pa testovi prave termine relativno od danas. Test da se "dana unaprijed" broji po danu u Sarajevu, a ne u UTC-u (termin u 23:30 UTC je već sljedeći dan), postoji samo na frontendu (`pravila.test.js`). Backend računa isto, preko `LocalDate` u zoni organizacije, ali poseban test za to nema, a ni test preko prelaska na ljetno vrijeme.
+Pravila računaju od pravog trenutka, pa testovi prave termine relativno od danas. Test da se "dana unaprijed" broji po danu u Sarajevu, a ne u UTC-u (termin u 23:30 UTC je već sljedeći dan), postoji samo na frontendu (`pravila.test.js`). Backend računa isto, preko `LocalDate` u zoni organizacije, ali poseban test za to nema, a ni test preko prelaska na ljetno vrijeme.
 
 ## Ekran na vratima (26.11.2026)
 
@@ -1206,29 +1206,39 @@ Javni odgovor nema ništa o ljudima: termin je samo vrijeme i broj slobodnih mje
 
 Promjene stižu kroz SSE bez prijave (`/api/screens/{token}/stream`), kao kalendar, samo što je ključ ekran, a ne resurs. Ugašen ekran odmah gubi vezu, a ponovno spajanje dobije 404, pa ekran kaže da je ugašen. Javne rute idu kroz istu granicu po IP adresi kao pozivni link (30 u minuti). Ekran zato ne osvježava češće od jednom u 10 sekundi, uz osvježavanje svakih 5 minuta za novi dan. Ograničenje: više ekrana u zgradi iza iste IP adrese dijeli tih 30. Četiri ekrana stanu, deset vjerovatno ne. Ekran je uvijek taman, a Wake Lock traži da se uređaj ne ugasi, gdje browser to podržava.
 
-Usput sam našao grešku koja je postojala i prije: kad stranica bez sesije pri učitavanju dobije 401 na refresh, `SesijaProvider` je brisao cijeli keš upita. Javna stranica čiji je upit u tom trenutku bio u letu ostala je zauvijek na "Učitava se". Na `/pridruzi` se to nije vidjelo samo zato što su odgovori stizali drugim redom. Sad se keš briše samo kad istekne sesija osobe koja je bila prijavljena.
+Tu se pokazala i greška koja je postojala i prije: kad stranica bez sesije pri učitavanju dobije 401 na refresh, `SesijaProvider` je brisao cijeli keš upita. Javna stranica čiji je upit u tom trenutku bio u letu ostala je zauvijek na "Učitava se". Na `/pridruzi` se to nije vidjelo samo zato što su odgovori stizali drugim redom. Sad se keš briše samo kad istekne sesija osobe koja je bila prijavljena.
 
-Šta nisam provjerio: ekran nisam držao na pravom tabletu ni TV-u. Wake Lock i cijeli ekran sam vidio samo u Edgeu na računaru. Stariji iPad bez Wake Locka treba podesiti ručno da se ne gasi. Nisam mjerio koliko upita treba ekran organizacije sa šest resursa. Po kodu je oko pet po resursu, i to će se vidjeti kod "Nađi slobodno", gdje se broj upita mjeri.
+Ekran nisam držao na pravom tabletu ni TV-u. Wake Lock i cijeli ekran sam vidio samo u Edgeu na računaru. Stariji iPad bez Wake Locka treba podesiti ručno da se ne gasi. Nisam mjerio koliko upita treba ekran organizacije sa šest resursa. Po kodu je oko pet po resursu, i to će se vidjeti kod "Nađi slobodno", gdje se broj upita mjeri.
 
 ## Nađi slobodno (26.11.2026)
 
-`GET /api/organizations/{id}/free-slots` ne računa termine na novi način, nego za svaki aktivan resurs pozove isti `FreeSlotService.calendar` kao kalendar i filtrira po satu početka u zoni organizacije. Tako ne postoje dvije verzije pravila "šta je slobodno", ali broj upita raste s brojem resursa. Izmjerio sam ga Hibernate statistikom u `OrganizationFreeSlotsApiTest` (Testcontainers, dva dana): jedan resurs 9 SQL upita, šest resursa 34, tačno 5 po resursu. Test pada ako rast nije linearan ili ako pređe 7 po resursu. Za čitaonicu sa šest stolova to je prihvatljivo. Za organizaciju sa sto resursa nije, i tada bi trebao jedan upit za sve resurse. Zato je raspon najviše dva dana, a sve preko toga je 400.
+`GET /api/organizations/{id}/free-slots` ne računa termine na novi način, nego za svaki aktivan resurs pozove isti `FreeSlotService.calendar` kao kalendar i filtrira po satu početka u zoni organizacije. Tako ne postoje dvije verzije pravila "šta je slobodno", ali broj upita raste s brojem resursa. Izmjerio sam ga Hibernate statistikom u `OrganizationFreeSlotsApiTest` (Testcontainers, dva dana): jedan resurs 9 SQL upita, šest resursa 34, tačno 5 po resursu. Test pada ako rast nije linearan ili ako pređe 7 po resursu. Za čitaonicu sa šest stolova to je prihvatljivo. Za organizaciju sa sto resursa nije, i tada bi trebao jedan upit za sve resurse. Raspon je zato najviše dva dana, a sve preko toga je 400.
 
 Klijentu se ne nude termini koje po pravilima resursa ne bi mogao uzeti (najava unaprijed, broj dana unaprijed), isto kao u kalendaru. Granica aktivnih rezervacija po osobi se ne filtrira, jer zavisi od toga gdje već ima termine, pa je provjeri tek rezervacija. Admin i ko vodi termine vide sve.
 
 Brzi izbori se računaju na frontendu u zoni organizacije, u trenutku klika. "Sad" su naredna tri sata, računajući sat u kojem jesmo. Klik na termin vodi na `/o/{slug}/r/{id}?termin=...`, a kalendar kad stignu termini sam otvori potvrdu. Ako je termin u međuvremenu uzet, kaže to i ostavi otvoren taj dan. U traci dana kalendara ispod datuma je broj slobodnih termina (od 900px i riječ "slobodno"), a čitač ekrana čuje "utorak, 20. novembar, 2 slobodna".
 
-Šta nisam mjerio: vrijeme odgovora na pravom serveru (Render i Neon) za organizaciju s više resursa. Broj upita je izmjeren, a milisekunde nisu.
+Vrijeme odgovora na pravom serveru (Render i Neon) za organizaciju s više resursa nisam mjerio. Broj upita je izmjeren, milisekunde nisu.
 
 ## PWA i push obavijesti (26.11.2026)
 
-Za PWA sam uzeo `vite-plugin-pwa` 2.0.0, jer u `peerDependencies` izričito ima `vite ^8.0.0` (provjereno s `npm view`, izdanje od 3.10.2026). Koristim ga u načinu `injectManifest`: service worker je moj fajl, `src/sw.js`, a plugin mu pri buildu upiše spisak statike s heševima i napravi manifest. `generateSW` bi bio kraći, ali push događaje i "nema mreže" bih onda pisao kroz opcije Workboxa, a ovako se cijeli service worker može pročitati u jednom fajlu od pedesetak linija. Service worker radi tri stvari: čuva statiku iz builda (29 fajlova, oko 1 MB), na navigaciju bez mreže daje `offline.html` i prima push. `/api` ne dira nikad. Termin iz keša bi mogao biti slobodan, a već je zauzet, pa bez mreže aplikacija ne pokazuje termine, nego kaže da nema mreže. U dev modu service workera nema, da keš ne smeta dok se radi. Zato e2e testovi (koji idu na `npm run dev`) ne prolaze kroz njega, a provjerio sam ga ručno na `vite preview`: registruje se, preuzme stranicu, a bez mreže `/rezervacije` pokaže "Nema mreže" u obje teme. `npm audit` javlja 4 umjerene ranjivosti u `glob` i `minimatch` preko `workbox-build`. To je alat za build, pa u produkcijskim paketima ranjivosti nema (`npm audit --omit=dev`: 0). Popravka koju predlaže npm je vraćanje na `vite-plugin-pwa` 1.1.0, koji ne podržava Vite 8, pa sam ostao na 2.0.0.
+Za PWA sam uzeo `vite-plugin-pwa` 2.0.0, jer u `peerDependencies` izričito ima `vite ^8.0.0` (provjereno s `npm view`, izdanje od 3.10.2026). Koristim ga u načinu `injectManifest`: service worker je moj fajl, `src/sw.js`, a plugin mu pri buildu upiše spisak statike s heševima i napravi manifest. `generateSW` bi bio kraći, ali push događaje i "nema mreže" bih onda pisao kroz opcije Workboxa. Ovako se cijeli service worker može pročitati u jednom fajlu od pedesetak linija.
+
+Service worker radi tri stvari: čuva statiku iz builda (29 fajlova, oko 1 MB), na navigaciju bez mreže daje `offline.html` i prima push. `/api` ne dira nikad. Termin iz keša bi mogao biti slobodan, a već je zauzet, pa bez mreže aplikacija ne pokazuje termine, nego kaže da nema mreže. U dev modu service workera nema, da keš ne smeta dok se radi. E2e testovi idu na `npm run dev`, pa ne prolaze kroz njega. Provjerio sam ga ručno na `vite preview`: registruje se, preuzme stranicu, a bez mreže `/rezervacije` pokaže "Nema mreže" u obje teme.
+
+`npm audit` javlja 4 umjerene ranjivosti u `glob` i `minimatch` preko `workbox-build`. To je alat za build, pa u produkcijskim paketima ranjivosti nema (`npm audit --omit=dev`: 0). Popravka koju predlaže npm je vraćanje na `vite-plugin-pwa` 1.1.0, koji ne podržava Vite 8, pa sam ostao na 2.0.0.
 
 Za Web Push na backendu sam birao između `nl.martijndwars:web-push` 5.1.2 i `com.zerodeplibs:zerodep-web-push-java` 2.1.5. Prvi vuče BouncyCastle i Apache async HTTP klijent, a zadnje izdanje mu je iz februara 2025. Drugi nema zavisnosti, šifruje preko JCA, VAPID JWT pravi sam i šalje preko JDK `HttpClient`, a zadnje izdanje je iz decembra 2025. Uzeo sam drugi. Nijedan nije baš živ projekat, ali drugi ima manje stvari koje mogu zastarjeti. Metode sam provjerio u samom jaru (`javap`), a ne po sjećanju. Ključeve u obliku iz `npx web-push generate-vapid-keys` (base64url) biblioteka ne prima direktno, pa privatni ključ pravim JCA-om iz broja d i parametara krive P-256.
 
-Push je drugi kanal istog outboxa (`notifications.channel`, V45). Uz mail za ponudu s liste čekanja, potvrdu, odbijanje i podsjetnik nastaje još po jedan red za svaki browser korisnika, u istoj transakciji. Ostale obavijesti (pozivnica, lozinka, nalog) idu samo mailom. Slanje ide istim poslom i istim pokušajima (1, 5, 25, 125 minuta). Kad push servis vrati 404 ili 410, browser više nema tu pretplatu, pa se ona briše, a s njom (`ON DELETE CASCADE`) i njene neposlane obavijesti. Briše se JPQL upitom, a ne preko entiteta, jer baza kaskadom obriše i red koji se upravo šalje, a Hibernate za to ne zna. Server šalje samo na HTTPS adrese poznatih push servisa (Google, Mozilla, Apple, Microsoft). Endpoint dolazi iz browsera, odnosno od korisnika, pa bi bez te liste neko mogao natjerati server da šalje POST na adresu u njegovoj mreži. Isti browser ima jedan endpoint: ako se na njemu prijavi neko drugi, pretplata prelazi na tu osobu, a odjava pretplatu ovog browsera briše. Na zajedničkom računaru sljedeća osoba tako ne dobija tuđe obavijesti. Bez VAPID ključeva u okruženju push je isključen: `/api/push/public-key` kaže `enabled: false`, pretplate se ne primaju, a mailovi idu kao i prije. U `.env.example` su varijable prazne, a ne lažne, jer bi lažan ključ oborio pokretanje.
+Push je drugi kanal istog outboxa (`notifications.channel`, V45). Uz mail za ponudu s liste čekanja, potvrdu, odbijanje i podsjetnik nastaje još po jedan red za svaki browser korisnika, u istoj transakciji. Ostale obavijesti (pozivnica, lozinka, nalog) idu samo mailom. Slanje ide istim poslom i istim pokušajima (1, 5, 25, 125 minuta). Kad push servis vrati 404 ili 410, browser više nema tu pretplatu, pa se ona briše, a s njom (`ON DELETE CASCADE`) i njene neposlane obavijesti. Briše se JPQL upitom umjesto preko entiteta, jer baza kaskadom obriše i red koji se upravo šalje, a Hibernate za to ne zna.
 
-Kako sam to provjerio: `PushApiTest` diže lažni push servis na localhostu. Pokazuje da ponuda ide na oba uređaja, da 410 briše pretplatu, da 503 dobija ponovni pokušaj, da tuđi browser ne može ni ugasiti ni testirati, i da brisanje naloga briše pretplate. Jedan test radi ono što radi browser: primljenu poruku dešifruje ključem "browsera" po RFC 8291 i provjerava VAPID potpis po RFC 8292. Taj kod sam napisao iz RFC-a, odvojeno od biblioteke, da test ne bi samo pokazao da se biblioteka slaže sama sa sobom. Šta nisam provjerio: dostavu na pravi telefon. Playwright pokreće Edge bez push servisa ("Registration failed - permission denied"), pa pravu pretplatu kod Googlea ili Microsofta nisam dobio. Na iPhoneu push radi samo kad je SlotBook dodan na početni ekran (iOS 16.4+), i to stoji na stranici Moj nalog. Probna obavijest ide odmah, mimo reda čekanja, da se na dugme vidi da li radi.
+Server šalje samo na HTTPS adrese poznatih push servisa (Google, Mozilla, Apple, Microsoft). Endpoint dolazi iz browsera, odnosno od korisnika, pa bi bez te liste neko mogao natjerati server da šalje POST na adresu u njegovoj mreži. Isti browser ima jedan endpoint: ako se na njemu prijavi neko drugi, pretplata prelazi na tu osobu, a odjava pretplatu ovog browsera briše. Na zajedničkom računaru sljedeća osoba tako ne dobija tuđe obavijesti.
+
+Bez VAPID ključeva u okruženju push je isključen: `/api/push/public-key` kaže `enabled: false`, pretplate se ne primaju, a mailovi idu kao i prije. U `.env.example` su varijable prazne, a ne lažne, jer bi lažan ključ oborio pokretanje.
+
+Kako sam to provjerio: `PushApiTest` diže lažni push servis na localhostu. Pokazuje da ponuda ide na oba uređaja, da 410 briše pretplatu, da 503 dobija ponovni pokušaj, da tuđi browser ne može ni ugasiti ni testirati, i da brisanje naloga briše pretplate. Jedan test radi ono što radi browser: primljenu poruku dešifruje ključem "browsera" po RFC 8291 i provjerava VAPID potpis po RFC 8292. Taj kod sam napisao iz RFC-a, odvojeno od biblioteke, da test ne bi samo pokazao da se biblioteka s bibliotekom sama sa sobom.
+
+Nisam provjerio dostavu na pravi telefon. Playwright pokreće Edge bez push servisa ("Registration failed - permission denied"), pa pravu pretplatu kod Googlea ili Microsofta nisam dobio. Na iPhoneu push radi samo kad je SlotBook dodan na početni ekran (iOS 16.4+), i to stoji na stranici Moj nalog. Probna obavijest ide odmah, mimo reda čekanja, da se na dugme vidi da li radi.
 
 ## Slike na Renderu ostaju na disku (26.11.2026)
 

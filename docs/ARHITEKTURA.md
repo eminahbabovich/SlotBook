@@ -293,15 +293,19 @@ erDiagram
     }
 ```
 
-Resurs ne pokazuje na `users` direktno, nego na par (organizacija, korisnik) u `organization_members`. Tako provider ne može biti neko izvan organizacije resursa, ni kad je Java kod pogrešan. Sva vremena su `TIMESTAMPTZ`, a ID-jevi UUID. Zašto je tako, piše u [ODLUKE.md](ODLUKE.md).
+Resurs ne pokazuje na `users` direktno, nego na par (organizacija, korisnik) u `organization_members`. Tako provider ne može biti neko izvan organizacije resursa, ni kad je Java kod pogrešan. Sva vremena su `TIMESTAMPTZ`, a ID-jevi UUID (razlozi su u [ODLUKE.md](ODLUKE.md)).
 
 ## Slobodni termini
 
-Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` ide kroz `FreeSlotService`, koji prvo pita `SlotService`, koji iz baze učita resurs sa zonom organizacije, sedmična pravila i izuzetke koji dodiruju traženi period. Onda sve to preda klasi `SlotCalculator`, koja nema ni Spring ni bazu i samo računa. Trenutno vrijeme dolazi iz `Clock` beana, pa se termini koji su već počeli ne nude. Na kraju `FreeSlotService` termine koje drži `PENDING` ili `CONFIRMED` rezervacija prebaci u listu `taken`, a uz svoju rezervaciju korisnik dobije i njen status.
+Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` ide kroz `FreeSlotService`, a on prvo pita `SlotService`. Taj iz baze učita resurs sa zonom organizacije, sedmična pravila i izuzetke koji dodiruju traženi period, pa sve preda klasi `SlotCalculator`, koja nema ni Spring ni bazu i samo računa. Trenutno vrijeme dolazi iz `Clock` beana, pa se termini koji su već počeli ne nude. Na kraju `FreeSlotService` termine koje drži `PENDING` ili `CONFIRMED` rezervacija prebaci u listu `taken`, a uz svoju rezervaciju korisnik dobije i njen status.
 
-## Slike i šta dolazi
+## Slike, poslovi i obavijesti
 
-Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, predviđeno za Cloudflare R2), a bira se preko `slotbook.storage.type`. Na produkciji je zasad disk, zašto je u [ODLUKE.md](ODLUKE.md). Pozadinski posao `BookingJob` (`@Scheduled`, svake minute) prebacuje istekle `PENDING` rezervacije u `EXPIRED` i zatvara potvrđene dan poslije kraja. Oba prelaza su po jedna SQL naredba koja mijenja status i piše historiju bez aktera. Isti posao upisuje podsjetnike za potvrđene termine u sljedećih 24 sata. Obavijesti idu kroz tabelu `notifications` (outbox): `BookingService` je upiše preko `NotificationService` u istoj transakciji kao promjenu rezervacije, a `NotificationJob` ih svakih 30 sekundi šalje kroz `NotificationSender`, jednu po jednu, svaku u svojoj transakciji (`FOR UPDATE SKIP LOCKED`). Tekst emaila (`subject`, `body`) se upiše kad obavijest nastane, pa pošiljalac ne zna ništa o rezervacijama. Paket `booking` zna za `notification`, a obrnuto ne, zato obavijest drži samo `booking_id`. Za ponudu s liste čekanja, potvrdu, odbijanje i podsjetnik uz mail nastaje i po jedan red s kanalom `PUSH` za svaki browser korisnika. Šalje ih isti posao, s istim ponovnim pokušajima.
+Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, predviđeno za Cloudflare R2), a bira se preko `slotbook.storage.type`. Na produkciji je zasad disk, a zašto, piše u [ODLUKE.md](ODLUKE.md).
+
+Pozadinski posao `BookingJob` (`@Scheduled`, svake minute) prebacuje istekle `PENDING` rezervacije u `EXPIRED` i zatvara potvrđene dan poslije kraja. Oba prelaza su po jedna SQL naredba koja mijenja status i piše historiju bez aktera. Isti posao upisuje podsjetnike za potvrđene termine u sljedećih 24 sata.
+
+Obavijesti idu kroz tabelu `notifications` (outbox): `BookingService` je upiše preko `NotificationService` u istoj transakciji kao promjenu rezervacije, a `NotificationJob` ih svakih 30 sekundi šalje kroz `NotificationSender`, jednu po jednu, svaku u svojoj transakciji (`FOR UPDATE SKIP LOCKED`). Tekst emaila (`subject`, `body`) se upiše kad obavijest nastane, pa pošiljalac ne zna ništa o rezervacijama. Paket `booking` zna za `notification`, a obrnuto ne, zato obavijest drži samo `booking_id`. Za ponudu s liste čekanja, potvrdu, odbijanje i podsjetnik uz mail nastaje i po jedan red s kanalom `PUSH` za svaki browser korisnika. Šalje ih isti posao, s istim ponovnim pokušajima.
 
 ## Frontend
 
