@@ -508,3 +508,17 @@ Za "Nađi slobodno" sam izmjerio Hibernate statistikom: jedan resurs 9 upita, š
 Push mi je bio najzanimljiviji. Biblioteka ne prima ključ u obliku koji daje `npx web-push generate-vapid-keys`, pa sam privatni ključ sklopio iz broja d i krive P-256 preko JCA. Pravi push na telefonu nisam vidio: Playwright pokreće Edge bez push servisa i javi `Registration failed - permission denied`. Umjesto toga test radi ono što bi radio browser, dešifruje poruku po RFC 8291 i provjeri VAPID potpis. Prvi put je pao na `Expecting actual not to be null`, jer JDK `HttpServer` zaglavlje piše kao `Content-encoding`, a ja sam tražio `Content-Encoding`.
 
 Iznenadilo me da je endpoint pretplate adresa koju šalje browser, znači korisnik. Bez liste poznatih push servisa server bi slao POST gdje god mu neko kaže.
+
+## Četvrtak, 26. novembar 2026, 19:15
+
+Zatvorio sam Fazu 12, uglavnom klikanjem po dashboardima.
+
+VAPID ključeve sam napravio sam i stavio na Render, a Claude je provjerio samo da `/api/push/public-key` vraća `enabled: true` i da ključ ima 87 znakova, bez ispisivanja. Za `VAPID_SUBJECT` sam pitao treba li razmak iza `mailto:`. Ne treba, Apple ga odbije.
+
+Stripe webhook se u novom dashboardu ne zove više "Add endpoint", nego "Create an event destination" u Workbenchu. Prvo sam mislio da je dovoljno dodati samo `whsec_`, a falio je i `sk_test_` na Renderu. Provjera je išla skriptom kroz pravu Checkout stranicu i tu je zapelo tri puta: Stripe drži polja za karticu i čak dugme "Pay" u iframeovima, pa obični `fill` na stranici čeka 30 s i padne. Rezervacija je na kraju prešla u `CONFIRMED`, a otkazivanje je vratilo novac.
+
+R2 sam preskočio jer Cloudflare traži karticu i za besplatni plan. Slike ostaju na disku Rendera.
+
+Nisam znao da Render broji 750 besplatnih sati po nalogu, a ne po servisu. Za jedan servis budan cijeli mjesec to je taman, 744.
+
+Claude je u README danas prepisao staru rečenicu da backup Neona nije napravljen, iako je napravljen 22.11. Uzeo ju je iz README-ja umjesto iz RUNBOOK-a.

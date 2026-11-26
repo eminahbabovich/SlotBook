@@ -185,7 +185,7 @@ svaki endpoint opisan u Swaggeru.
 | 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | gotovo |
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | gotovo |
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | gotovo |
-| 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | u izradi (redizajn gotov 25.11.2026, nova paleta 26.11.2026) |
+| 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | gotovo (26.11.2026; R2 i poddomen nisu urađeni, vidi korak 4) |
 | 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | ⏳ nije počelo |
 | 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s **tool calling**, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
 
@@ -443,7 +443,7 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    `DemoApiTest`, odluka u `docs/ODLUKE.md`.
 3. **Priprema za Vercel** ✅ (25.11.2026). `frontend/vercel.json` (rewrite `/api` na Render i
    `index.html` za rute), koraci za deploy, demo i varijable u `docs/RUNBOOK.md`.
-4. **Deploy (radim ja ručno):** (Vercel, `APP_URL` i demo ✅ 25.11.2026, `https://slot-book-delta.vercel.app`) Vercel projekat, `APP_URL` i `SPRING_PROFILES_ACTIVE=prod,demo` na
+4. **Deploy (radim ja ručno):** ✅ 26.11.2026. Vercel, `APP_URL` i demo 25.11. (`https://slot-book-delta.vercel.app`). Stripe varijable i webhook 26.11., provjereno test uplatom i povratom na produkciji. VAPID ključevi 26.11. UptimeRobot na liveness svakih 5 minuta 26.11. R2 nije uključen, jer Cloudflare i za besplatni plan traži karticu: slike ostaju na disku Rendera (`docs/ODLUKE.md`). Poddomen čeka vlastiti domen iz portfolio faze. Prvobitno: Vercel projekat, `APP_URL` i `SPRING_PROFILES_ACTIVE=prod,demo` na
    Renderu, Stripe varijable i webhook, R2, uptime monitor. Poslije svakog provjera iz RUNBOOK-a.
 5. **SMTP na Renderu** ✅ (25.11.2026). Brevo, port 2525 sa STARTTLS-om. Mail stiže, ali u spam (`docs/ODLUKE.md`). Besplatan SMTP servis (npr. Brevo ili Gmail s app lozinkom), varijable
    `MAIL_*` i `SPRING_MAIL_*` na Renderu. Provjera: nov nalog na Vercelu dobije mail za potvrdu,
@@ -460,11 +460,10 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
 7. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (✅ 25.11.2026, rezultat u
    `docs/RUNBOOK.md` i `docs/ODLUKE.md`: granica po IP-u kroz Vercel ne radi), live link (✅) i GIF
    toka u README, status faze.
-8. **Deadlock pri vraćanju dema** (25.11.2026, commitano, nije pushano): CI pao na `DemoApiTest`,
+8. **Deadlock pri vraćanju dema** ✅ (25.11.2026, pushano 26.11.): CI pao na `DemoApiTest`,
    `TRUNCATE` se sudarao s `@Scheduled` poslovima. Ponovni pokušaj kroz `TransactionTemplate`, test
    koji pravi deadlock namjerno, odluka u `docs/ODLUKE.md`. 506 backend testova prolazi lokalno.
-   **Sutra:** push i provjera CI-ja, pa ostatak koraka 4 (Stripe varijable i webhook na Renderu, R2,
-   uptime monitor), CI badge i poddomen, pa zatvaranje Faze 12 i Faza 13.
+   Ostatak koraka 4, CI badge i zatvaranje faze urađeni 26.11.2026.
 
 ## Dodaci prije Faze 13
 
@@ -674,6 +673,7 @@ Detaljne korake radimo zajedno kad dođemo do tog dijela.
 Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo šta ulazi.
 
 - Web push obavijesti / PWA (instalacija na telefon): prešlo u "Dodaci prije Faze 13", korak 5
+- Trajno skladište slika bez kartice: Backblaze B2 (10 GB besplatno, S3 API). Naš `S3StorageService` s njim nije proban, a B2 se zna buniti na nove checksum opcije AWS SDK-a
 - Sinhronizacija s Google Calendarom (dvosmjerna, za razliku od iCal pretplate)
 - Ocjene i komentari nakon termina
 - SMS podsjetnici
