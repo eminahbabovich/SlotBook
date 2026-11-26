@@ -1,10 +1,10 @@
 # Arhitektura
 
-Opis backenda kakav je sada. Frontend (Faza 7) je u izradi u `frontend/`, a ovdje će biti opisan na kraju te faze (korak 12).
+Opis backenda i frontenda kakvi su 26.11.2026, sa šemom do migracije V47. V46 i V47 nisu nove tabele, nego ispravke indeksa iz pregleda koda (`docs/ODLUKE.md`).
 
 ## Paketi i slojevi
 
-Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, `stats`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike), `observability` (ID zahtjeva u logu) i `status`.
+Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, `stats`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike), `observability` (ID zahtjeva u logu) i `status`. Kasnije su došli `audit` (dnevnik osjetljivih radnji), `ratelimit` (granica pokušaja prijave), `export` i `account` (izvoz i brisanje naloga), `payment` (Stripe), `screen` (ekran na vratima) i `demo` (podaci za demo profil). Lista čekanja, serije i iCal pretplata su u `booking`, pozivni linkovi u `organization`, a push pretplate u `notification`, jer su push i mail dva kanala istog outboxa.
 
 Unutar paketa je uvijek isti red: kontroler prima zahtjev i provjerava pristup, servis drži pravila i transakciju, repozitorij priča s bazom. Kontroler vraća samo DTO (`record`), nikad entitet. Repozitorij organizacija je vidljiv samo u paketu `organization`, pa paket `resource` do organizacije dolazi preko `OrganizationService`. Isto važi za rezervacije: `BookingRepository` vidi samo paket `booking`.
 
@@ -90,6 +90,15 @@ erDiagram
     organization_invites ||--o| notifications : "mail pozivnice"
     organizations ||--o{ audit_log : "dnevnik"
     users ||--o{ audit_log : "uradio"
+    resources ||--o{ waitlist_entries : "lista čekanja"
+    users ||--o{ waitlist_entries : "čeka"
+    users ||--o| calendar_feeds : "iCal link"
+    bookings ||--o{ payments : "uplate"
+    organizations ||--o{ invite_links : "pozivni linkovi"
+    organizations ||--o{ door_screens : "ekrani"
+    resources |o--o{ door_screens : "jedan resurs ili cijela organizacija"
+    users ||--o{ push_subscriptions : "browseri"
+    push_subscriptions ||--o{ notifications : "push kanal"
 
     users {
         uuid id PK
@@ -123,6 +132,9 @@ erDiagram
         varchar slug UK "CHECK formata"
         varchar timezone "IANA zona"
         timestamptz created_at
+        int no_show_limit "nedolasci, sva tri ili nijedno"
+        int no_show_window_days
+        int no_show_block_days
     }
     organization_members {
         uuid organization_id PK
@@ -153,6 +165,9 @@ erDiagram
         int cancel_notice_hours "rok za otkazivanje, 0 do 168"
         int capacity "mjesta u terminu, 1 do 100"
         int price_cents "u feninzima, 0 je besplatno"
+        int max_active_per_member "pravila samo za klijente"
+        int max_days_ahead
+        int min_notice_minutes
     }
     availability_rules {
         uuid id PK
@@ -180,6 +195,8 @@ erDiagram
         timestamptz created_at
         varchar idempotency_key "UNIQUE s client_id"
         bigint version "@Version"
+        uuid series_id "ista serija, bez FK"
+        int price_cents "cijena u trenutku rezervacije"
     }
     notifications {
         uuid id PK
@@ -197,6 +214,8 @@ erDiagram
         text body
         text ics "prilog uz potvrdu"
         varchar last_error
+        varchar channel "EMAIL ili PUSH"
+        uuid push_subscription_id FK "ON DELETE CASCADE"
     }
     audit_log {
         bigint id PK "redni broj, daje redoslijed"
@@ -212,6 +231,57 @@ erDiagram
         int failures
         timestamptz window_start
         timestamptz locked_until
+    }
+    waitlist_entries {
+        uuid id PK
+        uuid resource_id FK
+        uuid client_id FK
+        timestamptz start_time
+        timestamptz end_time
+        varchar status "WAITING, OFFERED, BOOKED, EXPIRED, CANCELLED"
+        timestamptz offered_until "CHECK: ponuda ima rok"
+    }
+    calendar_feeds {
+        uuid user_id PK
+        varchar token_hash UK
+        timestamptz created_at
+    }
+    payments {
+        uuid id PK
+        uuid booking_id FK
+        int amount_cents
+        varchar currency
+        varchar status "OPEN, PAID, EXPIRED, REFUNDED"
+        varchar stripe_session_id UK
+        varchar stripe_payment_intent_id "kad je novac uplaćen"
+        timestamptz expires_at
+    }
+    invite_links {
+        uuid id PK
+        uuid organization_id FK
+        varchar role "CHECK: samo CLIENT"
+        varchar token_hash UK
+        int max_uses
+        int uses "CHECK: ne preko max_uses"
+        timestamptz expires_at
+        timestamptz revoked_at
+        uuid created_by FK "ON DELETE SET NULL"
+    }
+    door_screens {
+        uuid id PK
+        uuid organization_id FK
+        uuid resource_id FK "(resource_id, organization_id): resurs iste organizacije"
+        varchar token_hash UK
+        timestamptz revoked_at
+        uuid created_by FK
+    }
+    push_subscriptions {
+        uuid id PK
+        uuid user_id FK
+        varchar endpoint UK "adresa push servisa"
+        varchar p256dh
+        varchar auth
+        varchar device
     }
     booking_events {
         uuid id PK
@@ -231,4 +301,8 @@ Slobodni termini nisu tabela. `GET /api/resources/{resourceId}/slots?from=&to=` 
 
 ## Slike i šta dolazi
 
-Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, Cloudflare R2 na produkciji), a bira se preko `slotbook.storage.type`. Pozadinski posao `BookingJob` (`@Scheduled`, svake minute) prebacuje istekle `PENDING` rezervacije u `EXPIRED` i zatvara potvrđene dan poslije kraja. Oba prelaza su po jedna SQL naredba koja mijenja status i piše historiju bez aktera. Isti posao upisuje podsjetnike za potvrđene termine u sljedećih 24 sata. Obavijesti idu kroz tabelu `notifications` (outbox): `BookingService` je upiše preko `NotificationService` u istoj transakciji kao promjenu rezervacije, a `NotificationJob` ih svakih 30 sekundi šalje kroz `NotificationSender`, jednu po jednu, svaku u svojoj transakciji (`FOR UPDATE SKIP LOCKED`). Tekst emaila (`subject`, `body`) se upiše kad obavijest nastane, pa pošiljalac ne zna ništa o rezervacijama. Paket `booking` zna za `notification`, a obrnuto ne, zato obavijest drži samo `booking_id`.
+Slika resursa ide kroz interface `StorageService`. Implementacije su `LocalStorageService` (folder na disku) i `S3StorageService` (S3-kompatibilno skladište, predviđeno za Cloudflare R2), a bira se preko `slotbook.storage.type`. Na produkciji je zasad disk, zašto je u [ODLUKE.md](ODLUKE.md). Pozadinski posao `BookingJob` (`@Scheduled`, svake minute) prebacuje istekle `PENDING` rezervacije u `EXPIRED` i zatvara potvrđene dan poslije kraja. Oba prelaza su po jedna SQL naredba koja mijenja status i piše historiju bez aktera. Isti posao upisuje podsjetnike za potvrđene termine u sljedećih 24 sata. Obavijesti idu kroz tabelu `notifications` (outbox): `BookingService` je upiše preko `NotificationService` u istoj transakciji kao promjenu rezervacije, a `NotificationJob` ih svakih 30 sekundi šalje kroz `NotificationSender`, jednu po jednu, svaku u svojoj transakciji (`FOR UPDATE SKIP LOCKED`). Tekst emaila (`subject`, `body`) se upiše kad obavijest nastane, pa pošiljalac ne zna ništa o rezervacijama. Paket `booking` zna za `notification`, a obrnuto ne, zato obavijest drži samo `booking_id`. Za ponudu s liste čekanja, potvrdu, odbijanje i podsjetnik uz mail nastaje i po jedan red s kanalom `PUSH` za svaki browser korisnika. Šalje ih isti posao, s istim ponovnim pokušajima.
+
+## Frontend
+
+`frontend/` je React s Viteom, u JavaScriptu. Paketi su opet po funkcionalnosti (`kalendar`, `rezervacije`, `clanovi`, `nalog`...). Backend zovu samo funkcije iz `src/api/`, preko jednog `apiFetch`, koji drži access token u memoriji, na `401` jednom obnovi sesiju (i kad tri zahtjeva padnu u isto vrijeme) i svaku grešku pretvori u `ApiError` s Problem Details tijelom. Stanje sa servera drži TanStack Query, a sesiju `SesijaProvider`. Vrijeme se prikazuje u zoni organizacije, kroz `src/vrijeme/`. Boje, fontovi i razmaci su samo u `src/tokeni.css`, a test pada ako se u kodu pojavi boja ili veličina fonta van tokena. U buildu je i service worker (`src/sw.js`) koji čuva samo statiku i prima push, a `/api` ne dira. Na Vercelu `vercel.json` prosljeđuje `/api` na Render, pa su frontend i backend za browser isti origin.

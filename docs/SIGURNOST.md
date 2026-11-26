@@ -82,6 +82,6 @@ Od 22.11.2026 CodeQL (`security-extended`) analizira Javu i JavaScript na svaki 
 
 ## Šta nije provjereno nigdje
 
-- Ništa od ovoga nije provjereno na produkcijskoj adresi. Zaglavlja, HSTS, CORS i IP iz `CF-Connecting-IP` su testirani kroz MockMvc i lokalno.
+- Zaglavlja i CORS sam 26.11.2026 provjerio curlom i na produkciji: `/api/status` i direktno na Renderu i kroz Vercel vraća CSP `default-src 'none'; frame-ancestors 'none'`, HSTS, `nosniff`, `X-Frame-Options: DENY` i `Referrer-Policy: no-referrer`. Preflight s tuđeg origina dobije `403`, a s Vercel adrese `200` s tom adresom u `Access-Control-Allow-Origin`. IP iz `CF-Connecting-IP` kroz Vercel ne radi kako treba: granica pokušaja prijave vidi Vercelovu adresu (`docs/RUNBOOK.md`).
 - Nema pentesta ni automatskog skeniranja žive aplikacije (npr. OWASP ZAP).
-- Frontend nema svoj CSP dok ne dobije host (Faza 12). Produkcija za refresh kolačić (`SameSite=Strict`) traži da frontend i `/api` budu na istom sajtu.
+- Frontend na Vercelu i dalje nema CSP. Stranica dobija samo HSTS, koji Vercel stavlja sam (provjereno 26.11.2026). CSP bi išao u `frontend/vercel.json` kao `headers`, a treba ga probati sa service workerom, fontovima i povratkom sa Stripea, pa je zapisan u Dodacima. Produkcija za refresh kolačić (`SameSite=Strict`) traži da frontend i `/api` budu na istom sajtu.

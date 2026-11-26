@@ -186,7 +186,7 @@ svaki endpoint opisan u Swaggeru.
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | gotovo |
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | gotovo |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | gotovo (26.11.2026; R2 i poddomen nisu urađeni, vidi korak 4) |
-| 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | ⏳ nije počelo |
+| 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | gotovo (26.11.2026, u tri koraka, engleski UI prebačen u Dodatke) |
 | 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s **tool calling**, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
 
 Pravilo iz P1 ostaje: ne čekati kraj s deployem. Zato u Fazi 1 uradimo "hodajući kostur"
@@ -474,7 +474,7 @@ funkcija (svaki tekst, datumi, poruke grešaka), a ne pregled.
    metode koje niko ne zove. Lint upozorenje u `Kalendar.jsx`. Svi testovi prolaze poslije čišćenja.
 2. **Pregled koda** (gotovo 26.11.: četiri greške iz pregleda i peta usput, podsjetnik s push obavijesti je padao na indeksu iz V25; V46 i V47, svaka s testom koji je prvo pao, vidi `docs/ODLUKE.md`) od Faze 10 nadalje (najmanje pregledan dio). Svaka stvarna greška dobija test koji
    je prvo pokaže, pa popravku.
-3. **Docs i kraj.** Svaka tvrdnja u README-ju i `docs/` uporedi se sa stanjem (brojke, linkovi, model
+3. **Docs i kraj.** (gotovo 26.11.: `ARHITEKTURA.md` dopunjen paketima, frontendom i šemom do V47; zaglavlja i CORS provjereni na produkciji; README opis e2e testova i brojke; svi lokalni linkovi u README-ju, planu i `docs/` vode na postojeće fajlove. Odluka o Dodacima: nijedan ne ulazi sada, ostaju kao ideje za poslije.) Svaka tvrdnja u README-ju i `docs/` uporedi se sa stanjem (brojke, linkovi, model
    podataka u `ARHITEKTURA.md` do V47), odluka o Dodacima, status, dnevnik, commit.
 
 ## Dodaci prije Faze 13
@@ -686,6 +686,7 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 
 - Web push obavijesti / PWA (instalacija na telefon): prešlo u "Dodaci prije Faze 13", korak 5
 - Engleski prijevod UI-ja (bio u planu Faze 13, odvojen 26.11.2026)
+- CSP za frontend na Vercelu (`headers` u `vercel.json`), probati sa service workerom, fontovima i povratkom sa Stripea
 - Trajno skladište slika bez kartice: Backblaze B2 (10 GB besplatno, S3 API). Naš `S3StorageService` s njim nije proban, a B2 se zna buniti na nove checksum opcije AWS SDK-a
 - Sinhronizacija s Google Calendarom (dvosmjerna, za razliku od iCal pretplate)
 - Ocjene i komentari nakon termina

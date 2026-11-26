@@ -522,3 +522,15 @@ R2 sam preskočio jer Cloudflare traži karticu i za besplatni plan. Slike ostaj
 Nisam znao da Render broji 750 besplatnih sati po nalogu, a ne po servisu. Za jedan servis budan cijeli mjesec to je taman, 744.
 
 Claude je u README danas prepisao staru rečenicu da backup Neona nije napravljen, iako je napravljen 22.11. Uzeo ju je iz README-ja umjesto iz RUNBOOK-a.
+
+## Četvrtak, 26. novembar 2026, 20:05
+
+Faza 13 gotova u tri koraka, kako sam i htio.
+
+Pregled koda od Faze 10 je našao četiri prave greške i nijedna nije bila tamo gdje bih je tražio. Lista čekanja nije mogla ponuditi dva mjesta u grupnom terminu, jer je indeks iz V34 pisan prije nego što su grupni termini postojali (V37). Druga ponuda: `duplicate key value violates unique constraint "waitlist_jedna_ponuda"`. Indeks nisam mogao mijenjati u V34, pa ide V46.
+
+Deadlock između posla liste čekanja i rezervacije nisam ni znao kako testirati. Na kraju test drži `select ... for update` nad resursom iz druge konekcije i čeka da posao commita istek ponuda prije nego što stane na lock. Prije popravke: `expected EXPIRED but was OFFERED`. Popravka je bila podijeliti metodu na dvije transakcije, ali ne pozivom druge `@Transactional` metode iste klase, jer to Spring preskoči. `TransactionTemplate` radi.
+
+Najgora greška je došla sama. Pisao sam test samo za tekst podsjetnika na telefonu (bio je uvijek "Termin je sutra"), a pao je na `notifications_jedan_podsjetnik`. Od push obavijesti podsjetnik pravi dva reda za istu rezervaciju, a indeks iz V25 dozvoljava jedan. Cijeli krug podsjetnika je jedna transakcija, pa jedan korisnik s uključenim pushom obori podsjetnike svima. Taj kod je na produkciji od kad je push uključen. Push testovi su sve provjeravali na ponudi s liste čekanja, a podsjetnik niko nije probao.
+
+Dvaput je pao moj test, a ne kod. Prvi put sam rezervisao 12:00 na stolu koji radi do 12, pa je stiglo 400 `Ovaj termin se ne nudi`. Drugi put baza nije dala obavijest o rezervaciji bez prave rezervacije (`notifications_rezervacija`).
