@@ -12,7 +12,7 @@ interface AvailabilityRuleRepository extends JpaRepository<AvailabilityRule, UUI
 	List<AvailabilityRule> findByResourceId(UUID resourceId);
 
 	// JPQL delete ide u bazu odmah. Spring Data deleteBy... bi brisao pri flushu, poslije INSERT-a
-	// novih pravila, i novo pravilo bi se "preklopilo" sa starim koje još nije obrisano (Faza 2, pozivnice).
+	// novih pravila, i novo pravilo bi se "preklopilo" sa starim koje još nije obrisano. Isto je bilo kod pozivnica.
 	@Modifying
 	@Query("delete from AvailabilityRule r where r.resource.id = :resourceId")
 	void deleteAllOfResource(UUID resourceId);

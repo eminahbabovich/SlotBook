@@ -42,7 +42,8 @@ public class AuthService {
 		this.hashZaNepostojeciEmail = passwordEncoder.encode("lozinka-koja-se-nikad-ne-poklapa");
 	}
 
-	// Access token ide u tijelo odgovora, a refresh token kontroler stavlja u kolačić
+	// Refresh token kontroler stavlja u httpOnly kolačić, da ga JavaScript na stranici ne može
+	// pročitati. U tijelu odgovora je samo access token.
 	public record Tokens(TokenResponse access, String refreshToken) {
 	}
 

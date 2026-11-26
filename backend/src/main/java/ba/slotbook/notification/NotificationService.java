@@ -49,7 +49,7 @@ public class NotificationService {
 	}
 
 	// MANDATORY: bez transakcije pozivaoca Spring baci izuzetak. Obavijest upisana u svojoj
-	// transakciji ostala bi i kad rezervacija padne, a outbox postoji baš da se to ne može desiti.
+	// transakciji ostala bi i kad rezervacija padne. Outbox je tu da se to ne desi.
 	@Transactional(propagation = Propagation.MANDATORY)
 	public void enqueue(UUID userId, NotificationType type, EmailContent content) {
 		notifications.save(new Notification(users.getReferenceById(userId), type, null, content, clock.instant()));

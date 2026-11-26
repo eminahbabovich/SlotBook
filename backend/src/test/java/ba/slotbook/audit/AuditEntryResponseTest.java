@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 class AuditEntryResponseTest {
 
-	// Brisanje naloga (korak 9) postavi actor na null, a zapis o radnji ostaje
+	// Brisanje naloga postavi actor na null, a zapis o radnji ostaje
 	@Test
 	void zapisObrisanogNalogaOstajeBezImenaIId() {
 		UUID sala = UUID.randomUUID();

@@ -541,7 +541,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		log.error("Neočekivana greška", ex);
 
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
-				"Nešto je pošlo po zlu na našoj strani. Pokušaj ponovo, a ako se ponovi, javi nam.");
+				"Greška je kod nas na serveru, ne kod tebe. Pokušaj ponovo, a ako se ponovi, javi nam.");
 		problem.setTitle("Greška na serveru");
 		// Isti ID je u liniji loga sa stack traceom, pa prijava greške vodi pravo do nje
 		String requestId = MDC.get(RequestIdFilter.MDC_KLJUC);

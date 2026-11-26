@@ -66,7 +66,7 @@ class StripeCheckoutClient implements StripeCheckout {
 	static SessionCreateParams parametri(NovaSesija nova) {
 		return SessionCreateParams.builder()
 				.setMode(SessionCreateParams.Mode.PAYMENT)
-				// Webhook (korak 3) po ovome nalazi rezervaciju i kad naš red uplate još nije commitan
+				// Webhook po ovome nalazi rezervaciju i kad naš red uplate još nije commitan
 				.setClientReferenceId(nova.bookingId().toString())
 				.putMetadata("bookingId", nova.bookingId().toString())
 				.setExpiresAt(nova.istice().getEpochSecond())
