@@ -472,10 +472,10 @@ funkcija (svaki tekst, datumi, poruke grešaka), a ne pregled.
 
 1. **Mrtvi kod i upozorenja.** (gotovo 26.11.: obrisani api/status.js, tok() u lažnom backendu i Payment.getBooking, zastarjeli isUnprocessableEntity u jednom testu, ref u Kalendar.jsx se piše u efektu, pa je lint bez upozorenja; javac -Xlint za glavni kod čist) Frontend: neiskorišteni fajlovi i exporti. Backend: `javac -Xlint` i
    metode koje niko ne zove. Lint upozorenje u `Kalendar.jsx`. Svi testovi prolaze poslije čišćenja.
-2. **Pregled koda** od Faze 10 nadalje (najmanje pregledan dio). Svaka stvarna greška dobija test koji
+2. **Pregled koda** (gotovo 26.11.: četiri greške iz pregleda i peta usput, podsjetnik s push obavijesti je padao na indeksu iz V25; V46 i V47, svaka s testom koji je prvo pao, vidi `docs/ODLUKE.md`) od Faze 10 nadalje (najmanje pregledan dio). Svaka stvarna greška dobija test koji
    je prvo pokaže, pa popravku.
 3. **Docs i kraj.** Svaka tvrdnja u README-ju i `docs/` uporedi se sa stanjem (brojke, linkovi, model
-   podataka u `ARHITEKTURA.md` do V45), odluka o Dodacima, status, dnevnik, commit.
+   podataka u `ARHITEKTURA.md` do V47), odluka o Dodacima, status, dnevnik, commit.
 
 ## Dodaci prije Faze 13
 

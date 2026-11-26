@@ -45,10 +45,13 @@ class SlobodnaMjesta {
 				waitlist.countOffersToOthers(resurs.getId(), termin.start(), termin.end(), clientId, sada));
 	}
 
-	// Mjesta od 1 do kapaciteta koja nijedna od datih rezervacija ne drži, od najnižeg
+	// Mjesta od 1 do kapaciteta koja nijedna od datih rezervacija ne drži, od najnižeg. Ima ih najviše
+	// kapacitet minus zauzeta: kad admin smanji kapacitet, rezervacije na mjestima iznad njega ostaju i
+	// i dalje zauzimaju mjesto. Isto broji upit posla za listu čekanja (count(distinct seat) < capacity).
 	static List<Integer> slobodna(List<Booking> drze, int kapacitet) {
 		Set<Integer> zauzeta = drze.stream().map(Booking::getSeat).collect(Collectors.toSet());
-		return IntStream.rangeClosed(1, kapacitet).boxed().filter(m -> !zauzeta.contains(m)).toList();
+		return IntStream.rangeClosed(1, kapacitet).boxed().filter(m -> !zauzeta.contains(m))
+				.limit(Math.max(0, kapacitet - zauzeta.size())).toList();
 	}
 
 }

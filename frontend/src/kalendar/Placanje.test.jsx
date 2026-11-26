@@ -26,7 +26,7 @@ function salaZaJogu(placanje = () => json({ url: STRIPE, expiresAt: '2035-11-19T
 			json({
 				timezone: 'Europe/Sarajevo',
 				slots: slobodni.map((start) => ({ start, end: sat(start) })),
-				taken: moji.map((start) => ({ start, end: sat(start), myStatus: 'PENDING' })),
+				taken: moji.map((start) => ({ start, end: sat(start), myStatus: 'PENDING', myAwaitingPayment: true })),
 			}),
 		'POST /api/resources/r1/bookings': (tijelo) => {
 			slobodni.splice(slobodni.indexOf(tijelo.startTime), 1)

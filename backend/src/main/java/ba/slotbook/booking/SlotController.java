@@ -4,8 +4,6 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
-
-import ba.slotbook.error.InvalidFieldException;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +13,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import ba.slotbook.error.InvalidFieldException;
 
 // U paketu booking, a ne availability: slobodan termin je ponuđen po pravilima i nije rezervisan,
 // a availability ne zna za rezervacije. Tako booking zavisi od availability, a ne i obrnuto.

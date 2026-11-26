@@ -17,7 +17,8 @@ public record SlotCalendarResponse(String timezone, int capacity, List<FreeSlot>
 
 	// myStatus je null kad rezervacija nije tvoja: drugi vide samo da je termin zauzet,
 	// ne čiji je ni da li čeka potvrdu. myWaitlistId je moj upis na listu čekanja za taj termin.
-	public record TakenSlot(Instant start, Instant end, BookingStatus myStatus, UUID myWaitlistId) {
+	public record TakenSlot(Instant start, Instant end, BookingStatus myStatus, UUID myWaitlistId,
+			boolean myAwaitingPayment) {
 	}
 
 	public record OfferedSlot(Instant start, Instant end, Instant offeredUntil, UUID waitlistId) {

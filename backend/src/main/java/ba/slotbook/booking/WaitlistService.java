@@ -12,7 +12,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import ba.slotbook.availability.SlotService;
 import ba.slotbook.availability.TimeRange;
@@ -42,11 +44,12 @@ public class WaitlistService {
 	private final ApplicationEventPublisher objave;
 	private final Clock clock;
 	private final String appUrl;
+	private final TransactionTemplate transakcija;
 
 	public WaitlistService(WaitlistEntryRepository entries, SlobodnaMjesta slobodnaMjesta, BookingRules pravila,
 			ResourceRepository resources,
 			UserRepository users, SlotService slotService, NotificationService notifications,
-			ApplicationEventPublisher objave, Clock clock,
+			ApplicationEventPublisher objave, Clock clock, PlatformTransactionManager transactionManager,
 			@Value("${slotbook.app-url}") String appUrl) {
 		this.entries = entries;
 		this.slobodnaMjesta = slobodnaMjesta;
@@ -58,6 +61,7 @@ public class WaitlistService {
 		this.objave = objave;
 		this.clock = clock;
 		this.appUrl = appUrl;
+		this.transakcija = new TransactionTemplate(transactionManager);
 	}
 
 	// Lock resursa kao kod rezervacije: dupli klik čeka prvi zahtjev i ovdje nađe njegov upis.
@@ -108,10 +112,17 @@ public class WaitlistService {
 	// Za BookingJob, poslije isteka rezervacija, da istekla PENDING već oslobodi termin. Termin se nudi
 	// najkasnije minutu poslije otkazivanja, a ne u istoj transakciji: tako ga oslobodi i otkazivanje
 	// SQL naredbom (istek, brisanje naloga), a ne samo BookingService.
-	@Transactional
+	// Istek ide u svoju transakciju, commitanu prije prvog locka resursa. Rezervacija zaključa resurs pa
+	// mijenja upis na listi (markBooked), pa bi posao koji drži istekle upise i čeka resurs s njom ušao u
+	// deadlock (40P01). Ovako oba puta zaključavaju istim redom: prvo resurs, pa upis.
 	public int offerFreed() {
 		Instant sada = clock.instant();
-		entries.expireAll(sada).forEach(resourceId -> objave.publishEvent(new SlotsChanged(resourceId)));
+		transakcija.executeWithoutResult(t -> entries.expireAll(sada)
+				.forEach(resourceId -> objave.publishEvent(new SlotsChanged(resourceId))));
+		return transakcija.execute(t -> ponudi(sada));
+	}
+
+	private int ponudi(Instant sada) {
 		int ponude = 0;
 		for (UUID id : entries.findFirstInLineForFreeSlots(sada)) {
 			WaitlistEntry upis = entries.findWithResourceById(id).orElseThrow();

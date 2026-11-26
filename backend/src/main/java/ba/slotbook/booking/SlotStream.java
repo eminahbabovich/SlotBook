@@ -27,9 +27,16 @@ public class SlotStream {
 
 	SseEmitter open(UUID resourceId) {
 		SseEmitter veza = new SseEmitter(TRAJE.toMillis());
-		Set<SseEmitter> resursa = veze.computeIfAbsent(resourceId, id -> new CopyOnWriteArraySet<>());
-		resursa.add(veza);
-		Runnable ukloni = () -> resursa.remove(veza);
+		// compute je atoman po ključu: nova veza ne može ući u skup koji ukloni upravo briše iz mape
+		veze.compute(resourceId, (id, resursa) -> {
+			Set<SseEmitter> skup = resursa != null ? resursa : new CopyOnWriteArraySet<>();
+			skup.add(veza);
+			return skup;
+		});
+		Runnable ukloni = () -> veze.computeIfPresent(resourceId, (id, resursa) -> {
+			resursa.remove(veza);
+			return resursa.isEmpty() ? null : resursa;
+		});
 		veza.onCompletion(ukloni);
 		veza.onTimeout(ukloni);
 		veza.onError(greska -> ukloni.run());
@@ -55,6 +62,10 @@ public class SlotStream {
 
 	int brojVeza(UUID resourceId) {
 		return veze.getOrDefault(resourceId, Set.of()).size();
+	}
+
+	boolean prati(UUID resourceId) {
+		return veze.containsKey(resourceId);
 	}
 
 	// Zatvoren tab se vidi tek kad pisanje padne. Tada se veza zatvori, a onError je ukloni.

@@ -45,4 +45,12 @@ interface NotificationRepository extends JpaRepository<Notification, UUID> {
 				WHERE organization_id = :organizationId AND email = :email AND accepted_at IS NULL)""")
 	int deletePendingForOpenInvite(UUID organizationId, String email);
 
+	// Browser je prešao na drugi nalog. Obavijesti prethodnog vlasnika koje još čekaju ne smiju otići na
+	// browser koji je sad tuđi. Red koji se upravo šalje ostaje, isto kao kod pozivnice.
+	@Modifying
+	@Query(nativeQuery = true, value = """
+			DELETE FROM notifications WHERE status = 'PENDING' AND push_subscription_id = :pretplata
+			AND user_id <> :vlasnik""")
+	int deletePendingPushForOthers(UUID pretplata, UUID vlasnik);
+
 }

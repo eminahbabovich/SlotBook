@@ -7,12 +7,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +56,9 @@ class WaitlistApiTest {
 
 	@Autowired
 	JdbcTemplate jdbc;
+
+	@Autowired
+	DataSource dataSource;
 
 	@Autowired
 	UserService userService;
@@ -150,6 +159,39 @@ class WaitlistApiTest {
 		assertThat(brojUpisa()).isEqualTo(1);
 	}
 
+	// Rezervacija zaključa resurs pa mijenja upis na listi (markBooked). Kad bi posao držao istekle upise
+	// dok čeka lock resursa, ta dva bi čekala jedno drugo (40P01). Zato istek mora biti commitan prije nego
+	// što posao uzme lock resursa: dok druga konekcija drži salu, istek se već vidi.
+	@Test
+	void istekPonudeJeCommitanPrijeNegoStoPosaoCekaLockResursa() throws Exception {
+		String lejlinUpis = upisi(lejlin);
+		String selminUpis = upisi(selmin);
+		otkaziHaninu();
+		waitlistService.offerFreed();
+		jdbc.update("update waitlist_entries set offered_until = now() - interval '1 minute' where id = ?::uuid",
+				lejlinUpis);
+
+		try (Connection druga = dataSource.getConnection()) {
+			druga.setAutoCommit(false);
+			try (PreparedStatement lock = druga.prepareStatement("select id from resources where id = ? for update")) {
+				lock.setObject(1, sala);
+				lock.executeQuery();
+			}
+			CompletableFuture<Integer> posao = CompletableFuture.supplyAsync(waitlistService::offerFreed);
+			try {
+				Instant rok = Instant.now().plusSeconds(10);
+				while (!stanje(lejlinUpis).equals("EXPIRED") && Instant.now().isBefore(rok)) {
+					Thread.sleep(100);
+				}
+				assertThat(stanje(lejlinUpis)).isEqualTo("EXPIRED");
+			} finally {
+				druga.rollback();
+			}
+			posao.get(30, TimeUnit.SECONDS);
+		}
+		assertThat(stanje(selminUpis)).isEqualTo("OFFERED");
+	}
+
 	@Test
 	void ispisanaKlijentkinjaNeDobijaPonudu() throws Exception {
 		String lejlinUpis = upisi(lejlin);
@@ -234,6 +276,29 @@ class WaitlistApiTest {
 				.andExpect(jsonPath("$.title").value("Termin je ponuđen drugome"));
 		rezervisi(selmin).andExpect(status().isCreated());
 		assertThat(stanje(selminUpis)).isEqualTo("BOOKED");
+	}
+
+	// Oba mjesta se oslobode, a na listi čekaju dvije: svaka dobije svoje mjesto, druga u sljedećem
+	// prolazu posla. Dvije ponude za isti termin su ovdje ispravne, jer svaka čuva drugo mjesto.
+	@Test
+	void kadSeUGrupnomTerminuOslobodeDvaMjestaObjeSaListeDobijuPonudu() throws Exception {
+		jdbc.update("update resources set capacity = 2 where id = ?", sala);
+		rezervisi(lejlin).andExpect(status().isCreated());
+		UUID amra = korisnik("amra", "Amra Ćatić");
+		jdbc.update("insert into organization_members select organization_id, ?, 'CLIENT', now() from resources "
+				+ "where id = ?", amra, sala);
+		String selminUpis = upisi(selmin);
+		String amrinUpis = upisi(prijava("amra"));
+
+		otkaziHaninu();
+		UUID lejla = jdbc.queryForObject("select id from users where email = ?", UUID.class, email("lejla"));
+		bookingService.cancel(jdbc.queryForObject("select id from bookings where resource_id = ? and client_id = ?",
+				UUID.class, sala, lejla), lejla, false);
+		waitlistService.offerFreed();
+		waitlistService.offerFreed();
+
+		assertThat(stanje(selminUpis)).isEqualTo("OFFERED");
+		assertThat(stanje(amrinUpis)).isEqualTo("OFFERED");
 	}
 
 	@Test

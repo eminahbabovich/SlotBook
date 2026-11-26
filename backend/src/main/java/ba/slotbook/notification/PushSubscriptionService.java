@@ -12,21 +12,25 @@ import ba.slotbook.notification.PushException.Razlog;
 import ba.slotbook.user.UserRepository;
 import tools.jackson.databind.json.JsonMapper;
 
-// Pretplate se vežu za korisnika iz tokena. Svaki upit traži i endpoint i korisnika, pa niko ne može
-// ugasiti ni testirati tuđi browser, čak ni kad zna njegov endpoint.
+// Pretplate se vežu za korisnika iz tokena. Brisanje i proba traže i endpoint i korisnika, pa ih niko ne
+// radi nad tuđim browserom. Endpoint je tajna koju zna samo browser (i push servis), pa ko ga pošalje
+// u PUT, smatra se tim browserom i pretplata prelazi na njega. Tako radi zajednički računar: sljedeća
+// osoba koja uključi obavijesti preuzme browser, a obavijesti prethodne koje još čekaju se brišu.
 @Service
 public class PushSubscriptionService {
 
 	private static final JsonMapper JSON = JsonMapper.builder().build();
 
 	private final PushSubscriptionRepository pretplate;
+	private final NotificationRepository obavijesti;
 	private final UserRepository users;
 	private final WebPushClient webPush;
 	private final Clock clock;
 
-	public PushSubscriptionService(PushSubscriptionRepository pretplate, UserRepository users, WebPushClient webPush,
-			Clock clock) {
+	public PushSubscriptionService(PushSubscriptionRepository pretplate, NotificationRepository obavijesti,
+			UserRepository users, WebPushClient webPush, Clock clock) {
 		this.pretplate = pretplate;
+		this.obavijesti = obavijesti;
 		this.users = users;
 		this.webPush = webPush;
 		this.clock = clock;
@@ -48,6 +52,7 @@ public class PushSubscriptionService {
 		String uredjaj = zahtjev.device() == null || zahtjev.device().isBlank() ? null : zahtjev.device().strip();
 		PushSubscription pretplata = pretplate.findByEndpoint(zahtjev.endpoint())
 				.map(p -> {
+					obavijesti.deletePendingPushForOthers(p.getId(), userId);
 					p.preuzmi(korisnik, zahtjev.keys().p256dh(), zahtjev.keys().auth(), uredjaj, clock.instant());
 					return p;
 				})

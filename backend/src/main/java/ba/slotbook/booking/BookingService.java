@@ -401,8 +401,7 @@ public class BookingService {
 		}
 	}
 
-	// Isti ključ i isti zahtjev vraćaju raniju rezervaciju, u stanju u kojem je sada. Isti ključ
-	// za drugi termin je greška klijenta (422 po nacrtu IETF-a za Idempotency-Key).
+	// Kao ponovljen, za seriju: isti ključ znači i isti broj sedmica
 	private BookingSeriesResponse ponovljenaSerija(Booking ranija, UUID resourceId, Instant start, int sedmica) {
 		List<Booking> serija = ranija.getSeriesId() == null ? List.of()
 				: bookings.findBySeriesIdOrderByStartTime(ranija.getSeriesId());
@@ -413,6 +412,8 @@ public class BookingService {
 		return new BookingSeriesResponse(ranija.getSeriesId(), serija.stream().map(BookingResponse::from).toList());
 	}
 
+	// Isti ključ i isti zahtjev vraćaju raniju rezervaciju, u stanju u kojem je sada. Isti ključ
+	// za drugi termin je greška klijenta (422 po nacrtu IETF-a za Idempotency-Key).
 	private BookingResponse ponovljen(Booking ranija, UUID resourceId, Instant start) {
 		if (!ranija.getResource().getId().equals(resourceId) || !ranija.getStartTime().equals(start)) {
 			throw new IdempotencyKeyReusedException();

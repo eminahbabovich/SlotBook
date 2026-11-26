@@ -9,9 +9,9 @@ const STO = { id: 'r1', organizationId: 'o1', providerId: 'u9', name: 'Sto 4, ti
 const SLOTS = '/api/resources/r1/slots?from=2035-11-19&to=2035-11-26'
 const OSMICA = { start: '2035-11-19T07:00:00Z', end: '2035-11-19T08:00:00Z' }
 
-// Prvo učitavanje: 08:00 slobodno. Poslije toga ga je neko drugi rezervisao.
+// Prvo učitavanje: 08:00 slobodno. Poslije toga ga je neko drugi rezervisao (ili ja, kad test da zauzet).
 // Tok vraća kontroler, da test šalje poruke kad hoće, kao server.
-function kalendar() {
+function kalendar(zauzet = { ...OSMICA, myStatus: null, myWaitlistId: null }, ostalo = {}) {
 	let ucitavanja = 0
 	const veza = {}
 	const fetch = backend({
@@ -21,7 +21,7 @@ function kalendar() {
 			json(
 				++ucitavanja === 1
 					? { timezone: 'Europe/Sarajevo', slots: [OSMICA], taken: [] }
-					: { timezone: 'Europe/Sarajevo', slots: [], taken: [{ ...OSMICA, myStatus: null, myWaitlistId: null }] },
+					: { timezone: 'Europe/Sarajevo', slots: [], taken: [zauzet] },
 			),
 		'GET /api/resources/r1/slots/stream': (_, zaglavlja, signal) => {
 			veza.signal = signal
@@ -36,6 +36,7 @@ function kalendar() {
 			})
 			return new Response(tijelo, { headers: { 'Content-Type': 'text/event-stream' } })
 		},
+		...ostalo,
 	})
 	return { fetch, veza, ucitavanja: () => ucitavanja }
 }
@@ -80,6 +81,25 @@ test('otvorena potvrda za termin koji je neko upravo uzeo kaže to prije klika i
 	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Neko je upravo rezervisao ovaj termin. Izaberi drugi slobodan termin.')
 	expect(screen.queryByRole('button', { name: 'Rezerviši' })).toBeNull()
 	expect(fetch.mock.calls.some(([p, o]) => o.method === 'POST' && p.includes('/bookings'))).toBe(false)
+})
+
+// Server pošalje promjenu odmah poslije commita, pa ona za moju rezervaciju može stići prije odgovora na
+// POST. Termin je tada moj, a ne tuđi, i potvrda to ne smije pogrešno reći.
+test('promjena koju je izazvala moja rezervacija dok čeka odgovor ne kaže da je termin uzeo neko drugi', async () => {
+	const { veza, ucitavanja } = kalendar({ ...OSMICA, myStatus: 'CONFIRMED', myWaitlistId: null }, {
+		'POST /api/resources/r1/bookings': () => new Promise(() => {}),
+	})
+	otvori('/o/citaonica-pmf/r/r1')
+	const korisnik = userEvent.setup()
+	await korisnik.click(await screen.findByRole('button', { name: /08:00 do 09:00, slobodno$/ }))
+	await waitFor(() => expect(veza.posalji).toBeDefined())
+	await korisnik.click(screen.getByRole('button', { name: 'Rezerviši' }))
+
+	veza.posalji('event:promjena\ndata:r1\n\n')
+	await waitFor(() => expect(ucitavanja()).toBe(2))
+	await screen.findByText('Termini su osvježeni.')
+
+	expect(screen.queryByText(/Neko je upravo rezervisao/)).toBeNull()
 })
 
 test('otkucaj servera (komentar) ne učitava termine ponovo', async () => {

@@ -25,11 +25,12 @@ public class NotificationService {
 	private static final Duration SAT = Duration.ofHours(1);
 
 	// Na telefon ide samo ono zbog čega treba nešto uraditi ili ne zakasniti. Ostalo stiže samo mailom.
+	// Podsjetnik nosi tekst maila (dan i sat termina): posao koji kasni ga pošalje i par sati prije termina,
+	// pa fiksno "sutra" ne bi bilo tačno.
 	private static final Map<NotificationType, String> PUSH = Map.of(
 			NotificationType.WAITLIST_OFFER, "Termin s liste čekanja je tvoj ako ga potvrdiš prije nego što ponuda istekne.",
 			NotificationType.BOOKING_CONFIRMED, "Termin je potvrđen. Detalji su u Mojim rezervacijama.",
-			NotificationType.BOOKING_REJECTED, "Rezervacija nije prihvaćena. Možeš izabrati drugi termin.",
-			NotificationType.BOOKING_REMINDER, "Termin je sutra. Ako ne možeš doći, otkaži ga na vrijeme.");
+			NotificationType.BOOKING_REJECTED, "Rezervacija nije prihvaćena. Možeš izabrati drugi termin.");
 	private static final JsonMapper JSON = JsonMapper.builder().build();
 
 	private final NotificationRepository notifications;
@@ -64,7 +65,7 @@ public class NotificationService {
 
 	// Uz mail još po jedna obavijest za svaki browser korisnika, u istoj transakciji i istom redu čekanja
 	private void naUredjaje(UUID userId, NotificationType type, UUID bookingId, EmailContent content) {
-		String recenica = PUSH.get(type);
+		String recenica = type == NotificationType.BOOKING_REMINDER ? content.body() : PUSH.get(type);
 		if (recenica == null || !webPush.ukljucen()) {
 			return;
 		}

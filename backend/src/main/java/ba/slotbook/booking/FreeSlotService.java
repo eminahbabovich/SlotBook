@@ -128,11 +128,10 @@ public class FreeSlotService {
 					.orElse(null);
 			// Ako je admin promijenio dužinu termina, termin može dodirivati više rezervacija. Tada
 			// prednost ima moja, da je ne prikažemo kao tuđu. getId() na LAZY klijentu ne učitava red.
-			BookingStatus moj = preklapaju.stream()
+			Optional<Booking> moja = preklapaju.stream()
 					.filter(b -> userId != null && b.getClient().getId().equals(userId))
-					.map(Booking::getStatus)
-					.findFirst()
-					.orElse(null);
+					.findFirst();
+			BookingStatus moj = moja.map(Booking::getStatus).orElse(null);
 			// Isto pravilo kao SlobodnaMjesta, samo nad redovima koji su već učitani za cijelu sedmicu
 			int zaMene = SlobodnaMjesta.slobodna(preklapaju, ponudjeni.capacity()).size()
 					- (ponudeTermina.size() - (meniPonudjen.isPresent() ? 1 : 0));
@@ -143,7 +142,9 @@ public class FreeSlotService {
 						p.getOfferedUntil(), p.getId())));
 				continue;
 			}
-			zauzeti.add(new TakenSlot(termin.start(), termin.end(), moj, moj == null ? mojUpis : null));
+			// Čeka uplatu po cijeni zapisanoj na rezervaciji: admin je cijenu resursa mogao promijeniti poslije
+			zauzeti.add(new TakenSlot(termin.start(), termin.end(), moj, moj == null ? mojUpis : null,
+					moja.map(Booking::cekaUplatu).orElse(false)));
 		}
 		return new SlotCalendarResponse(ponudjeni.timezone(), ponudjeni.capacity(), slobodni, zauzeti, meni);
 	}

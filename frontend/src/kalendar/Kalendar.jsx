@@ -251,7 +251,7 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = n
 							dan={dan}
 							danas={danas}
 							dani={dani}
-							kalendar={cijenaFeninga > 0 ? saUplatom(data) : data}
+							kalendar={data}
 							cijenaFeninga={cijenaFeninga}
 							lista={lista}
 							naIzborDana={izaberiDan}
@@ -336,12 +336,6 @@ function slobodnihRijecima(broj) {
 	if (broj % 10 === 1 && desetica !== 11) return `${broj} slobodan`
 	if ([2, 3, 4].includes(broj % 10) && (desetica < 12 || desetica > 14)) return `${broj} slobodna`
 	return `${broj} slobodnih`
-}
-
-// Moje na čekanju kod plaćenog resursa čekaju uplatu. Kalendar ne zna rok ni stanje uplate, samo da
-// je resurs plaćen, a to je dovoljno: plaćenu na čekanju osoblje ne potvrđuje.
-function saUplatom(kalendar) {
-	return { ...kalendar, termini: kalendar.termini.map((t) => (t.stanje === 'ceka' ? { ...t, uplata: true } : t)) }
 }
 
 function Dan({ dan, danas, dani, kalendar, cijenaFeninga, lista, naIzborDana, naIzborTermina, izabran }) {

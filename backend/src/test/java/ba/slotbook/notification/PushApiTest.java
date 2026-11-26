@@ -46,6 +46,8 @@ import com.jayway.jsonpath.JsonPath;
 import com.sun.net.httpserver.HttpServer;
 
 import ba.slotbook.TestcontainersConfiguration;
+import ba.slotbook.organization.OrganizationService;
+import ba.slotbook.resource.ResourceService;
 import ba.slotbook.user.UserService;
 
 // Push servis je lažni HTTP server na localhostu: zapisuje šta je primio i vraća status koji test zada.
@@ -119,6 +121,12 @@ class PushApiTest {
 	NotificationSender sender;
 
 	@Autowired
+	OrganizationService organizationService;
+
+	@Autowired
+	ResourceService resourceService;
+
+	@Autowired
 	PlatformTransactionManager transakcije;
 
 	private final String sufiks = UUID.randomUUID().toString().substring(0, 6);
@@ -165,6 +173,23 @@ class PushApiTest {
 
 		assertThat(jdbc.queryForList("select user_id from push_subscriptions where endpoint = ?", UUID.class,
 				endpoint)).containsExactly(lejla);
+	}
+
+	// Amilina sesija je istekla bez odjave, a na istom browseru se prijavi Lejla. Amilina obavijest koja još
+	// čeka u redu ne smije stići na browser koji je sad Lejlin. Mail Amili ostaje.
+	@Test
+	void kadBrowserPredjeNaDrugiNalogObavijestiPrethodnogKojeCekajuSeBrisu() throws Exception {
+		String endpoint = "https://fcm.googleapis.com/fcm/send/" + sufiks;
+		mockMvc.perform(put("/api/me/push-subscriptions").header("Authorization", "Bearer " + prijava("amila"))
+				.contentType(MediaType.APPLICATION_JSON).content(pretplata(endpoint))).andExpect(status().isOk());
+		transakcija.executeWithoutResult(s -> notificationService.enqueue(amila, NotificationType.WAITLIST_OFFER,
+				new EmailContent("Termin se oslobodio: Sto 4, tihi dio", "Termin je tvoj ako ga potvrdiš.")));
+		assertThat(kanali(amila)).containsExactlyInAnyOrder("EMAIL", "PUSH");
+
+		mockMvc.perform(put("/api/me/push-subscriptions").header("Authorization", "Bearer " + prijava("lejla"))
+				.contentType(MediaType.APPLICATION_JSON).content(pretplata(endpoint))).andExpect(status().isOk());
+
+		assertThat(kanali(amila)).containsExactly("EMAIL");
 	}
 
 	@Test
@@ -234,6 +259,30 @@ class PushApiTest {
 				.containsEntry("sub", "mailto:obavijesti@slotbook.local");
 		assertThat(((Number) jwt.get("exp")).longValue()).isBetween(Instant.now().getEpochSecond(),
 				Instant.now().plusSeconds(24 * 3600).getEpochSecond());
+	}
+
+	// Posao šalje podsjetnike kad stigne (Render zna spavati), pa podsjetnik ne smije reći "sutra" za termin
+	// koji je za dva sata. Na telefon ide tekst maila, s danom i satom termina.
+	@Test
+	void podsjetnikNaTelefonuKazeKadaJeTerminANeSutra() throws Exception {
+		pretplataUBazi(amila, "telefon");
+		String tekst = "Podsjetnik za termin četvrtak, 19. novembar 2035. u 10:00 (Sto 4, tihi dio). Ako ne možeš doći, "
+				+ "otkaži ga u aplikaciji, da ga može uzeti neko drugi.";
+
+		UUID organizacija = organizationService.create(amila, "Čitaonica PMF", "citaonica-pmf-" + sufiks,
+				"Europe/Sarajevo").id();
+		UUID sto = resourceService.create(organizacija, amila, "Sto 4, tihi dio", null, 60, true, 0, 1, 0).id();
+		UUID rezervacija = UUID.randomUUID();
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at) "
+				+ "values (?, ?, ?, '2035-11-19 09:00Z', '2035-11-19 10:00Z', 'CONFIRMED', now())", rezervacija, sto, amila);
+
+		transakcija.executeWithoutResult(s -> notificationService.enqueueForBooking(amila,
+				NotificationType.BOOKING_REMINDER, rezervacija, new EmailContent("Podsjetnik: Sto 4, tihi dio", tekst)));
+		posaljiSvePush();
+
+		String procitano = new String(WebPushProvjera.desifruj(PRIMLJENO.getFirst().tijelo(),
+				BROWSERI.get("telefon").kljucevi(), BROWSERI.get("telefon").auth()), java.nio.charset.StandardCharsets.UTF_8);
+		assertThat(JsonPath.<String>read(procitano, "$.body")).isEqualTo(tekst);
 	}
 
 	// Push servis privremeno ne radi: isti ponovni pokušaj kao za mail, za minutu

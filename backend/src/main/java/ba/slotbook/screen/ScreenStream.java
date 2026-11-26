@@ -37,9 +37,16 @@ class ScreenStream {
 	SseEmitter open(Pretplata pretplata) {
 		SseEmitter emitter = new SseEmitter(TRAJE.toMillis());
 		Veza veza = new Veza(emitter, Set.copyOf(pretplata.resourceIds()));
-		Set<Veza> ekrana = veze.computeIfAbsent(pretplata.screenId(), id -> new CopyOnWriteArraySet<>());
-		ekrana.add(veza);
-		Runnable ukloni = () -> ekrana.remove(veza);
+		// Kao u SlotStream: compute je atoman po ključu, a ekran bez veza ne ostaje u mapi
+		veze.compute(pretplata.screenId(), (id, ekrana) -> {
+			Set<Veza> skup = ekrana != null ? ekrana : new CopyOnWriteArraySet<>();
+			skup.add(veza);
+			return skup;
+		});
+		Runnable ukloni = () -> veze.computeIfPresent(pretplata.screenId(), (id, ekrana) -> {
+			ekrana.remove(veza);
+			return ekrana.isEmpty() ? null : ekrana;
+		});
 		emitter.onCompletion(ukloni);
 		emitter.onTimeout(ukloni);
 		emitter.onError(greska -> ukloni.run());
@@ -55,7 +62,9 @@ class ScreenStream {
 						.data(dogadjaj.resourceId().toString()))));
 	}
 
-	// Ugašen ekran odmah gubi vezu. Ponovno spajanje dobije 404, pa ekran kaže da je ugašen.
+	// Ugašen ekran odmah gubi vezu. Ponovno spajanje dobije 404, pa ekran kaže da je ugašen. Veza koja
+	// se otvarala baš dok se ekran gasio (provjera prošla prije commita) može ostati do isteka, najviše
+	// TRAJE. Nisam to zatvarao: veza nosi samo id resursa, a podatke ekran traži preko tokena, koji je tada 404.
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	void ugasen(DoorScreenRevoked dogadjaj) {
 		Set<Veza> ekrana = veze.remove(dogadjaj.screenId());

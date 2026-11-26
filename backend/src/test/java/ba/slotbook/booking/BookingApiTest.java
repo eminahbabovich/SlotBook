@@ -233,6 +233,22 @@ class BookingApiTest {
 				.andExpect(jsonPath("$.taken[0].myStatus").value("PENDING"));
 	}
 
+	// Da li moja rezervacija čeka uplatu kaže cijena zapisana na rezervaciji, a ne sadašnja cijena
+	// resursa: sto je bio besplatan kad je Hana rezervisala, pa ona čeka potvrdu, ne uplatu.
+	@Test
+	void kalendarKazeDaMojaRezervacijaCekaUplatuPoCijeniRezervacijeANeResursa() throws Exception {
+		UUID sto = sto(false);
+		rezervisi(hana, sto, "2035-11-19T11:00:00+01:00").andExpect(jsonPath("$.status").value("PENDING"));
+		jdbc.update("update resources set price_cents = 1500 where id = ?", sto);
+		rezervisi(hana, sto, "2035-11-19T10:00:00+01:00").andExpect(jsonPath("$.status").value("PENDING"));
+
+		slobodniTermini(hana, sto)
+				.andExpect(jsonPath("$.taken[*].start", contains("2035-11-19T09:00:00Z", "2035-11-19T10:00:00Z")))
+				.andExpect(jsonPath("$.taken[0].myAwaitingPayment").value(true))
+				.andExpect(jsonPath("$.taken[1].myAwaitingPayment").value(false));
+		slobodniTermini(lamija, sto).andExpect(jsonPath("$.taken[0].myAwaitingPayment").value(false));
+	}
+
 	// Klijent ne vidi deaktiviran resurs, pa ga ne može ni rezervisati
 	@Test
 	void klijentNeMozeRezervisatiDeaktiviranResurs() throws Exception {

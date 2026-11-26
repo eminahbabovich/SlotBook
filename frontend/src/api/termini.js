@@ -25,6 +25,7 @@ export async function kalendarResursa(resursId, od, doDana) {
 			stanje: STANJE_MOJE[t.myStatus] ?? 'zauzeto',
 			upisId: t.myWaitlistId ?? null,
 			pun: grupni && !t.myStatus,
+			uplata: t.myAwaitingPayment === true,
 		})),
 	]
 	// ISO stringovi u UTC-u se porede kao tekst, isto kao vremena

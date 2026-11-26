@@ -51,8 +51,10 @@ export function Potvrda({ resursId, kljucKalendara, termin, kljuc, zona, termini
 		dugme.current?.focus()
 	}, [])
 
-	// Zauzet je i kad je 409 stigao na klik, i kad je kalendar preko SSE saznao prije klika
-	const upravoZauzet = !slanje.isError && !['slobodno', 'ponudjen'].includes(termin.stanje)
+	// Zauzet je i kad je 409 stigao na klik, i kad je kalendar preko SSE saznao prije klika. Dok moja
+	// rezervacija čeka odgovor, SSE može javiti baš nju, pa se tada (i kad je termin već moj) ne gleda.
+	const upravoZauzet =
+		slanje.isIdle && !['slobodno', 'ponudjen', 'moje', 'ceka'].includes(termin.stanje)
 	const greska409 = zauzet(slanje.error) || upravoZauzet
 	const nisuSlobodne = zauzeteSedmice(slanje.error)
 	const najblizi = greska409 ? najbliziSlobodan(termini, termin) : null

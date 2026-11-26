@@ -41,6 +41,24 @@ test('kalendar spaja slobodne i zauzete termine po vremenu, sa stanjem svakog', 
 	expect(kalendar.termini[0].kraj).toBe('2035-11-19T08:00:00Z')
 })
 
+// Oblik kao u BookingApiTest: da li moja čeka uplatu kaže server (cijena na rezervaciji), ne cijena resursa
+test('moja rezervacija čeka uplatu samo kad to kaže server', async () => {
+	vi.stubGlobal('fetch', vi.fn(async () =>
+		json({
+			timezone: 'Europe/Sarajevo',
+			slots: [],
+			taken: [
+				{ start: '2035-11-19T09:00:00Z', end: '2035-11-19T10:00:00Z', myStatus: 'PENDING', myAwaitingPayment: true },
+				{ start: '2035-11-19T10:00:00Z', end: '2035-11-19T11:00:00Z', myStatus: 'PENDING', myAwaitingPayment: false },
+			],
+		}),
+	))
+
+	const kalendar = await kalendarResursa('r1', '2035-11-19', '2035-11-26')
+
+	expect(kalendar.termini.map((t) => [t.stanje, t.uplata])).toEqual([['ceka', true], ['ceka', false]])
+})
+
 // Oblik kao u WaitlistApiTest za salu s dva mjesta
 test('grupni termin nosi broj mjesta koja ostaju, a običan ne', async () => {
 	const odgovor = (capacity, seatsLeft) =>

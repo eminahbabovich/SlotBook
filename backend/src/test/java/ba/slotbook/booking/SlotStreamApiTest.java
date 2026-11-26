@@ -155,6 +155,19 @@ class SlotStreamApiTest {
 		assertThat(joga.getContentAsString()).contains("event:promjena");
 	}
 
+	// Resursa ima koliko i otvorenih kalendara ikad, pa resurs bez ijedne veze ne ostaje u memoriji
+	@Test
+	void zatvorenaVezaNeOstavljaResursUMemoriji() throws Exception {
+		var otvorena = mockMvc.perform(get("/api/resources/{id}/slots/stream", salaZaJogu)
+				.header("Authorization", "Bearer " + prijava("lejla"))).andExpect(request().asyncStarted()).andReturn();
+		assertThat(slotStream.prati(salaZaJogu)).isTrue();
+
+		otvorena.getRequest().getAsyncContext().complete();
+
+		assertThat(slotStream.brojVeza(salaZaJogu)).isZero();
+		assertThat(slotStream.prati(salaZaJogu)).isFalse();
+	}
+
 	@Test
 	void korisnikIzDrugeOrganizacijeNeOtvaraTok() throws Exception {
 		UUID tarik = korisnik("tarik");
