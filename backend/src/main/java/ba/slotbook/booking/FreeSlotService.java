@@ -38,7 +38,17 @@ public class FreeSlotService {
 	// da je termin u međuvremenu zauzet, rezervacija ga ionako odbije s 409.
 	@Transactional(readOnly = true)
 	public SlotCalendarResponse calendar(UUID resourceId, LocalDate from, LocalDate to, UUID userId) {
-		SlotsResponse ponudjeni = slotService.slots(resourceId, from, to);
+		return podijeli(resourceId, slotService.slots(resourceId, from, to), userId);
+	}
+
+	// Cijeli dan za ekran na vratima, i termin koji je u toku. Bez korisnika: nijedna rezervacija nije
+	// "moja", pa zauzet termin ne kaže ni čiji je ni u kojem je statusu.
+	@Transactional(readOnly = true)
+	public SlotCalendarResponse wholeDay(UUID resourceId, LocalDate dan) {
+		return podijeli(resourceId, slotService.wholeDay(resourceId, dan), null);
+	}
+
+	private SlotCalendarResponse podijeli(UUID resourceId, SlotsResponse ponudjeni, UUID userId) {
 		if (ponudjeni.slots().isEmpty()) {
 			return new SlotCalendarResponse(ponudjeni.timezone(), ponudjeni.capacity(), List.of(), List.of(),
 					List.of());
@@ -49,7 +59,8 @@ public class FreeSlotService {
 				BookingStatus.DRZE_TERMIN, doKraja, od);
 		// Dva upita za cijelu sedmicu, ne po terminu: ponude koje traju (bilo čije) i moji živi upisi
 		List<WaitlistEntry> ponude = waitlist.findActiveOffers(resourceId, od, doKraja, clock.instant());
-		List<WaitlistEntry> moji = waitlist.findLiveForClient(resourceId, userId, od, doKraja, WaitlistStatus.ZIVI);
+		List<WaitlistEntry> moji = userId == null ? List.of()
+				: waitlist.findLiveForClient(resourceId, userId, od, doKraja, WaitlistStatus.ZIVI);
 		List<FreeSlot> slobodni = new ArrayList<>();
 		List<TakenSlot> zauzeti = new ArrayList<>();
 		List<OfferedSlot> meni = new ArrayList<>();
@@ -61,7 +72,7 @@ public class FreeSlotService {
 					.filter(w -> termin.overlaps(new TimeRange(w.getStartTime(), w.getEndTime())))
 					.toList();
 			Optional<WaitlistEntry> meniPonudjen = ponudeTermina.stream()
-					.filter(w -> w.getClient().getId().equals(userId))
+					.filter(w -> userId != null && w.getClient().getId().equals(userId))
 					.findFirst();
 			UUID mojUpis = moji.stream()
 					.filter(w -> w.getStartTime().equals(termin.start()))
@@ -71,7 +82,7 @@ public class FreeSlotService {
 			// Ako je admin promijenio dužinu termina, termin može dodirivati više rezervacija. Tada
 			// prednost ima moja, da je ne prikažemo kao tuđu. getId() na LAZY klijentu ne učitava red.
 			BookingStatus moj = preklapaju.stream()
-					.filter(b -> b.getClient().getId().equals(userId))
+					.filter(b -> userId != null && b.getClient().getId().equals(userId))
 					.map(Booking::getStatus)
 					.findFirst()
 					.orElse(null);

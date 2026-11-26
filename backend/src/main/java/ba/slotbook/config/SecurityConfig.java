@@ -86,6 +86,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/demo").permitAll()
 						// Pregled pozivnog linka prije prijave: ime organizacije, pravo daje token
 						.requestMatchers(HttpMethod.GET, "/api/invite-links/*").permitAll()
+						// Ekran na vratima: tablet bez naloga, token u putanji je jedina provjera
+						.requestMatchers(HttpMethod.GET, "/api/screens/*", "/api/screens/*/stream").permitAll()
 						// Stripe nema naš token. Pravo daje potpis, provjerava ga StripeWebhookService.
 						.requestMatchers(HttpMethod.POST, "/api/stripe/webhook").permitAll()
 						.anyRequest().authenticated())

@@ -51,6 +51,18 @@ public class SlotService {
 				kalkulator(resurs, from, to).between(from, to, clock.instant()));
 	}
 
+	// Svi termini jednog dana, i oni koji su već počeli. Za ekran na vratima, koji pokazuje i termin u toku.
+	@Transactional(readOnly = true)
+	public SlotsResponse wholeDay(UUID resourceId, LocalDate dan) {
+		Resource resurs = resources.findById(resourceId).orElseThrow(ResourceNotFoundException::new);
+		ZoneId zona = ZoneId.of(resurs.getOrganization().getTimezone());
+		if (!resurs.isActive()) {
+			return new SlotsResponse(zona.getId(), resurs.getCapacity(), List.of());
+		}
+		return new SlotsResponse(zona.getId(), resurs.getCapacity(),
+				kalkulator(resurs, dan, dan.plusDays(1)).allBetween(dan, dan.plusDays(1)));
+	}
+
 	// Za popunjenost u statistici. Bez ograničenja od 31 dan, jer period ograničava statistika, i bez
 	// provjere aktivnosti: resurs deaktiviran danas je prošlog mjeseca možda radio, a historiju
 	// aktivacije ni radnog vremena ne čuvamo, pa se računa po pravilima kakva su sada.

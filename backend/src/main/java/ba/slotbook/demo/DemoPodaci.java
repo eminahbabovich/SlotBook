@@ -161,6 +161,7 @@ public class DemoPodaci {
 		narednaSedmica(danas, sada, hana, ostali, sto, soba, konsultacije, trening);
 		hanineProsle(danas, sada, hana, sto);
 		pozivi(citaonica, amila, sada);
+		ekran(citaonica, amila, sada);
 		pravila(citaonica, sto, konsultacije);
 	}
 
@@ -188,6 +189,14 @@ public class DemoPodaci {
 				values (?, ?, 'asistentica.pmf@slotbook.test', 'PROVIDER', ?, ?, ?)""", UUID.randomUUID(), citaonica,
 				LinkToken.hash(UUID.randomUUID().toString()), utc(sada.minus(Duration.ofDays(1))),
 				utc(sada.plus(Duration.ofDays(6))));
+	}
+
+	// Ekran na vratima čitaonice, da admin u postavkama ima šta otvoriti i ugasiti
+	private void ekran(UUID citaonica, UUID admin, Instant sada) {
+		UUID ekran = UUID.randomUUID();
+		jdbc.update("insert into door_screens (id, organization_id, token_hash, created_by, created_at) values (?, ?, ?, ?, ?)",
+				ekran, citaonica, LinkToken.hash(linkovi.za(LinkToken.Svrha.EKRAN, ekran)), admin,
+				utc(sada.minus(Duration.ofDays(2))));
 	}
 
 	// Četiri sedmice unazad, da statistika ima šta pokazati. Raspored je izmišljen, ali stalan:

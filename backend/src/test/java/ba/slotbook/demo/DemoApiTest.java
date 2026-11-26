@@ -103,6 +103,22 @@ class DemoApiTest {
 				.andExpect(jsonPath("$.content[0].role").value("PROVIDER"));
 	}
 
+	// Ekran iz dema mora stvarno raditi: adresa iz postavki otvara ekran s resursima čitaonice
+	@Test
+	void adminVidiEkranNaVratimaKojiRadi() throws Exception {
+		UUID citaonica = jdbc.queryForObject("select id from organizations where slug = 'citaonica-pmf'", UUID.class);
+		String ekrani = mockMvc.perform(get("/api/organizations/{id}/screens", citaonica)
+				.header("Authorization", "Bearer " + token("admin@slotbook.test")))
+				.andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
+		String url = JsonPath.read(ekrani, "$[0].url");
+
+		mockMvc.perform(get("/api/screens/{t}", url.substring(url.lastIndexOf('/') + 1)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.resources[*].name").value(hasItems("Sto 4, tihi dio")))
+				.andExpect(jsonPath("$.inviteUrl").isNotEmpty());
+	}
+
 	@Test
 	void adminVidiStatistikuZaProsleCetiriSedmice() throws Exception {
 		UUID citaonica = jdbc.queryForObject("select id from organizations where slug = 'citaonica-pmf'", UUID.class);

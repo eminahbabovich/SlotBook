@@ -1,5 +1,5 @@
 import { useRef, useState, useSyncExternalStore } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { porukaGreske } from './forma/porukaGreske.js'
 import { useSesija } from './sesija/sesija.js'
 import { PrekidacTeme } from './tema/PrekidacTeme.jsx'
@@ -20,6 +20,7 @@ export function Zaglavlje() {
 	const [salje, setSalje] = useState(false)
 	const [greska, setGreska] = useState(null)
 	const telefon = useMedij(TELEFON)
+	const { pathname } = useLocation()
 	const prijavljen = status === 'prijavljen'
 
 	async function odjaviSe() {
@@ -38,6 +39,9 @@ export function Zaglavlje() {
 			{salje ? 'Odjava u toku' : 'Odjavi se'}
 		</button>
 	)
+
+	// Ekran na vratima je cijeli prozor: bez imena, odjave i prekidača teme
+	if (pathname.startsWith('/ekran/')) return null
 
 	return (
 		<header className="zaglavlje">

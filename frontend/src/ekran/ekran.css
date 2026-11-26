@@ -1,0 +1,236 @@
+/* Ekran na vratima: preko cijelog prozora, bez zaglavlja aplikacije. Čita se s par metara, pa su
+   sat i nazivi u najvećim veličinama iz tokena, a stanja termina su ista kao u kalendaru: slobodan
+   ima mjedeni rub i prazan krug, zauzet je udubljen sa šrafurom. Razlikuju se i riječju. */
+.ekran {
+	position: fixed;
+	inset: 0;
+	z-index: 10;
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+	gap: var(--razmak-24);
+	box-sizing: border-box;
+	padding: var(--razmak-24) var(--razmak-16);
+	overflow-y: auto;
+	background: var(--zrno), var(--podloga);
+	color: var(--tekst);
+}
+
+@media (min-width: 900px) {
+	.ekran {
+		padding: var(--razmak-32) var(--razmak-48);
+	}
+}
+
+.ekran-poruka {
+	align-content: center;
+	justify-items: center;
+	grid-template-rows: none;
+	text-align: center;
+}
+
+.ekran-poruka p {
+	max-width: 50ch;
+	color: var(--tekst-sporedni);
+}
+
+.ekran-zaglavlje {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	justify-content: space-between;
+	gap: var(--razmak-16);
+	padding-bottom: var(--razmak-16);
+	border-bottom: 1px solid var(--linija);
+}
+
+.ekran-zaglavlje h1 {
+	margin: 0;
+	font-size: var(--velicina-naslov-1);
+}
+
+.ekran-dan {
+	margin: var(--razmak-4) 0 0;
+	color: var(--tekst-sporedni);
+	font-size: var(--velicina-naslov-3);
+}
+
+.ekran-sat {
+	margin: 0;
+	font-family: var(--font-brojevi);
+	font-size: var(--velicina-hero);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+	color: var(--tekst-mjed);
+}
+
+.ekran-sadrzaj {
+	display: grid;
+	gap: var(--razmak-24);
+	align-content: start;
+	min-width: 0;
+}
+
+@media (min-width: 1100px) {
+	.ekran-sadrzaj:has(.ekran-qr) {
+		grid-template-columns: minmax(0, 1fr) 280px;
+	}
+}
+
+.ekran-resursi {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+	gap: var(--razmak-16);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ekran-resurs {
+	display: grid;
+	gap: var(--razmak-16);
+	align-content: start;
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-2);
+}
+
+.ekran-resurs h2 {
+	margin: 0;
+	font-size: var(--velicina-naslov-0);
+	overflow-wrap: anywhere;
+}
+
+.ekran-sada {
+	display: grid;
+	gap: var(--razmak-8);
+	margin: 0;
+}
+
+.ekran-sada > div {
+	position: relative;
+	padding: var(--razmak-12) var(--razmak-16);
+	border-radius: var(--zaobljenje-zeton);
+}
+
+.ekran-sada dt {
+	color: var(--tekst-sporedni);
+	font-size: var(--velicina-sitno);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.ekran-sada dd {
+	margin: 0;
+	font-size: var(--velicina-naslov-3);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Isti jezik kao kalendar: slobodan je žeton iznad ploče s mjedenim rubom i praznim krugom */
+.ekran-slobodan {
+	background: var(--povrsina);
+	box-shadow: var(--dubina-1), inset 0 -3px 0 var(--moje);
+}
+
+.ekran-sada .ekran-slobodan::after {
+	content: '';
+	position: absolute;
+	top: var(--razmak-12);
+	right: var(--razmak-12);
+	width: 14px;
+	height: 14px;
+	box-sizing: border-box;
+	border: 2px solid var(--tekst);
+	border-radius: 50%;
+}
+
+.ekran-zauzet {
+	color: var(--tekst-sporedni);
+	background: repeating-linear-gradient(-45deg, var(--sraf) 0 1px, transparent 1px 7px), var(--podloga);
+	box-shadow: var(--utisnuto);
+}
+
+.ekran-ne-radi {
+	color: var(--tekst-sporedni);
+	box-shadow: inset 0 0 0 1px var(--linija);
+}
+
+.ekran-ostatak {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--razmak-8);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ekran-ostatak li {
+	display: grid;
+	padding: var(--razmak-8) var(--razmak-12);
+	border-radius: var(--zaobljenje-zeton);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.ekran-oznaka {
+	font-size: var(--velicina-sitno);
+	font-weight: 400;
+}
+
+.ekran-qr {
+	display: grid;
+	gap: var(--razmak-12);
+	align-content: start;
+	justify-items: center;
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-ploca);
+	box-shadow: var(--dubina-2);
+	text-align: center;
+}
+
+.ekran-qr svg {
+	width: min(100%, 220px);
+	height: auto;
+}
+
+.ekran-qr p {
+	margin: 0;
+}
+
+.ekran-prazno {
+	color: var(--tekst-sporedni);
+}
+
+.ekran-dno {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--razmak-8) var(--razmak-16);
+	color: var(--tekst-sporedni);
+	font-size: var(--velicina-sitno);
+}
+
+/* Uživo ima punu tačku, a prekid praznu: razlika je u obliku, ne samo u boji */
+.ekran-uzivo::before,
+.ekran-prekid::before {
+	content: '';
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-right: var(--razmak-8);
+	box-sizing: border-box;
+	border-radius: 50%;
+}
+
+.ekran-uzivo::before {
+	background: var(--moje);
+}
+
+.ekran-prekid::before {
+	border: 2px solid var(--greska);
+}

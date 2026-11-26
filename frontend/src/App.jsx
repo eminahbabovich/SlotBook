@@ -11,6 +11,7 @@ import { KalendarResursa } from './kalendar/KalendarResursa.jsx'
 import { Organizacija } from './organizacije/Organizacija.jsx'
 import { Organizacije } from './organizacije/Organizacije.jsx'
 import { Pridruzivanje } from './pozivnica/Pridruzivanje.jsx'
+import { Ekran } from './ekran/Ekran.jsx'
 import { PrihvatanjePozivnice } from './pozivnica/PrihvatanjePozivnice.jsx'
 import { PotvrdaEmaila } from './prijava/PotvrdaEmaila.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
@@ -75,6 +76,8 @@ export default function App() {
 							<Route path="/nova-lozinka" element={<NovaLozinka />} />
 							{/* Van čuvara: ime organizacije se vidi i prije prijave, pa stranica sama nudi prijavu */}
 							<Route path="/pridruzi/:token" element={<Pridruzivanje />} />
+							{/* Van čuvara: tablet na vratima nema nalog, pravo daje token iz linka */}
+							<Route path="/ekran/:token" element={<Ekran />} />
 							<Route path="*" element={<NePostoji />} />
 						</Routes>
 					</main>

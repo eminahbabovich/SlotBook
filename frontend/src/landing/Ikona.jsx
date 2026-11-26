@@ -51,6 +51,15 @@ const PUTANJE = {
 			<path d="M14 10a4 4 0 0 1 0 5.6l-2.4 2.4a4 4 0 0 1-5.6-5.6l1.2-1.2" />
 		</>
 	),
+	// Tablet na zidu sa satom: ekran na vratima
+	ekran: (
+		<>
+			<rect x="3.5" y="4.5" width="17" height="12.5" rx="2" />
+			<path d="M9 20.5h6M12 17v3.5" />
+			<circle cx="12" cy="10.75" r="3.2" />
+			<path d="M12 9.2v1.6l1 .8" />
+		</>
+	),
 	// Pješčani sat: pravilo koliko unaprijed i do kad se rezerviše
 	pravila: (
 		<>

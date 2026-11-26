@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { naIstekSesije, obnoviSesiju } from '../api/apiFetch.js'
 import { mojNalog, odjava, prijava } from '../api/auth.js'
 import { obrisiNalog as obrisi } from '../api/nalog.js'
@@ -42,8 +42,16 @@ export function SesijaProvider({ children }) {
 
 	// StrictMode u dev modu pokrene efekat dvaput. Oba poziva dobiju isti refresh iz
 	// obnoviSesiju, pa backend ne vidi dva refresha istim kolačićem.
+	// Istek javlja i prva provjera kad sesije nikad nije ni bilo (tablet s ekranom na vratima, link za
+	// pridruživanje). Tada keš ne pripada nikome, a brisanje bi usred učitavanja odbacilo upit javne
+	// stranice, koja bi onda ostala na "Učitava se". Briše se samo kad istekne sesija prijavljene osobe.
+	const status = useRef(stanje.status)
 	useEffect(() => {
-		naIstekSesije(() => zavrsiSesiju(ODJAVLJEN))
+		status.current = stanje.status
+	}, [stanje.status])
+
+	useEffect(() => {
+		naIstekSesije(() => (status.current === 'prijavljen' ? zavrsiSesiju(ODJAVLJEN) : setStanje(ODJAVLJEN)))
 		provjeri()
 	}, [provjeri, zavrsiSesiju])
 

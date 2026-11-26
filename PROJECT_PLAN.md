@@ -502,7 +502,7 @@ poruku prije slanja.
 3. Frontend: polja u formi resursa i u postavkama organizacije, značke s pravilima na stranici
    resursa, termini izvan prozora se ne nude, traka s blokadom u Mojim rezervacijama.
 
-**3. Ekran na vratima**
+**3. Ekran na vratima** (gotovo 26.11.)
 1. `door_screens` (V44): tajni link za cijelu organizaciju ili jedan resurs, novi zamijeni stari,
    povlačenje. Token kao kod pozivnog linka.
 2. Javni `GET /api/screens/{token}`: ime organizacije, resursi, današnji termini sa stanjem i

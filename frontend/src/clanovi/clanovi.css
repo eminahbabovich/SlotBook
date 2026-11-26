@@ -263,3 +263,27 @@
 a.dugme {
 	text-decoration: none;
 }
+
+/* Ekrani na vratima u postavkama: svaki ekran je red s linkom i radnjama, odvojen linijom */
+.lista-ekrana {
+	display: grid;
+	gap: var(--razmak-16);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ekran-stavka {
+	display: grid;
+	gap: var(--razmak-8);
+	padding-bottom: var(--razmak-16);
+	border-bottom: 1px solid var(--linija);
+}
+
+.ekran-stavka .napomena {
+	margin: 0;
+}
+
+.ekran-stavka > .dugme-tekst {
+	justify-self: start;
+}

@@ -1,3 +1,4 @@
+import { pratiTok } from './tok.js'
 import { apiFetch, provjeriPolja } from './apiFetch.js'
 
 const STANJE_MOJE = { CONFIRMED: 'moje', PENDING: 'ceka' }
@@ -31,26 +32,7 @@ export async function kalendarResursa(resursId, od, doDana) {
 	return { zona: odgovor.timezone, termini }
 }
 
-// SSE tok termina resursa. EventSource ne može poslati Authorization zaglavlje, pa se tok čita
-// kroz fetch. Završi se kad server zatvori vezu (poslije 15 minuta), a baci ApiError kad se ne otvori.
-// naSpajanje javi da je veza otvorena, naPromjenu da su se termini promijenili. Podatke tok ne nosi.
-export async function pratiTermine(resursId, { naSpajanje, naPromjenu, signal }) {
-	const putanja = `/api/resources/${resursId}/slots/stream`
-	const odgovor = await apiFetch(putanja, { oblik: 'tok', signal, zaglavlja: { Accept: 'text/event-stream' } })
-	naSpajanje()
-	const citac = odgovor.body.getReader()
-	const dekoder = new TextDecoder()
-	let ostatak = ''
-	for (;;) {
-		const { value, done } = await citac.read()
-		if (done) return
-		ostatak += dekoder.decode(value, { stream: true })
-		// Poruka završava praznim redom. Zadnji dio može biti pola poruke, pa čeka sljedeći komad.
-		const poruke = ostatak.split('\n\n')
-		ostatak = poruke.pop()
-		// Spring piše "event:promjena", a standard dozvoljava i razmak iza dvotačke
-		if (poruke.some((poruka) => poruka.split('\n').some((red) => /^event: ?promjena$/.test(red)))) {
-			naPromjenu()
-		}
-	}
+// SSE tok termina resursa (pratiTok): javlja samo da su se termini promijenili, podatke ne nosi
+export function pratiTermine(resursId, opcije) {
+	return pratiTok(`/api/resources/${resursId}/slots/stream`, opcije)
 }

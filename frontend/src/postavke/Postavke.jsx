@@ -9,6 +9,7 @@ import { KLJUC_MOJE_ORGANIZACIJE, useOrganizacija } from '../organizacije/upiti.
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Mrvice } from '../tema/Mrvice.jsx'
+import { EkranNaVratima } from './EkranNaVratima.jsx'
 import '../forma/forma.css'
 
 const PORUKE = {
@@ -50,6 +51,7 @@ export function Postavke() {
 			<Mrvice stavke={[{ naziv: 'Organizacije', to: '/' }, { naziv: organizacija.naziv, to: `/o/${slug}` }, { naziv: 'Postavke' }]} />
 			<h1>Postavke</h1>
 			<PraviloNedolazaka organizacija={organizacija} />
+			<EkranNaVratima organizacija={organizacija} />
 		</section>
 	)
 }

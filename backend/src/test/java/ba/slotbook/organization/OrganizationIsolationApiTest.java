@@ -75,6 +75,9 @@ class OrganizationIsolationApiTest {
 					{"maxUses": 5, "days": 7}
 					"""),
 			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/invite-links/{linkId}", null),
+			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/screens", null),
+			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/screens", "{}"),
+			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/screens/{screenId}", null),
 			// Lejli se daje uloga koju već ima: admin dobije 200, a ništa se ne promijeni
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/members/{lejlaId}/role", """
 					{"role": "CLIENT"}
@@ -197,6 +200,8 @@ class OrganizationIsolationApiTest {
 			Map.entry("POST /api/invites/accept", "pravo daju token i email iz pozivnice"),
 			Map.entry("GET /api/invite-links/{token}", "javno, samo ime organizacije, pravo daje token iz linka"),
 			Map.entry("POST /api/invite-links/join", "pravo daje token, ulazi se samo kao klijent, InviteLinkApiTest"),
+			Map.entry("GET /api/screens/{token}", "javno, pravo daje token ekrana, bez podataka o ljudima, DoorScreenApiTest"),
+			Map.entry("GET /api/screens/{token}/stream", "javno, pravo daje token ekrana, šalje samo ID resursa, DoorScreenApiTest"),
 			Map.entry("POST /api/stripe/webhook", "javno, pravo daje Stripe potpis, StripeWebhookApiTest"));
 
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 13 };
@@ -229,6 +234,7 @@ class OrganizationIsolationApiTest {
 	private UUID alminUpis;
 	private UUID otvorenaPozivnica;
 	private UUID pozivniLink;
+	private UUID ekran;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
 	// Lejla je klijent čitaonice, a Damir u čitaonici vodi drugi sto.
@@ -252,6 +258,7 @@ class OrganizationIsolationApiTest {
 		clan(citaonica, "kenan.izolacija@example.com", "CLIENT");
 		otvorenaPozivnica = otvorenaPozivnica();
 		pozivniLink = pozivniLink();
+		ekran = ekranNaVratima();
 	}
 
 	// Almino povlačenje ih ukloni, pa se prave nove prije svakog testa
@@ -273,10 +280,21 @@ class OrganizationIsolationApiTest {
 		return id;
 	}
 
+	private UUID ekranNaVratima() {
+		UUID id = UUID.randomUUID();
+		jdbc.update("update door_screens set revoked_at = now() where organization_id = ? and revoked_at is null",
+				citaonica);
+		jdbc.update("insert into door_screens (id, organization_id, token_hash, created_at) values (?, ?, ?, now())",
+				id, citaonica, UUID.randomUUID().toString().replace("-", ""));
+		return id;
+	}
+
 	// Ukupno i povučenih: tuđi POST bi dodao link, a tuđi DELETE bi ga povukao
 	private String brojPovucenihLinkova() {
-		return jdbc.queryForObject("select count(*) || '/' || count(revoked_at) from invite_links where organization_id = ?",
-				String.class, citaonica);
+		// Isto za ekrane na vratima
+		return jdbc.queryForObject("select (select count(*) || '/' || count(revoked_at) from invite_links "
+				+ "where organization_id = ?) || ' ' || (select count(*) || '/' || count(revoked_at) from door_screens "
+				+ "where organization_id = ?)", String.class, citaonica, citaonica);
 	}
 
 	// Almin prelaz ih promijeni, pa se prije svakog testa prave nove. Klijent je Alma, admin čitaonice.
@@ -453,7 +471,7 @@ class OrganizationIsolationApiTest {
 		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
 		Map<String, Object> varijable = new HashMap<>(rezervacije);
 		varijable.putAll(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola, "waitlistId",
-				alminUpis, "inviteId", otvorenaPozivnica, "linkId", pozivniLink, "lejlaId",
+				alminUpis, "inviteId", otvorenaPozivnica, "linkId", pozivniLink, "screenId", ekran, "lejlaId",
 				users.findByEmail("lejla.izolacija@example.com").orElseThrow().getId(), "kenanId",
 				users.findByEmail("kenan.izolacija@example.com").orElseThrow().getId()));
 		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja()).buildAndExpand(varijable).toUri();
@@ -666,6 +684,12 @@ class OrganizationIsolationApiTest {
 				otvorenaPozivnica))).isEqualTo(404);
 		assertThat(bojanovStatus(request(HttpMethod.DELETE, "/api/organizations/{id}/invite-links/{l}", teretana,
 				pozivniLink))).isEqualTo(404);
+		assertThat(bojanovStatus(request(HttpMethod.DELETE, "/api/organizations/{id}/screens/{s}", teretana, ekran)))
+				.isEqualTo(404);
+		// Ekran svoje organizacije s tuđim resursom: termini čitaonice bi bili javni na Bojanovom ekranu
+		assertThat(bojanovStatus(request(HttpMethod.POST, "/api/organizations/{id}/screens", teretana)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"resourceId\": \"" + stoCitaonice + "\"}")))
+				.isEqualTo(404);
 
 		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
 		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);

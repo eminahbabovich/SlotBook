@@ -39,6 +39,7 @@ import ba.slotbook.booking.NoShowTooEarlyException;
 import ba.slotbook.booking.SeriesConflictException;
 import ba.slotbook.booking.SlotOfferedException;
 import ba.slotbook.booking.BookingRuleException;
+import ba.slotbook.screen.DoorScreenNotFoundException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.booking.WaitlistNotNeededException;
 import ba.slotbook.organization.AlreadyMemberException;
@@ -381,6 +382,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 						+ "). Prvo ih predaj drugom članu u uređivanju resursa.");
 		problem.setTitle("Član vodi resurse");
 		problem.setProperty("resursi", ex.getResursi());
+		return problem;
+	}
+
+	// Ista poruka za nepostojeći, ugašen i zamijenjen ekran: ko pogađa token ne saznaje ništa
+	@ExceptionHandler(DoorScreenNotFoundException.class)
+	ProblemDetail ekranNePostoji(DoorScreenNotFoundException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"Ovaj ekran je ugašen ili link nije tačan. Admin organizacije može napraviti novi u postavkama.");
+		problem.setTitle("Ekran ne postoji");
 		return problem;
 	}
 
