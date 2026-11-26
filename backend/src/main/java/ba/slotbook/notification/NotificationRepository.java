@@ -26,6 +26,7 @@ interface NotificationRepository extends JpaRepository<Notification, UUID> {
 	@Query("""
 			SELECT n.createdAt FROM Notification n
 			WHERE n.user.id = :userId AND n.type = :type AND n.createdAt > :od
+				AND n.channel = ba.slotbook.notification.NotificationChannel.EMAIL
 			ORDER BY n.createdAt DESC""")
 	List<Instant> createdForUserSince(UUID userId, NotificationType type, Instant od, Pageable koliko);
 

@@ -520,7 +520,7 @@ poruku prije slanja.
    lista po vremenu na stranici organizacije, klik vodi na resurs s izabranim terminom. Broj
    slobodnih termina ispod svakog dana u traci.
 
-**5. PWA i push obavijesti**
+**5. PWA i push obavijesti** (gotovo 26.11., na pravom telefonu nije provjereno)
 1. Izbor Vite PWA plugina i Java biblioteke za Web Push po dokumentaciji, odluka u `docs/ODLUKE.md`.
 2. Manifest, ikone, service worker samo za statiku (nikad `/api`), stranica "nema mreže".
 3. `push_subscriptions` (V45), VAPID ključevi samo iz env-a. Bez ključeva push je isključen, a

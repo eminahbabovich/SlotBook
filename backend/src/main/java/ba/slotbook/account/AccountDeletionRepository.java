@@ -84,6 +84,7 @@ class AccountDeletionRepository {
 		jdbc.sql("delete from waitlist_entries where client_id = ?").param(userId).update();
 		jdbc.sql("delete from calendar_feeds where user_id = ?").param(userId).update();
 		jdbc.sql("delete from notifications where user_id = ? or email = ?").param(userId).param(email).update();
+		jdbc.sql("delete from push_subscriptions where user_id = ?").param(userId).update();
 		jdbc.sql("delete from organization_invites where email = ?").param(email).update();
 		jdbc.sql("delete from login_failures where email = ?").param(email).update();
 		jdbc.sql("delete from organization_members where user_id = ?").param(userId).update();

@@ -40,6 +40,7 @@ import ba.slotbook.booking.SeriesConflictException;
 import ba.slotbook.booking.SlotOfferedException;
 import ba.slotbook.booking.BookingRuleException;
 import ba.slotbook.screen.DoorScreenNotFoundException;
+import ba.slotbook.notification.PushException;
 import ba.slotbook.booking.SlotTakenException;
 import ba.slotbook.booking.WaitlistNotNeededException;
 import ba.slotbook.organization.AlreadyMemberException;
@@ -382,6 +383,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 						+ "). Prvo ih predaj drugom članu u uređivanju resursa.");
 		problem.setTitle("Član vodi resurse");
 		problem.setProperty("resursi", ex.getResursi());
+		return problem;
+	}
+
+	@ExceptionHandler(PushException.class)
+	ProblemDetail push(PushException ex) {
+		ProblemDetail problem = switch (ex.getRazlog()) {
+			case ISKLJUCEN -> ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+					"Obavijesti na telefonu trenutno nisu uključene na serveru. Mailovi stižu kao i do sada.");
+			case NEMA_PRETPLATE -> ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+					"Ovaj uređaj više nije prijavljen za obavijesti. Isključi ih i uključi ponovo.");
+			case SERVIS_ODBIO -> ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY,
+					"Push servis browsera nije primio obavijest. Pokušaj ponovo za minutu.");
+		};
+		problem.setTitle(switch (ex.getRazlog()) {
+			case ISKLJUCEN -> "Obavijesti nisu uključene";
+			case NEMA_PRETPLATE -> "Uređaj nije prijavljen";
+			case SERVIS_ODBIO -> "Obavijest nije poslana";
+		});
 		return problem;
 	}
 

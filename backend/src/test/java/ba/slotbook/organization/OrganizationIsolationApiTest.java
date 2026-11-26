@@ -205,6 +205,10 @@ class OrganizationIsolationApiTest {
 			Map.entry("POST /api/invite-links/join", "pravo daje token, ulazi se samo kao klijent, InviteLinkApiTest"),
 			Map.entry("GET /api/screens/{token}", "javno, pravo daje token ekrana, bez podataka o ljudima, DoorScreenApiTest"),
 			Map.entry("GET /api/screens/{token}/stream", "javno, pravo daje token ekrana, šalje samo ID resursa, DoorScreenApiTest"),
+			Map.entry("GET /api/push/public-key", "javni VAPID ključ servera, isti za sve"),
+			Map.entry("PUT /api/me/push-subscriptions", "samo korisnik iz tokena, PushApiTest"),
+			Map.entry("DELETE /api/me/push-subscriptions", "samo browser korisnika iz tokena, PushApiTest provjerava tuđi"),
+			Map.entry("POST /api/me/push-subscriptions/test", "samo browser korisnika iz tokena, PushApiTest provjerava tuđi"),
 			Map.entry("POST /api/stripe/webhook", "javno, pravo daje Stripe potpis, StripeWebhookApiTest"));
 
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 13 };

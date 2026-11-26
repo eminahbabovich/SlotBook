@@ -94,6 +94,12 @@
 			<artifactId>sentry-logback</artifactId>
 			<version>${sentry.version}</version>
 		</dependency>
+		<!-- Web Push (RFC 8291 i VAPID) bez dodatnih zavisnosti, šalje preko JDK HttpClienta -->
+		<dependency>
+			<groupId>com.zerodeplibs</groupId>
+			<artifactId>zerodep-web-push-java</artifactId>
+			<version>2.1.5</version>
+		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>

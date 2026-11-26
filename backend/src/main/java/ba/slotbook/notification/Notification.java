@@ -52,6 +52,15 @@ public class Notification {
 	@Column(nullable = false)
 	private NotificationStatus status;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, updatable = false)
+	private NotificationChannel channel = NotificationChannel.EMAIL;
+
+	// Samo za push: na koji browser ide. Baza briše obavijest zajedno s pretplatom.
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "push_subscription_id", updatable = false)
+	private PushSubscription pushSubscription;
+
 	@Column(nullable = false)
 	private int attempts;
 
@@ -97,6 +106,16 @@ public class Notification {
 		this.inviteId = inviteId;
 	}
 
+	// Push ide na jedan browser. Naslov stoji u subject, a cijela poruka (JSON za service worker) u body.
+	static Notification push(User user, NotificationType type, UUID bookingId, PushSubscription pretplata,
+			String naslov, String poruka, Instant createdAt) {
+		Notification obavijest = new Notification(user, type, bookingId, new EmailContent(naslov, poruka, null),
+				createdAt);
+		obavijest.channel = NotificationChannel.PUSH;
+		obavijest.pushSubscription = pretplata;
+		return obavijest;
+	}
+
 	void poslana(Instant sada) {
 		attempts++;
 		status = NotificationStatus.SENT;
@@ -122,6 +141,14 @@ public class Notification {
 
 	UUID getId() {
 		return id;
+	}
+
+	boolean isPush() {
+		return channel == NotificationChannel.PUSH;
+	}
+
+	PushSubscription getPushSubscription() {
+		return pushSubscription;
 	}
 
 	String getRecipient() {

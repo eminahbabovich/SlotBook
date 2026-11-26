@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { naIstekSesije, obnoviSesiju } from '../api/apiFetch.js'
+import { ugasiObavijestiNaOdjavi } from '../obavijesti/odjava.js'
 import { mojNalog, odjava, prijava } from '../api/auth.js'
 import { obrisiNalog as obrisi } from '../api/nalog.js'
 import { SesijaContext } from './sesija.js'
@@ -61,6 +62,7 @@ export function SesijaProvider({ children }) {
 	}
 
 	async function odjavi() {
+		await ugasiObavijestiNaOdjavi()
 		await odjava()
 		zavrsiSesiju(ODJAVIO_SE)
 	}

@@ -32,7 +32,8 @@ class NotificationSenderTest {
 	private final NotificationRepository notifications = mock(NotificationRepository.class);
 	private final JavaMailSender mailSender = mock(JavaMailSender.class);
 	private final SimpleMeterRegistry metrike = new SimpleMeterRegistry();
-	private final NotificationSender sender = new NotificationSender(notifications, mailSender,
+	private final NotificationSender sender = new NotificationSender(notifications,
+			mock(PushSubscriptionRepository.class), mock(WebPushClient.class), mailSender,
 			Clock.fixed(SADA, ZoneOffset.UTC), "SlotBook <noreply@slotbook.local>", metrike);
 
 	@BeforeEach
