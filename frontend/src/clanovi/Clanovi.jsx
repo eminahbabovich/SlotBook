@@ -1,14 +1,17 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { clanoviOrganizacije } from '../api/clanovi.js'
+import { clanoviOrganizacije, promijeniUlogu, ukloniClana } from '../api/clanovi.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { OrganizacijaNijeDostupna } from '../organizacije/Organizacija.jsx'
 import { ULOGE, useOrganizacija } from '../organizacije/upiti.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
+import { OtvorenePozivnice } from './OtvorenePozivnice.jsx'
 import { Pozivnica } from './Pozivnica.jsx'
+import { PozivniLink } from './PozivniLink.jsx'
+import './clanovi.css'
 import '../organizacije/organizacije.css'
 import { emajlResursa } from '../resursi/emajl.js'
 
@@ -51,11 +54,20 @@ export function Clanovi() {
 		<section>
 			<Link to={`/o/${slug}`}>{organizacija.naziv}</Link>
 			<h1>Članovi</h1>
+			<PozivniLink organizacija={organizacija} />
 			<Pozivnica organizacija={organizacija} />
+			<OtvorenePozivnice organizacija={organizacija} />
 			<ListaClanova organizacija={organizacija} />
 		</section>
 	)
 }
+
+const PORUKE_IZMJENE = {
+	serverNeOdgovara: 'Promjena nije sačuvana, server ne odgovara. Pokušaj ponovo za minutu.',
+	opsta: 'Promjena nije sačuvana zbog greške na serveru. Pokušaj ponovo za minutu.',
+}
+
+const IZBOR_ULOGE = ['CLIENT', 'PROVIDER', 'ADMIN']
 
 function ListaClanova({ organizacija }) {
 	const [stranica, setStranica] = useState(0)
@@ -76,18 +88,11 @@ function ListaClanova({ organizacija }) {
 		<>
 			<h2>Ko je u organizaciji</h2>
 			{data.ukupnoStranica === 1 && data.clanovi.length === 1 && (
-				<p className="napomena-blok">Za sada si jedini član. Kad neko prihvati pozivnicu, pojavit će se ovdje.</p>
+				<p className="napomena-blok">Za sada si jedini član. Kad neko uđe preko linka ili pozivnice, pojavit će se ovdje.</p>
 			)}
-			<ul className="tabla tabla-zbijena" aria-label="Članovi">
+			<ul className="lista-clanova" aria-label="Članovi">
 				{data.clanovi.map((c) => (
-					<li key={c.id} className="tabla-red" style={{ '--emajl': emajlResursa(c.id) }}>
-						<span>
-							<span className="tabla-naziv">{c.ime}</span>
-							{c.id === korisnik.id && ' (ti)'}{' '}
-							<span className="tabla-uloga">{c.email}</span>
-						</span>
-						<span className="tabla-uloga">{ULOGE[c.uloga] ?? c.uloga}</span>
-					</li>
+					<Clan key={c.id} clan={c} organizacija={organizacija} ja={c.id === korisnik.id} />
 				))}
 			</ul>
 			{data.ukupnoStranica > 1 && (
@@ -106,5 +111,78 @@ function ListaClanova({ organizacija }) {
 				</div>
 			)}
 		</>
+	)
+}
+
+// Uloga se mijenja odmah po izboru, a uklanjanje traži potvrdu, jer otkazuje i buduće termine.
+// Zadnjeg admina i člana koji vodi resurse čuva backend (409), a poruka kaže šta prvo uraditi.
+function Clan({ clan, organizacija, ja }) {
+	const queryClient = useQueryClient()
+	const [pitaj, setPitaj] = useState(false)
+	const osvjezi = () => queryClient.invalidateQueries({ queryKey: ['clanovi', organizacija.id] })
+	const uloga = useMutation({
+		mutationFn: (nova) => promijeniUlogu(organizacija.id, clan.id, nova),
+		onSettled: osvjezi,
+	})
+	const uklanjanje = useMutation({
+		mutationFn: () => ukloniClana(organizacija.id, clan.id),
+		onSettled: () => {
+			setPitaj(false)
+			osvjezi()
+		},
+	})
+	const greska = uloga.error ?? uklanjanje.error
+	const izbor = `uloga-${clan.id}`
+
+	return (
+		<li style={{ '--emajl': emajlResursa(clan.id) }}>
+			<span className="clan-ime">
+				<strong>
+					<span>{clan.ime}</span>
+					{ja && ' (ti)'}
+				</strong>
+				<span className="clan-sporedno">{clan.email}</span>
+			</span>
+			<div className="clan-radnje">
+				<label className="skriveno" htmlFor={izbor}>
+					Uloga za {clan.ime}
+				</label>
+				<select
+					id={izbor}
+					value={uloga.isPending ? uloga.variables : clan.uloga}
+					onChange={(d) => uloga.mutate(d.target.value)}
+					disabled={uloga.isPending}
+				>
+					{IZBOR_ULOGE.map((u) => (
+						<option key={u} value={u}>
+							{ULOGE[u]}
+						</option>
+					))}
+				</select>
+				{pitaj ? (
+					<div className="potvrda-dugmad" role="group" aria-label={`Uklanjanje: ${clan.ime}`}>
+						<p className="potvrda-pitanje">Ukloniti {clan.ime}? Buduće rezervacije se otkazuju, uz mail.</p>
+						<button className="dugme" type="button" onClick={() => uklanjanje.mutate()} disabled={uklanjanje.isPending}>
+							{uklanjanje.isPending ? 'Uklanja se' : 'Ukloni'}
+						</button>
+						<button className="dugme-tekst" type="button" onClick={() => setPitaj(false)}>
+							Ne
+						</button>
+					</div>
+				) : (
+					// Sebe admin ne uklanja ovdje: odmah bi izgubio ovu stranicu usred klika
+					!ja && (
+						<button className="dugme-tekst" type="button" onClick={() => setPitaj(true)}>
+							Ukloni
+						</button>
+					)
+				)}
+			</div>
+			{greska && (
+				<p role="alert" className="greska-forme">
+					{porukaGreske(greska, PORUKE_IZMJENE)}
+				</p>
+			)}
+		</li>
 	)
 }

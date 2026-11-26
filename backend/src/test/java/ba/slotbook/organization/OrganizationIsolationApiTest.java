@@ -60,7 +60,7 @@ class OrganizationIsolationApiTest {
 		// u testu kaže u kojem je stanju, a u aplikaciji je {bookingId}.
 		String ruta() {
 			return metoda.name() + " " + putanja.split("\\?")[0].replaceFirst("/api/bookings/\\{[^}]+}",
-					"/api/bookings/{bookingId}");
+					"/api/bookings/{bookingId}").replaceFirst("/members/\\{[^}]+}", "/members/{userId}");
 		}
 
 	}
@@ -68,6 +68,19 @@ class OrganizationIsolationApiTest {
 	private static final List<Zahtjev> ZAHTJEVI = List.of(
 			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/members", null),
 			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/audit-log", null),
+			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/invites", null),
+			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/invites/{inviteId}", null),
+			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/invite-links", null),
+			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/invite-links", """
+					{"maxUses": 5, "days": 7}
+					"""),
+			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/invite-links/{linkId}", null),
+			// Lejli se daje uloga koju već ima: admin dobije 200, a ništa se ne promijeni
+			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/members/{lejlaId}/role", """
+					{"role": "CLIENT"}
+					"""),
+			// Kenan je klijent bez rezervacija, samo za ovo. Prije svakog testa se vraća u čitaonicu.
+			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/members/{kenanId}", null),
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/invites", """
 					{"email": "upad.izolacija@example.com", "role": "ADMIN"}
 					"""),
@@ -179,6 +192,8 @@ class OrganizationIsolationApiTest {
 			Map.entry("POST /api/organizations", "nova organizacija, kreator postaje admin"),
 			Map.entry("GET /api/organizations/{slug}", "javni profil: naziv, adresa i zona"),
 			Map.entry("POST /api/invites/accept", "pravo daju token i email iz pozivnice"),
+			Map.entry("GET /api/invite-links/{token}", "javno, samo ime organizacije, pravo daje token iz linka"),
+			Map.entry("POST /api/invite-links/join", "pravo daje token, ulazi se samo kao klijent, InviteLinkApiTest"),
 			Map.entry("POST /api/stripe/webhook", "javno, pravo daje Stripe potpis, StripeWebhookApiTest"));
 
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 13 };
@@ -209,6 +224,8 @@ class OrganizationIsolationApiTest {
 	private UUID odmorStola;
 	private Map<String, UUID> rezervacije;
 	private UUID alminUpis;
+	private UUID otvorenaPozivnica;
+	private UUID pozivniLink;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
 	// Lejla je klijent čitaonice, a Damir u čitaonici vodi drugi sto.
@@ -228,6 +245,35 @@ class OrganizationIsolationApiTest {
 		ponedjeljkomOtvoreno();
 		rezervacije = rezervacijeZaPrelaze();
 		alminUpis = selmaDrziTerminAAlmaCeka();
+		token("kenan.izolacija@example.com", "Kenan Hodžić");
+		clan(citaonica, "kenan.izolacija@example.com", "CLIENT");
+		otvorenaPozivnica = otvorenaPozivnica();
+		pozivniLink = pozivniLink();
+	}
+
+	// Almino povlačenje ih ukloni, pa se prave nove prije svakog testa
+	private UUID otvorenaPozivnica() {
+		jdbc.update("delete from organization_invites where organization_id = ? and email = 'nova.izolacija@example.com'",
+				citaonica);
+		UUID id = UUID.randomUUID();
+		jdbc.update("insert into organization_invites (id, organization_id, email, role, token_hash, created_at, "
+				+ "expires_at) values (?, ?, 'nova.izolacija@example.com', 'CLIENT', ?, now(), now() + interval '7 days')",
+				id, citaonica, UUID.randomUUID().toString().replace("-", ""));
+		return id;
+	}
+
+	private UUID pozivniLink() {
+		UUID id = UUID.randomUUID();
+		jdbc.update("insert into invite_links (id, organization_id, token_hash, max_uses, expires_at, created_at) "
+				+ "values (?, ?, ?, 5, now() + interval '7 days', now())", id, citaonica,
+				UUID.randomUUID().toString().replace("-", ""));
+		return id;
+	}
+
+	// Ukupno i povučenih: tuđi POST bi dodao link, a tuđi DELETE bi ga povukao
+	private String brojPovucenihLinkova() {
+		return jdbc.queryForObject("select count(*) || '/' || count(revoked_at) from invite_links where organization_id = ?",
+				String.class, citaonica);
 	}
 
 	// Almin prelaz ih promijeni, pa se prije svakog testa prave nove. Klijent je Alma, admin čitaonice.
@@ -404,7 +450,9 @@ class OrganizationIsolationApiTest {
 		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
 		Map<String, Object> varijable = new HashMap<>(rezervacije);
 		varijable.putAll(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola, "waitlistId",
-				alminUpis));
+				alminUpis, "inviteId", otvorenaPozivnica, "linkId", pozivniLink, "lejlaId",
+				users.findByEmail("lejla.izolacija@example.com").orElseThrow().getId(), "kenanId",
+				users.findByEmail("kenan.izolacija@example.com").orElseThrow().getId()));
 		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja()).buildAndExpand(varijable).toUri();
 		if (Zahtjev.SLIKA.equals(zahtjev.tijelo())) {
 			return mockMvc.perform(multipart(zahtjev.metoda(), adresa)
@@ -451,11 +499,13 @@ class OrganizationIsolationApiTest {
 		String slikaPrije = kljucSlike();
 		long rezervacijaPrije = brojRezervacija();
 		String statusiPrije = statusiRezervacija();
+		String linkoviPrije = brojPovucenihLinkova();
 
 		for (Zahtjev zahtjev : ZAHTJEVI) {
 			assertThat(posalji(zahtjev, bojan)).as(zahtjev.ruta()).isEqualTo(403);
 		}
 
+		assertThat(brojPovucenihLinkova()).isEqualTo(linkoviPrije);
 		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
 		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);
 		assertThat(brojRedova("audit_log")).isEqualTo(zapisaPrije);
@@ -513,6 +563,7 @@ class OrganizationIsolationApiTest {
 		long izuzetakaPrije = brojIzuzetaka();
 		String slikaPrije = kljucSlike();
 		String statusiPrije = statusiPripremljenih();
+		String linkoviPrije = brojPovucenihLinkova();
 
 		for (Zahtjev zahtjev : ZAHTJEVI) {
 			int status = posalji(zahtjev, token);
@@ -525,6 +576,7 @@ class OrganizationIsolationApiTest {
 
 		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
 		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);
+		assertThat(brojPovucenihLinkova()).isEqualTo(linkoviPrije);
 		// U dnevniku je samo ono što je uloga smjela: provider je napravio svoj resurs, klijent ništa
 		assertThat(jdbc.queryForList("select action from audit_log where id > ? order by id", String.class,
 				zadnjiZapis)).isEqualTo(uloga.equals("klijent") ? List.of() : List.of("RESOURCE_CREATED"));
@@ -591,6 +643,34 @@ class OrganizationIsolationApiTest {
 				stoCitaonice)).isEqualTo(120);
 		assertThat(jdbc.queryForObject("select active from resources where id = ?", Boolean.class,
 				stoCitaonice)).isTrue();
+	}
+
+	// Isto za članove i pozivnice: Bojan prođe @PreAuthorize sa svojom teretanom, ali Kenan, pozivnica i
+	// link čitaonice se traže unutar teretane i ne nađu se
+	@Test
+	void adminSaSvojomOrganizacijomITudjimClanomIliPozivnicomUPutanjiNistaNeMijenja() throws Exception {
+		UUID kenan = users.findByEmail("kenan.izolacija@example.com").orElseThrow().getId();
+		long clanovaPrije = brojRedova("organization_members");
+		long pozivnicaPrije = brojRedova("organization_invites");
+		String linkoviPrije = brojPovucenihLinkova();
+
+		assertThat(bojanovStatus(request(HttpMethod.DELETE, "/api/organizations/{id}/members/{u}", teretana, kenan))).isEqualTo(404);
+		assertThat(bojanovStatus(request(HttpMethod.PUT, "/api/organizations/{id}/members/{u}/role", teretana, kenan)
+				.contentType(MediaType.APPLICATION_JSON).content("""
+						{"role": "ADMIN"}
+						"""))).isEqualTo(404);
+		assertThat(bojanovStatus(request(HttpMethod.DELETE, "/api/organizations/{id}/invites/{i}", teretana,
+				otvorenaPozivnica))).isEqualTo(404);
+		assertThat(bojanovStatus(request(HttpMethod.DELETE, "/api/organizations/{id}/invite-links/{l}", teretana,
+				pozivniLink))).isEqualTo(404);
+
+		assertThat(brojRedova("organization_members")).isEqualTo(clanovaPrije);
+		assertThat(brojRedova("organization_invites")).isEqualTo(pozivnicaPrije);
+		assertThat(brojPovucenihLinkova()).isEqualTo(linkoviPrije);
+	}
+
+	private int bojanovStatus(MockHttpServletRequestBuilder zahtjev) throws Exception {
+		return mockMvc.perform(zahtjev.header("Authorization", "Bearer " + bojan)).andReturn().getResponse().getStatus();
 	}
 
 	// Čuvar: nova /api ruta ne može proći mimo ovog testa. Ili je u ZAHTJEVI, pa prolazi kroz sve uloge,

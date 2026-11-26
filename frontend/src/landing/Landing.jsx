@@ -40,6 +40,7 @@ const MOGUCNOSTI = [
 	['statistika', 'Statistika popunjenosti', 'Vidiš koliko je prostor zauzet, kad je najveća gužva i ko ne dođe.'],
 	['clanovi', 'Članovi i uloge', 'Ti određuješ ko samo rezerviše, ko vodi termine, a ko upravlja svime.'],
 	['kalendar', 'Termini u tvom kalendaru', 'Rezervacije se same pojave u Google kalendaru, na iPhoneu ili u Outlooku.'],
+	['link', 'Pozivni link i plakat', 'Jedan link za grupu ili plakat s QR kodom na vratima. Ko ga skenira, ulazi i rezerviše.'],
 ]
 
 const PITANJA = [

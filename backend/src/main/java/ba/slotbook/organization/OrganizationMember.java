@@ -61,6 +61,10 @@ public class OrganizationMember {
 		this.joinedAt = joinedAt;
 	}
 
+	void promijeniUlogu(OrganizationRole nova) {
+		this.role = nova;
+	}
+
 	public Organization getOrganization() {
 		return organization;
 	}

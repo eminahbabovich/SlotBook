@@ -42,7 +42,7 @@ class AuthRateLimitInterceptorTest {
 	}
 
 	private final Sat sat = new Sat();
-	private final AuthRateLimitInterceptor granica = new AuthRateLimitInterceptor(sat, 3, 2, "");
+	private final AuthRateLimitInterceptor granica = new AuthRateLimitInterceptor(sat, 3, 2, 4, "");
 
 	private boolean prijava(String adresa) {
 		MockHttpServletRequest zahtjev = new MockHttpServletRequest("POST", "/api/auth/login");

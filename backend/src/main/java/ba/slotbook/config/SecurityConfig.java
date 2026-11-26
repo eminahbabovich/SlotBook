@@ -84,6 +84,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/me/calendar.ics").permitAll()
 						// Demo računi za prijavu. Endpoint postoji samo u profilu demo, inače je odgovor 404.
 						.requestMatchers(HttpMethod.GET, "/api/demo").permitAll()
+						// Pregled pozivnog linka prije prijave: ime organizacije, pravo daje token
+						.requestMatchers(HttpMethod.GET, "/api/invite-links/*").permitAll()
 						// Stripe nema naš token. Pravo daje potpis, provjerava ga StripeWebhookService.
 						.requestMatchers(HttpMethod.POST, "/api/stripe/webhook").permitAll()
 						.anyRequest().authenticated())

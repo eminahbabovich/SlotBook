@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +19,11 @@ interface OrganizationInviteRepository extends JpaRepository<OrganizationInvite,
 			delete from OrganizationInvite i
 			where i.organization.id = :organizationId and i.email = :email and i.acceptedAt is null""")
 	int deleteOpen(UUID organizationId, String email);
+
+	// Otvorene su i istekle: admin vidi da je istekla i može poslati novu
+	Page<OrganizationInvite> findByOrganizationIdAndAcceptedAtIsNull(UUID organizationId, Pageable pageable);
+
+	Optional<OrganizationInvite> findByIdAndOrganizationIdAndAcceptedAtIsNull(UUID id, UUID organizationId);
 
 	@Query("select i from OrganizationInvite i join fetch i.organization where i.tokenHash = :tokenHash")
 	Optional<OrganizationInvite> findByTokenHash(String tokenHash);

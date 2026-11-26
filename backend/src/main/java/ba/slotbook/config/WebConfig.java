@@ -19,7 +19,8 @@ public class WebConfig implements WebMvcConfigurer {
 	// @Valid), a izuzetak iz njega ide kroz GlobalExceptionHandler kao svaka druga greška
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(granicaPokusaja).addPathPatterns("/api/auth/login", "/api/auth/register");
+		registry.addInterceptor(granicaPokusaja).addPathPatterns("/api/auth/login", "/api/auth/register",
+				"/api/invite-links/**", "/api/screens/**");
 	}
 
 }

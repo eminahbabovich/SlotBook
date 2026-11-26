@@ -1,5 +1,5 @@
 // Ikone mogućnosti: linije od 1,75 px u boji teksta, na mjedenoj pločici. Crtane rukom na mreži
-// 24 × 24, bez biblioteke, jer ih je šest i nijedna se ne koristi van landinga.
+// 24 × 24, bez biblioteke, jer ih je malo i nijedna se ne koristi van landinga.
 const PUTANJE = {
 	uzivo: (
 		<>
@@ -42,6 +42,13 @@ const PUTANJE = {
 		<>
 			<rect x="3.5" y="5" width="17" height="15" rx="2.5" />
 			<path d="M3.5 9.5h17M8 3v4M16 3v4M8.5 14.5l2.2 2.2 4.8-4.7" />
+		</>
+	),
+	// Dvije karike lanca: pozivni link
+	link: (
+		<>
+			<path d="M10 14a4 4 0 0 1 0-5.6l2.4-2.4a4 4 0 0 1 5.6 5.6l-1.2 1.2" />
+			<path d="M14 10a4 4 0 0 1 0 5.6l-2.4 2.4a4 4 0 0 1-5.6-5.6l1.2-1.2" />
 		</>
 	),
 }

@@ -46,7 +46,11 @@ import ba.slotbook.payment.NotAwaitingPaymentException;
 import ba.slotbook.payment.StripeCheckout;
 import ba.slotbook.organization.InviteRaceException;
 import ba.slotbook.auth.UserTokenException;
+import ba.slotbook.organization.InviteLinkNotUsableException;
 import ba.slotbook.organization.InviteNotUsableException;
+import ba.slotbook.organization.LastAdminException;
+import ba.slotbook.organization.MemberLeadsResourcesException;
+import ba.slotbook.organization.MemberNotFoundException;
 import ba.slotbook.organization.OrganizationNotFoundException;
 import ba.slotbook.organization.SlugAlreadyUsedException;
 import ba.slotbook.observability.RequestIdFilter;
@@ -326,6 +330,51 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"Osoba s ovim emailom je već član organizacije i nalazi se na listi članova.");
 		problem.setTitle("Već je član");
+		return problem;
+	}
+
+	@ExceptionHandler(InviteLinkNotUsableException.class)
+	ProblemDetail pozivniLinkNeVazi(InviteLinkNotUsableException ex) {
+		ProblemDetail problem = switch (ex.getReason()) {
+			case NOT_FOUND -> ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+					"Ovaj pozivni link ne postoji. Provjeri da li je kopiran cijeli link ili skeniraj kod ponovo.");
+			case REVOKED -> ProblemDetail.forStatusAndDetail(HttpStatus.GONE,
+					"Admin je povukao ovaj pozivni link. Zamoli ga za novi.");
+			case EXPIRED -> ProblemDetail.forStatusAndDetail(HttpStatus.GONE,
+					"Pozivni link je istekao. Zamoli admina organizacije za novi.");
+			case FULL -> ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+					"Preko ovog linka je ušao najveći broj ljudi koji je admin dozvolio. Zamoli ga za novi link.");
+			case EMAIL_NOT_VERIFIED -> ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+					"Prvo potvrdi email linkom iz maila, pa otvori pozivni link ponovo.");
+		};
+		problem.setTitle("Pozivni link ne važi");
+		problem.setProperty("razlog", ex.getReason().name());
+		return problem;
+	}
+
+	@ExceptionHandler(LastAdminException.class)
+	ProblemDetail zadnjiAdmin(LastAdminException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ovo je jedini admin organizacije. Prvo nekom drugom članu daj ulogu admina.");
+		problem.setTitle("Organizacija bi ostala bez admina");
+		return problem;
+	}
+
+	@ExceptionHandler(MemberLeadsResourcesException.class)
+	ProblemDetail clanVodiResurse(MemberLeadsResourcesException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ovaj član vodi resurse (" + String.join(", ", ex.getResursi())
+						+ "). Prvo ih predaj drugom članu u uređivanju resursa.");
+		problem.setTitle("Član vodi resurse");
+		problem.setProperty("resursi", ex.getResursi());
+		return problem;
+	}
+
+	@ExceptionHandler(MemberNotFoundException.class)
+	ProblemDetail clanNePostoji(MemberNotFoundException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"Ova osoba nije član organizacije. Možda ju je drugi admin upravo uklonio, osvježi listu.");
+		problem.setTitle("Član ne postoji");
 		return problem;
 	}
 

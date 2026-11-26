@@ -25,6 +25,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import ba.slotbook.auth.LinkToken;
+
 // Podaci za javni demo: čitaonica i teretana, tri računa s javnom lozinkom i nekoliko sedmica
 // rezervacija. Postoji samo u profilu demo, jer prije punjenja obriše SVE iz baze.
 // Upisuje se SQL-om, a ne kroz servise, jer servisi ne daju napraviti rezervaciju u prošlosti,
@@ -56,10 +58,12 @@ public class DemoPodaci {
 	private final PasswordEncoder passwordEncoder;
 	private final Clock clock;
 	private final TransactionTemplate transakcija;
+	private final LinkToken linkovi;
 
 	public DemoPodaci(JdbcTemplate jdbc, PasswordEncoder passwordEncoder, Clock clock,
-			PlatformTransactionManager transactionManager) {
+			PlatformTransactionManager transactionManager, LinkToken linkovi) {
 		this.jdbc = jdbc;
+		this.linkovi = linkovi;
 		this.passwordEncoder = passwordEncoder;
 		this.clock = clock;
 		this.transakcija = new TransactionTemplate(transactionManager);
@@ -156,6 +160,23 @@ public class DemoPodaci {
 		prosleSedmice(danas, sada, mirza, ostali, sto, soba, konsultacije);
 		narednaSedmica(danas, sada, hana, ostali, sto, soba, konsultacije, trening);
 		hanineProsle(danas, sada, hana, sto);
+		pozivi(citaonica, amila, sada);
+	}
+
+	// Admin odmah vidi pozivni link s plakatom (7 od 40 mjesta iskorišteno) i jednu pozivnicu koja čeka.
+	// Token linka se računa iz ID-ja, isto kao u InviteLinkService, pa QR na plakatu stvarno radi.
+	private void pozivi(UUID citaonica, UUID admin, Instant sada) {
+		UUID link = UUID.randomUUID();
+		jdbc.update("""
+				insert into invite_links (id, organization_id, token_hash, max_uses, uses, expires_at, created_by, created_at)
+				values (?, ?, ?, 40, 7, ?, ?, ?)""", link, citaonica,
+				LinkToken.hash(linkovi.za(LinkToken.Svrha.POZIVNI_LINK, link)), utc(sada.plus(Duration.ofDays(30))), admin,
+				utc(sada.minus(Duration.ofDays(3))));
+		jdbc.update("""
+				insert into organization_invites (id, organization_id, email, role, token_hash, created_at, expires_at)
+				values (?, ?, 'asistentica.pmf@slotbook.test', 'PROVIDER', ?, ?, ?)""", UUID.randomUUID(), citaonica,
+				LinkToken.hash(UUID.randomUUID().toString()), utc(sada.minus(Duration.ofDays(1))),
+				utc(sada.plus(Duration.ofDays(6))));
 	}
 
 	// Četiri sedmice unazad, da statistika ima šta pokazati. Raspored je izmišljen, ali stalan:

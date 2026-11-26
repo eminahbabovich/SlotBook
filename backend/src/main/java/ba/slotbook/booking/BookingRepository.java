@@ -47,6 +47,14 @@ interface BookingRepository extends JpaRepository<Booking, UUID> {
 			order by b.startTime, b.id""")
 	List<Booking> findForCalendar(UUID clientId, Collection<BookingStatus> statusi, Instant od);
 
+	// Buduće rezervacije jednog člana u jednoj organizaciji, kad ga admin ukloni
+	@Query("""
+			select b from Booking b join fetch b.resource r join fetch r.organization o
+			where o.id = :organizationId and b.client.id = :clientId and b.status in :statusi and b.startTime > :sada
+			order by b.startTime""")
+	List<Booking> findFutureInOrganization(UUID organizationId, UUID clientId, Collection<BookingStatus> statusi,
+			Instant sada);
+
 	@Query("select b from Booking b join fetch b.resource r join fetch r.organization where b.client.id = :clientId")
 	Page<Booking> findMine(UUID clientId, Pageable pageable);
 

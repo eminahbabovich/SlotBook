@@ -17,21 +17,26 @@ import io.github.bucket4j.TimeMeter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-// Granica pokušaja prijave i registracije po IP adresi (token bucket). Bucketi su u memoriji, jer radi
+// Granica pokušaja prijave i registracije po IP adresi (token bucket). Ista granica, s trećim brojem,
+// čuva i javne linkove (pozivni link, ekran na vratima), da se token ne pogađa hiljadu puta u minuti.
+// Bucketi su u memoriji, jer radi
 // jedna instanca. Za više instanci bi trebali biti u Redisu, da svaka ne broji za sebe.
 @Component
 public class AuthRateLimitInterceptor implements HandlerInterceptor {
 
 	private final Map<String, Bucket> prijave = new ConcurrentHashMap<>();
 	private final Map<String, Bucket> registracije = new ConcurrentHashMap<>();
+	private final Map<String, Bucket> linkovi = new ConcurrentHashMap<>();
 	private final TimeMeter sat;
 	private final int prijavaUMinuti;
 	private final int registracijaNaSat;
+	private final int linkovaUMinuti;
 	private final String zaglavljeAdrese;
 
 	public AuthRateLimitInterceptor(Clock clock,
 			@Value("${slotbook.rate-limit.login-per-minute}") int prijavaUMinuti,
 			@Value("${slotbook.rate-limit.register-per-hour}") int registracijaNaSat,
+			@Value("${slotbook.rate-limit.links-per-minute:30}") int linkovaUMinuti,
 			@Value("${slotbook.rate-limit.client-ip-header:}") String zaglavljeAdrese) {
 		// Bucket4j sam čita System.nanoTime. Ovako vrijeme ide kroz Clock, pa ga test može pomjeriti.
 		this.sat = new TimeMeter() {
@@ -49,14 +54,21 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
 		};
 		this.prijavaUMinuti = prijavaUMinuti;
 		this.registracijaNaSat = registracijaNaSat;
+		this.linkovaUMinuti = linkovaUMinuti;
 		this.zaglavljeAdrese = zaglavljeAdrese;
 	}
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-		Bucket bucket = request.getRequestURI().equals("/api/auth/login")
-				? prijave.computeIfAbsent(adresa(request), a -> novi(prijavaUMinuti, Duration.ofMinutes(1)))
-				: registracije.computeIfAbsent(adresa(request), a -> novi(registracijaNaSat, Duration.ofHours(1)));
+		String putanja = request.getRequestURI();
+		Bucket bucket;
+		if (putanja.equals("/api/auth/login")) {
+			bucket = prijave.computeIfAbsent(adresa(request), a -> novi(prijavaUMinuti, Duration.ofMinutes(1)));
+		} else if (putanja.equals("/api/auth/register")) {
+			bucket = registracije.computeIfAbsent(adresa(request), a -> novi(registracijaNaSat, Duration.ofHours(1)));
+		} else {
+			bucket = linkovi.computeIfAbsent(adresa(request), a -> novi(linkovaUMinuti, Duration.ofMinutes(1)));
+		}
 		ConsumptionProbe pokusaj = bucket.tryConsumeAndReturnRemaining(1);
 		if (!pokusaj.isConsumed()) {
 			throw new TooManyAttemptsException(TooManyAttemptsException.Razlog.ADRESA,
@@ -90,10 +102,11 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
 	void ocisti() {
 		prijave.values().removeIf(bucket -> bucket.getAvailableTokens() >= prijavaUMinuti);
 		registracije.values().removeIf(bucket -> bucket.getAvailableTokens() >= registracijaNaSat);
+		linkovi.values().removeIf(bucket -> bucket.getAvailableTokens() >= linkovaUMinuti);
 	}
 
 	int brojAdresa() {
-		return prijave.size() + registracije.size();
+		return prijave.size() + registracije.size() + linkovi.size();
 	}
 
 }

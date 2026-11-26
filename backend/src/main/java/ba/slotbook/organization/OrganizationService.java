@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,14 +27,16 @@ public class OrganizationService {
 	private final OrganizationMemberRepository members;
 	private final UserRepository users;
 	private final AuditLogService auditLog;
+	private final ApplicationEventPublisher objave;
 	private final Clock clock;
 
 	public OrganizationService(OrganizationRepository organizations, OrganizationMemberRepository members,
-			UserRepository users, AuditLogService auditLog, Clock clock) {
+			UserRepository users, AuditLogService auditLog, ApplicationEventPublisher objave, Clock clock) {
 		this.organizations = organizations;
 		this.members = members;
 		this.users = users;
 		this.auditLog = auditLog;
+		this.objave = objave;
 		this.clock = clock;
 	}
 
@@ -80,6 +83,53 @@ public class OrganizationService {
 	@Transactional(readOnly = true)
 	public List<MyOrganizationResponse> listForUser(UUID userId) {
 		return members.findAllByUserWithOrganization(userId).stream().map(MyOrganizationResponse::from).toList();
+	}
+
+	// Admin ne smije ostati bez admina, a član koji vodi resurse ne smije postati klijent: klijent ne
+	// vodi resurse, a resurs bez nekog ko ga vodi nema ko potvrditi rezervacije.
+	@Transactional
+	public MemberResponse changeRole(UUID organizationId, UUID userId, OrganizationRole nova, UUID adminId) {
+		organizations.findLockedById(organizationId).orElseThrow();
+		OrganizationMember clan = members.findById(new OrganizationMember.Id(organizationId, userId))
+				.orElseThrow(MemberNotFoundException::new);
+		OrganizationRole stara = clan.getRole();
+		if (stara == nova) {
+			return MemberResponse.from(clan);
+		}
+		if (stara == OrganizationRole.ADMIN && members.countByIdOrganizationIdAndRole(organizationId,
+				OrganizationRole.ADMIN) == 1) {
+			throw new LastAdminException();
+		}
+		if (nova == OrganizationRole.CLIENT) {
+			List<String> resursi = members.resursiKojeVodi(organizationId, userId);
+			if (!resursi.isEmpty()) {
+				throw new MemberLeadsResourcesException(resursi);
+			}
+		}
+		clan.promijeniUlogu(nova);
+		auditLog.record(organizationId, adminId, AuditAction.MEMBER_ROLE_CHANGED, userId, stara + " -> " + nova);
+		return MemberResponse.from(clan);
+	}
+
+	// Lock organizacije: dva admina koja u isto vrijeme uklanjaju jedan drugog idu jedan za drugim. Bez
+	// toga bi oba vidjela "ima još jedan admin" i organizacija bi ostala bez ijednog.
+	@Transactional
+	public void removeMember(UUID organizationId, UUID userId, UUID adminId) {
+		organizations.findLockedById(organizationId).orElseThrow();
+		OrganizationMember clan = members.findById(new OrganizationMember.Id(organizationId, userId))
+				.orElseThrow(MemberNotFoundException::new);
+		if (clan.getRole() == OrganizationRole.ADMIN
+				&& members.countByIdOrganizationIdAndRole(organizationId, OrganizationRole.ADMIN) == 1) {
+			throw new LastAdminException();
+		}
+		// I baza bi odbila brisanje (strani ključ resursa na članstvo), ali tek kao 500 bez spiska
+		List<String> resursi = members.resursiKojeVodi(organizationId, userId);
+		if (!resursi.isEmpty()) {
+			throw new MemberLeadsResourcesException(resursi);
+		}
+		objave.publishEvent(new MemberRemoved(organizationId, userId, adminId));
+		members.delete(clan);
+		auditLog.record(organizationId, adminId, AuditAction.MEMBER_REMOVED, userId, clan.getRole().name());
 	}
 
 	// Kao kod resursa: redoslijed određuje server, a userId razdvaja članove koji su ušli u istoj sekundi

@@ -1161,3 +1161,21 @@ Email u lozinci se provjerava na početku `EmailVerificationService.register`, p
 Frontend (`forma/lozinka.js`) ima ista pravila osim liste, da se greška vidi prije slanja. Listu zna samo backend, pa se ta poruka vidi poslije slanja.
 
 Usput sam našao da stranica za novu lozinku nije postojala: mail za reset je vodio na `/nova-lozinka`, a to je bio 404. Nije bilo ni linka "Zaboravljena lozinka". Sada postoje obje stranice. `RegisterRequestTest` je za granicu od 72 bajta koristio isti znak 72 puta, a takvu lozinku novo pravilo odbija. Test sada koristi niz različitih slova iste dužine u bajtovima i i dalje mjeri samo granicu.
+
+## Pozivni link, uloge i uklanjanje člana (26.11.2026)
+
+Pozivnica na email traži da admin zna email svakog studenta u čitaonici. Za plakat na vratima i grupni chat treba jedan link koji važi za više ljudi. Taj link uvijek daje ulogu klijenta, i to čuva i baza (`CHECK (role = 'CLIENT')` u V42). Provider i admin i dalje idu preko emaila, jer link s većim pravima postaje opasan kad ga neko proslijedi.
+
+Token linka nije nasumičan, nego HMAC nad ID-jem linka (`LinkToken`, ključ izveden iz JWT tajne, kao kod QR koda za dolazak). U bazi je samo SHA-256 tokena. Razlog: admin treba isti link i sutra, za plakat i za ekran na vratima, a nasumičan token bi se morao čuvati u bazi kao čitljiv tekst. Cijena je da promjena JWT tajne pokvari sve pozivne linkove i odštampane plakate. To je zapisano i za ekran na vratima, koji koristi isti mehanizam.
+
+Brojanje ulazaka je jedan `UPDATE invite_links SET uses = uses + 1 WHERE ... AND uses < max_uses`. Ako ažurira nula redova, link je pun, a upis članstva u istoj transakciji se vrati. Prvo se upisuje članstvo (`INSERT ... ON CONFLICT DO NOTHING`), pa se tek onda broji, da osoba koja je već član ne potroši mjesto. Ona dobije `200` s `alreadyMember: true` i poruku "već si član", a ne grešku. `InviteLinkIstovremenoTest` pusti 20 niti na link s 5 mjesta: tačno 5 uđe, 15 dobije "pun", a broj članova i `uses` su oba 5. Ulazak traži potvrđen email. Prijava ga već traži, pa je ovo druga linija odbrane.
+
+Token je u putanji (`/pridruzi/{token}`), a ne iza `#` kao kod pozivnice na email. Link s plakata je ionako javan za svakog ko stoji pred vratima. Pregled linka (`GET /api/invite-links/{token}`) i ulazak imaju granicu po IP adresi, 30 u minuti, da se tokeni ne pogađaju (`AuthRateLimitInterceptor`, sada i za javne linkove).
+
+Kod uloga i uklanjanja sam birao šta raditi sa zadnjim adminom i s članom koji vodi resurse. Organizacija bez admina nema ko da je vodi, pa se zadnji admin ne spušta ni ne uklanja (`409`). Dva admina koja u istom trenutku uklanjaju jedan drugog bi oba vidjela "ima još jedan admin", pa promjena prvo zaključa red organizacije (`SELECT ... FOR UPDATE`). Član koji vodi resurse se ne uklanja i ne postaje klijent dok resurse ne preda drugom (`409` sa spiskom naziva u polju `resursi`). Baza bi brisanje odbila i sama, strani ključ resursa ide na članstvo, ali kao `500` bez objašnjenja. Deaktivirani resursi se broje, jer i oni imaju taj strani ključ.
+
+Buduće rezervacije uklonjenog člana se otkazuju (`PENDING` i `CONFIRMED` s početkom poslije sada), a upisi na listu čekanja u toj organizaciji prelaze u `CANCELLED`. Drugi put je bio da rezervacije ostanu, ali tada termin drži neko ko više nije član i ne može ga ni otkazati. Otkazuje admin, pa mail o otkazivanju ide klijentu, oslobođen termin ide prvom na listi čekanja, a plaćen termin se vrati kroz isti `BookingReleased` kao kod običnog otkazivanja. Prošle rezervacije ostaju, zbog statistike. Organizacija ne zove `BookingService` direktno, nego objavi `MemberRemoved`, a booking otkaže svoje u istoj transakciji. Ako otkazivanje padne, član ostaje.
+
+Otvorene pozivnice na email admin sada vidi i može povući. Povučena se briše, a s njom i mail koji još nije otišao. Mail mora ići prvi, jer CHECK u `notifications` traži da pozivnica koja čeka slanje ima `invite_id`, a strani ključ je `ON DELETE SET NULL`.
+
+Šta nisam riješio: ko napravi nalog preko linka, potvrdi email u drugom tabu i tamo se prijavi, ne vrati se sam na `/pridruzi`. Mora ponovo skenirati kod ili otvoriti link. Plakat sam štampao samo u PDF iz Edgea (A4, jedna strana), ne na pravom štampaču, i QR s ekrana nisam skenirao pravim telefonom.

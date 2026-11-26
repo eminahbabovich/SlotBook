@@ -473,13 +473,13 @@ svake: backend testovi, Vitest i e2e prolaze, commit, odluke u `docs/ODLUKE.md`,
 na landingu u "Šta još radi" i podaci u demo profilu. Svaki novi endpoint nad podacima
 organizacije ulazi u `OrganizationIsolationApiTest`, a svaka osjetljiva radnja u `audit_log`.
 
-**0. Lozinka koja se ne pogađa.** Najmanje 10 znakova, ne smije biti na listi čestih lozinaka
+**0. Lozinka koja se ne pogađa.** (gotovo 26.11.) Najmanje 10 znakova, ne smije biti na listi čestih lozinaka
 (`12345678`, `qwertzuiop`, `lozinka123`...), ne smije biti jedan znak ili niz koji se ponavlja i
 ne smije sadržati dio emaila prije `@`. Važi za registraciju, reset i novu lozinku, ne i za prijavu
 (stari nalozi se i dalje prijavljuju). Pravilo je na backendu (`@Valid`), a frontend pokazuje istu
 poruku prije slanja.
 
-**1. Pozivni link i upravljanje članovima**
+**1. Pozivni link i upravljanje članovima** (gotovo 26.11.)
 1. `invite_links` (V42): organizacija, uloga uvijek `CLIENT`, hash tokena, rok, najviše korištenja,
    broj korištenja, povučen, ko je napravio. Token je HMAC nad ID-jem linka (kao QR za dolazak), pa
    ga server može ponovo izračunati za plakat, a baza čuva samo hash.

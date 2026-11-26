@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ import ba.slotbook.availability.TimeRange;
 import ba.slotbook.error.InvalidFieldException;
 import ba.slotbook.notification.NotificationService;
 import ba.slotbook.notification.NotificationType;
+import ba.slotbook.organization.MemberRemoved;
 import ba.slotbook.paging.PageResponse;
 import ba.slotbook.resource.Resource;
 import ba.slotbook.resource.ResourceNotFoundException;
@@ -256,6 +258,21 @@ public class BookingService {
 			rezervacija.otkaziKaoKlijent(sada);
 		}
 		return zapisi(rezervacija, stari, actorId, sada);
+	}
+
+	// Uklonjen član više ne smije doći na termin, a termin ne smije ostati zauzet za nekoga ko nije
+	// član. Otkazuje admin koji ga je uklonio, pa mail o otkazivanju ide klijentu, a oslobođeni termin
+	// dobije sljedeći s liste čekanja (BookingReleased). Ista transakcija kao uklanjanje.
+	@EventListener
+	public void naUklonjenogClana(MemberRemoved uklonjen) {
+		Instant sada = clock.instant();
+		for (Booking rezervacija : bookings.findFutureInOrganization(uklonjen.organizationId(), uklonjen.userId(),
+				List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED), sada)) {
+			BookingStatus stari = rezervacija.getStatus();
+			rezervacija.prijedi(BookingStatus.CANCELLED, sada);
+			zapisi(rezervacija, stari, uklonjen.adminId(), sada);
+		}
+		waitlist.cancelAllInOrganization(uklonjen.organizationId(), uklonjen.userId());
 	}
 
 	// Za uplatu (ba.slotbook.payment). Red ostaje zaključan do kraja transakcije pozivaoca, a MANDATORY

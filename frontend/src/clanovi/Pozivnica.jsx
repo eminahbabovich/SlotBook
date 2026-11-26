@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { posaljiPozivnicu } from '../api/clanovi.js'
 import { Polje } from '../forma/Polje.jsx'
@@ -19,10 +19,15 @@ export function Pozivnica({ organizacija }) {
 	const [email, setEmail] = useState('')
 	const [uloga, setUloga] = useState(IZBOR_ULOGE[0])
 
-	// Lista članova se ne osvježava: pozvana osoba postaje član tek kad prihvati pozivnicu.
+	const queryClient = useQueryClient()
+	// Lista članova se ne osvježava: pozvana osoba postaje član tek kad prihvati pozivnicu. Osvježi se
+	// lista otvorenih pozivnica, jer nova ide na njen vrh.
 	const slanje = useMutation({
 		mutationFn: () => posaljiPozivnicu(organizacija.id, { email, uloga }),
-		onSuccess: () => setEmail(''),
+		onSuccess: () => {
+			setEmail('')
+			queryClient.invalidateQueries({ queryKey: ['otvorenePozivnice', organizacija.id] })
+		},
 	})
 	const poPoljima = greskePoPoljima(slanje.error)
 

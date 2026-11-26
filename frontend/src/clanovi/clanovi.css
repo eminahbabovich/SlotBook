@@ -1,0 +1,265 @@
+/* Članovi, pozivni link i plakat. Samo vrijednosti iz tokeni.css (docs/DIZAJN.md). */
+
+.pozivni-link {
+	display: grid;
+	gap: var(--razmak-16);
+	margin-block: var(--razmak-32);
+}
+
+.pozivni-link h2 {
+	margin: 0;
+}
+
+/* QR lijevo, podaci desno; na telefonu jedno ispod drugog */
+.aktivan-link {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--razmak-24);
+	padding: var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: var(--dubina-2), inset 0 -4px 0 var(--moje);
+}
+
+@media (min-width: 720px) {
+	.aktivan-link {
+		grid-template-columns: 200px minmax(0, 1fr);
+		align-items: start;
+	}
+}
+
+.aktivan-link-podaci {
+	display: grid;
+	gap: var(--razmak-12);
+	min-width: 0;
+}
+
+.aktivan-link-podaci p {
+	margin: 0;
+}
+
+/* Kod je uvijek taman na svijetlom, i noću: čitač treba kontrast, a ne temu */
+.qr-linka {
+	margin: 0;
+	padding: var(--razmak-12);
+	color: var(--dan-tekst);
+	background: var(--dan-izdignuto);
+	border-radius: var(--zaobljenje);
+	box-shadow: var(--dubina-1);
+	justify-self: start;
+	width: min(100%, 200px);
+}
+
+.qr-linka svg {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.brojac-linka {
+	font-size: var(--velicina-vrijeme);
+	font-variant-numeric: tabular-nums;
+}
+
+.brojac-linka strong {
+	font-family: var(--font-brojevi);
+	font-size: var(--velicina-naslov-2);
+}
+
+.radnje-linka {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--razmak-16);
+}
+
+.potvrda-pitanje {
+	margin: 0;
+	font-weight: 600;
+}
+
+.potvrda-dugmad {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--razmak-8) var(--razmak-24);
+}
+
+/* Dva broja i dugme u redu na širem ekranu, jedno ispod drugog na telefonu */
+.forma.forma-u-redu {
+	max-width: none;
+}
+
+@media (min-width: 720px) {
+	.forma.forma-u-redu {
+		grid-template-columns: repeat(2, minmax(0, 200px)) auto;
+		align-items: end;
+	}
+
+	.forma.forma-u-redu > [role='alert'],
+	.forma.forma-u-redu > .napomena {
+		grid-column: 1 / -1;
+	}
+}
+
+.stari-linkovi summary {
+	min-height: var(--red-min-visina);
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	color: var(--tekst-sporedni);
+}
+
+.stari-linkovi ul {
+	margin: 0;
+	padding-left: var(--razmak-24);
+	color: var(--tekst-sporedni);
+}
+
+/* Lista članova i otvorenih pozivnica: red s imenom lijevo i radnjama desno */
+.lista-clanova {
+	display: grid;
+	gap: var(--razmak-8);
+	margin: 0 0 var(--razmak-24);
+	padding: 0;
+	list-style: none;
+}
+
+.lista-clanova > li {
+	--emajl: var(--emajl-tirkiz);
+	display: grid;
+	gap: var(--razmak-12);
+	padding: var(--razmak-16) var(--razmak-24);
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-zeton);
+	box-shadow: var(--dubina-1), inset 4px 0 0 var(--emajl);
+}
+
+@media (min-width: 720px) {
+	.lista-clanova > li {
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+	}
+}
+
+.clan-ime {
+	display: grid;
+	gap: var(--razmak-4);
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.clan-ime strong {
+	font-family: var(--font-naslov);
+}
+
+.clan-sporedno {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+.clan-radnje {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--razmak-8) var(--razmak-16);
+}
+
+.clan-radnje select {
+	min-height: var(--red-min-visina);
+	font: inherit;
+}
+
+/* Plakat: A4, na ekranu kao list papira, u štampi samo list */
+.plakat-stranica {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	justify-items: center;
+	gap: var(--razmak-24);
+}
+
+.plakat {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	justify-items: center;
+	align-content: center;
+	gap: var(--razmak-24);
+	box-sizing: border-box;
+	width: min(100%, 210mm);
+	aspect-ratio: 210 / 297;
+	padding: var(--razmak-48) var(--razmak-32);
+	color: var(--dan-tekst);
+	background: var(--dan-izdignuto);
+	border-radius: var(--zaobljenje);
+	box-shadow: var(--dubina-3), inset 0 -12px 0 var(--mjed);
+	text-align: center;
+}
+
+.plakat h1 {
+	margin: 0;
+	font-size: var(--velicina-naslov-0);
+	line-height: var(--prored-naslov);
+	overflow-wrap: anywhere;
+}
+
+.plakat p {
+	margin: 0;
+	max-width: 32ch;
+	font-size: var(--velicina-naslov-3);
+}
+
+.plakat .qr-plakata {
+	width: min(100%, 110mm);
+	margin: 0;
+}
+
+.plakat .qr-plakata svg {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.plakat .adresa-plakata {
+	font-family: var(--font-kod);
+	font-size: var(--velicina-sitno);
+	overflow-wrap: anywhere;
+	color: var(--dan-sporedni);
+}
+
+@media print {
+	@page {
+		size: A4;
+		margin: 0;
+	}
+
+	/* Dvije klase: radnje-linka iz nalog.css inače vrati display: flex */
+	.zaglavlje,
+	.plakat-stranica .plakat-radnje {
+		display: none;
+	}
+
+	/* Papir je bijel i u tamnoj temi */
+	html:has(.plakat-stranica),
+	html:has(.plakat-stranica) body {
+		background: var(--dan-izdignuto);
+	}
+
+	html:has(.plakat-stranica) main {
+		max-width: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.plakat {
+		width: 210mm;
+		height: 297mm;
+		border-radius: 0;
+		box-shadow: inset 0 -12mm 0 var(--mjed);
+		print-color-adjust: exact;
+	}
+}
+
+/* Veza koja izgleda kao dugme (Prijavi se, Otvori organizaciju) */
+a.dugme {
+	text-decoration: none;
+}

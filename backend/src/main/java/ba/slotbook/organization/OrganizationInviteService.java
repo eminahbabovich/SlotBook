@@ -7,6 +7,9 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +19,7 @@ import ba.slotbook.auth.RandomToken;
 import ba.slotbook.notification.EmailContent;
 import ba.slotbook.notification.NotificationService;
 import ba.slotbook.organization.InviteNotUsableException.Reason;
+import ba.slotbook.paging.PageResponse;
 import ba.slotbook.ratelimit.TooManyAttemptsException;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
@@ -94,6 +98,25 @@ public class OrganizationInviteService {
 				"Zdravo,\n\n" + organizacija + " te poziva na SlotBook, s ulogom: " + uloga + ".\n\n"
 						+ "Da prihvatiš pozivnicu, otvori link i prijavi se ili napravi nalog s ovim emailom:\n"
 						+ link + "\n\nPozivnica važi 7 dana. Ako ne znaš o čemu se radi, zanemari ovaj mail.");
+	}
+
+	@Transactional(readOnly = true)
+	public PageResponse<InviteResponse> listOpen(UUID organizationId, Pageable pageable) {
+		Pageable najnovijePrvo = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+				Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by("id")));
+		return PageResponse.from(invites.findByOrganizationIdAndAcceptedAtIsNull(organizationId, najnovijePrvo)
+				.map(InviteResponse::from));
+	}
+
+	// Povučena pozivnica se briše, a s njom i mail koji još čeka slanje. Link iz već poslanog maila
+	// tada vrati 404 "ne postoji". Prihvaćena se ne može povući, nju vodi lista članova.
+	@Transactional
+	public void revoke(UUID organizationId, UUID inviteId, UUID adminId) {
+		OrganizationInvite invite = invites.findByIdAndOrganizationIdAndAcceptedAtIsNull(inviteId, organizationId)
+				.orElseThrow(() -> new InviteNotUsableException(Reason.NOT_FOUND));
+		notifications.dropPendingInvite(organizationId, invite.getEmail());
+		invites.deleteOpen(organizationId, invite.getEmail());
+		auditLog.record(organizationId, adminId, AuditAction.INVITE_REVOKED, inviteId, invite.getRole().name());
 	}
 
 	// Ako upis članstva padne, rollback vrati i accepted_at, pa pozivnica ostaje upotrebljiva

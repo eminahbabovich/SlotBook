@@ -2,12 +2,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Suspense, lazy, useState } from 'react'
 import { BrowserRouter, Link, Route, Routes } from 'react-router'
 import { Clanovi } from './clanovi/Clanovi.jsx'
+import { Plakat } from './clanovi/Plakat.jsx'
 import { DolazakSKodom } from './dolazak/DolazakSKodom.jsx'
 import { Nalog } from './nalog/Nalog.jsx'
 import { serverNeOdgovara } from './forma/porukaGreske.js'
 import { KalendarResursa } from './kalendar/KalendarResursa.jsx'
 import { Organizacija } from './organizacije/Organizacija.jsx'
 import { Organizacije } from './organizacije/Organizacije.jsx'
+import { Pridruzivanje } from './pozivnica/Pridruzivanje.jsx'
 import { PrihvatanjePozivnice } from './pozivnica/PrihvatanjePozivnice.jsx'
 import { PotvrdaEmaila } from './prijava/PotvrdaEmaila.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
@@ -54,6 +56,7 @@ export default function App() {
 							<Route element={<Cuvar za="prijavljene" />}>
 								<Route path="/o/:slug" element={<Organizacija />} />
 								<Route path="/o/:slug/clanovi" element={<Clanovi />} />
+								<Route path="/o/:slug/plakat" element={<Plakat />} />
 								<Route path="/o/:slug/resursi/novi" element={<NoviResurs />} />
 								<Route path="/o/:slug/r/:resursId/uredi" element={<IzmjenaResursa />} />
 								<Route path="/o/:slug/r/:resursId/radno-vrijeme" element={<RadnoVrijemeResursa />} />
@@ -68,6 +71,8 @@ export default function App() {
 							{/* Van čuvara: link iz maila otvara neko ko se još ne može prijaviti */}
 							<Route path="/potvrda-emaila" element={<PotvrdaEmaila />} />
 							<Route path="/nova-lozinka" element={<NovaLozinka />} />
+							{/* Van čuvara: ime organizacije se vidi i prije prijave, pa stranica sama nudi prijavu */}
+							<Route path="/pridruzi/:token" element={<Pridruzivanje />} />
 							<Route path="*" element={<NePostoji />} />
 						</Routes>
 					</main>

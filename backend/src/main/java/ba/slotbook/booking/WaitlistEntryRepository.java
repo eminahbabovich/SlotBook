@@ -33,6 +33,14 @@ interface WaitlistEntryRepository extends JpaRepository<WaitlistEntry, UUID> {
 			and status in ('WAITING', 'OFFERED')""")
 	int markBooked(UUID resourceId, UUID clientId, Instant start);
 
+	// Uklonjen član više ne čeka termine te organizacije
+	@Modifying
+	@Query(nativeQuery = true, value = """
+			update waitlist_entries set status = 'CANCELLED'
+			where client_id = :clientId and status in ('WAITING', 'OFFERED')
+			and resource_id in (select id from resources where organization_id = :organizationId)""")
+	int cancelAllInOrganization(UUID organizationId, UUID clientId);
+
 	// Ponuda kojoj je prošao rok, i svaki živ upis za termin koji je već počeo. Vraća resurse kojima
 	// je istekla ponuda, jer tamo se termin drugima opet prikazuje kao slobodan (SlotsChanged).
 	// Bez @Modifying, jer naredba vraća redove, kao BookingRepository.expireAll.

@@ -94,7 +94,7 @@ async function prijaviKlijenta(page) {
 	await page.getByRole('button', { name: 'Prijavi se' }).click()
 	await page.getByRole('link', { name: new RegExp(ORGANIZACIJA) }).click()
 	await page.getByRole('link', { name: new RegExp(RESURS) }).click()
-	await expect(page.getByText('Ovaj dan nema termina.')).toBeVisible()
+	await expect(page.getByText('Danas više nema termina koji nisu počeli.')).toBeVisible()
 	await page.getByRole('button', { name: /^Prvi slobodan:/ }).click()
 }
 
@@ -310,4 +310,28 @@ test('u grupnoj sobi s dva mjesta klijent vidi da je ostalo jedno mjesto i rezer
 	await page.getByRole('button', { name: 'Rezerviši' }).click()
 	await expect(page.getByText(/^Termin je tvoj: .*08:00 do 09:00\.$/)).toBeVisible()
 	await expect(page.getByRole('list', { name: /Termini/ }).getByRole('listitem').filter({ hasText: '08:00–09:00' })).toContainText('tvoje')
+})
+
+// Plakat u čitaonici: admin napravi link, a student koji ga skenira vidi ime čitaonice prije prijave,
+// prijavi se, vrati se na isti link i uđe kao klijent. Brojač na linku poraste za jedan.
+test('student otvori pozivni link s plakata, prijavi se, vrati se na link i uđe u čitaonicu', async ({ page }) => {
+	test.setTimeout(120_000)
+	const admin = (await posalji('POST', '/api/auth/login', { tijelo: { email: ADMIN, password: LOZINKA } })).accessToken
+	const [org] = await posalji('GET', '/api/me/organizations', { token: admin })
+	const { url, id } = await posalji('POST', `/api/organizations/${org.id}/invite-links`, { token: admin, tijelo: { maxUses: 30, days: 7 } })
+	const student = `amar.${run}@primjer.ba`
+	await noviNalog(student, 'Amar Delić')
+
+	await page.goto(url)
+	await expect(page.getByRole('heading', { name: ORGANIZACIJA })).toBeVisible()
+	await page.getByRole('link', { name: 'Prijavi se' }).click()
+	await page.getByLabel('Email').fill(student)
+	await page.getByLabel('Lozinka').fill(LOZINKA)
+	await page.getByRole('button', { name: 'Prijavi se' }).click()
+	await page.getByRole('button', { name: 'Uđi u organizaciju' }).click()
+
+	await expect(page).toHaveURL(new RegExp(`/o/${slug}$`))
+	await expect(page.getByRole('link', { name: new RegExp(RESURS) })).toBeVisible()
+	const { content } = await posalji('GET', `/api/organizations/${org.id}/invite-links`, { token: admin })
+	expect(content.find((l) => l.id === id).uses).toBe(1)
 })

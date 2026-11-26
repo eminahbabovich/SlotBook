@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { create } from 'qrcode'
 import { useState } from 'react'
 import { linkZaDolazak } from '../api/rezervacije.js'
 import { porukaGreske } from '../forma/porukaGreske.js'
+import { QrSlika } from '../qr/QrSlika.jsx'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 
@@ -42,24 +42,5 @@ function Kod({ rezervacija }) {
 				Pokaži ga osobi koja vodi termin. Kad ga skenira, dolazak je upisan.
 			</figcaption>
 		</figure>
-	)
-}
-
-// Moduli se crtaju kao SVG kvadrati u boji teksta, pa boja dolazi iz tokena, a ne iz biblioteke.
-// Okvir od 4 modula oko koda traži standard, inače ga neki čitači ne nađu.
-function QrSlika({ tekst, opis }) {
-	const { modules } = create(tekst, { errorCorrectionLevel: 'M' })
-	const okvir = 4
-	const strana = modules.size + 2 * okvir
-	let putanja = ''
-	for (let red = 0; red < modules.size; red++) {
-		for (let kolona = 0; kolona < modules.size; kolona++) {
-			if (modules.get(red, kolona)) putanja += `M${kolona + okvir} ${red + okvir}h1v1h-1z`
-		}
-	}
-	return (
-		<svg role="img" aria-label={opis} viewBox={`0 0 ${strana} ${strana}`} shapeRendering="crispEdges">
-			<path d={putanja} fill="currentColor" />
-		</svg>
 	)
 }

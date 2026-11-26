@@ -84,6 +84,25 @@ class DemoApiTest {
 						"Teretana Ilidža")));
 	}
 
+	// Link iz dema mora stvarno raditi: adresu koju admin vidi, pregled prihvata kao upotrebljivu
+	@Test
+	void adminVidiPozivniLinkKojiRadiIPozivnicuKojaCeka() throws Exception {
+		UUID citaonica = jdbc.queryForObject("select id from organizations where slug = 'citaonica-pmf'", UUID.class);
+		String admin = token("admin@slotbook.test");
+		String linkovi = mockMvc.perform(get("/api/organizations/{id}/invite-links", citaonica)
+				.header("Authorization", "Bearer " + admin))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].uses").value(7))
+				.andReturn().getResponse().getContentAsString();
+		String url = JsonPath.read(linkovi, "$.content[0].url");
+
+		mockMvc.perform(get("/api/invite-links/{t}", url.substring(url.lastIndexOf('/') + 1)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.usable").value(true));
+		mockMvc.perform(get("/api/organizations/{id}/invites", citaonica).header("Authorization", "Bearer " + admin))
+				.andExpect(jsonPath("$.content[0].role").value("PROVIDER"));
+	}
+
 	@Test
 	void adminVidiStatistikuZaProsleCetiriSedmice() throws Exception {
 		UUID citaonica = jdbc.queryForObject("select id from organizations where slug = 'citaonica-pmf'", UUID.class);
