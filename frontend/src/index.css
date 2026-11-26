@@ -177,28 +177,136 @@ a:hover {
 		}
 }
 
-/* Prijavljen na telefonu: tri linka i prekidač ne stanu pored znaka, pa zaglavlje ima dva reda.
-   Gore znak i tema, dolje linkovi. Pilula postaje ploča, jer pilula u dva reda izgleda kao jaje. */
+/* Prijavljen na telefonu: umjesto tri linka i prekidača je krug s inicijalima, a stavke su u meniju
+   ispod njega. Zaglavlje ostaje jedan red. */
+.avatar {
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	font: inherit;
+	font-size: var(--velicina-sitno);
+	font-weight: 700;
+	color: var(--tekst-na-moje);
+	background: var(--moje);
+	border: 0;
+	border-radius: 50%;
+	box-shadow: var(--dubina-1);
+	cursor: pointer;
+}
+
+.avatar[aria-expanded='true'] {
+	box-shadow: 0 0 0 3px var(--podloga), 0 0 0 5px var(--moje);
+}
+
+/* Popover je u gornjem sloju, pa mu treba položaj ispod zaglavlja, desno */
+.meni-naloga {
+	position: fixed;
+	inset: 72px var(--razmak-16) auto auto;
+	width: min(260px, calc(100vw - 2 * var(--razmak-16)));
+	margin: 0;
+	padding: var(--razmak-8);
+	color: var(--tekst);
+	background: var(--izdignuto);
+	border: 0;
+	border-radius: var(--zaobljenje-karta);
+	box-shadow: var(--dubina-3);
+}
+
+.meni-naloga:popover-open {
+	display: grid;
+	gap: var(--razmak-4);
+}
+
+.meni-ime {
+	margin: 0;
+	padding: var(--razmak-8) var(--razmak-12);
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+	border-bottom: 1px solid var(--linija);
+}
+
+.meni-naloga nav {
+	display: grid;
+}
+
+.meni-naloga nav a,
+.meni-naloga > .dugme-tekst,
+.meni-tema {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: var(--red-min-visina);
+	padding: 0 var(--razmak-12);
+	font-weight: 600;
+	text-decoration: none;
+	border-radius: var(--zaobljenje);
+}
+
+.meni-naloga nav a:hover,
+.meni-naloga > .dugme-tekst:hover {
+	background: var(--povrsina);
+}
+
+.meni-naloga > .dugme-tekst {
+	width: 100%;
+	text-align: left;
+	color: var(--greska);
+	border-top: 1px solid var(--linija);
+	border-radius: 0 0 var(--zaobljenje) var(--zaobljenje);
+}
+
+/* Demo nalog: tanka traka ispod zaglavlja, da se zna da podaci nisu stvarni i da se vraćaju */
+.demo-traka {
+	width: min(100%, var(--sirina-sadrzaja));
+	margin: var(--razmak-8) auto 0;
+	padding: var(--razmak-8) var(--razmak-16);
+	font-size: var(--velicina-sitno);
+	text-align: center;
+	color: var(--tekst);
+	background: color-mix(in srgb, var(--moje) 14%, var(--izdignuto));
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--moje) 35%, transparent);
+}
+
 @media (max-width: 640px) {
-	.zaglavlje-red-prijavljen {
-		flex-wrap: wrap;
-		padding: var(--razmak-8) var(--razmak-8) var(--razmak-8) var(--razmak-16);
+	.demo-traka {
 		border-radius: var(--zaobljenje-karta);
 	}
+}
 
-	.zaglavlje-red-prijavljen .zaglavlje-desno {
-		display: contents;
-	}
+.demo-traka a {
+	font-weight: 700;
+	white-space: nowrap;
+}
 
-	.zaglavlje-red-prijavljen .zaglavlje-nalog {
-		order: 3;
-		flex-basis: 100%;
-		flex-wrap: nowrap;
-		justify-content: space-between;
-		padding: var(--razmak-8) var(--razmak-8) 0 0;
-		font-size: var(--velicina-sitno);
-		border-top: 1px solid var(--linija);
-	}
+/* Put do ekrana iznad naslova: sitno, sporedno, a ekran na kojem si nije link */
+.mrvice ol {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--razmak-4) var(--razmak-8);
+	margin: 0 0 var(--razmak-8);
+	padding: 0;
+	list-style: none;
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+.mrvice li + li::before {
+	content: '/';
+	margin-right: var(--razmak-8);
+	color: var(--linija-jaka);
+}
+
+.mrvice a {
+	font-weight: 600;
+	color: var(--tekst-sporedni);
+}
+
+.mrvice [aria-current='page'] {
+	font-weight: 600;
+	color: var(--tekst);
 }
 
 .znak-zeton {

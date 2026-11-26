@@ -135,6 +135,49 @@
 	background: var(--greska);
 }
 
+/* Sporedna radnja koja nešto poništava (Otkaži): pilula s obrisom u boji greške, ne puna kao
+   "Obriši nalog", jer otkazivanje još traži potvrdu */
+.dugme.dugme-otkazi:not(:disabled) {
+	color: var(--greska);
+	background: color-mix(in srgb, var(--greska) 10%, var(--izdignuto));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--greska) 45%, transparent);
+}
+
+/* Okruglo dugme s ikonom; naziv je u aria-label i u title, pa se vidi i pri prelazu mišem */
+.dugme-ikona {
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	color: var(--tekst);
+	background: var(--izdignuto);
+	border: 0;
+	border-radius: 50%;
+	box-shadow: inset 0 0 0 1px var(--linija-jaka);
+	cursor: pointer;
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz);
+}
+
+.dugme-ikona:hover:not(:disabled) {
+	transform: translateY(-1px);
+}
+
+.dugme-ikona:disabled {
+	opacity: 0.6;
+	cursor: wait;
+}
+
+.dugme-ikona svg {
+	width: 20px;
+	height: 20px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
 /* Glavna akcija: puna mjed, bez preliva (preliv je samo karta i moj žeton). Jedna po ekranu. */
 .dugme.dugme-mjed {
 	display: inline-flex;
@@ -192,7 +235,7 @@
 }
 
 code {
-	font-family: var(--font-karta);
+	font-family: var(--font-kod);
 	font-size: var(--velicina-sitno);
 	padding: 1px var(--razmak-4);
 	background: var(--sraf);

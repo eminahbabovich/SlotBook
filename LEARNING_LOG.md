@@ -482,3 +482,15 @@ Poslije sam dodao efekte na landing: reflektor na karticama, izranjanje pri skro
 Treći krug istog dana: tamna tema je sad podrazumijevana za sve. Mislio sam da ću trebati JavaScript, a bilo je dovoljno okrenuti selektor u `tokeni.css` na `:root:not([data-tema='svijetla'])` i izbaciti `prefers-color-scheme`. Slobodni termini su dobili mjedeni rub umjesto zelenog, a zauzeti katanac umjesto precrtanog vremena, jer se precrtano teško čitalo. Ispod "Kako je napravljeno" je bilo oko 200 px praznog: 96 od `main`, 48 od landinga i 64 od same sekcije. Za fontove se ispostavilo da se učitavaju samo dva, a Archivo je samo visio u `package.json`.
 
 Screenshot cijele stranice je pokazao praznu sredinu, kao da su sve sekcije nestale. Nisu: Playwright za `fullPage` razvuče prozor na visinu cijele stranice, pa skrol animacije misle da je sve još ispod ekrana. U običnom prozoru, sa skrolom, sve je na mjestu.
+
+## Četvrtak, 26. novembar 2026, 13:19
+
+Spisak od dvanaest sitnica za UI, bez diranja backenda. Prvo je na karti sitni IBM Plex Mono zamijenjen glavnim fontom, a ime mjesta je podebljano. Mono je sad samo za kod i demo lozinke, pa se token zove `--font-kod`, ne `--font-karta`.
+
+Meni na telefonu je `popover="auto"`: Escape i klik van menija browser rješava sam, bez ijednog listenera. U testu ga Testing Library nije nalazila, jer jsdom zatvoren popover smatra skrivenim. Treba `{ hidden: true }`.
+
+Kad sam dodao put do ekrana ("Organizacije / Čitaonica PMF"), pao je test koji je uzimao prvu listu na stranici. Prva lista su sad mrvice. Prvo sam probao uzeti listu van `nav`, ali resursi u tom trenutku još nisu stigli, pa je bila `undefined`. Sad test čeka naziv resursa i uzima njegov `li`.
+
+Najviše me iznenadilo predučitavanje landinga. Dodao sam `import()` na vrhu `App.jsx` kad je adresa `/`, i odjednom je šest testova po ugao palo na isteku od 5 s. Svaki test je učitavao cijeli landing s motionom. Sad se to radi samo u buildu (`import.meta.env.PROD`).
+
+Na lapisu tinta ima 3,72:1. To je ispod 4,5, pa su inicijali na pločici 20 px podebljano, jer veliki tekst traži samo 3:1.

@@ -2,7 +2,7 @@ import { porukaGreske } from '../forma/porukaGreske.js'
 import { useSesija } from '../sesija/sesija.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
-import { emajlResursa } from '../resursi/emajl.js'
+import { emajlPoRedu, inicijali } from '../resursi/emajl.js'
 import { NovaOrganizacija } from './NovaOrganizacija.jsx'
 import { ULOGE, useMojeOrganizacije } from './upiti.js'
 import './organizacije.css'
@@ -33,9 +33,9 @@ export function Organizacije() {
 			)}
 			{organizacije?.length > 0 && (
 				<ul className="tabla">
-					{organizacije.map((o) => (
-						<li key={o.id} style={{ '--emajl': emajlResursa(o.id) }}>
-							<PrelazLink to={`/o/${o.slug}`} className="tabla-red">
+					{organizacije.map((o, i) => (
+						<li key={o.id} style={{ '--emajl': emajlPoRedu(i) }}>
+							<PrelazLink to={`/o/${o.slug}`} className="tabla-red" data-znak={inicijali(o.naziv)}>
 								<span className="tabla-naziv" style={{ viewTransitionName: `org-${o.id}` }}>
 									{o.naziv}
 								</span>

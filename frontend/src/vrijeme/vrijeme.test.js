@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { rokPonude } from './opis.js'
-import { danUSedmici, danUZoni, dodajDane, dodajMjesece, mjesecUZoni, nazivDana, nazivMjeseca, satUZoni, sedmicaOd, uTrenutakSPomakom, zonaUredjajaRazlicita } from './vrijeme.js'
+import { danUSedmici, danUZoni, dodajDane, dodajMjesece, mjesecUZoni, nazivDana, nazivMjeseca, rasponDana, satUZoni, sedmicaOd, uTrenutakSPomakom, zonaUredjajaRazlicita } from './vrijeme.js'
 
 const SARAJEVO = 'Europe/Sarajevo'
 
@@ -136,5 +136,15 @@ describe('mjesec za statistiku', () => {
 	test('dan u sedmici po ISO broju', () => {
 		expect(danUSedmici(1)).toBe('ponedjeljak')
 		expect(danUSedmici(7)).toBe('nedjelja')
+	})
+})
+
+describe('raspon sedmice', () => {
+	test('kad sedmica pređe u novi mjesec, oba kraja imaju svoj mjesec', () => {
+		expect(rasponDana('2026-11-26', '2026-12-02')).toBe('26. nov – 2. dec')
+	})
+
+	test('i preko nove godine', () => {
+		expect(rasponDana('2026-12-29', '2027-01-04')).toBe('29. dec – 4. jan')
 	})
 })

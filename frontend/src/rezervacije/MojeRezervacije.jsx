@@ -3,7 +3,7 @@ import { useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { mojeRezervacije } from '../api/rezervacije.js'
 import { Karta } from '../karta/Karta.jsx'
-import { SacuvajKartu } from '../karta/SacuvajKartu.jsx'
+import { SacuvajKartuIkona } from '../karta/SacuvajKartu.jsx'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
@@ -203,14 +203,15 @@ function Red({ rezervacija: r, vrsta, sada, otvorena, naOtvori, naOdbijenuUplatu
 						Rok za otkazivanje je bio {opisTrenutka(r.rokOtkazivanja, r.zona)}. Ako ne možeš doći, javi se osobi koja vodi termin.
 					</p>
 				)}
-				{/* Radnje u jednom redu; QR kod i pitanje za otkazivanje se otvore ispod, preko cijele širine */}
+				{/* Glavna radnja prva (QR kod), Otkaži zadnje; QR kod i pitanje za otkazivanje se otvore ispod, preko cijele širine */}
 				<div className="karta-radnje">
+					{r.status === 'CONFIRMED' && Date.parse(r.kraj) > sada && <QrDolaska rezervacija={r} />}
+					{zaSliku && <SacuvajKartuIkona id={r.id} />}
 					{drziTermin && rokVazi && (
-						<button className="dugme-tekst" type="button" data-rezervacija={r.id} aria-expanded={otvorena} onClick={naOtvori}>
+						<button className="dugme dugme-otkazi" type="button" data-rezervacija={r.id} aria-expanded={otvorena} onClick={naOtvori}>
 							Otkaži
 						</button>
 					)}
-					{r.status === 'CONFIRMED' && Date.parse(r.kraj) > sada && <QrDolaska rezervacija={r} />}
 					{children}
 				</div>
 		</Karta>
@@ -218,7 +219,7 @@ function Red({ rezervacija: r, vrsta, sada, otvorena, naOtvori, naOdbijenuUplatu
 
 	return (
 		<li className={`karta-stavka karta-${r.status.toLowerCase()} karta-stavka-${vrsta}`}>
-			{zaSliku ? <SacuvajKartu id={r.id}>{karta}</SacuvajKartu> : karta}
+			{karta}
 		</li>
 	)
 }

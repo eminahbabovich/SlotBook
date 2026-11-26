@@ -16,18 +16,28 @@
 	justify-self: start;
 }
 
+/* Radnje u karti: QR kod je glavno dugme, Otkaži sporedno u boji greške, slika je ikona */
 .karta-radnje {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 0 var(--razmak-24);
+	gap: var(--razmak-8);
+	margin-top: var(--razmak-8);
+}
+
+.karta-radnje .dugme {
+	min-height: 40px;
+	padding-inline: var(--razmak-16);
+	font-size: var(--velicina-sitno);
 }
 
 .karta-radnje:empty {
 	display: none;
 }
 
-.karta-radnje > :not(.dugme-tekst) {
+/* QR kod, pitanje za otkazivanje i greške idu ispod svih dugmadi, ne između njih */
+.karta-radnje > :not(button) {
+	order: 1;
 	flex-basis: 100%;
 	max-width: none;
 }

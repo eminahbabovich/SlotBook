@@ -40,9 +40,16 @@
 
 /* Pločica emajla: boja organizacije ili resursa */
 .tabla-red::before {
-	content: '';
-	width: 28px;
-	height: 28px;
+	content: attr(data-znak);
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	/* Inicijali od 20 px su veliki tekst (prag 3:1): tinta na lapisu ima 3,72:1, na ostalima više */
+	font-size: var(--velicina-vrijeme);
+	font-weight: 700;
+	line-height: 1;
+	color: var(--dan-tekst);
 	margin-bottom: var(--razmak-8);
 	background: var(--emajl);
 	border-radius: var(--zaobljenje);

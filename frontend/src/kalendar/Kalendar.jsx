@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { kalendarResursa } from '../api/termini.js'
 import { Karta } from '../karta/Karta.jsx'
 import { porukaGreske } from '../forma/porukaGreske.js'
@@ -8,7 +8,7 @@ import { SacuvajKartu } from '../karta/SacuvajKartu.jsx'
 import { uzPrelaz } from '../tema/prelaz.js'
 import { feningeUKm } from '../resursi/cijena.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
-import { danUZoni, dodajDane, nazivDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from '../vrijeme/vrijeme.js'
+import { danUZoni, dodajDane, nazivDana, rasponDana, satUZoni, sedmicaOd, zonaUredjajaRazlicita } from '../vrijeme/vrijeme.js'
 import { opisTermina, opisTrenutka, rokPonude } from '../vrijeme/opis.js'
 import { ListaCekanja } from './ListaCekanja.jsx'
 import { Potvrda } from './Potvrda.jsx'
@@ -108,6 +108,17 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 		lista.current?.querySelector(`button[data-termin="${pocetakTermina}"]`)?.focus()
 	}
 
+	// Escape zatvara otvorenu potvrdu, isto kao Odustani
+	const odustaniRef = useRef(odustani)
+	odustaniRef.current = odustani
+	const otvorena = Boolean(izabran)
+	useEffect(() => {
+		if (!otvorena) return undefined
+		const naTipku = (dogadjaj) => dogadjaj.key === 'Escape' && odustaniRef.current()
+		document.addEventListener('keydown', naTipku)
+		return () => document.removeEventListener('keydown', naTipku)
+	}, [otvorena])
+
 	function promjenaListe(tekst) {
 		setIzabran(null)
 		setPoruka(tekst)
@@ -156,12 +167,21 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 			<p className="skriveno" aria-live="polite">
 				{najavaPromjene}
 			</p>
+			{/* Strelice i raspon između njih: bez mjeseca bi se "1." i "2." u traci činili kao novembar */}
 			<div className="sedmica">
-				<button className="dugme-tekst" type="button" onClick={() => pomjeriSedmicu(-1)} disabled={pocetak <= danas}>
-					Prethodnih 7 dana
+				<button
+					className="strelica"
+					type="button"
+					aria-label="Prethodnih 7 dana"
+					onClick={() => pomjeriSedmicu(-1)}
+					disabled={pocetak <= danas}
+					aria-disabled={pocetak <= danas}
+				>
+					<Strelica smjer="lijevo" />
 				</button>
-				<button className="dugme-tekst" type="button" onClick={() => pomjeriSedmicu(1)}>
-					Sljedećih 7 dana
+				<p className="sedmica-raspon">{rasponDana(dani[0], dani[6])}</p>
+				<button className="strelica" type="button" aria-label="Sljedećih 7 dana" onClick={() => pomjeriSedmicu(1)}>
+					<Strelica smjer="desno" />
 				</button>
 			</div>
 			<div className="dani">
@@ -192,6 +212,7 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 					{data && (
 						<Dan
 							dan={dan}
+							danas={danas}
 							dani={dani}
 							kalendar={cijenaFeninga > 0 ? saUplatom(data) : data}
 							cijenaFeninga={cijenaFeninga}
@@ -202,6 +223,9 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 						/>
 					)}
 				</div>
+				{/* Na telefonu je otvorena potvrda ploča odozdo, a iza nje zastor koji je zatvara na dodir.
+				    Tastatura ima Odustani i Escape, pa zastor nije dugme. */}
+				{izabran && <div className="kalendar-zastor" aria-hidden="true" onClick={odustani} />}
 				{/* Karta je desno od liste (na telefonu prikovana za dno): prvo u nastajanju dok se termin
 				    potvrđuje, pa odštampana kad server kaže da je rezervacija napravljena */}
 				<div className={izabran ? 'kalendar-karta kalendar-karta-otvorena' : 'kalendar-karta'}>
@@ -253,7 +277,14 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0 }) {
 					{zaUplatu && <Plati rezervacijaId={zaUplatu} cijenaFeninga={cijenaFeninga} naOdbijeno={nijeZaUplatu} />}
 					{/* Samo kad su termini stigli: dok se učitavaju ili kad se nisu učitali, nema šta birati */}
 					{data && !izabran && !karta && !poruka && (
-						<p className="karta-prazna">Izaberi slobodan žeton s ploče, a ovdje se odštampa karta: dan, vrijeme i šta rezervišeš.</p>
+						<div className="karta-prazna">
+							<div className="karta-prazna-skica" aria-hidden="true">
+								<span />
+								<span />
+								<span />
+							</div>
+							<p>Izaberi slobodan žeton s ploče, a ovdje se odštampa karta: dan, vrijeme i šta rezervišeš.</p>
+						</div>
 					)}
 				</div>
 			</div>
@@ -267,16 +298,18 @@ function saUplatom(kalendar) {
 	return { ...kalendar, termini: kalendar.termini.map((t) => (t.stanje === 'ceka' ? { ...t, uplata: true } : t)) }
 }
 
-function Dan({ dan, dani, kalendar, cijenaFeninga, lista, naIzborDana, naIzborTermina, izabran }) {
+function Dan({ dan, danas, dani, kalendar, cijenaFeninga, lista, naIzborDana, naIzborTermina, izabran }) {
 	const { zona, termini } = kalendar
 	const zaDan = termini.filter((t) => danUZoni(t.pocetak, zona) === dan)
+	// Server za danas vraća samo termine koji još nisu počeli, pa ploča kaže zašto počinje kasnije
+	const prosliSkriveni = dan === danas
 
 	if (zaDan.length === 0) {
 		const slobodniDani = dani.filter((d) => termini.some((t) => MOZE_REZERVISATI.includes(t.stanje) && danUZoni(t.pocetak, zona) === d))
 		const sljedeci = slobodniDani.find((d) => d > dan) ?? slobodniDani[0]
 		return (
 			<div className="prazan-dan prazno">
-				<p>Ovaj dan nema termina.</p>
+				<p>{prosliSkriveni ? 'Danas više nema termina koji nisu počeli.' : 'Ovaj dan nema termina.'}</p>
 				{sljedeci ? (
 					<button className="dugme-tekst" type="button" onClick={() => naIzborDana(sljedeci)}>
 						Prvi slobodan: {nazivDana(sljedeci)}
@@ -290,6 +323,7 @@ function Dan({ dan, dani, kalendar, cijenaFeninga, lista, naIzborDana, naIzborTe
 
 	return (
 		<>
+			{prosliSkriveni && <p className="napomena-prosli">Danas se vide samo termini koji još nisu počeli.</p>}
 			{zonaUredjajaRazlicita(zaDan.map((t) => t.pocetak), zona) && (
 				<p className="napomena-blok">Vremena su po zoni {zona}, a tvoj uređaj je u drugoj zoni.</p>
 			)}
@@ -354,6 +388,14 @@ function strelice(dogadjaj) {
 	if (trenutno === -1 || novo === undefined || dugmad[novo] === undefined) return
 	dogadjaj.preventDefault()
 	dugmad[novo].focus()
+}
+
+function Strelica({ smjer }) {
+	return (
+		<svg viewBox="0 0 24 24" aria-hidden="true">
+			<path d={smjer === 'lijevo' ? 'M14.5 5.5 8 12l6.5 6.5' : 'M9.5 5.5 16 12l-6.5 6.5'} />
+		</svg>
+	)
 }
 
 // Kostur u obliku liste, da se raspored ne pomjeri kad termini stignu

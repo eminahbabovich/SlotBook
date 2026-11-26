@@ -76,6 +76,20 @@ main:has(> .landing) {
 	gap: var(--razmak-12);
 }
 
+/* Na uskom telefonu su dva dugmeta jedno ispod drugog, oba preko cijele širine */
+@media (max-width: 479px) {
+	.hero .akcije,
+	.poziv .akcije {
+		display: grid;
+		width: 100%;
+	}
+
+	.hero .akcije .dugme,
+	.poziv .akcije .dugme {
+		justify-self: stretch;
+	}
+}
+
 /* Sporedno dugme: obris na podlozi, ista visina kao glavno */
 .dugme.dugme-sporedno {
 	color: var(--tekst);
@@ -177,10 +191,14 @@ main:has(> .landing) {
 	gap: 2px;
 }
 
-.hero-mjesto,
 .hero-dan {
 	font-size: var(--velicina-sitno);
 	color: var(--tekst-sporedni);
+}
+
+.hero-mjesto {
+	font-size: var(--velicina-sitno);
+	font-weight: 700;
 }
 
 .hero-resurs {
@@ -204,7 +222,7 @@ main:has(> .landing) {
 }
 
 .hero-karta {
-	min-height: 196px;
+	min-height: 120px;
 	display: grid;
 	align-content: start;
 }
@@ -213,8 +231,8 @@ main:has(> .landing) {
 	margin: 0;
 	display: grid;
 	place-items: center;
-	min-height: 196px;
-	padding: var(--razmak-24);
+	min-height: 120px;
+	padding: var(--razmak-16) var(--razmak-24);
 	text-align: center;
 	color: var(--tekst-sporedni);
 	border: 2px dashed var(--linija-jaka);

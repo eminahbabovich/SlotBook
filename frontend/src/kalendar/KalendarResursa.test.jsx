@@ -185,7 +185,8 @@ test('u 00:30 po Sarajevu je već utorak, a termin od 00:30 u srijedu je u srije
 	otvori('/o/citaonica-pmf/r/r1')
 	const korisnik = userEvent.setup()
 
-	expect(await screen.findByText('Ovaj dan nema termina.')).toBeTruthy()
+	// Utorak je danas, pa prazna ploča kaže i da se termini koji su počeli ne vide
+	expect(await screen.findByText('Danas više nema termina koji nisu počeli.')).toBeTruthy()
 	expect(screen.getByRole('button', { name: 'utorak, 20. novembar', pressed: true })).toBeTruthy()
 	await korisnik.click(screen.getByRole('button', { name: 'Prvi slobodan: srijeda, 21. novembar' }))
 
@@ -216,4 +217,33 @@ test('resurs koji nije u organizaciji ne otkriva da li postoji', async () => {
 	otvori('/o/citaonica-pmf/r/tudji-resurs')
 
 	expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Resurs nije dostupan')
+})
+
+test('Escape i dodir na zastor zatvaraju potvrdu kao Odustani, a fokus se vrati na termin', async () => {
+	backend({ ...PRIJAVLJENA, ...RESURSI, ...KALENDAR })
+	otvori('/o/citaonica-pmf/r/r1')
+	const korisnik = userEvent.setup()
+	const termin = await screen.findByRole('button', { name: /08:00 do 09:00, slobodno/ })
+	const potvrda = { name: 'Rezervisati ponedjeljak, 19. novembar, 08:00 do 09:00?' }
+
+	await korisnik.click(termin)
+	expect(screen.getByRole('group', potvrda)).toBeTruthy()
+	await korisnik.keyboard('{Escape}')
+	expect(screen.queryByRole('group', potvrda)).toBeNull()
+	expect(document.activeElement).toBe(termin)
+
+	await korisnik.click(termin)
+	await korisnik.click(document.querySelector('.kalendar-zastor'))
+	expect(screen.queryByRole('group', potvrda)).toBeNull()
+})
+
+test('danas ploča kaže da se termini koji su počeli ne vide, a drugi dan ne', async () => {
+	backend({ ...PRIJAVLJENA, ...RESURSI, ...KALENDAR })
+	otvori('/o/citaonica-pmf/r/r1')
+	const korisnik = userEvent.setup()
+
+	expect(await screen.findByText('Danas se vide samo termini koji još nisu počeli.')).toBeTruthy()
+	expect(screen.getByText('19. nov – 25. nov')).toBeTruthy()
+	await korisnik.click(screen.getByRole('button', { name: /srijeda, 21. novembar/ }))
+	expect(screen.queryByText('Danas se vide samo termini koji još nisu počeli.')).toBeNull()
 })

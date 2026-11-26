@@ -53,6 +53,15 @@ export function nazivDana(dan, duzina = 'dugo') {
 	return `${DANI[datum.getUTCDay()]}, ${redni}. ${MJESECI[datum.getUTCMonth()]}`
 }
 
+// Raspon sedmice iznad trake dana: "26. nov – 2. dec". Bez mjeseca u traci se "1." i "2." čine kao
+// novembar, pa mjesec piše uz oba kraja, i kad je isti.
+const MJESECI_KRATKO = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'avg', 'sep', 'okt', 'nov', 'dec']
+
+export function rasponDana(prvi, zadnji) {
+	const kratko = (dan) => `${Number(dan.slice(8, 10))}. ${MJESECI_KRATKO[Number(dan.slice(5, 7)) - 1]}`
+	return `${kratko(prvi)} – ${kratko(zadnji)}`
+}
+
 // Mjesec je "YYYY-MM", isto kao dan, bez Date objekta
 export function mjesecUZoni(trenutak, zona) {
 	return danUZoni(trenutak, zona).slice(0, 7)

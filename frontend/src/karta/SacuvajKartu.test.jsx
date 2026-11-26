@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, test, vi } from 'vitest'
-import { SacuvajKartu } from './SacuvajKartu.jsx'
+import { SacuvajKartu, SacuvajKartuIkona } from './SacuvajKartu.jsx'
 import { brojKarte } from './brojKarte.js'
 
 const toBlob = vi.fn()
@@ -46,4 +46,22 @@ test('kad slika ne uspije, poruka kaže šta uraditi umjesto toga, a ništa se n
 	expect((await screen.findByRole('alert')).textContent).toMatch(/snimak ekrana/)
 	expect(sacuvajFajl).not.toHaveBeenCalled()
 	expect(screen.getByRole('button', { name: 'Sačuvaj kartu kao sliku' }).disabled).toBe(false)
+})
+
+test('ikona u redu radnji pravi sliku od karte u kojoj stoji, i ima naziv za čitač i za miša', async () => {
+	toBlob.mockResolvedValue(new Blob(['png'], { type: 'image/png' }))
+	render(
+		<article className="karta" data-testid="karta">
+			<div className="karta-radnje">
+				<SacuvajKartuIkona id={ID} />
+			</div>
+		</article>,
+	)
+
+	const dugme = screen.getByRole('button', { name: 'Sačuvaj kartu kao sliku' })
+	expect(dugme.getAttribute('title')).toBe('Sačuvaj kartu kao sliku')
+	await userEvent.setup().click(dugme)
+
+	expect(toBlob.mock.calls[0][0]).toBe(screen.getByTestId('karta'))
+	expect(sacuvajFajl).toHaveBeenCalledWith(expect.any(Blob), `karta-${brojKarte(ID)}.png`)
 })

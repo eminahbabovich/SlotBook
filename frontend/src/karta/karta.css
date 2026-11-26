@@ -77,8 +77,10 @@
 }
 
 .karta-zaglavlje {
-	font-family: var(--font-karta);
 	font-size: var(--velicina-sitno);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.01em;
 	color: var(--tekst-sporedni);
 }
 
@@ -133,9 +135,10 @@
 	line-height: 1.25;
 }
 
+/* Mjesto je podebljano, da se odmah zna gdje je termin */
 .karta-mjesto {
 	font-size: var(--velicina-sitno);
-	color: var(--tekst-sporedni);
+	font-weight: 700;
 }
 
 .karta-kupon {
@@ -154,8 +157,8 @@
 /* Žig: stanje riječima u dvostrukom okviru, malo nakrivljen kao udaren rukom. Čita se i bez boje. */
 .zig {
 	padding: var(--razmak-4) var(--razmak-8);
-	font-family: var(--font-karta);
 	font-size: var(--velicina-sitno);
+	font-weight: 700;
 	text-align: center;
 	border: 3px double currentColor;
 	border-radius: var(--zaobljenje);
@@ -207,6 +210,11 @@
 
 .karta[data-slika] {
 	transform: none;
+}
+
+/* Na slici je samo karta, bez dugmadi */
+.karta[data-slika] .karta-radnje {
+	display: none;
 }
 
 .karta[data-slika] .karta-tijelo {

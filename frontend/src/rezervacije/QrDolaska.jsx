@@ -17,7 +17,7 @@ export function QrDolaska({ rezervacija }) {
 
 	return (
 		<>
-			<button className="dugme-tekst" type="button" aria-expanded={otvoren} onClick={() => setOtvoren(!otvoren)}>
+			<button className="dugme" type="button" aria-expanded={otvoren} onClick={() => setOtvoren(!otvoren)}>
 				{otvoren ? 'Sakrij QR kod' : 'QR kod za dolazak'}
 			</button>
 			{otvoren && <Kod rezervacija={rezervacija} />}

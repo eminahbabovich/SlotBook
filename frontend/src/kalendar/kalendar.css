@@ -4,11 +4,6 @@
 	--emajl: var(--emajl-tirkiz);
 }
 
-.nazad {
-	font-weight: 600;
-	color: var(--tekst-sporedni);
-}
-
 .resurs-naslov {
 	display: flex;
 	align-items: center;
@@ -53,9 +48,64 @@
 
 .sedmica {
 	display: flex;
+	align-items: center;
 	justify-content: space-between;
 	gap: var(--razmak-16);
 	margin: var(--razmak-24) 0 var(--razmak-8);
+}
+
+.sedmica-raspon {
+	margin: 0;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Strelice za sedmicu: okrugla dugmad od površine, a kad se dalje ne može, blijeda i bez sjene */
+.strelica {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	color: var(--tekst);
+	background: var(--izdignuto);
+	border: 0;
+	border-radius: var(--zaobljenje-puno);
+	box-shadow: var(--dubina-1);
+	cursor: pointer;
+	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
+}
+
+.strelica svg {
+	width: 20px;
+	height: 20px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.strelica:hover:not(:disabled) {
+	transform: translateY(-1px);
+	box-shadow: var(--dubina-2);
+}
+
+.strelica:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+.strelica:disabled {
+	opacity: 0.35;
+	box-shadow: none;
+	cursor: not-allowed;
+}
+
+/* Danas server ne vraća termine koji su već počeli, pa ploča kaže zašto počinje kasnije */
+.napomena-prosli {
+	margin: 0 0 var(--razmak-12);
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
 }
 
 /* Dani: udubljena traka, a izabran dan se digne iz nje kao žeton */
@@ -142,8 +192,33 @@
 	box-shadow: 0 -1px 0 var(--linija), 0 -16px 32px -16px var(--sjena-jaka);
 }
 
-.karta-prazna {
+.karta-prazna,
+.kalendar-zastor {
 	display: none;
+}
+
+/* Telefon: iza otvorene potvrde je zastor preko stranice, a dodir na njega je Odustani */
+@media (max-width: 899px) {
+	.kalendar-zastor {
+		position: fixed;
+		inset: 0;
+		z-index: 1;
+		display: block;
+		background: color-mix(in srgb, var(--noc-podloga) 55%, transparent);
+		animation: zastor-ulaz var(--trajanje-srednje) var(--kriva-izlaz);
+	}
+}
+
+@keyframes zastor-ulaz {
+	from {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.kalendar-zastor {
+		animation: none;
+	}
 }
 
 @media (min-width: 900px) {
@@ -167,15 +242,42 @@
 		box-shadow: none;
 	}
 
-	/* Prazna karta: isprekidan obris karte s linijom kupona, da se zna gdje će se odštampati */
+	/* Prazna karta: blijeda skica karte (traka za dan, za vrijeme i za mjesto) u isprekidanom
+	   obrisu, da se zna gdje će se i kako odštampati */
 	.karta-prazna {
-		display: block;
-		margin: 0;
-		padding: var(--razmak-48) calc(var(--razmak-96) + var(--razmak-32)) var(--razmak-48) var(--razmak-24);
+		display: grid;
+		gap: var(--razmak-16);
+		padding: var(--razmak-24);
 		color: var(--tekst-sporedni);
-		background: linear-gradient(var(--linija-jaka), var(--linija-jaka)) right var(--razmak-96) top / 2px 100% no-repeat;
 		border: 2px dashed var(--linija-jaka);
 		border-radius: var(--zaobljenje-karta);
+	}
+
+	.karta-prazna p {
+		margin: 0;
+		font-size: var(--velicina-sitno);
+	}
+
+	.karta-prazna-skica {
+		display: grid;
+		gap: var(--razmak-12);
+	}
+
+	.karta-prazna-skica span {
+		display: block;
+		height: 12px;
+		width: 40%;
+		background: var(--sraf);
+		border-radius: var(--zaobljenje-puno);
+	}
+
+	.karta-prazna-skica span:nth-child(2) {
+		height: 28px;
+		width: 85%;
+	}
+
+	.karta-prazna-skica span:nth-child(3) {
+		width: 55%;
 	}
 }
 

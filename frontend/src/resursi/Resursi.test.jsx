@@ -176,10 +176,10 @@ describe('izmjena', () => {
 		organizacijeSResursima({ citaonica: [resurs('r1', 'Sto 4, tihi dio', 'u7'), resurs('r2', 'Stara sala', 'u7', { active: false })] })
 		otvori('/o/citaonica-pmf')
 
-		const lista = await screen.findByRole('list')
-		const stara = within(lista).getAllByRole('listitem').find((li) => li.textContent.includes('Stara sala'))
+		// Red resursa je stavka liste oko njegovog naziva (prva lista na stranici je put do nje)
+		const stara = (await screen.findByText('Stara sala')).closest('li')
 		expect(stara.textContent).toMatch(/deaktiviran/)
-		const sto = within(lista).getAllByRole('listitem').find((li) => li.textContent.includes('Sto 4'))
+		const sto = screen.getByText('Sto 4, tihi dio').closest('li')
 		expect(sto.textContent).not.toMatch(/deaktiviran/)
 	})
 })

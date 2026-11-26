@@ -70,8 +70,80 @@
 	margin: 0;
 }
 
+/* Stranica koja ne postoji: u otisku je upitnik, izgubljen žeton koji ne vodi nigdje */
+.prazno-izgubljen::before {
+	content: '?';
+	display: grid;
+	place-items: center;
+	font-size: var(--velicina-naslov-3);
+	font-weight: 700;
+	color: var(--tekst-sporedni);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.kostur span {
+		animation: none;
+	}
+}
+
+/* Kostur landinga dok stiže njegov kod: isti raspored kao hero (tekst lijevo, prozor desno) */
+.landing-kostur {
+	display: grid;
+	gap: var(--razmak-48);
+	align-items: center;
+	padding-block: var(--razmak-32);
+}
+
+.landing-kostur span {
+	display: block;
+	background: var(--izdignuto);
+	border-radius: var(--zaobljenje-zeton);
+	box-shadow: var(--dubina-1);
+	animation: disanje var(--trajanje-disanje) ease-in-out infinite alternate;
+}
+
+.landing-kostur-tekst {
+	display: grid;
+	gap: var(--razmak-12);
+	max-width: 34rem;
+}
+
+.landing-kostur-tekst span {
+	height: 48px;
+}
+
+.landing-kostur-tekst span:nth-child(3) {
+	width: 70%;
+}
+
+.landing-kostur-tekst .landing-kostur-recenica {
+	height: 56px;
+	margin-top: var(--razmak-12);
+	animation-delay: 200ms;
+}
+
+.landing-kostur-tekst .landing-kostur-dugmad {
+	width: 60%;
+	height: var(--red-min-visina);
+	border-radius: var(--zaobljenje-puno);
+	animation-delay: 400ms;
+}
+
+.landing-kostur .landing-kostur-prozor {
+	min-height: 420px;
+	border-radius: var(--zaobljenje-ploca);
+	animation-delay: 300ms;
+}
+
+@media (min-width: 960px) {
+	.landing-kostur {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+		gap: var(--razmak-64);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.landing-kostur span {
 		animation: none;
 	}
 }

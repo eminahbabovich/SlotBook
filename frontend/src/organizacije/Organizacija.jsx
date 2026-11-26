@@ -5,7 +5,8 @@ import { porukaGreske } from '../forma/porukaGreske.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { ULOGE, useOrganizacija, useResursi } from './upiti.js'
-import { emajlResursa } from '../resursi/emajl.js'
+import { emajlResursa, inicijali } from '../resursi/emajl.js'
+import { Mrvice } from '../tema/Mrvice.jsx'
 import { PrelazLink } from '../tema/PrelazLink.jsx'
 
 const PORUKE = {
@@ -34,6 +35,7 @@ export function Organizacija() {
 
 	return (
 		<section>
+			<Mrvice stavke={[{ naziv: 'Organizacije', to: '/' }, { naziv: organizacija.naziv }]} />
 			<h1>
 				<span className="ime-prelaz" style={{ viewTransitionName: `org-${organizacija.id}` }}>
 					{organizacija.naziv}
@@ -91,7 +93,7 @@ function Resursi({ organizacija }) {
 		<ul className="tabla">
 			{resursi.map((r) => (
 				<li key={r.id} className="tabla-stavka" style={{ '--emajl': emajlResursa(r.id) }}>
-					<PrelazLink to={`/o/${organizacija.slug}/r/${r.id}`} className="tabla-red">
+					<PrelazLink to={`/o/${organizacija.slug}/r/${r.id}`} className="tabla-red" data-znak={inicijali(r.naziv)}>
 						<span className="tabla-naziv" style={{ viewTransitionName: `resurs-${r.id}` }}>
 							{r.naziv}
 						</span>
