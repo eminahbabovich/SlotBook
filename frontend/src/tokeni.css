@@ -2,28 +2,28 @@
    Komponente koriste samo semantičke varijable, a nova boja, font ili razmak se prvo dopiše u DIZAJN.md.
    Primitive (hex) su imenovane po temi, a semantičke varijable ispod ih biraju za dan ili noć. */
 :root {
-	/* Dan: hladan porculan, ne papir */
-	--dan-podloga: #e7eaf1;
-	--dan-povrsina: #f6f7fa;
+	/* Dan: topli kamen, ne bijeli ekran ni hladno sivilo */
+	--dan-podloga: #f4f2ee;
+	--dan-povrsina: #faf9f7;
 	--dan-izdignuto: #ffffff;
-	--dan-tekst: #151933;
-	--dan-sporedni: #4b5172;
-	--dan-greska: #b42318;
-	--dan-mjed-tekst: #7a5a12;
+	--dan-tekst: #18181b;
+	--dan-sporedni: #5c5a63;
+	--dan-greska: #c2262e;
+	--dan-mjed-tekst: #8a5a00;
 
-	/* Noć: tinta nad čaršijom, ne crna */
-	--noc-podloga: #121735;
-	--noc-povrsina: #1a2045;
-	--noc-izdignuto: #232a56;
-	--noc-tekst: #eceef8;
-	--noc-sporedni: #a4aacb;
+	/* Noć: grafit, neutralan, da mjed i emajl budu jedine boje na ekranu */
+	--noc-podloga: #0d0e11;
+	--noc-povrsina: #15161a;
+	--noc-izdignuto: #1d1f24;
+	--noc-tekst: #edecef;
+	--noc-sporedni: #a1a0aa;
 	--noc-greska: #ff8a80;
 
 	/* Mjed: moje, folija, glavno dugme. Svijetla i tamna strana za metalni preliv. */
-	--mjed: #c9a04e;
-	--mjed-noc: #d9b566;
-	--mjed-sjaj: #f3dfa6;
-	--mjed-sjena: #8a6a24;
+	--mjed: #e6a93f;
+	--mjed-noc: #f0bc5e;
+	--mjed-sjaj: #fce6b4;
+	--mjed-sjena: #a36f12;
 
 	/* Emajl: boja resursa. Uvijek površina ili rub, nikad tekst na podlozi. */
 	--emajl-sipak: #e5484d;
@@ -31,13 +31,13 @@
 	--emajl-tirkiz: #12a594;
 	--emajl-lapis: #3e6ae6;
 
-	/* Senke: tinta, ne crna, da sjena pripada istom svijetu kao tekst */
-	--sjena-boja: rgb(21 25 51 / 0.09);
-	--sjena-boja-jaka: rgb(21 25 51 / 0.16);
-	--sjena-noc: rgb(4 6 18 / 0.55);
-	--sjena-noc-jaka: rgb(4 6 18 / 0.75);
+	/* Senke: od teksta, ne od čiste crne, i mekše nego prije: ploča je obrisana tankom ivicom, ne sjenom */
+	--sjena-boja: rgb(24 24 27 / 0.07);
+	--sjena-boja-jaka: rgb(24 24 27 / 0.14);
+	--sjena-noc: rgb(0 0 0 / 0.5);
+	--sjena-noc-jaka: rgb(0 0 0 / 0.72);
 	--odsjaj-dan: rgb(255 255 255 / 0.9);
-	--odsjaj-noc: rgb(255 255 255 / 0.09);
+	--odsjaj-noc: rgb(255 255 255 / 0.07);
 
 	/* Semantičke boje, dan */
 	--podloga: var(--dan-podloga);
@@ -57,16 +57,18 @@
 	--linija: color-mix(in srgb, var(--tekst) 14%, transparent);
 	--linija-jaka: color-mix(in srgb, var(--tekst) 32%, transparent);
 	--sraf: color-mix(in srgb, var(--tekst) 9%, transparent);
+	/* Tanka ivica oko svega što je izdignuto: noću sjena na grafitu skoro ne postoji, pa rub drži oblik */
+	--obris: color-mix(in srgb, var(--tekst) 8%, transparent);
 
 	/* Tri nivoa dubine: ploča leži, žeton stoji, karta lebdi */
-	--dubina-1: 0 1px 0 var(--odsjaj) inset, 0 1px 2px var(--sjena);
-	--dubina-2: 0 1px 0 var(--odsjaj) inset, 0 2px 4px var(--sjena), 0 8px 20px -6px var(--sjena-jaka);
-	--dubina-3: 0 1px 0 var(--odsjaj) inset, 0 4px 10px var(--sjena), 0 18px 36px -14px var(--sjena-jaka);
+	--dubina-1: 0 1px 0 var(--odsjaj) inset, 0 0 0 1px var(--obris), 0 1px 2px var(--sjena);
+	--dubina-2: 0 1px 0 var(--odsjaj) inset, 0 0 0 1px var(--obris), 0 2px 4px var(--sjena), 0 8px 20px -6px var(--sjena-jaka);
+	--dubina-3: 0 1px 0 var(--odsjaj) inset, 0 0 0 1px var(--obris), 0 4px 10px var(--sjena), 0 24px 48px -16px var(--sjena-jaka);
 	--utisnuto: inset 0 2px 4px var(--sjena), inset 0 0 0 1px var(--linija);
 	--metal: linear-gradient(160deg, var(--mjed-sjaj) 0%, var(--mjed) 38%, var(--mjed-sjena) 100%);
 
-	/* Zrno: fino kucana površina mjedi, samo na podlozi i karti */
-	--zrno: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='z'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .025 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23z)'/%3E%3C/svg%3E");
+	/* Zrno: jedva vidljivo, kao dobar papir, samo na podlozi i karti */
+	--zrno: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='z'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .016 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23z)'/%3E%3C/svg%3E");
 
 	--font-naslov: 'Hanken Grotesk Variable', sans-serif;
 	--font-tekst: 'Hanken Grotesk Variable', sans-serif;

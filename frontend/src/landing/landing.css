@@ -85,7 +85,8 @@ body:has(.landing) {
 }
 
 /* Prozor aplikacije: traka s znakom i nazivom organizacije, ispod pravi mini kalendar */
-/* Prozor s demom je podignut iznad stranice: meka duga sjena, a iza njega diskretan mjedeni sjaj */
+/* Prozor s demom je podignut iznad stranice: meka duga sjena, a iza njega sjaj od mjedi i lapisa,
+   jedino mjesto na stranici gdje se dvije boje miješaju */
 .prozor {
 	position: relative;
 	min-width: 0;
@@ -102,9 +103,12 @@ body:has(.landing) {
 .prozor-scena::before {
 	content: '';
 	position: absolute;
-	inset: -12% -10%;
+	inset: -18% -14%;
 	z-index: -1;
-	background: radial-gradient(closest-side, color-mix(in srgb, var(--mjed) 30%, transparent), transparent);
+	background:
+		radial-gradient(closest-side at 30% 35%, color-mix(in srgb, var(--mjed) 45%, transparent), transparent),
+		radial-gradient(closest-side at 75% 70%, color-mix(in srgb, var(--emajl-lapis) 30%, transparent), transparent);
+	filter: blur(24px);
 	pointer-events: none;
 }
 
@@ -378,13 +382,32 @@ body:has(.landing) {
 	}
 }
 
-/* Kako radi: jedina obojena traka preko cijele širine. Danju porculan s malo mjedi, noću tamnija od
-   podloge. Koraci su kartice na njoj. */
+/* Kako radi: jedina tamna traka preko cijele širine, u obje teme, za kontrast u sredini stranice.
+   Nosi noćne vrijednosti kao tamna ploča u prijavi, a na vrhu ima blag mjedeni sjaj. */
 .kako-radi {
 	margin-inline: calc(50% - 50vw);
 	padding: var(--razmak-96) var(--razmak-16);
-	background: var(--zrno), color-mix(in srgb, var(--moje) 10%, var(--povrsina));
-	box-shadow: inset 0 1px 0 var(--linija), inset 0 -1px 0 var(--linija);
+	color: var(--noc-tekst);
+	background:
+		radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--mjed-noc) 14%, transparent), transparent),
+		var(--zrno),
+		var(--noc-povrsina);
+	box-shadow: inset 0 1px 0 var(--odsjaj-noc);
+	--izdignuto: var(--noc-izdignuto);
+	--povrsina: var(--noc-povrsina);
+	--tekst: var(--noc-tekst);
+	--tekst-sporedni: var(--noc-sporedni);
+	--moje: var(--mjed-noc);
+	--tekst-mjed: var(--mjed-noc);
+	--odsjaj: var(--odsjaj-noc);
+	--sjena: var(--sjena-noc);
+	--sjena-jaka: var(--sjena-noc-jaka);
+	/* Ivice i dubine su u tokenima izračunate iz dnevnih vrijednosti, pa se ovdje računaju ponovo */
+	--obris: color-mix(in srgb, var(--noc-tekst) 8%, transparent);
+	--linija: color-mix(in srgb, var(--noc-tekst) 14%, transparent);
+	--linija-jaka: color-mix(in srgb, var(--noc-tekst) 32%, transparent);
+	--dubina-1: 0 1px 0 var(--odsjaj) inset, 0 0 0 1px var(--obris), 0 1px 2px var(--sjena);
+	--dubina-3: 0 1px 0 var(--odsjaj) inset, 0 0 0 1px var(--obris), 0 4px 10px var(--sjena), 0 24px 48px -16px var(--sjena-jaka);
 }
 
 .kako-radi-unutra {
@@ -947,16 +970,6 @@ body:has(.landing) {
 	}
 }
 
-/* Noću je cijela stranica tamna, pa je traka "Kako radi" tamnija od podloge, a ne svjetlija */
-:root[data-tema='tamna'] .kako-radi {
-	background: var(--zrno), var(--sjena-noc);
-}
-
-@media (prefers-color-scheme: dark) {
-	:root:not([data-tema='svijetla']) .kako-radi {
-		background: var(--zrno), var(--sjena-noc);
-	}
-}
 
 
 /* Kartice na landingu: jedan sistem za sve, u duhu žetona. Na hover (i na tastaturi, kad je fokus u

@@ -1,6 +1,6 @@
 # Dizajn
 
-Smjer je **Mjed i emajl**, izabran 25.11.2026 za drugi redizajn u Fazi 12. Zamijenio je **Čelik i žar** (prvi redizajn, isti dan), koji je ispao ravan: jedna siva površina, 3 px zaobljenja na svemu, jedan font i jedna boja. Ideja, potpisni elementi i tri spektakularna momenta su u [redizajn/smjer.md](redizajn/smjer.md).
+Smjer je **Mjed i emajl**, izabran 25.11.2026 za drugi redizajn u Fazi 12. Zamijenio je **Čelik i žar** (prvi redizajn, isti dan), koji je ispao ravan: jedna siva površina, 3 px zaobljenja na svemu, jedan font i jedna boja. Paleta je 26.11.2026 zamijenjena (Redizajn 4, vidi "Boje"): hladni porculan i teget tinta su djelovali staro, pa je dan sad topli kamen, a noć neutralan grafit. Ideja, potpisni elementi i tri spektakularna momenta su u [redizajn/smjer.md](redizajn/smjer.md).
 
 Redizajn ide ekran po ekran: landing, kalendar i rezervacija, dashboard, ostalo. Boje, fontovi, veličine i oblik ispod već važe. Sekcije od "Forme i dugmad" naniže još opisuju prvi redizajn i prepisuju se kad dođe red na svaki ekran.
 
@@ -12,35 +12,35 @@ Kazandžiluk, ulica kazandžija na Baščaršiji: mjed koja se kuje čekićem i 
 
 ## Boje
 
-Dvije teme, svaka napravljena posebno: dan je hladan porculan, noć je tamna tinta. Tema prati sistem, a u zaglavlju se može izabrati ručno. Kontrast je po WCAG formuli za relativnu luminansu (AA: 4,5 za tekst, 3 za ivice i oblike).
+Dvije teme, svaka napravljena posebno: dan je topli kamen, noć je grafit. Do 26.11.2026 dan je bio hladan porculan (`#E7EAF1`), a noć zasićena teget tinta (`#121735`). Uz mjed i emajl je to bilo previše plave, mjed na sivo-plavoj je izgledala kao senf, a teget noć kao dashboard od prije pet godina. Pogledao sam šta danas rade proizvodi tog tipa: skoro bijela topla podloga, neutralna skoro crna noć, jedna jaka akcent boja i tanka ivica oko ploča umjesto teških sjena. Mjed je zato svjetlija i čistija, a noć nema boje, pa su mjed i emajl jedine boje na ekranu. Tema prati sistem, a u zaglavlju se može izabrati ručno. Kontrast je po WCAG formuli za relativnu luminansu (AA: 4,5 za tekst, 3 za ivice i oblike).
 
 | Varijabla | Hex | Uloga | Kontrast |
 |---|---|---|---|
-| `--dan-podloga` | `#E7EAF1` | dan: porculan, pozadina | |
-| `--dan-povrsina` | `#F6F7FA` | dan: ploče, polja | |
+| `--dan-podloga` | `#F4F2EE` | dan: topli kamen, pozadina | |
+| `--dan-povrsina` | `#FAF9F7` | dan: ploče, polja | |
 | `--dan-izdignuto` | `#FFFFFF` | dan: žeton, karta, meni | |
-| `--dan-tekst` | `#151933` | dan: tinta, sav tekst; i tekst na mjedi u obje teme | 14,31 na podlozi, 17,23 na izdignutom |
-| `--dan-sporedni` | `#4B5172` | dan: napomene | 6,41 na podlozi, 7,72 na izdignutom |
-| `--dan-greska` | `#B42318` | dan: greška, uvijek uz ikonu i tekst | 5,46 na podlozi |
-| `--dan-mjed-tekst` | `#7A5A12` | dan: mjed kao tekst (link "moje") | 5,29 na podlozi, 6,37 na izdignutom |
-| `--noc-podloga` | `#121735` | noć: tinta, pozadina | |
-| `--noc-povrsina` | `#1A2045` | noć: ploče, polja | |
-| `--noc-izdignuto` | `#232A56` | noć: žeton, karta, meni | |
-| `--noc-tekst` | `#ECEEF8` | noć: sav tekst | 15,13 na podlozi, 11,81 na izdignutom |
-| `--noc-sporedni` | `#A4AACB` | noć: napomene | 7,66 na podlozi, 5,98 na izdignutom |
-| `--noc-greska` | `#FF8A80` | noć: greška | 7,67 na podlozi |
-| `--mjed` | `#C9A04E` | dan: moje, glavno dugme, folija | tinta na mjedi 7,07; mjed na podlozi 2,02, zato nikad tekst |
-| `--mjed-noc` | `#D9B566` | noć: moje, i mjed kao tekst | tinta na mjedi 8,82; na noćnoj podlozi 8,96 |
-| `--mjed-sjaj` | `#F3DFA6` | svijetla strana metalnog preliva | |
-| `--mjed-sjena` | `#8A6A24` | tamna strana metalnog preliva | |
-| `--emajl-sipak` | `#E5484D` | resurs, kao površina ili rub | 3,25 na dnevnoj podlozi |
-| `--emajl-safran` | `#F2B530` | resurs, kao površina ili rub | tinta na šafranu 9,38 |
-| `--emajl-tirkiz` | `#12A594` | resurs, kao površina ili rub | 2,55 na dnevnoj podlozi, zato uvijek s tintanim rubom |
-| `--emajl-lapis` | `#3E6AE6` | resurs, kao površina ili rub | 3,95 na dnevnoj podlozi |
+| `--dan-tekst` | `#18181B` | dan: tinta, sav tekst; i tekst na mjedi u obje teme | 15,85 na podlozi, 17,72 na izdignutom |
+| `--dan-sporedni` | `#5C5A63` | dan: napomene | 6,06 na podlozi, 6,78 na izdignutom |
+| `--dan-greska` | `#C2262E` | dan: greška, uvijek uz ikonu i tekst | 5,20 na podlozi |
+| `--dan-mjed-tekst` | `#8A5A00` | dan: mjed kao tekst (link "moje") | 5,30 na podlozi, 5,93 na izdignutom |
+| `--noc-podloga` | `#0D0E11` | noć: grafit, pozadina | |
+| `--noc-povrsina` | `#15161A` | noć: ploče, polja | |
+| `--noc-izdignuto` | `#1D1F24` | noć: žeton, karta, meni | |
+| `--noc-tekst` | `#EDECEF` | noć: sav tekst | 16,40 na podlozi, 14,01 na izdignutom |
+| `--noc-sporedni` | `#A1A0AA` | noć: napomene | 7,47 na podlozi, 6,38 na izdignutom |
+| `--noc-greska` | `#FF8A80` | noć: greška | 8,45 na podlozi |
+| `--mjed` | `#E6A93F` | dan: moje, glavno dugme, folija | tinta na mjedi 8,53; mjed na podlozi 1,86, zato nikad tekst |
+| `--mjed-noc` | `#F0BC5E` | noć: moje, i mjed kao tekst | tinta na mjedi 10,17; na noćnoj podlozi 11,08 |
+| `--mjed-sjaj` | `#FCE6B4` | svijetla strana metalnog preliva | |
+| `--mjed-sjena` | `#A36F12` | tamna strana metalnog preliva | |
+| `--emajl-sipak` | `#E5484D` | resurs, kao površina ili rub | 3,50 na dnevnoj podlozi |
+| `--emajl-safran` | `#F2B530` | resurs, kao površina ili rub | tinta na šafranu 9,64 |
+| `--emajl-tirkiz` | `#12A594` | resurs, kao površina ili rub | 2,75 na dnevnoj podlozi, zato uvijek s tintanim rubom |
+| `--emajl-lapis` | `#3E6AE6` | resurs, kao površina ili rub | 4,26 na dnevnoj podlozi |
 
 Emajl nikad nije tekst i nikad jedini znak stanja: boja kaže koji je resurs, a oblik i tekst kažu stanje. Mjed je samo za "moje" i glavnu akciju. Greška u noći je svijetlo crvena, da ne potone u tintu.
 
-Senke su od tinte, ne od crne (`--sjena-boja`, u noći `--sjena-noc`), i imaju tri nivoa: `--dubina-1` (ploča leži), `--dubina-2` (žeton stoji), `--dubina-3` (karta lebdi). Svaki nivo ima i tanak svijetli gornji rub (`--odsjaj`), kao rub izdignute ploče. Udubljeno (zauzet termin, polje) je `--utisnuto`. Gradijent postoji samo kao `--metal`, na mjedi i foliji, gdje glumi metal.
+Senke su od boje teksta (`--sjena-boja`, u noći `--sjena-noc`), mekše nego prije, i imaju tri nivoa: `--dubina-1` (ploča leži), `--dubina-2` (žeton stoji), `--dubina-3` (karta lebdi). Svaki nivo ima tanak svijetli gornji rub (`--odsjaj`), kao rub izdignute ploče, i ivicu od 1 px (`--obris`, 8 % boje teksta) oko cijele ploče. Na grafitu se sjena skoro ne vidi, pa oblik drži ivica. Udubljeno (zauzet termin, polje) je `--utisnuto`. Gradijent postoji kao `--metal`, na mjedi i foliji, gdje glumi metal, i kao dva meka sjaja na landingu: iza prozora s demom (mjed i lapis, jedino mjesto gdje se dvije boje miješaju) i na vrhu tamne trake "Kako radi".
 
 ## Fontovi
 
@@ -65,7 +65,7 @@ Prored je 1,55 za tekst i 1 za naslove: široka teška slova s većim proredom i
 
 ## Razmaci i oblik
 
-Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48, 64, 96). Žeton je visok najmanje 48 px. Zaobljenje raste s nivoom, nije isto na svemu: polje i dugme 10 px (`--zaobljenje`), žeton 14 px (`--zaobljenje-zeton`), karta 20 px (`--zaobljenje-karta`), ploča 28 px (`--zaobljenje-ploca`), a pilula (prekidač teme, oznaka) puna (`--zaobljenje-puno`). Podloga ima fino zrno (`--zrno`), kao kucana mjed.
+Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48, 64, 96). Žeton je visok najmanje 48 px. Zaobljenje raste s nivoom, nije isto na svemu: polje i dugme 10 px (`--zaobljenje`), žeton 14 px (`--zaobljenje-zeton`), karta 20 px (`--zaobljenje-karta`), ploča 28 px (`--zaobljenje-ploca`), a pilula (prekidač teme, oznaka) puna (`--zaobljenje-puno`). Podloga ima zrno (`--zrno`) koje se jedva vidi, kao dobar papir.
 
 ## Pokret
 
@@ -79,9 +79,9 @@ Sve vrijednosti su u `frontend/src/tokeni.css`. Primitive su imenovane po temi (
 
 ## Forme i dugmad
 
-Polje je udubljeno u ploču: pozadina je `--podloga`, s unutrašnjom sjenom odozgo i ivicom od 1 px u `--tekst-sporedni`. Ivica polja treba kontrast 3:1, a sporedna boja ima 6,41:1 na dnevnoj podlozi i 5,98:1 na noćnoj izdignutoj ploči. `--linija` bi bila preslaba. Na hover ivica postane `--tekst`. Neispravno polje dobije ivicu od 3 px u boji `--greska` i tekst greške ispod, pa se razlikuje i bez boje. Oznaka je iznad polja, nikad samo placeholder. Zaobljenje polja je `--zaobljenje` (10 px).
+Polje je udubljeno u ploču: pozadina je `--podloga`, s unutrašnjom sjenom odozgo i ivicom od 1 px u `--tekst-sporedni`. Ivica polja treba kontrast 3:1, a sporedna boja ima 6,06:1 na dnevnoj podlozi i 6,38:1 na noćnoj izdignutoj ploči. `--linija` bi bila preslaba. Na hover ivica postane `--tekst`. Neispravno polje dobije ivicu od 3 px u boji `--greska` i tekst greške ispod, pa se razlikuje i bez boje. Oznaka je iznad polja, nikad samo placeholder. Zaobljenje polja je `--zaobljenje` (10 px).
 
-Dugme je pilula od tinte (`--tekst` s tekstom u `--podloga`, 14,31:1 danju), a noću obrnuto: svijetla pilula s tamnim tekstom. Ima sjenu `--dubina-2` i tanak svijetli rub gore, pa stoji iznad ploče. Na hover se digne za 1 px, a na klik spusti i sjena se skrati, sve za `--trajanje-brzo`. Dok čeka odgovor, blijedo je (60 %) i kaže šta radi ("Prijava u toku"). Glavna akcija ekrana je mjedena (`.dugme-mjed`, puna `--moje` s tekstom `--tekst-na-moje`, 7,07:1 danju i 8,82:1 noću). Od Redizajna 3 dugme nema metalni preliv: preliv `--metal` je samo na karti i na mom žetonu, da mjed ostane znak za "tvoje", a ne ukras: "Rezerviši" u karti i "Prijavi se". Jedna po ekranu. Veza na drugi ekran koja mora stajati kao dugme (Članovi i pozivnice, Novi resurs, Statistika) je pilula od površine s tankim rubom (`.veza-pilula`), da se ne miješa s akcijom. Prelaz koji je samo rečenica ("Napravi nalog" ispod prijave) ostaje podvučen tekst.
+Dugme je pilula od tinte (`--tekst` s tekstom u `--podloga`, 15,85:1 danju), a noću obrnuto: svijetla pilula s tamnim tekstom. Ima sjenu `--dubina-2` i tanak svijetli rub gore, pa stoji iznad ploče. Na hover se digne za 1 px, a na klik spusti i sjena se skrati, sve za `--trajanje-brzo`. Dok čeka odgovor, blijedo je (60 %) i kaže šta radi ("Prijava u toku"). Glavna akcija ekrana je mjedena (`.dugme-mjed`, puna `--moje` s tekstom `--tekst-na-moje`, 8,53:1 danju i 10,17:1 noću). Od Redizajna 3 dugme nema metalni preliv: preliv `--metal` je samo na karti i na mom žetonu, da mjed ostane znak za "tvoje", a ne ukras: "Rezerviši" u karti i "Prijavi se". Jedna po ekranu. Veza na drugi ekran koja mora stajati kao dugme (Članovi i pozivnice, Novi resurs, Statistika) je pilula od površine s tankim rubom (`.veza-pilula`), da se ne miješa s akcijom. Prelaz koji je samo rečenica ("Napravi nalog" ispod prijave) ostaje podvučen tekst.
 
 Greška cijele forme i greška polja imaju ikonu prekinutog kruga s uzvičnikom ispred teksta, jer se greška ne smije prepoznavati samo po boji (šipak iz emajla je blizu boje greške). Ikona je CSS maska u boji teksta, pa u SVG-u nema upisane boje. Greška forme je još i ploča s 8 % boje greške i trakom od 4 px lijevo. Poruka o uspjehu u formi je ista ploča, samo od površine i s trakom od tinte.
 
@@ -123,7 +123,7 @@ Greška učitavanja (`NijeUcitano`) je izdignuta ploča s trakom u boji `--gresk
 
 Prazno stanje je isprekidan obris (`--linija-jaka`, 2 px) sa zaobljenjem karte, isti kao prazna karta u kalendaru, s udubljenim otiskom žetona koji tu fali, rečenicom šta se može dalje i, gdje ima smisla, linkom ili dugmetom. Tako izgleda i stranica koja ne postoji.
 
-Radnja koja se ne može vratiti ("Obriši nalog") je ista pilula kao dugme, ali u boji `--greska` (5,46:1 danju, 7,67:1 noću), da se ne zamijeni s glavnom radnjom. Dok se šalje, blijeda je kao svako dugme.
+Radnja koja se ne može vratiti ("Obriši nalog") je ista pilula kao dugme, ali u boji `--greska` (5,20:1 danju, 8,45:1 noću), da se ne zamijeni s glavnom radnjom. Dok se šalje, blijeda je kao svako dugme.
 
 Statistika ima četiri brojke na vrhu (rezervacije, popunjenost, održane i potvrđene, nedolasci), sve izračunate iz istog odgovora kao tabele ispod, pa broj gore i broj u tabeli ne mogu reći različito. Popunjenost je jedina na mjedi, jer je to glavni broj za onoga ko vodi prostor. Ispod su ploče: po stanju i popunjenost jedna pored druge, pa "Kad je gužva" i najtraženiji termini. Trake su udubljen žlijeb s punim dijelom koji naraste slijeva kad stignu podaci (700 ms, bez toga uz smanjen pokret). Po stanju nose značenje kao kalendar: potvrđena i završena su mjed, ono što se nije desilo (otkazana, odbijena, istekla, nedolazak) je šrafura, a na čekanju tinta. "Kad je gužva" je mreža dan × sat u jednoj boji: što više rezervacija, to više mjedi (od 28 % do 100 %, `color-mix` u oklab), a sat bez ijedne je udubljen. Noću to znači svjetlije, jer mjed sija na tinti. Mreža je prava tabela s brojem u svakoj ćeliji za čitač ekrana, a oku broj kaže opis pri prelazu mišem. Ćelije se pojave kolonu po kolonu. Broj uvijek piše i u tabeli, pa boja nije jedini nosilac podatka.
 
@@ -133,7 +133,7 @@ Nije urađeno: polja za vrijeme (`input type=time`) i dalje pokazuju AM/PM kad j
 
 ## Fokus
 
-Fokus je okvir od 3 px u boji `--tekst`, odmaknut 3 px od elementa (`--fokus`, `--fokus-odmak`). WCAG traži najmanje 3:1 za okvir fokusa prema onome pored čega stoji. Zbog odmaka okvir stoji na ploči, ne na elementu: danju tinta ima 14,31:1 na podlozi i 17,23:1 na izdignutoj ploči, a noću svijetli tekst 15,13:1 na podlozi i 11,81:1 na izdignutoj. Na mjedenom žetonu bi noću imao samo 1,69:1, pa odmak tu nije ukras, nego razlog zašto se fokus vidi.
+Fokus je okvir od 3 px u boji `--tekst`, odmaknut 3 px od elementa (`--fokus`, `--fokus-odmak`). WCAG traži najmanje 3:1 za okvir fokusa prema onome pored čega stoji. Zbog odmaka okvir stoji na ploči, ne na elementu: danju tinta ima 15,85:1 na podlozi i 17,72:1 na izdignutoj ploči, a noću svijetli tekst 16,40:1 na podlozi i 14,01:1 na izdignutoj. Na mjedenom žetonu bi noću imao samo 1,48:1, pa odmak tu nije ukras, nego razlog zašto se fokus vidi.
 
 ## Stanja termina
 
@@ -225,7 +225,7 @@ Pristupačnost je dio poštovanja, ne dodatak: kontrast AA, sve radi tastaturom,
 
 ## Landing (Redizajn 3)
 
-Landing ima osam dijelova, svaki odgovara na jedno pitanje posjetioca. Hero: naslov "Termini za čitaonice, teretane i konsultacije", jedna rečenica, dugmad "Probaj demo" (mjed) i "Napravi organizaciju" (sporedno, obris), a desno pravi mini kalendar u okviru prozora aplikacije. Ispod je traka pilula "za koga" s emajl tačkama, pa prije i poslije (lijevo udubljena ploča s crticama, desno izdignuta s mjedenim kvačicama, pa se razlikuju i bez boje), pa "Kako radi" u tri koraka, jedina obojena traka preko cijele širine: danju porculan s 10 % mjedi, noću tamnija od podloge. Slijedi šest mogućnosti s ikonama crtanim rukom (`landing/Ikona.jsx`, linija 1,75 px na mreži 24), tri kartice "Na ovo se možeš osloniti" (sudar, pomjeranje sata, odvojene organizacije, bez statusnih kodova i imena testova), česta pitanja kao `<details>`, ulaz u demo, završni poziv i mala sekcija "Kako je napravljeno". Pokret: hero tekst i prozor se pojave jednom (500 i 600 ms), let žetona u demou i animacija sudara na klik. Lenis ostaje. Bez cjenovnika, citata, brojki korisnika i logotipa.
+Landing ima osam dijelova, svaki odgovara na jedno pitanje posjetioca. Hero: naslov "Termini za čitaonice, teretane i konsultacije", jedna rečenica, dugmad "Probaj demo" (mjed) i "Napravi organizaciju" (sporedno, obris), a desno pravi mini kalendar u okviru prozora aplikacije. Ispod je traka pilula "za koga" s emajl tačkama, pa prije i poslije (lijevo udubljena ploča s crticama, desno izdignuta s mjedenim kvačicama, pa se razlikuju i bez boje), pa "Kako radi" u tri koraka, jedina tamna traka preko cijele širine, u obje teme (grafit `--noc-povrsina` s blagim mjedenim sjajem na vrhu), da stranica ima kontrast u sredini. Slijedi šest mogućnosti s ikonama crtanim rukom (`landing/Ikona.jsx`, linija 1,75 px na mreži 24), tri kartice "Na ovo se možeš osloniti" (sudar, pomjeranje sata, odvojene organizacije, bez statusnih kodova i imena testova), česta pitanja kao `<details>`, ulaz u demo, završni poziv i mala sekcija "Kako je napravljeno". Pokret: hero tekst i prozor se pojave jednom (500 i 600 ms), let žetona u demou i animacija sudara na klik. Lenis ostaje. Bez cjenovnika, citata, brojki korisnika i logotipa.
 
 Naslovi sekcija su centrirani i najviše 24ch široki. Mreže kartica uvijek imaju pune redove (šest mogućnosti u 1, 2 ili 3 kolone), a u karticama oslonca su ilustracija, naslov i tekst na srednjoj osi, s ilustracijama iste visine. U opisu kartice smije biti jedna fraza u boldu, bez druge boje.
 

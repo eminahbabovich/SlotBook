@@ -468,3 +468,11 @@ Mislio sam da je nestabilan test. Nije. Postgres je u poruci napisao ko koga če
 Popravka je ponoviti cijelu transakciju, najviše tri puta. Prvo sam htio samo staviti petlju u metodu s `@Transactional`, ali poziv iz iste klase ne prolazi kroz proxy, pa ne bi bilo nove transakcije. Zato `TransactionTemplate`.
 
 Test sam prvo napisao bez popravke i pao je iz pravog razloga. Iznenadilo me da `pg_tables` vraća tabele drugim redom poslije svakog TRUNCATE-a, pa je ista skripta nekad pravila sudar, a nekad ne. Sad je `order by tablename`.
+
+## Četvrtak, 26. novembar 2026, 12:04
+
+Dizajn mi se sviđao, ali paleta je djelovala staro. Porculan `#E7EAF1` i teget noć `#121735` su uz mjed i emajl davali previše plave, a mjed na sivo-plavoj je izgledala kao senf. Pogledali smo šta danas rade slični proizvodi i svuda je isto: topla skoro bijela podloga, noć bez boje, jedna jaka boja i tanka ivica oko ploča. Sad je dan kamen `#F4F2EE`, noć grafit `#0D0E11`, a mjed `#E6A93F`.
+
+Promjena je bila skoro samo u `tokeni.css`. Imena varijabli su ostala, pa se cijela aplikacija prefarbala bez diranja ijedne komponente. Test koji poredi tokene s tabelom u `DIZAJN.md` je natjerao da i dokument ostane tačan, a kontraste sam ponovo izračunao skriptom, ne prepisao stare.
+
+Iznenadilo me nešto u tamnoj traci "Kako radi". U njoj sam prebacio `--tekst` na noćnu vrijednost, ali `--linija` i `--dubina-1` su ostale dnevne. Custom property s `var()` unutra se izračuna tamo gdje je napisan (`:root`), a djeca naslijede gotov rezultat, ne formulu. Zato sam ih u traci morao napisati ponovo. Tamna ploča u prijavi ima isti problem sa sjenama, samo se tamo ne vidi.
