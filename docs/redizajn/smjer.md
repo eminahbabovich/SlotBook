@@ -58,7 +58,7 @@ Pravi 3D (WebGL) ne koristim. Odlučio sam da je jedini 3D karta, napravljena CS
 
 ## Šta ne radimo
 
-Lista iz `REDESIGN.md` sekcija 5 i dalje važi. Posebno: nema ljubičasto-plavih gradijenata, glassmorphisma ni blur blobova; gradijent je dozvoljen samo na mjedu i foliji, gdje glumi metal; sjene su slojevite i nose informaciju o nivou, nisu ista siva sjena ispod svega.
+Lista iz `docs/DIZAJN.md` ("Da ne liči na sve ostalo") i dalje važi. Posebno: nema ljubičasto-plavih gradijenata, glassmorphisma ni blur blobova; gradijent je dozvoljen samo na mjedu i foliji, gdje glumi metal; sjene su slojevite i nose informaciju o nivou, nisu ista siva sjena ispod svega.
 
 ## Redizajn 3: isti fazon, profesionalnije (25.11.2026)
 

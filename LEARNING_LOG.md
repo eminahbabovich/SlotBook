@@ -543,4 +543,4 @@ SQL migracije nisam dirao, ni komentare u njima. Flyway pamti checksum svakog iz
 
 U README-ju i HISTORIJA je riječ "probа" imala ćirilično "а" na kraju. Na oko se ne razlikuje od latiničnog.
 
-Claude je jedan commit potpisao s prefiksom `docs:`, iako u CLAUDE.md piše da prefiksa nema. Ostao je takav, jer historiju ne prepravljamo. Vitest je jednom pao s jednim testom dok su backend testovi radili u pozadini, a tri pokretanja poslije prošla su sva 337. Koji je test pao nismo zapisali.
+Claude je jedan commit potpisao s prefiksom `docs:`, iako je dogovor da prefiksa nema. Ostao je takav, jer historiju ne prepravljamo. Vitest je jednom pao s jednim testom dok su backend testovi radili u pozadini, a tri pokretanja poslije prošla su sva 337. Koji je test pao nismo zapisali.

@@ -166,7 +166,7 @@ Dani su udubljena traka, a izabran dan se digne iz nje kao žeton s mjedenim rub
 
 Karta u nastajanju (potvrda) nema foliju. Folija dođe tek kad server kaže da je rezervacija napravljena: karta se odštampa, folija jednom prođe svjetlom, i od tada se naginje prema kursoru ili prstu. Ispod je "Sačuvaj kartu kao sliku" (PNG, dvostruka gustina, `html-to-image` se učitava tek na klik). Dugme "Rezerviši" u karti je mjedeno, jer je to glavna akcija ekrana.
 
-Oznake stanja su malim slovima, a kod tvojih termina podebljane. Ranije su bile verzalom ("MOJE"), ali verzal s razmakom je jedan od znakova AI dizajna iz `REDESIGN.md`.
+Oznake stanja su malim slovima, a kod tvojih termina podebljane. Ranije su bile verzalom ("MOJE"), ali verzal s razmakom je jedan od znakova generisanog dizajna.
 
 Zauzet termin se može otvoriti (Faza 10). Ispod njega se otvori isti red kao potvrda rezervacije, s pitanjem i dugmetom "Javi mi ako se oslobodi", a kad sam na listi, s dugmetom "Ispiši me sa liste". Strelice i dalje idu samo kroz termine koji se rezervišu (slobodan i ponuđen meni), a do zauzetog se dolazi Tabom. U "Mojim rezervacijama" je dio "Lista čekanja" iste vrste liste. Ponuđen termin tamo ima žutu traku i link "Rezerviši u kalendaru", a ispis traži drugi klik, jer se mjesto na listi gubi. Vrijeme termina se nikad ne lomi u dva reda (`white-space: nowrap`), a duga oznaka ide u dva reda, poravnata desno. Nove boje, fontove ni razmake ovo ne uvodi.
 

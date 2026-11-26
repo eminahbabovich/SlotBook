@@ -1,6 +1,6 @@
 # Redizajn: stanje poslije (25.11.2026)
 
-Isti ekrani i isti podaci kao u `inventar-prije.md`, uslikani istom skriptom (`frontend/e2e/screenshotovi.mjs`) na 1440 i 390 px. Slike su u `poslije/`, s istim imenima kao u `prije/`, pa se mogu porediti jedna do druge. Ovaj put je skripta išla na backend s praznom e2e bazom (port 5434) i Mailpitom iz `frontend/e2e/compose.yml`, a ne na razvojnu bazu.
+Isti ekrani i isti podaci kao prije redizajna, uslikani istom skriptom (`frontend/e2e/screenshotovi.mjs`) na 1440 i 390 px. Slike prije i poslije prvog redizajna su 26.11.2026 izbačene iz repoa, jer pokazuju izgled koji više ne postoji. Ostale su u git historiji. Ovaj put je skripta išla na backend s praznom e2e bazom (port 5434) i Mailpitom iz `frontend/e2e/compose.yml`, a ne na razvojnu bazu.
 
 Smjer je "Čelik i žar" iz `smjer.md`: hladna siva podloga kao lim, grafitni tekst, a jedina topla boja je žar, i ona uvijek znači "tvoje". Pravila i vrijednosti su u `docs/DIZAJN.md`.
 
@@ -42,7 +42,7 @@ Polja za vrijeme (`input type=time`) i dalje pokazuju AM/PM kad je browser na en
 
 Prvi redizajn je ispao ravan: jedna siva površina, isto zaobljenje na svemu i jedna topla boja. Isti dan sam ga zamijenio drugim smjerom, opisanim u `smjer.md`. Termin je žeton na ploči, rezervacija je karta s mjedenom folijom koja se naginje za kursorom, a svaki resurs ima svoju emajl boju (tirkiz, lapis, šafran ili šipak, iz ID-ja). Aplikacija ima svijetlu i tamnu temu. Pravila i vrijednosti su u `docs/DIZAJN.md`, a commit je jedan po ekranu, od `5736fef` do `68a9264`.
 
-Slike su u `redizajn-2/`. Nisu uslikane skriptom `screenshotovi.mjs`, nego kraćom skriptom po ekranu, na demo backendu (profil `demo` na e2e bazi, port 5434), pa se ne mogu porediti jedna do druge s `prije/` i `poslije/` kao prvi redizajn.
+Slike su u `redizajn-2/`. Nisu uslikane skriptom `screenshotovi.mjs`, nego kraćom skriptom po ekranu, na demo backendu (profil `demo` na e2e bazi, port 5434), pa se ne mogu porediti jedna do druge kao slike prvog redizajna.
 
 ## Šta se promijenilo
 
