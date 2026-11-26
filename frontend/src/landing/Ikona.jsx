@@ -51,6 +51,14 @@ const PUTANJE = {
 			<path d="M14 10a4 4 0 0 1 0 5.6l-2.4 2.4a4 4 0 0 1-5.6-5.6l1.2-1.2" />
 		</>
 	),
+	// Lupa nad satom: nađi slobodno u svim resursima
+	slobodno: (
+		<>
+			<circle cx="10.5" cy="10.5" r="6.5" />
+			<path d="M15.2 15.2 20.5 20.5" />
+			<path d="M10.5 7.2v3.3l2.2 1.4" />
+		</>
+	),
 	// Tablet na zidu sa satom: ekran na vratima
 	ekran: (
 		<>

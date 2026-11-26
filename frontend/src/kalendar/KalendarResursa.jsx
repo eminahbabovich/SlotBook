@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 import { porukaGreske } from '../forma/porukaGreske.js'
 import { feningeUKm } from '../resursi/cijena.js'
 import { emajlResursa } from '../resursi/emajl.js'
@@ -19,6 +19,8 @@ const PORUKE = {
 // Stranica /o/{slug}/r/{resursId}: prvo organizacija iz moje liste, pa resurs iz njene liste.
 export function KalendarResursa() {
 	const { slug, resursId } = useParams()
+	// Termin izabran u "Nađi slobodno" na stranici organizacije
+	const [parametri] = useSearchParams()
 	const org = useOrganizacija(slug)
 	const resursi = useResursi(org.organizacija)
 
@@ -71,6 +73,7 @@ export function KalendarResursa() {
 				zona={org.organizacija.zona}
 				cijenaFeninga={resurs.cijenaFeninga}
 				pravila={org.organizacija.uloga === 'CLIENT' ? resurs.pravila : null}
+				trazeniTermin={parametri.get('termin')}
 			/>
 		</section>
 	)

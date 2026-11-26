@@ -36,3 +36,20 @@ export async function kalendarResursa(resursId, od, doDana) {
 export function pratiTermine(resursId, opcije) {
 	return pratiTok(`/api/resources/${resursId}/slots/stream`, opcije)
 }
+
+// OrganizationFreeSlotsResponse iz GET /api/organizations/{id}/free-slots ("Nađi slobodno"). Backend
+// vraća samo slobodne termine aktivnih resursa, poredane po početku, i klijentu samo one koje smije uzeti.
+export async function slobodnoUOrganizaciji(organizacijaId, { dan, odSata, doSata }) {
+	const putanja = `/api/organizations/${organizacijaId}/free-slots?date=${dan}&days=1&fromHour=${odSata}&toHour=${doSata}`
+	const odgovor = provjeriPolja(await apiFetch(putanja), ['timezone', 'slots'], putanja)
+	return {
+		zona: odgovor.timezone,
+		termini: odgovor.slots.map((t) => ({
+			resursId: t.resourceId,
+			resurs: t.resourceName,
+			pocetak: t.start,
+			kraj: t.end,
+			mjesta: t.capacity > 1 ? t.seatsLeft : null,
+		})),
+	}
+}

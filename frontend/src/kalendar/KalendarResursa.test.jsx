@@ -47,9 +47,10 @@ test('iz organizacije se bira resurs, a kalendar otvara današnji dan u zoni org
 
 	expect(await screen.findByRole('heading', { name: 'Sto 4, tihi dio' })).toBeTruthy()
 	expect(screen.getByRole('button', { name: /ponedjeljak, 19. novembar/, pressed: true })).toBeTruthy()
-	// Tačkica od žara na danu s mojim terminom se čuje i na čitaču ekrana
-	expect(screen.getByRole('button', { name: 'ponedjeljak, 19. novembar, imaš termin' })).toBeTruthy()
-	expect(screen.getByRole('button', { name: 'utorak, 20. novembar' })).toBeTruthy()
+	// Tačkica od žara na danu s mojim terminom i broj slobodnih ispod dana se čuju i na čitaču ekrana
+	expect(screen.getByRole('button', { name: 'ponedjeljak, 19. novembar, imaš termin, 2 slobodna' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'utorak, 20. novembar, nema slobodnih' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'srijeda, 21. novembar, 1 slobodan' })).toBeTruthy()
 	expect(window.location.pathname).toBe('/o/citaonica-pmf/r/r1')
 	expect(fetch.mock.calls.some(([putanja]) => putanja === '/api/resources/r1/slots?from=2035-11-19&to=2035-11-26')).toBe(true)
 })
@@ -187,7 +188,7 @@ test('u 00:30 po Sarajevu je već utorak, a termin od 00:30 u srijedu je u srije
 
 	// Utorak je danas, pa prazna ploča kaže i da se termini koji su počeli ne vide
 	expect(await screen.findByText('Danas više nema termina koji nisu počeli.')).toBeTruthy()
-	expect(screen.getByRole('button', { name: 'utorak, 20. novembar', pressed: true })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'utorak, 20. novembar, nema slobodnih', pressed: true })).toBeTruthy()
 	await korisnik.click(screen.getByRole('button', { name: 'Prvi slobodan: srijeda, 21. novembar' }))
 
 	expect(screen.getByRole('button', { name: 'srijeda, 21. novembar, 00:30 do 01:30, slobodno' })).toBeTruthy()

@@ -127,6 +127,7 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/slots/stream", null),
 			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/bookings?from=2035-08-06&to=2035-08-13", null),
 			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/stats?from=2035-08-01&to=2035-09-01", null),
+			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/free-slots?date=2035-08-06&days=2", null),
 			// POST prije GET-a, da admin u drugom testu ima šta pročitati
 			new Zahtjev(HttpMethod.POST, "/api/resources/{resourceId}/image", Zahtjev.SLIKA),
 			new Zahtjev(HttpMethod.GET, "/api/resources/{resourceId}/image", null),
@@ -149,6 +150,7 @@ class OrganizationIsolationApiTest {
 	// Rezervacije u testu su Almine, pa njihovu historiju i otkazivanje ne smije. Sve ostalo je 403.
 	private static final Set<String> KLIJENT_SMIJE = Set.of(
 			"GET /api/organizations/{id}/resources",
+			"GET /api/organizations/{id}/free-slots",
 			"GET /api/resources/{resourceId}",
 			"GET /api/resources/{resourceId}/availability",
 			"GET /api/resources/{resourceId}/slots",
@@ -162,6 +164,7 @@ class OrganizationIsolationApiTest {
 	// StatsApiTest). Tuđi sto ne uređuje i tuđe rezervacije ne vodi, iako je u istoj organizaciji.
 	private static final Set<String> PROVIDER_DRUGOG_SMIJE = Set.of(
 			"GET /api/organizations/{id}/resources",
+			"GET /api/organizations/{id}/free-slots",
 			"GET /api/resources/{resourceId}",
 			"GET /api/resources/{resourceId}/availability",
 			"GET /api/resources/{resourceId}/slots",

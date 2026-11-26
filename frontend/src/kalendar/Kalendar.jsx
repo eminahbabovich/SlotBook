@@ -46,13 +46,14 @@ const MOZE_REZERVISATI = ['slobodno', 'ponudjen']
 // a traka s danima bira koji se dan prikazuje.
 // cijenaFeninga je cijena resursa: plaćen termin se ne ponavlja i čeka uplatu, ne potvrdu.
 // pravila su pravila resursa za klijenta, a null za admina i onoga ko vodi termine.
-export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = null }) {
+// trazeniTermin je početak termina izabranog u "Nađi slobodno": otvori se njegov dan i potvrda.
+export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = null, trazeniTermin = null }) {
 	const queryClient = useQueryClient()
 	// "Danas" je dan u zoni organizacije. U 00:30 po Sarajevu je za browser u Londonu još jučer.
 	// Računa se jednom, pri otvaranju: kalendar otvoren preko ponoći ostaje na istoj sedmici.
 	const [danas] = useState(() => danUZoni(new Date(), zona))
 	const [pocetak, setPocetak] = useState(danas)
-	const [dan, setDan] = useState(danas)
+	const [dan, setDan] = useState(() => (trazeniTermin ? danUZoni(trazeniTermin, zona) : danas))
 	// { termin, kljuc }: ključ nastaje kad korisnik izabere termin, jednom po namjeri
 	const [izabran, setIzabran] = useState(null)
 	const [poruka, setPoruka] = useState(null)
@@ -72,6 +73,13 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = n
 	})
 	// Dani u kojima imam termin (potvrđen ili na čekanju) dobiju tačkicu od žara u traci dana
 	const mojiDani = new Set((data?.termini ?? []).filter((t) => ['moje', 'ceka'].includes(t.stanje)).map((t) => danUZoni(t.pocetak, zona)))
+	// Broj slobodnih po danu, ispod dana u traci, da se vidi gdje ima mjesta prije nego što se dan otvori
+	const slobodnihPoDanu = new Map()
+	for (const t of data?.termini ?? []) {
+		if (!MOZE_REZERVISATI.includes(t.stanje)) continue
+		const d = danUZoni(t.pocetak, zona)
+		slobodnihPoDanu.set(d, (slobodnihPoDanu.get(d) ?? 0) + 1)
+	}
 	// Kad neko drugi rezerviše ili otkaže, termini se osvježe bez ponovnog učitavanja stranice
 	const najavaPromjene = useZivKalendar(resursId)
 
@@ -111,6 +119,21 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = n
 		setIzabran(null)
 		lista.current?.querySelector(`button[data-termin="${pocetakTermina}"]`)?.focus()
 	}
+
+	// Termin iz "Nađi slobodno" se izabere jednom, kad stignu termini. Ako ga je u međuvremenu neko
+	// uzeo, poruka to kaže, a dan je već otvoren pa se drugi bira odmah.
+	const trazeni = useRef(trazeniTermin)
+	const izaberiRef = useRef(izaberiTermin)
+	useEffect(() => {
+		izaberiRef.current = izaberiTermin
+	})
+	useEffect(() => {
+		if (!data || !trazeni.current) return
+		const termin = data.termini.find((t) => t.pocetak === trazeni.current)
+		trazeni.current = null
+		if (termin && MOZE_REZERVISATI.includes(termin.stanje)) izaberiRef.current(termin)
+		else setPoruka('Taj termin je u međuvremenu zauzet. Izaberi drugi s ploče.')
+	}, [data])
 
 	// Escape zatvara otvorenu potvrdu, isto kao Odustani
 	const odustaniRef = useRef(odustani)
@@ -191,18 +214,26 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = n
 			<div className="dani">
 				{dani.map((d) => {
 					const imamTermin = mojiDani.has(d)
+					const slobodnih = slobodnihPoDanu.get(d) ?? 0
+					const opis = [nazivDana(d), imamTermin && 'imaš termin', data && slobodnihRijecima(slobodnih)].filter(Boolean).join(', ')
 					return (
 						<button
 							key={d}
 							type="button"
 							className="dan"
 							aria-pressed={d === dan}
-							aria-label={imamTermin ? `${nazivDana(d)}, imaš termin` : nazivDana(d)}
+							aria-label={opis}
 							onClick={() => izaberiDan(d)}
 						>
 							{nazivDana(d, 'kratko').split(' ').map((dio) => (
 								<span key={dio}>{dio}</span>
 							))}
+							{data && (
+								<span className={slobodnih === 0 ? 'dan-slobodnih dan-slobodnih-nula' : 'dan-slobodnih'}>
+									{slobodnih}
+									<span className="dan-slobodnih-rijec"> slobodno</span>
+								</span>
+							)}
 							{imamTermin && <span className="dan-tacka" />}
 						</button>
 					)
@@ -294,6 +325,15 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = n
 			</div>
 		</div>
 	)
+}
+
+// Broj slobodnih za čitač ekrana: 1 slobodan, 2 do 4 slobodna, 5 i više slobodnih (11 do 14 isto)
+function slobodnihRijecima(broj) {
+	if (broj === 0) return 'nema slobodnih'
+	const desetica = broj % 100
+	if (broj % 10 === 1 && desetica !== 11) return `${broj} slobodan`
+	if ([2, 3, 4].includes(broj % 10) && (desetica < 12 || desetica > 14)) return `${broj} slobodna`
+	return `${broj} slobodnih`
 }
 
 // Moje na čekanju kod plaćenog resursa čekaju uplatu. Kalendar ne zna rok ni stanje uplate, samo da

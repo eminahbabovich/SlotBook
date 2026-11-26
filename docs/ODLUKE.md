@@ -1210,3 +1210,13 @@ Usput sam našao grešku koja je postojala i prije: kad stranica bez sesije pri 
 
 Šta nisam provjerio: ekran nisam držao na pravom tabletu ni TV-u. Wake Lock i cijeli ekran sam vidio samo u Edgeu na računaru. Stariji iPad bez Wake Locka treba podesiti ručno da se ne gasi. Nisam mjerio koliko upita treba ekran organizacije sa šest resursa. Po kodu je oko pet po resursu, i to će se vidjeti kod "Nađi slobodno", gdje se broj upita mjeri.
 
+## Nađi slobodno (26.11.2026)
+
+`GET /api/organizations/{id}/free-slots` ne računa termine na novi način, nego za svaki aktivan resurs pozove isti `FreeSlotService.calendar` kao kalendar i filtrira po satu početka u zoni organizacije. Tako ne postoje dvije verzije pravila "šta je slobodno", ali broj upita raste s brojem resursa. Izmjerio sam ga Hibernate statistikom u `OrganizationFreeSlotsApiTest` (Testcontainers, dva dana): jedan resurs 9 SQL upita, šest resursa 34, tačno 5 po resursu. Test pada ako rast nije linearan ili ako pređe 7 po resursu. Za čitaonicu sa šest stolova to je prihvatljivo. Za organizaciju sa sto resursa nije, i tada bi trebao jedan upit za sve resurse. Zato je raspon najviše dva dana, a sve preko toga je 400.
+
+Klijentu se ne nude termini koje po pravilima resursa ne bi mogao uzeti (najava unaprijed, broj dana unaprijed), isto kao u kalendaru. Granica aktivnih rezervacija po osobi se ne filtrira, jer zavisi od toga gdje već ima termine, pa je provjeri tek rezervacija. Admin i ko vodi termine vide sve.
+
+Brzi izbori se računaju na frontendu u zoni organizacije, u trenutku klika. "Sad" su naredna tri sata, računajući sat u kojem jesmo. Klik na termin vodi na `/o/{slug}/r/{id}?termin=...`, a kalendar kad stignu termini sam otvori potvrdu. Ako je termin u međuvremenu uzet, kaže to i ostavi otvoren taj dan. U traci dana kalendara ispod datuma je broj slobodnih termina (od 900px i riječ "slobodno"), a čitač ekrana čuje "utorak, 20. novembar, 2 slobodna".
+
+Šta nisam mjerio: vrijeme odgovora na pravom serveru (Render i Neon) za organizaciju s više resursa. Broj upita je izmjeren, a milisekunde nisu.
+

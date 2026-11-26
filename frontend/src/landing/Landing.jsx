@@ -41,6 +41,7 @@ const MOGUCNOSTI = [
 	['clanovi', 'Članovi i uloge', 'Ti određuješ ko samo rezerviše, ko vodi termine, a ko upravlja svime.'],
 	['kalendar', 'Termini u tvom kalendaru', 'Rezervacije se same pojave u Google kalendaru, na iPhoneu ili u Outlooku.'],
 	['link', 'Pozivni link i plakat', 'Jedan link za grupu ili plakat s QR kodom na vratima. Ko ga skenira, ulazi i rezerviše.'],
+	['slobodno', 'Nađi slobodno', 'Sutra ujutro, bilo koji sto? Jedan klik pokaže slobodno u svim resursima, a drugi otvori termin.'],
 	['ekran', 'Ekran na vratima', 'Tablet pored vrata pokazuje šta je sada, šta je sljedeće i QR kod za ulazak. Imena se ne vide.'],
 	['pravila', 'Pravila i nedolasci', 'Niko ne drži sto cijelu sedmicu. Ko tri puta ne dođe, sedmicu pauzira, a blokada prestaje sama.'],
 ]

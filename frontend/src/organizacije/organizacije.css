@@ -163,3 +163,94 @@
 .tabla-izuzeci > li {
 	--emajl: var(--emajl-sipak);
 }
+
+/* Nađi slobodno: brzi izbori kao pilule, pa red po satu. Sat je lijevo u brojevnom fontu, a resursi
+   koji su tada slobodni su veze desno, da se po satu skenira odozgo nadolje. */
+.slobodno {
+	display: grid;
+	gap: var(--razmak-12);
+	margin-bottom: var(--razmak-32);
+}
+
+.slobodno h2,
+.slobodno-uvod {
+	margin: 0;
+}
+
+.slobodno-izbori {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--razmak-8);
+}
+
+.slobodno-izbori button {
+	font: inherit;
+	font-weight: 600;
+	border: 0;
+	cursor: pointer;
+}
+
+/* Izabran izbor se razlikuje i bez boje: puna površina, deblji rub i podebljan tekst */
+.slobodno-izbori button[aria-pressed='true'] {
+	background: var(--izdignuto);
+	box-shadow: var(--dubina-2), inset 0 0 0 2px var(--moje);
+}
+
+.slobodno-lista,
+.slobodno-resursi {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.slobodno-lista {
+	display: grid;
+	gap: var(--razmak-8);
+}
+
+.slobodno-red {
+	display: grid;
+	grid-template-columns: 4.5em 1fr;
+	align-items: start;
+	gap: var(--razmak-12);
+	padding-top: var(--razmak-8);
+	border-top: 1px solid var(--linija);
+}
+
+.slobodno-sat {
+	padding-top: var(--razmak-8);
+	font-family: var(--font-brojevi);
+	font-size: var(--velicina-naslov-3);
+	font-weight: 700;
+}
+
+.slobodno-resursi {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--razmak-8);
+}
+
+.slobodno-termin {
+	display: grid;
+	min-height: var(--red-min-visina);
+	padding: var(--razmak-8) var(--razmak-12);
+	color: var(--tekst);
+	text-decoration: none;
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-zeton);
+	box-shadow: inset 0 0 0 1px var(--linija-jaka);
+}
+
+.slobodno-termin:hover {
+	background: var(--izdignuto);
+	box-shadow: var(--dubina-2);
+}
+
+.slobodno-resurs {
+	font-weight: 600;
+}
+
+.slobodno-detalj {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}

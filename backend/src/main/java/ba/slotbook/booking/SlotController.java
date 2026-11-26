@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
+
+import ba.slotbook.error.InvalidFieldException;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,6 +36,24 @@ public class SlotController {
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, @AuthenticationPrincipal Jwt token) {
 		return freeSlotService.calendar(resourceId, from, to, UUID.fromString(token.getSubject()));
+	}
+
+	// "Nađi slobodno" za cijelu organizaciju: svaki član, i klijent. Najviše dva dana, da odgovor ostane
+	// brz i kad organizacija ima mnogo resursa (broj upita raste s brojem resursa, docs/ODLUKE.md).
+	@GetMapping("/api/organizations/{id}/free-slots")
+	@PreAuthorize("@organizationAccess.hasRole(#id, authentication, 'ADMIN', 'PROVIDER', 'CLIENT')")
+	public OrganizationFreeSlotsResponse freeSlots(@PathVariable UUID id,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+			@RequestParam(defaultValue = "1") int days, @RequestParam(defaultValue = "0") int fromHour,
+			@RequestParam(defaultValue = "24") int toHour, @AuthenticationPrincipal Jwt token) {
+		if (days < 1 || days > 2) {
+			throw new InvalidFieldException("days", "Slobodni termini se traže za jedan ili dva dana.");
+		}
+		if (fromHour < 0 || toHour > 24 || fromHour >= toHour) {
+			throw new InvalidFieldException("fromHour", "Sat od mora biti prije sata do, oba između 0 i 24.");
+		}
+		return freeSlotService.inOrganization(id, UUID.fromString(token.getSubject()), date, days, fromHour,
+				toHour);
 	}
 
 	// Isto pravo kao za /slots. Tok nosi samo signal "promijenilo se", a podatke kalendar čita kroz /slots.

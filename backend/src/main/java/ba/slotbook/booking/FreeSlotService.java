@@ -3,7 +3,9 @@ package ba.slotbook.booking;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +19,10 @@ import ba.slotbook.availability.TimeRange;
 import ba.slotbook.booking.SlotCalendarResponse.FreeSlot;
 import ba.slotbook.booking.SlotCalendarResponse.OfferedSlot;
 import ba.slotbook.booking.SlotCalendarResponse.TakenSlot;
+import ba.slotbook.organization.OrganizationRole;
+import ba.slotbook.organization.OrganizationService;
+import ba.slotbook.resource.Resource;
+import ba.slotbook.resource.ResourceRepository;
 
 @Service
 public class FreeSlotService {
@@ -24,14 +30,55 @@ public class FreeSlotService {
 	private final SlotService slotService;
 	private final BookingRepository bookings;
 	private final WaitlistEntryRepository waitlist;
+	private final ResourceRepository resources;
+	private final OrganizationService organizations;
 	private final Clock clock;
 
 	public FreeSlotService(SlotService slotService, BookingRepository bookings, WaitlistEntryRepository waitlist,
-			Clock clock) {
+			ResourceRepository resources, OrganizationService organizations, Clock clock) {
 		this.slotService = slotService;
 		this.bookings = bookings;
 		this.waitlist = waitlist;
+		this.resources = resources;
+		this.organizations = organizations;
 		this.clock = clock;
+	}
+
+	// "Nađi slobodno": isti račun kao kalendar, za svaki aktivan resurs, pa filter po satu u zoni
+	// organizacije (od fromHour uključivo do toHour isključivo, po početku termina). Klijentu se ne nude
+	// termini koje po pravilima resursa ne bi mogao uzeti, kao ni u kalendaru.
+	@Transactional(readOnly = true)
+	public OrganizationFreeSlotsResponse inOrganization(UUID organizationId, UUID userId, LocalDate from, int days,
+			int fromHour, int toHour) {
+		boolean klijent = organizations.findRole(organizationId, userId)
+				.map(uloga -> uloga == OrganizationRole.CLIENT)
+				.orElse(true);
+		Instant sada = clock.instant();
+		List<OrganizationFreeSlotsResponse.Slot> termini = new ArrayList<>();
+		String zona = null;
+		for (Resource resurs : resources.findByOrganizationIdOrderByNameAscIdAsc(organizationId)) {
+			if (!resurs.isActive()) {
+				continue;
+			}
+			SlotCalendarResponse kalendar = calendar(resurs.getId(), from, from.plusDays(days), userId);
+			zona = kalendar.timezone();
+			ZoneId zonaId = ZoneId.of(zona);
+			for (FreeSlot t : kalendar.slots()) {
+				int sat = t.start().atZone(zonaId).getHour();
+				if (sat < fromHour || sat >= toHour) {
+					continue;
+				}
+				if (klijent && !BookingRules.uProzoru(resurs.getPravila(), t.start(), sada, zonaId)) {
+					continue;
+				}
+				termini.add(new OrganizationFreeSlotsResponse.Slot(resurs.getId(), resurs.getName(),
+						resurs.getCapacity(), t.start(), t.end(), t.seatsLeft()));
+			}
+		}
+		termini.sort(Comparator.comparing(OrganizationFreeSlotsResponse.Slot::start)
+				.thenComparing(OrganizationFreeSlotsResponse.Slot::resourceName));
+		return new OrganizationFreeSlotsResponse(
+				zona != null ? zona : organizations.getReference(organizationId).getTimezone(), termini);
 	}
 
 	// Ponuđeni termini podijeljeni na slobodne i zauzete. Ovo je samo prikaz za kalendar:

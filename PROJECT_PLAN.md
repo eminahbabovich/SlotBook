@@ -512,7 +512,7 @@ poruku prije slanja.
    ostatak dana, QR), tamna tema, Wake Lock, ponovno spajanje SSE-a. Admin pravi i povlači link u
    postavkama organizacije, uz dugme "Otvori ekran".
 
-**4. Nađi slobodno**
+**4. Nađi slobodno** (gotovo 26.11.)
 1. `GET /api/organizations/{id}/free-slots`: slobodni termini svih aktivnih resursa za najviše
    2 dana, opciono od-do sat u zoni organizacije. Isti `FreeSlotService`, broj SQL upita izmjeren s
    1 i 6 resursa.

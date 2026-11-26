@@ -149,7 +149,7 @@
 	transition: background-color var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
 }
 
-.dan span:nth-child(2) {
+.dan > span:nth-child(2) {
 	font-family: var(--font-brojevi);
 	font-size: var(--velicina-naslov-3);
 	font-weight: 700;
@@ -166,6 +166,29 @@
 	color: var(--tekst);
 	background: var(--izdignuto);
 	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--moje);
+}
+
+/* Broj slobodnih ispod datuma. Na telefonu samo broj, jer je kolona uska, a riječ se vidi od 900px.
+   Dan bez slobodnih ima prigušenu nulu, ne praznu kolonu, da se vidi da je provjereno. */
+.dan > .dan-slobodnih {
+	font-family: var(--font-brojevi);
+	font-size: var(--velicina-sitno);
+	font-weight: 600;
+	color: var(--tekst-sporedni);
+}
+
+.dan > .dan-slobodnih-nula {
+	opacity: 0.55;
+}
+
+.dan-slobodnih-rijec {
+	display: none;
+}
+
+@media (min-width: 900px) {
+	.dan-slobodnih-rijec {
+		display: inline;
+	}
 }
 
 /* Mjedena tačka na danu s mojim terminom, s prstenom od tinte da se vidi i na svijetloj podlozi.

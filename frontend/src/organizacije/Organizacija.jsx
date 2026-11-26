@@ -7,6 +7,7 @@ import { Ucitava } from '../stanja/Ucitava.jsx'
 import { ULOGE, useOrganizacija, useResursi } from './upiti.js'
 import { emajlResursa, inicijali } from '../resursi/emajl.js'
 import { Mrvice } from '../tema/Mrvice.jsx'
+import { NadjiSlobodno } from './NadjiSlobodno.jsx'
 import { PrelazLink } from '../tema/PrelazLink.jsx'
 
 const PORUKE = {
@@ -95,7 +96,9 @@ function Resursi({ organizacija }) {
 		)
 	}
 	return (
-		<ul className="tabla">
+		<>
+			{resursi.some((r) => r.aktivan) && <NadjiSlobodno organizacija={organizacija} />}
+			<ul className="tabla">
 			{resursi.map((r) => (
 				<li key={r.id} className="tabla-stavka" style={{ '--emajl': emajlResursa(r.id) }}>
 					<PrelazLink to={`/o/${organizacija.slug}/r/${r.id}`} className="tabla-red" data-znak={inicijali(r.naziv)}>
@@ -118,7 +121,8 @@ function Resursi({ organizacija }) {
 					)}
 				</li>
 			))}
-		</ul>
+			</ul>
+		</>
 	)
 }
 

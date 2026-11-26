@@ -88,6 +88,17 @@ class BookingRules {
 		}
 	}
 
+	// Za "Nađi slobodno": da li klijent po pravilima resursa smije uzeti termin s ovim početkom. Isti
+	// račun kao provjeri, bez granice po osobi, jer ona zavisi od njegovih ostalih rezervacija.
+	static boolean uProzoru(ResourceRules pravila, Instant pocetak, Instant sada, ZoneId zona) {
+		if (pravila.minNoticeMinutes() != null
+				&& pocetak.isBefore(sada.plus(Duration.ofMinutes(pravila.minNoticeMinutes())))) {
+			return false;
+		}
+		return pravila.maxDaysAhead() == null || !LocalDate.ofInstant(pocetak, zona)
+				.isAfter(LocalDate.ofInstant(sada, zona).plusDays(pravila.maxDaysAhead()));
+	}
+
 	// Za traku u Mojim rezervacijama: samo organizacije u kojima je član sada blokiran
 	@Transactional(readOnly = true)
 	public List<BlockResponse> blokade(UUID userId) {
