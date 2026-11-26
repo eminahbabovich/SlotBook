@@ -2,86 +2,69 @@
 
 [![CI](https://github.com/eminahbabovich/SlotBook/actions/workflows/ci.yml/badge.svg)](https://github.com/eminahbabovich/SlotBook/actions/workflows/ci.yml)
 
-Aplikacija za rezervaciju termina na zajedničkim resursima: učionice za učenje, sale za sastanke, konsultacije, teretana. Danas se to najčešće dogovara porukama u grupi ili tabelom, pa se termini preklapaju i niko ne zna ko je šta zauzeo. SlotBook treba da to riješi tako da dva korisnika ne mogu rezervirati isti termin, čak ni kad kliknu u istoj milisekundi. Svaka organizacija ima svoje resurse, osoblje, klijente i svoju vremensku zonu.
+SlotBook je aplikacija za rezervaciju termina u čitaonici, teretani, sali za sastanke ili na konsultacijama. Danas se to dogovara porukama u grupi ili u tabeli, pa se termini preklapaju i niko ne zna ko je šta uzeo. U SlotBooku preklapanje odbija sama baza, pa dvoje ne dobije isti termin ni kad kliknu u istoj milisekundi. Svaka organizacija ima svoje resurse, osoblje, klijente i vremensku zonu.
 
-Ovo je moj drugi projekat nakon [RoomSplita](https://github.com/eminahbabovich/roomsplit). Backend učim od nule, pa je cilj da svaku liniju mogu objasniti. Učim uz AI mentora (Claude): on objašnjava i predlaže, a ja pokrećem, provjeravam i pitam dok ne razumijem.
+Aplikacija je na **https://slot-book-delta.vercel.app**. Na prijavi su tri demo računa (klijent, provider i admin) i ulazi se jednim klikom, bez registracije.
 
-## Status
+![Tok rezervacije: demo prijava, kalendar, karta, moje rezervacije](docs/tok-rezervacije.gif)
 
-Faze 1 (infrastruktura), 2 (auth i organizacije), 3 (resursi i dostupnost), 4 (rezervacije i konkurentnost), 5 (pozadinski poslovi i email obavijesti), 6 (statistika), 7 (frontend), 8 (sigurnost i GDPR), 9 (observability i performanse), 10 (napredne funkcije), 11 (plaćanje) i 12 (deploy i prezentacija) su gotove. U frontendu su gotovi prijava, registracija, obnova sesije (jedan refresh za više paralelnih zahtjeva), lista organizacija s formom za novu, kalendar slobodnih termina po danima, rezervacija iz kalendara, lista mojih rezervacija s otkazivanjem i QR kodom za dolazak, raspored za onoga ko vodi termin (potvrdi, odbij, dolazak, nedolazak), za admina lista članova s formom za pozivnicu, stranica na koju vodi link iz pozivnice, upravljanje resursima (novi, izmjena, deaktivacija, ko ga vodi) i sedmično radno vrijeme s izuzecima. Uz to je gotova i statistika po mjesecima (rezervacije po stanju, popunjenost po resursu, najtraženiji termini) s preuzimanjem CSV-a. Devet Playwright testova ide kroz pravi backend i pravu bazu: glavni tok (prijava, rezervacija, otkazivanje i termin koji neko uzme prije potvrde), lista čekanja, iCal link, kalendar koji se osvježi sam, serija od tri sedmice, QR dolazak, grupna soba i pozivni link. Raspored providera, statistika i forme admina su provjereni samo s lažnim backendom u Vitest testovima i u browseru. Iz Faze 8 su gotovi granica pokušaja prijave i registracije po IP adresi (`429` s `Retry-After`), granica od tri maila na sat istom primaocu za reset lozinke, novi link za potvrdu i pozivnice, zaključavanje prijave na 15 minuta poslije 5 pogrešnih lozinki za isti email, registracija koja ne otkriva da li nalog postoji (uvijek `202`, a prijava tek poslije potvrde emaila), sigurnosna zaglavlja (CSP za `/api`, HSTS, `Referrer-Policy`) i CORS samo za adresu frontenda, dnevnik osjetljivih radnji koji admin čita za svoju organizaciju (`GET /api/organizations/{id}/audit-log`), izvoz svih podataka o korisniku u JSON-u (`GET /api/me/export`), brisanje naloga kao anonimizacija uz potvrdu lozinkom (`DELETE /api/me`), sve to i u frontendu (ekran "pogledaj inbox" poslije registracije, stranica za potvrdu emaila, poruka sa satom sljedećeg pokušaja kod `429`, stranica `/nalog` s izvozom i brisanjem), CodeQL za Javu i JavaScript i provjera zavisnosti u CI-ju, i test pristupa: svaki endpoint nad podacima organizacije proba se s tokenom admina druge organizacije, klijenta i providera drugog resursa iz iste organizacije, i bez tokena.
+U GIF-u Hana uđe u demo, otvori sto u Čitaonici PMF, uzme slobodan termin i dobije kartu, pa je vidi u Mojim rezervacijama. Okviri su Playwright screenshotovi pojedinih koraka, pa pokret između njih nije gladak kao u aplikaciji.
 
-U Fazi 1 je urađeno: Spring Boot projekat, PostgreSQL i Mailpit u Docker Composeu, prva Flyway migracija koja uključuje `btree_gist`, endpoint `GET /api/status`, globalno rukovanje greškama u formatu Problem Details (poruke na bosanskom), Swagger UI, CI na GitHub Actions (build, testovi, pokrivenost, skeniranje tajni), `Dockerfile` i profil `prod`. Provjerio sam i da `btree_gist` radi na Neon-u (PostgreSQL 17.11), pa `EXCLUDE` constraint ostaje plan za zaštitu od preklapanja. Backend je deployan na Render (free plan) s bazom na Neon-u i `GET /api/status` odgovara.
+## Šta je ovdje zanimljivo
 
-U Fazi 2 su urađeni registracija (`POST /api/auth/register`, od Faze 8 uvijek `202` bez tijela), prijava s JWT access tokenom (`POST /api/auth/login`), `GET /api/me` i refresh tokeni u httpOnly kolačiću, s rotacijom i detekcijom ponovne upotrebe (`/api/auth/refresh`, `/api/auth/logout`). Prijavljen korisnik može napraviti organizaciju (`POST /api/organizations`) i tada postaje njen `ADMIN`, a javni profil organizacije se vidi bez prijave (`GET /api/organizations/{slug}`). Admin vidi članove svoje organizacije s ulogama (`GET /api/organizations/{id}/members`), a klijent iste organizacije i admin neke druge dobiju `403`. Uloge se provjeravaju iz baze kod svakog zahtjeva preko `@PreAuthorize`. Admin može pozvati osobu s ulogom (`POST /api/organizations/{id}/invites`), a ona postaje član kad prihvati pozivnicu prijavljena s istim emailom (`POST /api/invites/accept`). Pozivnica stiže emailom, s linkom koji važi 7 dana. Admin token ne vidi. Izolaciju organizacija dokazuje test u kojem admin jedne organizacije na svakom endpointu druge dobije `403` i ništa se ne promijeni. Isti test padne ako se pojavi novi endpoint nad organizacijom koji nije u njemu. Nisam provjerio da li Render već vrti ovu verziju.
+### Dvadeset istovremenih klikova, jedan termin
 
-U Fazi 3 admin ili provider organizacije može napraviti resurs, npr. salu ili termin konsultacija s trajanjem termina (`POST /api/organizations/{id}/resources`). Provider resursa je onaj ko ga napravi, a baza ne pušta da provider bude neko ko nije član te organizacije. Svaki član organizacije vidi njene resurse po stranicama (`GET /api/organizations/{id}/resources?page=0&size=20`, najviše 100 po stranici), a lista članova od sada isto ide po stranicama. Admin može mijenjati svaki resurs, a provider samo one koje vodi (`PUT /api/organizations/{id}/resources/{resourceId}`). Resurs se ne briše nego deaktivira (`DELETE` na istoj adresi), i tada ga klijent više ne vidi u listi. Admin može resurs prebaciti na drugog providera ili admina iz organizacije (`PUT .../resources/{resourceId}/provider`). Jedan resurs se čita i preko `GET /api/resources/{resourceId}`, gdje se organizacija za provjeru pristupa uzima iz samog resursa. Sedmično radno vrijeme resursa se postavlja odjednom za cijelu sedmicu (`PUT /api/resources/{resourceId}/availability`), u lokalnom vremenu zone organizacije, a intervali istog dana se ne smiju preklapati, što čuva i baza. Izuzeci poput godišnjeg ili praznika se dodaju kao tačan period s vremenskom zonom (`/api/resources/{resourceId}/time-off`), a vide ih samo admin i provider. Slobodni termini se računaju iz radnog vremena i izuzetaka za period do 31 dan (`GET /api/resources/{resourceId}/slots?from=2035-03-19&to=2035-03-27`), u zoni organizacije i ispravno preko prelaska na ljetno vrijeme. Od Faze 4 se od njih oduzimaju zauzeti termini, a od Faze 7 isti odgovor ima i listu zauzetih (`taken`), gdje korisnik vidi koji su od njih njegovi i da li čekaju potvrdu. Admin ili provider resursa može postaviti sliku (JPEG, PNG ili WebP do 2 MB, `POST /api/resources/{resourceId}/image`), a čita je svako ko vidi resurs. Slike se čuvaju u folderu na disku ili u S3-kompatibilnom skladištu (`STORAGE_TYPE=s3`). Na Renderu je za sada disk, pa slike ne preživljavaju deploy dok se ne podesi Cloudflare R2.
+Preklapanje rezervacija istog resursa odbija PostgreSQL, preko `EXCLUDE USING gist` constrainta. Provjera u Javi ne bi bila dovoljna, jer dva zahtjeva koja stignu u istom trenutku oba vide slobodan termin. `BookingIstovremenoApiTest` šalje 20 zahtjeva za isti termin kroz pravi HTTP server, u četiri runde. U svakoj prođe tačno jedan, a ostalih 19 dobije `409`. Prva verzija je padala u deadlock (`40P01`), pa rezervacija sad prvo zaključa resurs. Isti test pokazuje da grupni trening s 5 mjesta pusti tačno 5, i da deset zahtjeva s istim `Idempotency-Key` napravi jednu rezervaciju.
 
-U Fazi 4 član organizacije rezerviše termin koji kalendar nudi (`POST /api/resources/{resourceId}/bookings`), a šalje samo početak, jer kraj određuje trajanje termina na resursu. Dvije aktivne rezervacije istog resursa se ne mogu preklopiti, i to čuva baza (`EXCLUDE` constraint). Test šalje 20 istovremenih zahtjeva za isti termin kroz pravi HTTP server, u četiri runde, i u svakoj prođe tačno jedan, a ostalih 19 dobije `409`. Na putu do toga sam naletio na deadlock u Postgresu, opisan u [docs/ODLUKE.md](docs/ODLUKE.md). Ponovljen zahtjev s istim `Idempotency-Key` vraća istu rezervaciju, a isti ključ za drugi termin daje `422`. Resurs je na automatskoj ili ručnoj potvrdi. Admin ili provider potvrđuje, odbija i označava dolazak ili nedolazak, a klijent može otkazati svoju rezervaciju do roka koji piše na resursu (`POST /api/bookings/{id}/confirm`, `/reject`, `/cancel`, `/check-in`, `/no-show`). Nedozvoljen prelaz, npr. potvrda otkazane rezervacije, vraća `409`. Svaka promjena statusa ide u historiju (`GET /api/bookings/{id}/events`), a korisnik vidi svoje rezervacije iz svih organizacija (`GET /api/bookings/mine`), od Faze 7 s nazivom organizacije i rokom do kada ih može sam otkazati. Admin i provider resursa vide raspored s imenima klijenata (`GET /api/resources/{resourceId}/bookings?from&to`), a klijent dobije `403`. Slobodni termini više ne nude zauzete. Nisam provjerio da li Render već vrti ovu verziju.
+### Ljetno vrijeme ne pomjera termine
 
-U Fazi 5 rezervacija na ručnoj potvrdi čeka providera 24 sata, a najkasnije do početka termina. Pozadinski posao svake minute prebaci isteklu u `EXPIRED` i oslobodi termin, a potvrđenu zatvori (`COMPLETED`) dan poslije kraja termina, da provider stigne označiti nedolazak. Isti posao klijentu pošalje podsjetnik dan prije potvrđenog termina, ako je rezervacija napravljena bar dan unaprijed. Ako posao kasni, nova rezervacija na istom resursu sama oslobodi istekle. Svaka promjena koju neko treba saznati (nova rezervacija na čekanju, potvrda, odbijanje, otkazivanje, istek) upisuje obavijest u tabelu `notifications`, u istoj transakciji kao promjena. Poseban posao svakih 30 sekundi šalje te obavijesti emailom. Ako SMTP ne odgovara, pokušava ponovo poslije 1, 5, 25 i 125 minuta, a poslije petog neuspjeha odustaje i zapiše razlog. Potvrda rezervacije nosi prilog `termin.ics`, koji se otvori u kalendaru. Test šalje potvrdu kroz pravi SMTP u Mailpit i provjerava naslov, tekst sa č, vrijeme u zoni organizacije i prilog. Lokalno se mailovi vide u Mailpitu na http://localhost:8025. Na Renderu SMTP još nije podešen, pa tamo obavijesti padaju i poslije pet pokušaja ostaju `FAILED`. To dolazi u Fazi 12.
+Radno vrijeme je lokalno, u zoni organizacije (`Europe/Sarajevo`), a termini su u bazi `TIMESTAMPTZ`. Pravilo "ponedjeljkom od 08:00" daje termin u 08:00 po satu na zidu i zimi (+01:00) i ljeti (+02:00). `SlotCalculatorTest` to provjerava preko obje granice. U noći kad se sat vraća, pravilo od 00 do 04 ima pet satnih termina, a ne četiri. Kad sam za probu uzeo pomak zone za trenutak upita umjesto za datum termina, pala su sva četiri DST testa.
 
-Pozadinski poslovi nemaju ShedLock, jer su sigurni i kad rade na dvije instance u isto vrijeme. Test pokrene dva posla isteka tako da drugi stvarno čeka na lock prvog, i svaka rezervacija istekne jednom. Kod podsjetnika drugi padne na unique indeksu, pa ostane jedan podsjetnik. Kod slanja drugi preskoči obavijest koju prvi šalje (`SKIP LOCKED`). Test šalje i potvrdu dok je Mailpit pauziran: rezervacija nastane, prvi pokušaj padne na timeoutu, a drugi pokušaj stigne u Mailpit.
+### Organizacija ne dira tuđe podatke
 
-Poslije registracije stiže mail s linkom za potvrdu emaila, koji važi 24 sata i može se iskoristiti jednom (`POST /api/auth/verify-email`, token u tijelu). Novi link se traži bez prijave (`POST /api/auth/email-verification` s emailom, uvijek `204`), a `GET /api/me` kaže da li je email potvrđen. `GET /api/me/organizations` vraća organizacije prijavljenog korisnika s njegovom ulogom u svakoj (od Faze 7). Baza čuva samo hash tokena, a tijelo maila se briše čim je poslan. Od Faze 8 se nalog s nepotvrđenim emailom ne može prijaviti, i dobije isti `401` kao pogrešna lozinka. Link vodi na stranicu frontenda (`APP_URL`), koja još ne postoji, pa registracija kroz frontend do koraka 10 Faze 8 ne vodi do prijave.
+`OrganizationIsolationApiTest` prođe svaki endpoint nad organizacijom s tokenom admina druge organizacije i provjeri da dobije `403` i da se u bazi ništa ne promijeni. Uz to proba klijenta, providera drugog resursa iz iste organizacije i zahtjev bez tokena. Spisak ruta test čita iz samog Springa, pa padne i kad dodam endpoint koji u njemu nije. Uhvatio je upload slike bez `@PreAuthorize`, kroz koji je admin druge organizacije stvarno stavio sliku na sto u tuđoj čitaonici.
 
-Ko zaboravi lozinku, traži link na `POST /api/auth/password-reset`. Odgovor je isti i za email bez naloga, da se ne može provjeriti ko je registrovan. Link važi sat vremena. Nova lozinka se postavlja na `POST /api/auth/password-reset/confirm`, a time prestaju važiti stariji linkovi za reset i sve sesije na svim uređajima.
+### Webhook koji je vraćao novac četiri puta
 
-U Fazi 6 admin i provider vide statistiku organizacije za period do godinu dana (`GET /api/organizations/{id}/stats?from=2035-11-01&to=2035-12-01`, datumi u zoni organizacije, `to` se ne uključuje). U njoj je broj rezervacija po statusu, najtraženiji termini po danu u sedmici i satu, i popunjenost svakog resursa kao zauzete i ponuđene minute. Admin vidi cijelu organizaciju, provider samo resurse koje vodi, a klijent dobije `403`. Period se gleda po početku termina, a dan i sat po lokalnom vremenu, pa srijeda u 9 ostaje srijeda u 9 i preko prelaska na zimsko vrijeme. Ponuđene minute računa isti kod koji pravi kalendar slobodnih termina. Sa zaglavljem `Accept: text/csv` isti endpoint vraća popunjenost kao CSV za Excel. Kriterij faze dokazuje test koji upiše mjesec rezervacija u čitaonici i poredi cijeli JSON s brojkama koje sam izračunao ručno. Indeks za statistiku sam izmjerio na 408 hiljada rezervacija: za jedan mjesec upit je pao s oko 20 na oko 2 ms, a za cijelu godinu se ništa ne mijenja. Brojke su u [docs/PERFORMANSE.md](docs/PERFORMANSE.md). Radno vrijeme nema historiju, pa se prošli period računa po sadašnjem radnom vremenu. Nisam provjerio da li Render već vrti ovu verziju.
+Stripe isti događaj zna poslati više puta, i to u isto vrijeme. `StripeWebhookApiTest` šalje pet istih dostava u istom trenutku. U prvoj verziji je za ispravno plaćen termin novac vraćen četiri puta. Sad dostavu obradi tačno jedna, a ostale ništa ne mijenjaju.
 
-U Fazi 9 svaki zahtjev dobija ID (`X-Request-Id`), koji je u svakoj liniji loga i u tijelu greške `500`. Na produkciji je log JSON. `/actuator/health/readiness` gleda i bazu, a liveness ne gleda, pa restart ne pokušava popraviti bazu koja se budi. Tri Micrometer brojača broje upisane rezervacije, sudare (`409`) i neuspjele pokušaje slanja maila. Test s 20 niti provjerava i njih: 4 nove i 76 sudara. Svaka ERROR linija loga ide u Sentry s ID-jem zahtjeva kao tagom, ali samo kad postoji `SENTRY_DSN`, pa su testovi i lokalni rad bez njega. Za sedam glavnih lista test mjeri broj SQL upita s jednim i sa šest redova i traži isti broj. N+1 nije nađen. `EXPLAIN` na 408 hiljada rezervacija je pokazao da raspored providera čita svu historiju stola, 1 861 red za 33. Poslije donje granice i `CHECK` da rezervacija traje najviše 8 sati (`V33`) čita samo tih 33. k6 je tri puta po minutu na laptopu tukao kalendar (50 u sekundi), rezervacije (10 u sekundi) i 20 članova na istom terminu. p95 je bio ispod 105 ms za kalendar i rezervacije, a nijedan zahtjev nije pao. U sudaru je po terminu prošao tačno jedan od 20. Backup je `pg_dump`, vraćen u praznu bazu, s istim brojem redova u svih 15 tabela, i aplikacija se nad njim podigla. Postupak je u [docs/RUNBOOK.md](docs/RUNBOOK.md). Backup Neona sam napravio i vratio 22.11.2026 (postupak i jedna Neonova zamka su u RUNBOOK-u), a Sentry i Render health check path su podešeni isti dan.
+## Šta aplikacija radi
 
-U Fazi 10 su došle napredne funkcije, svaka s testom i u UI-ju. Na zauzet termin se klijent upiše na listu čekanja, a kad se termin oslobodi, posao ga ponudi prvom na listi na 30 minuta i za to vrijeme ga niko drugi ne može uzeti. Moje rezervacije se mogu pratiti u Google ili Apple kalendaru preko tajnog `.ics` linka, a otvoren kalendar se sam osvježi preko SSE kad neko rezerviše ili otkaže. Isti termin se može rezervisati svake sedmice do 12 puta, sve ili ništa, a sedmice se računaju u zoni organizacije, pa ljetno vrijeme ne pomjera sat. Potvrđena rezervacija ima QR kod: kod je HMAC nad rezervacijom, a dolazak upisuje samo onaj ko vodi resurs. Resurs može imati više mjesta (grupni trening, grupna soba). Svaka rezervacija tada dobija broj mjesta, a isti `EXCLUDE` constraint sada kaže da se isto mjesto ne preklapa. Test sa 20 niti na trening s 5 mjesta svaki put pusti tačno 5. Da mjesto nije veće od kapaciteta čuva samo Java pod lockom resursa, a ne baza, i to piše u [docs/ODLUKE.md](docs/ODLUKE.md). QR kod još nisam skenirao pravim telefonom, jer telefon ne može otvoriti `localhost`.
+Organizacija upiše resurse (sto, salu, teren, termin konsultacija) i radno vrijeme s izuzecima, pa pozove članove mailom ili pozivnim linkom s QR plakatom. Članovi rezervišu u kalendaru koji se sam osvježi kad neko drugi uzme termin. Na zauzet termin se mogu upisati na listu čekanja, termin mogu ponoviti svake sedmice, platiti karticom (Stripe u test modu) i pratiti u Google ili Apple kalendaru. Dolazak se potvrđuje QR kodom, a potvrde, ponude i podsjetnici stižu mailom i kao push obavijest. Admin vidi popunjenost po mjesecima, postavlja pravila (koliko rezervacija po osobi, blokada poslije nedolazaka) i može na vrata staviti tablet koji pokazuje današnje termine.
 
-Faza 11 je plaćanje preko Stripea u test modu. Resurs ima cijenu, a rezervacija plaćenog termina čeka uplatu 30 minuta. `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout stranice, a Stripe poslije javi uplatu webhookom. Webhook bez ispravnog potpisa se odbija, a isti događaj poslan dvaput ne potvrdi rezervaciju dvaput i ne vrati novac. To dokazuje i test s pet istih dostava u istom trenutku, koji je u prvoj verziji našao grešku: novac vraćen četiri puta za ispravno plaćen termin. Uplata koja stigne za već isteklu rezervaciju se vraća, kao i uplata za otkazanu rezervaciju, a ako Stripe povrat odbije, otkazivanje ne prolazi. Stripe je u testovima lažan, a pravi sandbox je otvorio sesiju za 15 KM. U frontendu rezervacija koja čeka uplatu ima dugme "Plati 15 KM" (u kalendaru odmah poslije rezervacije i u Mojim rezervacijama), a poslije povratka sa Stripea lista sama pita server dok potvrda ne stigne, najviše minutu. Raspored providera za takvu rezervaciju ne nudi "Potvrdi". Ekrani su provjereni na 375 i 1280 px, ali s lažnim backendom. Cijeli tok sam onda prošao lokalno s pravim sandboxom i Stripe CLI: uplata 15 KM karticom 4242 je preko pravog webhooka potvrdila rezervaciju, a otkazivanje je vratilo cijeli iznos (detalji u [docs/ODLUKE.md](docs/ODLUKE.md)). Na Renderu je podešeno 26.11.2026 i provjereno jednom test uplatom kroz pravu Checkout stranicu: demo klijent je platio Salu 3 karticom `4242...`, webhook je rezervaciju prebacio u potvrđenu, a otkazivanje je vratilo novac.
+Cijeli tok po fazama, sa screenshotovima, je u [docs/HISTORIJA.md](docs/HISTORIJA.md).
 
-Faza 12 je počela redizajnom frontenda, prije deploya, da screenshotovi pokazuju konačan izgled. Smjer se zove "Čelik i žar": siva podloga kao lim, grafitni tekst, i jedna topla boja koja uvijek znači "tvoje". Potpis aplikacije je karta za voz: poslije rezervacije se odštampa karta s brojem rezervacije i žigom stanja, a Moje rezervacije su niz takvih karata. Backend i API nisu dirani. Prije i poslije, s brojkama i onim što nije urađeno, je u [docs/redizajn/poslije.md](docs/redizajn/poslije.md), a pravila dizajna u [docs/DIZAJN.md](docs/DIZAJN.md).
+## Kako je nastao
 
-Taj prvi redizajn je ispao ravan, pa je istog dana zamijenjen drugim: "Mjed i emajl". Termin je žeton na ploči, rezervacija je karta s mjedenom folijom koja se naginje za kursorom, svaki resurs ima svoju emajl boju, a aplikacija ima svijetlu i tamnu temu. Odjavljeni prvo vide landing na kojem se mogu probati tri teška problema. Opet bez promjena na backendu, s jednim commitom po ekranu. Smjer je u [docs/redizajn/smjer.md](docs/redizajn/smjer.md), pravila u [docs/DIZAJN.md](docs/DIZAJN.md), a brojke i ono što nije urađeno na kraju [docs/redizajn/poslije.md](docs/redizajn/poslije.md).
+Ovo je moj drugi projekat, poslije [RoomSplita](https://github.com/eminahbabovich/roomsplit). Backend učim od nule, pa je cilj bio da svaku liniju mogu objasniti. Učio sam uz AI mentora (Claude): on objašnjava i predlaže, a ja pokrećem, provjeravam i pitam dok ne razumijem.
 
-Treći redizajn (25.11.) je zadržao materijal, a stišao ostalo: jedan font (Hanken Grotesk), mirniji naslovi, mjed bez preliva na dugmadima, i landing koji za par sekundi kaže šta je SlotBook i za koga je, bez statusnih kodova i imena testova. Screenshotovi landinga su u [docs/redizajn/redizajn-3/](docs/redizajn/redizajn-3/), a ostali ekrani ispod su još iz drugog redizajna.
-
-Dan poslije (26.11.) je promijenjena samo paleta. Hladni porculan i teget noć su djelovali staro, pa je dan sad topli kamen, noć neutralan grafit, mjed je svjetlija, a ploče imaju tanku ivicu umjesto teških sjena. "Kako radi" je tamna traka u obje teme. Kontrasti su ponovo izračunati i upisani u [docs/DIZAJN.md](docs/DIZAJN.md), a hero u novoj paleti je u [docs/redizajn/redizajn-4/](docs/redizajn/redizajn-4/). Isti dan je tamna tema postala podrazumijevana za svakoga (svijetla je izbor u zaglavlju), slobodni termini imaju mjedeni rub umjesto zelenog, a zauzeti katanac umjesto precrtanog vremena. Popodne su došle sitnice po spisku: meni s inicijalima na telefonu, put do ekrana iznad naslova, strelice i raspon sedmice u kalendaru, radnje na karti kao prava dugmad, kostur dok se učitava landing i slika za dijeljenje linka (`og.png`). Ekrani na 375 i 1280 px u obje teme su u [docs/redizajn/redizajn-4/ekrani/](docs/redizajn/redizajn-4/ekrani/).
-
-Faza 12 je zatvorena 26.11.2026. Na produkciji su sad podešeni Stripe (test mode), VAPID ključevi za push i UptimeRobot, koji svakih 5 minuta zove liveness, pa Render ne zaspi i posjetilac ne čeka hladni start. Dvije stvari iz plana nisu urađene: R2 (vidi gore) i poddomen, koji čeka vlastiti domen iz portfolio faze.
-
-Prije Faze 13 je došlo šest dodataka, svi gotovi 26.11.2026 (plan je u [PROJECT_PLAN.md](PROJECT_PLAN.md), pod "Dodaci prije Faze 13"). Prvi je jača lozinka: najmanje 10 znakova, bez nizova s tastature, bez čestih lozinaka i bez emaila, po NIST-u umjesto pravila "veliko slovo, broj i znak". Uz to su konačno napravljene stranice za zaboravljenu i novu lozinku, jer je link iz maila vodio na 404. Drugi je pozivni link: admin napravi link s brojem mjesta i rokom, pošalje ga u grupu ili odštampa A4 plakat s QR kodom, a ko ga otvori ulazi kao klijent. Dvadeset istovremenih ulazaka na link s pet mjesta pusti tačno pet. Admin sada mijenja uloge, uklanja članove i povlači pozivnice. Zadnji admin se ne može spustiti ni ukloniti, član koji vodi resurse ne može dok ih ne preda, a uklonjenom članu se buduće rezervacije otkazuju uz mail. Treći su pravila korištenja: resurs može imati granicu budućih rezervacija po osobi, koliko dana unaprijed se rezerviše i koliko najkasnije prije početka, a organizacija pravilo "toliko nedolazaka u toliko dana daje blokadu od toliko dana". Pravila važe za klijente, a provjeravaju se pod istim lockom resursa kao i sama rezervacija. Osam istovremenih rezervacija iste osobe uz granicu tri pusti tačno tri. Četvrti je ekran na vratima: admin napravi tajni link za tablet ili TV pored vrata, a ekran bez prijave pokazuje sat, termin u toku, sljedeći, ostatak dana i QR kod pozivnog linka. Osvježava se sam preko SSE-a, ne gasi se (Wake Lock) i ne pokazuje nijedno ime, što test provjerava na samom JSON-u. Peti je "Nađi slobodno" na stranici organizacije: brzi izbori (sad, danas poslije 16h, sutra ujutro, sutra poslije podne) pokažu slobodne termine svih resursa po satu, a klik otvori kalendar resursa s tim terminom. U traci dana kalendara ispod svakog dana piše koliko je slobodnih. Šesti su obavijesti na telefonu: SlotBook je PWA (manifest, ikone, service worker samo za statiku, stranica "nema mreže"), a ponuda s liste čekanja, potvrda, odbijanje i podsjetnik dan prije stižu i kao push obavijest, kroz isti outbox i iste ponovne pokušaje kao mail. Uključuje se na stranici Moj nalog, po uređaju. Bez `VAPID_PUBLIC_KEY` i `VAPID_PRIVATE_KEY` push je isključen, a sve ostalo radi. Ključevi se prave jednom, s `npx web-push generate-vapid-keys`. Zašto baš tako je u [docs/ODLUKE.md](docs/ODLUKE.md).
-
-| Faza | Šta | Status |
-|---|---|---|
-| 1 | Temelji i infrastruktura | gotovo |
-| 2 | Auth i organizacije | gotovo |
-| 3 | Resursi i dostupnost, slobodni termini | gotovo |
-| 4 | Rezervacije i konkurentnost | gotovo |
-| 5 | Pozadinski poslovi i email obavijesti | gotovo |
-| 6 | Statistika | gotovo |
-| 7 | Frontend (jezgro) | gotovo |
-| 8 | Sigurnost i GDPR | gotovo |
-| 9 | Observability i performanse | gotovo |
-| 10 | Napredne funkcije (lista čekanja, iCal, SSE...) | gotovo |
-| 11 | Plaćanje (Stripe, test mode) | gotovo |
-| 12 | Deploy i prezentacija | gotovo |
-| 13 | Završni pregled i dodaci | gotovo |
-| 14 | AI asistent za rezervacije | nije počelo |
-
-Detaljan plan, model podataka i skica API-ja su u [PROJECT_PLAN.md](PROJECT_PLAN.md), odluke koje sam donio i zašto u [docs/ODLUKE.md](docs/ODLUKE.md), slojevi i model podataka u [docs/ARHITEKTURA.md](docs/ARHITEKTURA.md), mjerenja (EXPLAIN, broj upita, k6) u [docs/PERFORMANSE.md](docs/PERFORMANSE.md), šta uraditi kad nešto ne radi i kako se vraća backup u [docs/RUNBOOK.md](docs/RUNBOOK.md), a prolaz kroz OWASP Top 10 (šta nas štiti, kojim testom i šta nije pokriveno) u [docs/SIGURNOST.md](docs/SIGURNOST.md).
-
-Backend ima 595 testova i svi prolaze (zadnje pokretanje 26.11.2026.). Frontend ima 337 Vitest testova i 9 Playwright testova (zadnje pokretanje 26.11.2026.). JaCoCo je mjerio 97,1 % linija glavnog koda (1385 od 1427) 15.11.2026, iz jednog čistog pokretanja, dok je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12): handler za istovremenu izmjenu rezervacije (`@Version`) i handler za dvije istovremene pozivnice, oba provjerena u servisnom testu, ali ne i kroz HTTP, i dio opisa stanja u poruci o nedozvoljenom prelazu. Nepokrivena je i grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
+Rad je išao u fazama iz [PROJECT_PLAN.md](PROJECT_PLAN.md). Od 14 faza gotovo je 13, a Faza 14 (AI asistent za rezervacije) nije počela. Odluke i zašto sam ih donio su u [docs/ODLUKE.md](docs/ODLUKE.md). Šta sam naučio i gdje smo griješili, i ja i Claude, piše u [LEARNING_LOG.md](LEARNING_LOG.md).
 
 ## Tehnologije
 
-Backend je Java 21 sa Spring Bootom 4.1.2 (Hibernate 7.4), PostgreSQL 17 i Flywayom za migracije. API se dokumentira springdoc-om 3.2.0. Testovi koriste JUnit i Testcontainers, pa se vrte na pravom PostgreSQL-u u Dockeru, a ne na H2 ili na mojoj lokalnoj bazi. Pokrivenost mjeri JaCoCo, a CI na svaki push pokreće testove i gitleaks nad cijelom git historijom.
+Backend je Java 21 sa Spring Bootom 4.1.2 (Hibernate 7.4), PostgreSQL 17 i Flywayom za migracije. API dokumentuje springdoc 3.2.0. Testovi koriste JUnit i Testcontainers, pa idu na pravi PostgreSQL u Dockeru, ne na H2 ni na moju lokalnu bazu. Pokrivenost mjeri JaCoCo, a CI na svaki push pokreće testove i gitleaks nad cijelom git historijom.
 
-Frontend je React 19 s Viteom 8, u JavaScriptu. Fontovi su self-hostani preko Fontsource paketa. Frontend je na Vercelu, backend na Renderu, a baza na Neon-u. Slike resursa su na disku Rendera i nestanu s deployem. Cloudflare R2 traži karticu i za besplatni plan, pa ga nisam uključio (`docs/ODLUKE.md`).
+Frontend je React 19 s Viteom 8, u JavaScriptu. Fontovi su self-hostani preko Fontsource paketa. Frontend je na Vercelu, backend na Renderu, a baza na Neon-u.
+
+## Demo i produkcija
+
+Vercel prosljeđuje `/api` na Render (`frontend/vercel.json`), pa je za browser sve na jednoj adresi. Backend direktno je na https://slotbook-dxvs.onrender.com: bez prijave odgovaraju samo [`/api/status`](https://slotbook-dxvs.onrender.com/api/status), [`/actuator/health`](https://slotbook-dxvs.onrender.com/actuator/health) i [Swagger UI](https://slotbook-dxvs.onrender.com/swagger-ui/index.html), a sve ostalo vraća 401, i adrese koje ne postoje. Koraci za deploy i šta sam poslije njega provjerio su u [docs/RUNBOOK.md](docs/RUNBOOK.md).
+
+Render na besplatnom planu uspava servis poslije 15 minuta bez saobraćaja. Od 26.11.2026 ga UptimeRobot zove svakih 5 minuta. Prije toga je prvi zahtjev poslije pauze znao trajati dugo, 25.11. čak 207 sekundi.
+
+Demo se pali profilom `demo`. Podaci su čitaonica i teretana s četiri sedmice rezervacija i svaki dan se sami vrate na početak. Profil na pokretanju obriše cijelu bazu, pa se pali samo na bazi koja služi za demo (zašto, piše u [docs/ODLUKE.md](docs/ODLUKE.md)). Može se napraviti i svoj nalog. Mail za potvrdu šalje Brevo preko porta 2525, jer Render na besplatnom planu blokira 465 i 587, ali zasad završi u spamu, jer je pošiljalac Gmail adresa umjesto vlastitog domena. Svoj nalog nestane kad se demo vrati na početak.
 
 ## Pokretanje lokalno
 
 Treba ti Java 21 i Docker. Maven ne treba instalirati, projekat dolazi s `mvnw`.
 
-Prvo napravi `.env` i u njemu promijeni lozinku baze. Ako ti je port 5432 već zauzet (meni jeste, drži ga baza iz RoomSplita), promijeni i `POSTGRES_PORT`. U `JWT_SECRET` ide nasumičan ključ kojim se potpisuju tokeni, najmanje 32 bajta. Bez njega aplikacija ne starta. Za plaćanje trebaju `STRIPE_SECRET_KEY` (test ključ `sk_test_...` iz Stripe sandboxa, Developers, API keys) i `STRIPE_WEBHOOK_SECRET` (`whsec_...`, lokalno ga ispiše `stripe listen`). Bez njih aplikacija radi, samo plaćanje vraća `503`, a webhook `400`. U PowerShellu se pravi ovako:
+Prvo napravi `.env` i u njemu promijeni lozinku baze. Ako ti je port 5432 već zauzet (meni jeste, drži ga baza iz RoomSplita), promijeni i `POSTGRES_PORT`. U `JWT_SECRET` ide nasumičan ključ od najmanje 32 bajta, kojim se potpisuju tokeni. Bez njega aplikacija ne starta. U PowerShellu ga napraviš ovako:
 
 ```powershell
 $b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
 ```
+
+Za plaćanje trebaju `STRIPE_SECRET_KEY` (test ključ `sk_test_...` iz Stripe sandboxa, Developers, API keys) i `STRIPE_WEBHOOK_SECRET` (`whsec_...`, lokalno ga ispiše `stripe listen`). Bez njih aplikacija radi, samo plaćanje vraća `503`, a webhook `400`.
 
 ```powershell
 copy .env.example .env
@@ -89,7 +72,7 @@ notepad .env
 docker compose up -d
 ```
 
-Spring ne čita `.env` sam, to radi samo Docker Compose. Zato ga prije starta učitaj u PowerShell prozor, pa pokreni aplikaciju:
+Spring ne čita `.env` sam, to radi samo Docker Compose. Prije starta ga učitaj u PowerShell prozor, pa pokreni aplikaciju:
 
 ```powershell
 cd backend
@@ -101,18 +84,18 @@ Get-Content ..\.env | ForEach-Object {
 .\mvnw.cmd spring-boot:run
 ```
 
-U IntelliJ-u se isto riješi tako da se `.env` doda u run konfiguraciju (polje Environment variables, ili plugin EnvFile).
+U IntelliJ-u se `.env` doda u run konfiguraciju (polje Environment variables, ili plugin EnvFile).
 
-Kad aplikacija radi, Swagger UI je na http://localhost:8080/swagger-ui.html, provjera zdravlja na http://localhost:8080/actuator/health (i `/liveness`, `/readiness`), a Mailpit (lažni SMTP server koji hvata emailove) na http://localhost:8025.
+Kad aplikacija radi, Swagger UI je na http://localhost:8080/swagger-ui.html, provjera zdravlja na http://localhost:8080/actuator/health (i `/liveness`, `/readiness`), a Mailpit, lažni SMTP server koji hvata mailove, na http://localhost:8025.
 
-Testovi traže da Docker radi, a ne traže `.env`:
+Testovi traže da Docker radi, a `.env` ne treba:
 
 ```powershell
 cd backend
 .\mvnw.cmd test
 ```
 
-Frontend traži Node (koristim 26) i radi na http://localhost:5173. Vite zahtjeve na `/api` prosljeđuje backendu na portu 8080, pa backend treba biti pokrenut. Testovi (Vitest) ne traže backend:
+Frontend traži Node (koristim 26) i radi na http://localhost:5173. Vite zahtjeve na `/api` prosljeđuje backendu na portu 8080, pa backend mora biti pokrenut. Vitest testovi rade i bez njega:
 
 ```powershell
 cd frontend
@@ -121,66 +104,50 @@ npm run dev
 npm test
 ```
 
-Playwright test glavnog toka sam podigne svoju bazu i Mailpit (`frontend/e2e/compose.yml`, portovi 5434 i 8026), backend i Vite, i na kraju ugasi kontejnere. Traži Docker i Microsoft Edge, a portovi 8080 i 5173 moraju biti slobodni, pa razvojni backend i `npm run dev` prvo ugasi. Traje oko minut i po, najviše zbog starta backenda i čekanja maila s pozivnicom:
+Playwright testovi sami podignu svoju bazu i Mailpit (`frontend/e2e/compose.yml`, portovi 5434 i 8026), backend i Vite, i na kraju ugase kontejnere. Traže Docker i Microsoft Edge. Portovi 8080 i 5173 moraju biti slobodni, pa razvojni backend i `npm run dev` prvo ugasi. Svih devet testova je zadnji put trajalo 3,1 minut, najviše zbog starta backenda i čekanja mailova:
 
 ```powershell
 cd frontend
 npm run e2e
 ```
 
-Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Tada se baza spaja preko varijabli `DB_URL`, `DB_USER` i `DB_PASSWORD`, a port se uzima iz `PORT`. `JWT_SECRET` treba i tamo, i mora biti drugi ključ od lokalnog.
+Za produkciju se uključuje profil `prod` (`SPRING_PROFILES_ACTIVE=prod`). Baza se tada spaja preko `DB_URL`, `DB_USER` i `DB_PASSWORD`, a port se uzima iz `PORT`. I tamo treba `JWT_SECRET`, i to drugi ključ od lokalnog.
 
-## Struktura
+## Testovi
 
-`backend/` je Spring Boot aplikacija, a paketi su po funkcionalnosti (`ba.slotbook.booking`, `ba.slotbook.resource`...), ne po sloju. `frontend/` je React aplikacija (Vite, JavaScript), a Playwright test je u `frontend/e2e/`. Pozivi backenda su samo u `frontend/src/api/`, a boje, fontovi i razmaci samo u `frontend/src/tokeni.css`. U `docs/` su `ODLUKE.md` (odluke i zašto) i `ARHITEKTURA.md` (slojevi, tok zahtjeva i model podataka) i `PERFORMANSE.md` (mjerenja, a SQL i k6 skripte za njih su u `docs/mjerenja/`) i `RUNBOOK.md` (kvarovi, backup i vraćanje). `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj. `.github/workflows/ci.yml` je CI (backend testovi, frontend lint, testovi i build, provjera zavisnosti na pull requestu, gitleaks), `.github/workflows/codeql.yml` je CodeQL analiza Jave i JavaScripta, a `.github/dependabot.yml` sedmično traži zastarjele zavisnosti (Maven, npm, GitHub Actions).
+Backend ima 595 testova i svi prolaze (zadnje pokretanje 26.11.2026). Frontend ima 337 Vitest testova i 9 Playwright testova, koji idu kroz pravi backend i pravu bazu: glavni tok (prijava, rezervacija, otkazivanje i termin koji neko uzme prije potvrde), lista čekanja, iCal link, kalendar koji se osvježi sam, serija od tri sedmice, QR dolazak, grupna soba i pozivni link. Raspored providera, statistika i forme admina su provjereni samo s lažnim backendom u Vitest testovima i u browseru.
 
-## Live demo i screenshotovi
-
-Backend radi na https://slotbook-dxvs.onrender.com. Za sada ima samo [`/api/status`](https://slotbook-dxvs.onrender.com/api/status), [`/actuator/health`](https://slotbook-dxvs.onrender.com/actuator/health) i [Swagger UI](https://slotbook-dxvs.onrender.com/swagger-ui/index.html). Sve ostale adrese traže prijavu i bez nje vraćaju 401, pa i one koje ne postoje.
-
-Aplikacija je na **https://slot-book-delta.vercel.app** (od 25.11.2026). Vercel `/api` prosljeđuje na Render (`frontend/vercel.json`), pa je za browser sve na jednoj adresi. Koraci za deploy i šta je poslije njega provjereno su u [docs/RUNBOOK.md](docs/RUNBOOK.md). Free plan na Renderu uspavljuje servis poslije 15 minuta bez saobraćaja. Prvi zahtjev poslije pauze je 25.11. trajao 207 sekundi, pa se demo prvi put zna učitavati par minuta.
-
-Demo se pali profilom `demo`. Na prijavi su tada tri računa (klijent, provider i admin) i ulazi se jednim klikom, bez registracije. Podaci su čitaonica i teretana s četiri sedmice rezervacija, a jednom dnevno se sami vrate na početak. Profil na pokretanju obriše cijelu bazu, pa se pali samo na bazi koja služi za demo. Zašto i kako je u [docs/ODLUKE.md](docs/ODLUKE.md). Na Renderu je uključen od 25.11.2026. Može se napraviti i svoj nalog: mail za potvrdu šalje Brevo preko porta 2525 (Render na besplatnom planu blokira 465 i 587), ali zasad završi u spamu, jer je pošiljalac Gmail adresa, a ne vlastiti domen. Svoj nalog nestane kad se demo vrati na početak, jer demo prazni cijelu bazu.
-
-Tok ispod je lokalni backend s profilom `demo`: landing, ulaz kao Hana jednim klikom, Čitaonica PMF, sto u čitaonici (naziv preleti s pločice u naslov), slobodan žeton koji odleti u kartu, rezervacija i odštampana karta, pa Moje rezervacije. Okviri su Playwright screenshotovi pojedinih koraka, složeni u GIF, pa pokret između okvira nije gladak kao u aplikaciji.
-
-![Tok rezervacije: demo prijava, kalendar, karta, moje rezervacije](docs/tok-rezervacije.gif)
-
-Screenshotovi su pravi ekrani drugog redizajna, uslikani Playwrightom na lokalnom backendu s profilom `demo`. Svi, i oni od prije oba redizajna, su u [docs/redizajn/](docs/redizajn/).
-
-| Landing | Kalendar i karta |
-|---|---|
-| ![Landing: Termin je tvoj, s pločom termina](docs/redizajn/redizajn-2/landing-hero-desktop-svijetla.png) | ![Kalendar stola u čitaonici sa žetonima i kartom desno](docs/redizajn/redizajn-2/kal-karta-desktop-svijetla.png) |
-| **Moje rezervacije, tamna tema** | **Statistika organizacije** |
-| ![Moje rezervacije kao karte sa žigom stanja](docs/redizajn/redizajn-2/rez-desktop-tamna.png) | ![Statistika s brojkama, trakama i mrežom gužve](docs/redizajn/redizajn-2/stat-desktop-svijetla.png) |
-| **Telefon: kalendar** | **Telefon: organizacije** |
-| ![Kalendar na telefonu s izabranim terminom](docs/redizajn/redizajn-2/kal-izabran-mobitel-svijetla.png) | ![Organizacije kao pločice s emajl bojom](docs/redizajn/redizajn-2/org-mobitel-svijetla.png) |
-
-Ekran na vratima: admin u postavkama otvori ekran, klijent s telefona rezerviše 19:00, ekran se sam osvježi (sljedeći termin postane zauzet), a QR kod s ekrana vodi na pozivni link. Okviri su Playwright screenshotovi na lokalnom backendu s profilom `demo`.
-
-![Ekran na vratima: postavke, ekran, rezervacija s telefona, ekran se osvježi, pozivni link](docs/ekran-na-vratima.gif)
-
-Ekrani dodataka prije Faze 13 (svi su u [docs/dodaci/](docs/dodaci/)):
-
-| Nađi slobodno, telefon | Kalendar otvoren iz "Nađi slobodno" |
-|---|---|
-| ![Nađi slobodno: sutra ujutro, slobodni termini svih resursa po satu](docs/dodaci/nadji-slobodno-svijetla-375.png) | ![Kalendar s izabranim terminom i brojem slobodnih ispod svakog dana](docs/dodaci/kalendar-iz-nadji-slobodno-tamna-1280.png) |
-| **Postavke: nedolasci i ekran na vratima** | **Obavijesti na ovom uređaju i "nema mreže"** |
-| ![Postavke organizacije s pravilom nedolazaka i ekranima](docs/dodaci/postavke-svijetla-375.png) | ![Moj nalog s uključivanjem obavijesti](docs/dodaci/nalog-obavijesti-svijetla-375.png) ![Stranica Nema mreže u tamnoj temi](docs/dodaci/nema-mreze-tamna-375.png) |
+JaCoCo je 15.11.2026 izmjerio 97,1 % linija glavnog koda (1385 od 1427), iz jednog čistog pokretanja, kad je testova bilo 334. Paket `stats` je pokriven cijeli. Najviše nepokrivenih linija ima `GlobalExceptionHandler` (12). Dva njegova handlera, za istovremenu izmjenu rezervacije (`@Version`) i za dvije istovremene pozivnice, provjerena su u servisnom testu, ali ne i kroz HTTP. Nepokriven je i dio opisa stanja u poruci o nedozvoljenom prelazu, grana u kojoj isti `Idempotency-Key` u istom trenutku stigne za dva različita resursa, i grana u kojoj se mail ne može ni sastaviti (`MessagingException`).
 
 ## Šta nije urađeno ili nije provjereno
 
-Ovo je spisak onoga za šta nemam dokaz na pravom uređaju ili na produkciji, ili što je namjerno ostalo nedovršeno:
+Ovdje je ono za šta nemam dokaz na pravom uređaju ili na produkciji, i ono što sam namjerno ostavio nedovršeno.
 
-- Push obavijesti nisam vidio na pravom telefonu. Playwright pokreće Edge bez push servisa, pa pravu pretplatu kod Googlea ili Microsofta nisam dobio. Dokaz koji postoji je test koji poruku dešifruje kao browser i provjerava VAPID potpis (`PushApiTest`). Na Renderu VAPID ključevi još nisu postavljeni, pa je push tamo isključen.
-- PWA nisam instalirao na telefon. Manifest, ikone, service worker i stranicu "nema mreže" sam provjerio u Edgeu na računaru, na `vite preview`. E2e testovi idu na dev server, gdje service workera nema, pa ga ne pokrivaju.
+- Push obavijesti nisam vidio na pravom telefonu. Na Renderu su VAPID ključevi postavljeni i push je uključen, ali Playwright pokreće Edge bez push servisa, pa pravu pretplatu kod Googlea ili Microsofta nisam dobio. Dokaz koji postoji je test koji poruku dešifruje kao browser i provjerava VAPID potpis (`PushApiTest`).
+- PWA nisam instalirao na telefon. Manifest, ikone, service worker i stranicu "nema mreže" sam provjerio u Edgeu na računaru, na `vite preview`. E2e testovi idu na dev server, gdje service workera nema.
 - Na iPhoneu push radi samo kad je SlotBook dodan na početni ekran (iOS 16.4+). Nijedan iPhone nisam probao.
 - Ekran na vratima nisam držao na pravom tabletu ni TV-u. Wake Lock i cijeli ekran sam vidio samo u Edgeu na računaru, a stariji iPad bez Wake Locka treba ručno podesiti da se ne gasi. Svi ekrani iza iste IP adrese dijele granicu od 30 zahtjeva u minuti, pa deset ekrana u jednoj zgradi vjerovatno ne bi stalo.
 - "Nađi slobodno" ima izmjeren broj SQL upita (5 po resursu), ali ne i vrijeme odgovora na Renderu i Neon-u.
 - `npm audit` javlja 4 umjerene ranjivosti u alatu za build PWA (`workbox-build`). U produkcijskim paketima ih nema, a popravka koju nudi npm vraća plugin na verziju bez podrške za Vite 8.
-- Slike resursa na Renderu su na disku i nestanu sa svakim deployem. Demo podaci nemaju slika, pa se to vidi samo kad neko postavi svoju.
-- Stripe na produkciji je proban jednom uplatom i jednim povratom, skriptom. Istek neplaćene rezervacije (`checkout.session.expired`) na produkciji nisam čekao, provjeren je samo lokalno.
-- Faze 13 i 14 (završni pregled i AI asistent) još nisu počele.
+- Slike resursa su na disku Rendera i nestanu sa svakim deployem. Cloudflare R2 traži karticu i za besplatni plan, pa ga nisam uključio ([docs/ODLUKE.md](docs/ODLUKE.md)). Demo podaci nemaju slika, pa se to vidi tek kad neko postavi svoju.
+- Stripe na produkciji sam probao jednom uplatom i jednim povratom, skriptom. Istek neplaćene rezervacije (`checkout.session.expired`) na produkciji nisam čekao, provjeren je samo lokalno.
+- Faza 14 (AI asistent) nije počela.
+
+## Struktura i dokumentacija
+
+`backend/` je Spring Boot aplikacija s paketima po funkcionalnosti (`ba.slotbook.booking`, `ba.slotbook.resource`...), ne po sloju. `frontend/` je React aplikacija (Vite, JavaScript), a Playwright testovi su u `frontend/e2e/`. Pozivi backenda su samo u `frontend/src/api/`, a boje, fontovi i razmaci samo u `frontend/src/tokeni.css`. `docker-compose.yml` diže PostgreSQL i Mailpit za lokalni razvoj.
+
+CI je u `.github/workflows/ci.yml` (backend testovi, frontend lint, testovi i build, provjera zavisnosti na pull requestu, gitleaks). `.github/workflows/codeql.yml` analizira Javu i JavaScript, a `.github/dependabot.yml` jednom sedmično traži zastarjele zavisnosti (Maven, npm, GitHub Actions).
+
+U `docs/` su:
+
+- [HISTORIJA.md](docs/HISTORIJA.md): šta je urađeno u kojoj fazi, s ekranima redizajna
+- [ODLUKE.md](docs/ODLUKE.md): odluke, između čega sam birao i šta nisam provjerio
+- [ARHITEKTURA.md](docs/ARHITEKTURA.md): slojevi, tok zahtjeva i model podataka
+- [PERFORMANSE.md](docs/PERFORMANSE.md): `EXPLAIN`, broj upita i k6, a skripte za to su u `docs/mjerenja/`
+- [SIGURNOST.md](docs/SIGURNOST.md): OWASP Top 10, šta nas štiti, kojim testom i šta nije pokriveno
+- [RUNBOOK.md](docs/RUNBOOK.md): kvarovi, deploy, backup i vraćanje
+- [DIZAJN.md](docs/DIZAJN.md): paleta, fontovi i stanja termina
 
 ## Licenca
 
