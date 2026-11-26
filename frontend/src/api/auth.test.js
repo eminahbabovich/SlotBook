@@ -34,7 +34,7 @@ describe('auth', () => {
 		expect(fetch.mock.calls.at(-1)[1].headers.Authorization).toBe('Bearer tok')
 	})
 
-	// Od Faze 8 prijava radi tek poslije potvrde emaila, pa registracija ne prijavljuje
+	// Prijava radi tek poslije potvrde emaila, pa registracija ne prijavljuje
 	test('registracija šalje displayName i ne pokušava prijavu', async () => {
 		const fetch = backend()
 

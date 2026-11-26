@@ -60,7 +60,7 @@ describe('apiFetch', () => {
 	})
 
 	test('status se uzima iz HTTP odgovora, ne iz tijela', async () => {
-		// Ovako je izgledao bug iz Faze 4: setProperty("status", ...) je pregazio broj.
+		// Backend je jednom kroz setProperty("status", ...) pregazio broj statusa u tijelu.
 		odgovori(409, JSON.stringify({ title: 'Conflict', status: 'CANCELLED' }), 'application/problem+json')
 
 		const greska = await greskaIz(apiFetch('/api/bookings/b1/confirm', { metoda: 'POST' }))
@@ -96,7 +96,7 @@ describe('apiFetch', () => {
 		expect(greska.problem).toBeNull()
 	})
 
-	// Registracija vraća 202 bez tijela (Faza 8, korak 5), a ne 204
+	// Registracija vraća 202 bez tijela, a json() na praznom tijelu baci SyntaxError
 	test('prazan uspješan odgovor koji nije 204 vraća null umjesto greške', async () => {
 		odgovori(202, null)
 

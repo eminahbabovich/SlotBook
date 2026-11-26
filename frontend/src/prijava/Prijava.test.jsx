@@ -169,7 +169,7 @@ describe('prijava', () => {
 		expect(poruka.textContent).toMatch(/Sljedeći pokušaj je moguć u \d{2}:\d{2}\./)
 	})
 
-	// Isti 401 za nepotvrđen nalog (Faza 8, korak 5), pa poruka mora pomenuti i to
+	// Backend daje isti 401 i za nepotvrđen nalog, pa poruka mora pomenuti i to
 	test('401 podsjeti da nov nalog prvo treba potvrditi i nudi novi link', async () => {
 		backend({
 			...NEPRIJAVLJENA,

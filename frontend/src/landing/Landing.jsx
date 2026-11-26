@@ -54,15 +54,15 @@ const PITANJA = [
 		'Termin dobije samo jedno. Drugo odmah vidi da je zauzet i dobije prijedlog najbližeg slobodnog termina.',
 	],
 	[
-		'Moram li sam potvrđivati svaku rezervaciju?',
+		'Moram li ručno potvrđivati svaku rezervaciju?',
 		'Ne moraš. Za svaki resurs biraš da li se rezervacija potvrdi sama ili je potvrđuješ ti.',
 	],
-	['Može li se otkazati u zadnji čas?', 'Za svaki resurs upišeš rok za otkazivanje u satima. Poslije roka termin se ne može sam otkazati.'],
+	['Može li se otkazati u zadnji čas?', 'Za svaki resurs upišeš rok za otkazivanje u satima. Poslije roka ga klijent više ne može otkazati.'],
 	['Šta kad neko otkaže?', 'Termin se oslobodi. Ako je neko na listi čekanja, termin se prvo ponudi njemu.'],
 	['Mogu li dobiti svoje podatke?', 'Možeš. U nalogu je izvoz svih podataka u jedan fajl, a nalog se može i obrisati.'],
 ]
 
-// Ulaz hera je jedan orkestriran trenutak: naslov, pa rečenica, pa dugmad, pa prozor s demom, svaki
+// Hero ulazi redom: naslov, rečenica, dugmad i prozor s demom, svaki
 // 90 ms poslije prethodnog. Uz smanjen pokret (MotionConfig) ostaje samo pretapanje, bez pomjeranja.
 const KRIVA = [0.2, 0.7, 0.2, 1]
 const NIZ = { skriven: {}, vidljiv: { transition: { staggerChildren: 0.09 } } }

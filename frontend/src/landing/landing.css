@@ -1,6 +1,4 @@
-/* Landing za odjavljene (Redizajn 3): miran ritam proizvoda. Hero s pravim UI-jem u prozoru, traka
-   "za koga", prije i poslije, tamna sekcija s koracima, mogućnosti, oslonac, pitanja, demo i poziv.
-   Jedan font, umjereni naslovi, mjed samo kao akcent. */
+/* Landing za odjavljene. Redoslijed sekcija i pravila su u docs/DIZAJN.md, "Landing". */
 /* Mreža hera i traka Kako radi idu do ruba ekrana; bez ovoga širina trake za skrol napravi
    vodoravni skrol od par piksela */
 body:has(.landing) {

@@ -109,7 +109,7 @@ describe('prijava', () => {
 })
 
 describe('registracija', () => {
-	// Zauzet email više ne daje 409 (Faza 8, korak 5), pa je jedina greška forme neispravno polje
+	// Zauzet email ne daje 409, da odgovor ne otkrije ko ima nalog, pa je jedina greška forme neispravno polje
 	// Kratku lozinku forma ne šalje (ista pravila kao backend), a listu čestih lozinaka zna samo server,
 	// pa njegova poruka stoji ispod polja. Ispravljena forma vodi na inbox bez prijave.
 	test('kratka lozinka se ne šalje, česta je greška sa servera na polju, a ispravljena vodi na inbox', async () => {
