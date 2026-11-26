@@ -24,15 +24,17 @@ class RegisterRequestTest {
 		return factory.getValidator().validate(new RegisterRequest("amra@example.com", lozinka, "Amra"));
 	}
 
+	// Četiri različita slova, a ne jedno ponovljeno: isti znak 72 puta odbija JakaLozinka, a ovaj test
+	// mjeri samo granicu u bajtovima
 	@Test
 	void lozinkaOd72BajtaProlazi() {
-		assertThat(provjeri("a".repeat(72))).isEmpty();
-		assertThat(provjeri("č".repeat(36))).isEmpty();
+		assertThat(provjeri("tri-zute-macke-na-mostu-".repeat(3))).isEmpty();
+		assertThat(provjeri("čćšž".repeat(9))).isEmpty();
 	}
 
 	@Test
-	void lozinkaOd37SlovaCIma74BajtaIOdbijaSe() {
-		assertThat(provjeri("č".repeat(37)))
+	void lozinkaOd37NasihSlovaIma74BajtaIOdbijaSe() {
+		assertThat(provjeri("čćšž".repeat(9) + "đ"))
 				.extracting(greska -> greska.getPropertyPath().toString())
 				.containsExactly("password");
 	}

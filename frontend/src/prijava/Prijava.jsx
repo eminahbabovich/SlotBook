@@ -74,6 +74,9 @@ export function Prijava() {
 					</button>
 				</form>
 				<p>
+					<Link to="/zaboravljena-lozinka">Zaboravljena lozinka?</Link>
+				</p>
+				<p>
 					Prvi put ovdje:{' '}
 					<Link to="/registracija" state={lokacija.state}>Napravi nalog</Link>
 				</p>

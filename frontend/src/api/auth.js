@@ -23,6 +23,16 @@ export async function noviLinkZaPotvrdu(email) {
 	await apiFetch('/api/auth/email-verification', { metoda: 'POST', tijelo: { email } })
 }
 
+// Uvijek 204, i za email bez naloga, pa UI kaže "ako nalog postoji, mail je poslan"
+export async function zatraziNovuLozinku(email) {
+	await apiFetch('/api/auth/password-reset', { metoda: 'POST', tijelo: { email } })
+}
+
+// Token iz linka /nova-lozinka#token=... (NewPasswordRequest). 204, a sesije na drugim uređajima se gase.
+export async function postaviNovuLozinku(token, lozinka) {
+	await apiFetch('/api/auth/password-reset/confirm', { metoda: 'POST', tijelo: { token, password: lozinka } })
+}
+
 // Token se briše tek kad server potvrdi odjavu. Refresh kolačić briše samo server, pa bi
 // brisanje tokena bez toga bila lažna odjava: poslije osvježavanja stranice sesija se vrati.
 export async function odjava() {

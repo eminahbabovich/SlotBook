@@ -13,6 +13,7 @@ import ba.slotbook.notification.NotificationService;
 import ba.slotbook.notification.NotificationType;
 import ba.slotbook.user.User;
 import ba.slotbook.user.UserRepository;
+import ba.slotbook.user.UserService;
 
 @Service
 public class PasswordResetService {
@@ -61,6 +62,7 @@ public class PasswordResetService {
 	@Transactional
 	public void reset(String token, String novaLozinka) {
 		User user = tokens.use(token, UserTokenType.PASSWORD_RESET);
+		UserService.provjeriEmailULozinci(novaLozinka, user.getEmail());
 		user.changePassword(passwordEncoder.encode(novaLozinka));
 		// Stariji linkovi za reset bi inače i dalje mogli promijeniti lozinku
 		tokens.useAll(user, UserTokenType.PASSWORD_RESET);

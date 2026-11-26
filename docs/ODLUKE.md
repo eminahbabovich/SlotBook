@@ -1147,3 +1147,17 @@ Birao sam između dvije stvari. Isključiti `@Scheduled` u testovima bi dalo zel
 Usput: tabele se brišu abecednim redom. `pg_tables` bez `order by` vraća tabele redom koji se mijenja poslije svakog brisanja, pa je u CI-ju i lokalno redoslijed bio različit.
 
 Dokaz je `vracanjeDemaUspijeIKadIzgubiUDeadlockuSDrugomTransakcijom`: druga konekcija drži `waitlist_entries` (zadnja u nizu), čeka da `TRUNCATE` stane na nju, pa čita `audit_log` (prva u nizu). Test provjerava i da je brojač `deadlocks` u `pg_stat_database` porastao, da ne prođe kad do sudara ne dođe. S `POKUSAJA = 1` test padne na `deadlock detected`. Svih 506 backend testova prolazi lokalno. CI s ovom popravkom još nije pokrenut, jer nije pushano.
+
+## Jaka lozinka bez pravila "veliko slovo, broj, znak" (26.11.2026)
+
+Do sada je pravilo bilo osam znakova, pa je `12345678` prolazila. Tražio sam "nešto komplikovanije, neki regex". Regex tipa "bar jedno veliko slovo, jedan broj i jedan znak" sam odbacio. NIST 800-63B (smjernice za lozinke) ga izričito ne preporučuje: ljudi tada pišu `Lozinka1!`, koju napadač proba među prvima, a duga fraza od malih slova je i jača i lakša za pamćenje.
+
+Pravilo je sada u `ProvjeraLozinke`: najmanje 10 znakova (broje se slova, pa `č` ne broji duplo), najmanje četiri različita znaka (`aaaaaaaaaa`, `abababababab`), lozinka ne smije biti komad reda tastature ili abecede, naprijed ni nazad (`1234567890`, `qwertzuiop`, `asdfghjklč`), ne smije biti na listi čestih lozinaka (`backend/src/main/resources/lozinke/ceste.txt`), i to se provjerava i bez cifara i znakova na krajevima (`Lozinka2024!` je `lozinka`) i za riječ ponovljenu dvaput (`testtest`). Ne smije ni sadržati dio emaila prije `@`, ako je duži od tri znaka.
+
+Lista je kratka, oko 150 riječi: česte lozinke iz javnih lista curenja i riječi odavde (`sarajevo`, `zeljeznicar`, `cevapi`). Puna lista od 100 000 lozinaka bi bila bolja, ali je to 1 MB u backendu, pa je to u Dodacima. Pravilo važi za registraciju i novu lozinku, ne za prijavu, pa se stari nalozi i dalje prijavljuju.
+
+Email u lozinci se provjerava na početku `EmailVerificationService.register`, prije traženja naloga. Da je provjera bila u `UserService.register`, koji se zove samo za nov email, postojeći email bi dobio `202`, a nov `400`, i odgovor bi otkrio ko ima nalog. `RegisterApiTest.lozinkaSEmailomPadaIsto` to provjerava.
+
+Frontend (`forma/lozinka.js`) ima ista pravila osim liste, da se greška vidi prije slanja. Listu zna samo backend, pa se ta poruka vidi poslije slanja.
+
+Usput sam našao da stranica za novu lozinku nije postojala: mail za reset je vodio na `/nova-lozinka`, a to je bio 404. Nije bilo ni linka "Zaboravljena lozinka". Sada postoje obje stranice. `RegisterRequestTest` je za granicu od 72 bajta koristio isti znak 72 puta, a takvu lozinku novo pravilo odbija. Test sada koristi niz različitih slova iste dužine u bajtovima i i dalje mjeri samo granicu.

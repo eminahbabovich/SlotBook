@@ -466,6 +466,72 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    **Sutra:** push i provjera CI-ja, pa ostatak koraka 4 (Stripe varijable i webhook na Renderu, R2,
    uptime monitor), CI badge i poddomen, pa zatvaranje Faze 12 i Faza 13.
 
+## Dodaci prije Faze 13
+
+Pet funkcija i pravilo za lozinke, dogovoreno 26.11.2026. Radim ih jednu po jednu, a poslije
+svake: backend testovi, Vitest i e2e prolaze, commit, odluke u `docs/ODLUKE.md`, README, kartica
+na landingu u "Šta još radi" i podaci u demo profilu. Svaki novi endpoint nad podacima
+organizacije ulazi u `OrganizationIsolationApiTest`, a svaka osjetljiva radnja u `audit_log`.
+
+**0. Lozinka koja se ne pogađa.** Najmanje 10 znakova, ne smije biti na listi čestih lozinaka
+(`12345678`, `qwertzuiop`, `lozinka123`...), ne smije biti jedan znak ili niz koji se ponavlja i
+ne smije sadržati dio emaila prije `@`. Važi za registraciju, reset i novu lozinku, ne i za prijavu
+(stari nalozi se i dalje prijavljuju). Pravilo je na backendu (`@Valid`), a frontend pokazuje istu
+poruku prije slanja.
+
+**1. Pozivni link i upravljanje članovima**
+1. `invite_links` (V42): organizacija, uloga uvijek `CLIENT`, hash tokena, rok, najviše korištenja,
+   broj korištenja, povučen, ko je napravio. Token je HMAC nad ID-jem linka (kao QR za dolazak), pa
+   ga server može ponovo izračunati za plakat, a baza čuva samo hash.
+2. Admin pravi, vidi i povlači linkove. Ulazak (`POST /api/invite-links/join`) traži potvrđen
+   email, broj korištenja raste jednim `UPDATE ... WHERE uses < max_uses RETURNING`. Test s 20 niti
+   na link s 5 mjesta. Već član dobije `200` s porukom, ne grešku. Granica pokušaja po adresi.
+3. Članovi: lista otvorenih pozivnica i povlačenje, promjena uloge, uklanjanje. Zadnji admin se ne
+   spušta ni uklanja (`409`), član koji vodi resurse se ne uklanja dok ih ne preda (`409` s
+   listom). Buduće rezervacije uklonjenog člana se otkazuju, uz mail.
+4. Frontend: sekcija "Pozivni link" (pravljenje, kopiranje, QR, povlačenje, broj korištenja,
+   plakat za štampu A4), stranica `/pridruzi/:token`, lista članova s ulogom i uklanjanjem, lista
+   otvorenih pozivnica.
+
+**2. Pravila korištenja i nedolasci**
+1. Resurs (V43): najviše aktivnih budućih rezervacija po članu, koliko dana unaprijed, najmanje
+   minuta prije početka. Organizacija: N nedolazaka u zadnjih X dana daje blokadu od Y dana.
+   Blokada se računa iz `NO_SHOW` rezervacija, ne čuva se.
+2. Provjere u `BookingService` pod lockom resursa, za jednu rezervaciju, seriju (sve ili ništa) i
+   ponudu s liste čekanja. Test s nitima za granicu po članu. Admin i provider nisu ograničeni.
+3. Frontend: polja u formi resursa i u postavkama organizacije, značke s pravilima na stranici
+   resursa, termini izvan prozora se ne nude, traka s blokadom u Mojim rezervacijama.
+
+**3. Ekran na vratima**
+1. `door_screens` (V44): tajni link za cijelu organizaciju ili jedan resurs, novi zamijeni stari,
+   povlačenje. Token kao kod pozivnog linka.
+2. Javni `GET /api/screens/{token}`: ime organizacije, resursi, današnji termini sa stanjem i
+   brojem slobodnih mjesta, QR pozivnog linka ako postoji. Bez imena članova (test to provjerava).
+   SSE s tokenom umjesto prijave, granica zahtjeva.
+3. Frontend: `/ekran/:token` preko cijelog ekrana (sat, trenutni i sljedeći termin po resursu,
+   ostatak dana, QR), tamna tema, Wake Lock, ponovno spajanje SSE-a. Admin pravi i povlači link u
+   postavkama organizacije, uz dugme "Otvori ekran".
+
+**4. Nađi slobodno**
+1. `GET /api/organizations/{id}/free-slots`: slobodni termini svih aktivnih resursa za najviše
+   2 dana, opciono od-do sat u zoni organizacije. Isti `FreeSlotService`, broj SQL upita izmjeren s
+   1 i 6 resursa.
+2. Frontend: brzi izbori ("Sad", "Danas poslije 16h", "Sutra ujutro", "Sutra poslije podne") i
+   lista po vremenu na stranici organizacije, klik vodi na resurs s izabranim terminom. Broj
+   slobodnih termina ispod svakog dana u traci.
+
+**5. PWA i push obavijesti**
+1. Izbor Vite PWA plugina i Java biblioteke za Web Push po dokumentaciji, odluka u `docs/ODLUKE.md`.
+2. Manifest, ikone, service worker samo za statiku (nikad `/api`), stranica "nema mreže".
+3. `push_subscriptions` (V45), VAPID ključevi samo iz env-a. Bez ključeva push je isključen, a
+   aplikacija radi.
+4. Push kao novi kanal outboxa (`notifications`), s istim ponovnim pokušajima. `404` i `410`
+   brišu pretplatu. Događaji: ponuda s liste čekanja, potvrda i odbijanje, podsjetnik dan prije.
+5. `/nalog`: uključivanje po uređaju, probna obavijest, napomena za iPhone.
+
+**Na kraju:** novi screenshotovi u `docs/`, GIF ekrana na vratima i pozivnog linka za README, i
+spisak onoga što nije urađeno ili nije provjereno na pravom telefonu.
+
 ## Faza 14 po koracima
 
 Svaki korak je jedna sesija ili manje. Domen ostaje naš: "alat za usluge" je kod nas
@@ -607,7 +673,7 @@ Detaljne korake radimo zajedno kad dođemo do tog dijela.
 
 Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo šta ulazi.
 
-- Web push obavijesti / PWA (instalacija na telefon)
+- Web push obavijesti / PWA (instalacija na telefon): prešlo u "Dodaci prije Faze 13", korak 5
 - Sinhronizacija s Google Calendarom (dvosmjerna, za razliku od iCal pretplate)
 - Ocjene i komentari nakon termina
 - SMS podsjetnici
@@ -615,10 +681,9 @@ Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo �
 - Redis za rate limiting i keš kad bi radilo više instanci
 - Praćenje troškova i mjerenje potrošnje besplatnih planova
 - Sedmična mreža kalendara na desktopu (sada je jedan dan i na telefonu i na desktopu)
-- Broj slobodnih termina ispod svakog dana u traci s danima
+- Broj slobodnih termina ispod svakog dana u traci s danima: "Dodaci prije Faze 13", korak 4
 - Strelice lijevo i desno kroz traku s danima (sada samo Tab)
-- Lista otvorenih pozivnica za admina, s povlačenjem pozivnice (sada admin vidi samo potvrdu odmah poslije slanja)
-- Promjena uloge člana i uklanjanje člana iz organizacije (backend za to nema endpoint)
+- Lista otvorenih pozivnica, promjena uloge i uklanjanje člana: prešlo u "Dodaci prije Faze 13", korak 1
 - Vlastito polje za sat u 24-satnom obliku (ugrađeno `<input type="time">` prati jezik browsera, pa na engleskom pokazuje AM/PM)
 - Kopiranje radnog vremena jednog dana na ostale radne dane
 - Toplotna mapa dan x sat za statistiku (sada je samo pet najtraženijih termina), traži sekvencijalnu paletu koje u `docs/DIZAJN.md` nema

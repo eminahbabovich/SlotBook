@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { registracija } from '../api/auth.js'
 import { Polje } from '../forma/Polje.jsx'
+import { NAPOMENA_LOZINKE, problemLozinke } from '../forma/lozinka.js'
 import { greskePoPoljima, porukaGreske } from '../forma/porukaGreske.js'
 import { NoviLinkZaPotvrdu } from './NoviLinkZaPotvrdu.jsx'
 import { Uvod } from './Uvod.jsx'
@@ -21,10 +22,14 @@ export function Registracija() {
 	const [greska, setGreska] = useState(null)
 	// Email na koji je otišao link. Sesija ostaje odjavljena, jer prijava radi tek poslije potvrde.
 	const [poslano, setPoslano] = useState(null)
+	const [slabaLozinka, setSlabaLozinka] = useState(null)
 	const poPoljima = greskePoPoljima(greska)
 
 	async function posalji(dogadjaj) {
 		dogadjaj.preventDefault()
+		const problem = problemLozinke(lozinka, email)
+		setSlabaLozinka(problem)
+		if (problem) return
 		setSalje(true)
 		setGreska(null)
 		try {
@@ -82,8 +87,8 @@ export function Registracija() {
 						autoComplete="new-password"
 						vrijednost={lozinka}
 						promjena={setLozinka}
-						greska={poPoljima.password}
-						napomena="Najmanje 8 znakova."
+						greska={slabaLozinka ?? poPoljima.password}
+						napomena={NAPOMENA_LOZINKE}
 					/>
 					<button className="dugme" type="submit" disabled={salje}>
 						{salje ? 'Nalog se pravi' : 'Napravi nalog'}

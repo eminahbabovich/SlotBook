@@ -46,6 +46,8 @@ public class EmailVerificationService {
 	// nema naloga kojem link nikad nije ni krenuo.
 	@Transactional
 	public void register(String email, String password, String displayName) {
+		// Prije traženja naloga: inače bi 400 dobio samo nov email, a odgovor bi otkrio ko već ima nalog
+		UserService.provjeriEmailULozinci(password, email);
 		User postojeci = users.findByEmail(User.normalizeEmail(email)).orElse(null);
 		if (postojeci == null) {
 			UserResponse novi = userService.register(email, password, displayName);

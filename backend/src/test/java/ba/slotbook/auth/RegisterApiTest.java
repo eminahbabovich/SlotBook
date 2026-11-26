@@ -1,5 +1,6 @@
 package ba.slotbook.auth;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -123,6 +124,32 @@ class RegisterApiTest {
 		registruj("nije-email", "kratka", " ")
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.greske.length()").value(3));
+	}
+
+
+	// 12345678 je bila dovoljna dok je pravilo bilo samo osam znakova
+	@Test
+	void cestaLozinkaSeOdbijaSPorukomKojaKazeSta() throws Exception {
+		registruj("dzenana.lozinka@example.com", "sarajevo2024", "Dženana")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].polje").value("password"))
+				.andExpect(jsonPath("$.greske[0].poruka").value(containsString("često koriste")));
+		assertThat(jdbc.queryForObject("select count(*) from users where email = ?", Long.class,
+				"dzenana.lozinka@example.com")).isZero();
+	}
+
+	// Isti 400 i za email koji već ima nalog. Da se provjera radi tek za nov nalog, postojeći bi dobio
+	// 202 i odgovor bi otkrio ko je registrovan.
+	@Test
+	void lozinkaSEmailomPadaIsto() throws Exception {
+		registruj("emir.postojeci@example.com", "kozija-cuprija-1580", "Emir").andExpect(status().isAccepted());
+
+		registruj("emir.postojeci@example.com", "emir.postojeci-77", "Emir")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].poruka").value("Lozinka ne smije sadržati tvoj email."));
+		registruj("emir.novi@example.com", "emir.novi-1580", "Emir")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.greske[0].poruka").value("Lozinka ne smije sadržati tvoj email."));
 	}
 
 }

@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ba.slotbook.error.InvalidFieldException;
+
 @Service
 public class UserService {
 
@@ -35,6 +37,13 @@ public class UserService {
 			return UserResponse.from(users.saveAndFlush(user));
 		} catch (DataIntegrityViolationException e) {
 			throw new EmailAlreadyUsedException();
+		}
+	}
+
+	// Email je dio koji napadač zna prije svega ostalog, pa lozinka koja ga sadrži nije tajna
+	public static void provjeriEmailULozinci(String lozinka, String email) {
+		if (ProvjeraLozinke.sadrziEmail(lozinka, email)) {
+			throw new InvalidFieldException("password", "Lozinka ne smije sadržati tvoj email.");
 		}
 	}
 

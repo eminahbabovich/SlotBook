@@ -12,6 +12,8 @@ import { PrihvatanjePozivnice } from './pozivnica/PrihvatanjePozivnice.jsx'
 import { PotvrdaEmaila } from './prijava/PotvrdaEmaila.jsx'
 import { Prijava } from './prijava/Prijava.jsx'
 import { Registracija } from './prijava/Registracija.jsx'
+import { NovaLozinka } from './prijava/NovaLozinka.jsx'
+import { ZaboravljenaLozinka } from './prijava/ZaboravljenaLozinka.jsx'
 import { RadnoVrijemeResursa } from './radnoVrijeme/RadnoVrijemeResursa.jsx'
 import { RasporedResursa } from './raspored/RasporedResursa.jsx'
 import { Statistika } from './statistika/Statistika.jsx'
@@ -47,6 +49,7 @@ export default function App() {
 							<Route element={<Cuvar za="odjavljene" />}>
 								<Route path="/prijava" element={<Prijava />} />
 								<Route path="/registracija" element={<Registracija />} />
+								<Route path="/zaboravljena-lozinka" element={<ZaboravljenaLozinka />} />
 							</Route>
 							<Route element={<Cuvar za="prijavljene" />}>
 								<Route path="/o/:slug" element={<Organizacija />} />
@@ -64,6 +67,7 @@ export default function App() {
 							</Route>
 							{/* Van čuvara: link iz maila otvara neko ko se još ne može prijaviti */}
 							<Route path="/potvrda-emaila" element={<PotvrdaEmaila />} />
+							<Route path="/nova-lozinka" element={<NovaLozinka />} />
 							<Route path="*" element={<NePostoji />} />
 						</Routes>
 					</main>

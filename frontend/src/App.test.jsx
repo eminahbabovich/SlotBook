@@ -110,13 +110,15 @@ describe('prijava', () => {
 
 describe('registracija', () => {
 	// Zauzet email više ne daje 409 (Faza 8, korak 5), pa je jedina greška forme neispravno polje
-	test('kratka lozinka je greška na polju, a ispravljena forma vodi na inbox bez prijave', async () => {
-		let kratka = true
+	// Kratku lozinku forma ne šalje (ista pravila kao backend), a listu čestih lozinaka zna samo server,
+	// pa njegova poruka stoji ispod polja. Ispravljena forma vodi na inbox bez prijave.
+	test('kratka lozinka se ne šalje, česta je greška sa servera na polju, a ispravljena vodi na inbox', async () => {
+		let cesta = true
 		const fetch = backend({
 			'/api/auth/refresh': BEZ_SESIJE,
 			'/api/auth/register': () =>
-				kratka
-					? problem(400, { detail: 'Neki podaci nisu ispravni.', greske: [{ polje: 'password', poruka: 'Lozinka mora imati najmanje 8 znakova.' }] })
+				cesta
+					? problem(400, { detail: 'Neki podaci nisu ispravni.', greske: [{ polje: 'password', poruka: 'Ovu lozinku ljudi često koriste, pa se lako pogodi.' }] })
 					: new Response(null, { status: 202 }),
 		})
 		otvori('/prijava')
@@ -127,14 +129,19 @@ describe('registracija', () => {
 		await korisnik.type(screen.getByLabelText('Email'), 'hana@primjer.ba')
 		await korisnik.type(screen.getByLabelText('Lozinka'), 'čitaonica')
 		await korisnik.click(screen.getByRole('button', { name: 'Napravi nalog' }))
-		expect(await screen.findByText('Lozinka mora imati najmanje 8 znakova.')).toBeTruthy()
+		expect(await screen.findByText('Lozinka treba imati najmanje 10 znakova.')).toBeTruthy()
+		expect(fetch.mock.calls.some(([putanja]) => putanja === '/api/auth/register')).toBe(false)
 
-		kratka = false
-		await korisnik.type(screen.getByLabelText('Lozinka'), '1')
+		await korisnik.type(screen.getByLabelText('Lozinka'), '2024')
+		await korisnik.click(screen.getByRole('button', { name: 'Napravi nalog' }))
+		expect(await screen.findByText('Ovu lozinku ljudi često koriste, pa se lako pogodi.')).toBeTruthy()
+
+		cesta = false
+		await korisnik.type(screen.getByLabelText('Lozinka'), '-trebević')
 		await korisnik.click(screen.getByRole('button', { name: 'Napravi nalog' }))
 
 		expect(await screen.findByRole('heading', { name: 'Pogledaj inbox' })).toBeTruthy()
-		expect(tijelo(fetch, 'POST /api/auth/register')).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica1', displayName: 'Hana Šehić' })
+		expect(tijelo(fetch, 'POST /api/auth/register')).toEqual({ email: 'hana@primjer.ba', password: 'čitaonica2024-trebević', displayName: 'Hana Šehić' })
 	})
 })
 
