@@ -8,7 +8,7 @@
 	box-shadow: var(--dubina-1);
 }
 
-/* Žeton: termin kao emajlirana pločica koja stoji. --emajl je boja resursa (rub i tačka). */
+/* Žeton: termin kao pločica koja stoji. Slobodan ima mjedeni rub odozdo, jer je to ono što se može uzeti. */
 .zeton {
 	--emajl: var(--emajl-tirkiz);
 	position: relative;
@@ -38,28 +38,40 @@
 	line-height: 1.2;
 }
 
-/* Slobodan: stoji iznad ploče, s emajl rubom odozdo. Na hover se malo digne, na pritisak spusti. */
+/* Slobodan: stoji iznad ploče, s mjedenim rubom odozdo. Na hover se malo digne, na pritisak spusti. */
 .zeton-slobodan {
 	cursor: pointer;
-	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--moje);
 	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
 }
 
 .zeton-slobodan:hover {
 	transform: translateY(-2px);
-	box-shadow: var(--dubina-3), inset 0 -3px 0 var(--emajl);
+	box-shadow: var(--dubina-3), inset 0 -3px 0 var(--moje);
 }
 
-/* Zauzet: udubljen u ploču i šrafiran, bez debljine. Razlikuje se i bez boje. */
+/* Zauzet: udubljen u ploču, s tankom šrafurom i katancem u uglu. Razlikuje se i bez boje: nema
+   debljine, ima katanac i riječ "zauzeto". Vrijeme nije precrtano, da se lako pročita. */
 .zeton-zauzet {
 	color: var(--tekst-sporedni);
-	background: repeating-linear-gradient(-45deg, var(--sraf) 0 6px, transparent 6px 12px), var(--povrsina);
+	background: repeating-linear-gradient(-45deg, var(--sraf) 0 1px, transparent 1px 7px), var(--podloga);
 	box-shadow: var(--utisnuto);
 }
 
 .zeton-zauzet time {
-	text-decoration: line-through;
-	text-decoration-thickness: 2px;
+	font-weight: 600;
+}
+
+.zeton-zauzet::after,
+.termin-zauzeto .termin-red::after {
+	content: '';
+	position: absolute;
+	top: var(--razmak-12);
+	right: var(--razmak-12);
+	width: 14px;
+	height: 14px;
+	background: currentColor;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='7' width='10' height='7.5' rx='2'/%3E%3Cpath d='M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7' fill='none' stroke='black' stroke-width='1.7'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 /* Moj: mjed. Najdeblji, sa sjajem, tekst je tinta. */

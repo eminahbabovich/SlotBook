@@ -10,7 +10,11 @@ body:has(.landing) {
 .landing {
 	display: grid;
 	gap: var(--razmak-96);
-	padding-bottom: var(--razmak-48);
+}
+
+/* Landing se završava malom sekcijom Kako je napravljeno, pa ispod nje nema praznog prostora */
+main:has(> .landing) {
+	padding-bottom: 0;
 }
 
 /* Hero: tekst lijevo, prozor aplikacije desno. Na telefonu prozor ispod teksta. */
@@ -502,9 +506,12 @@ body:has(.landing) {
 	place-items: center;
 	width: 44px;
 	height: 44px;
-	color: var(--tekst-na-moje);
-	background: color-mix(in srgb, var(--moje) 35%, var(--izdignuto));
+	/* Ikona je mjed na blagoj mjedenoj pločici, s tankim mjedenim rubom. Na grafitu tinta na
+	   tamnoj mjedi nije imala kontrasta. */
+	color: var(--tekst-mjed);
+	background: color-mix(in srgb, var(--moje) 14%, var(--izdignuto));
 	border-radius: var(--zaobljenje);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--moje) 35%, transparent);
 }
 
 .ikona svg {
@@ -783,8 +790,15 @@ body:has(.landing) {
 
 @media (min-width: 760px) {
 	.napravljeno {
-		padding-block: var(--razmak-64);
+		padding-block: var(--razmak-64) var(--razmak-48);
 	}
+}
+
+/* Dugme za GitHub je sporedno i na kraju stranice, pa je manje od dugmadi u heru */
+.napravljeno .dugme {
+	min-height: 40px;
+	padding-inline: var(--razmak-16);
+	font-size: var(--velicina-sitno);
 }
 
 /* Sudar: dvadeset žetona oko jednog termina */

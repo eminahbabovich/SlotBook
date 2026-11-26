@@ -40,7 +40,7 @@ Taj prvi redizajn je ispao ravan, pa je istog dana zamijenjen drugim: "Mjed i em
 
 Treći redizajn (25.11.) je zadržao materijal, a stišao ostalo: jedan font (Hanken Grotesk), mirniji naslovi, mjed bez preliva na dugmadima, i landing koji za par sekundi kaže šta je SlotBook i za koga je, bez statusnih kodova i imena testova. Screenshotovi landinga su u [docs/redizajn/redizajn-3/](docs/redizajn/redizajn-3/), a ostali ekrani ispod su još iz drugog redizajna.
 
-Dan poslije (26.11.) je promijenjena samo paleta. Hladni porculan i teget noć su djelovali staro, pa je dan sad topli kamen, noć neutralan grafit, mjed je svjetlija, a ploče imaju tanku ivicu umjesto teških sjena. "Kako radi" je tamna traka u obje teme. Kontrasti su ponovo izračunati i upisani u [docs/DIZAJN.md](docs/DIZAJN.md), a hero u novoj paleti je u [docs/redizajn/redizajn-4/](docs/redizajn/redizajn-4/).
+Dan poslije (26.11.) je promijenjena samo paleta. Hladni porculan i teget noć su djelovali staro, pa je dan sad topli kamen, noć neutralan grafit, mjed je svjetlija, a ploče imaju tanku ivicu umjesto teških sjena. "Kako radi" je tamna traka u obje teme. Kontrasti su ponovo izračunati i upisani u [docs/DIZAJN.md](docs/DIZAJN.md), a hero u novoj paleti je u [docs/redizajn/redizajn-4/](docs/redizajn/redizajn-4/). Isti dan je tamna tema postala podrazumijevana za svakoga (svijetla je izbor u zaglavlju), slobodni termini imaju mjedeni rub umjesto zelenog, a zauzeti katanac umjesto precrtanog vremena.
 
 | Faza | Šta | Status |
 |---|---|---|

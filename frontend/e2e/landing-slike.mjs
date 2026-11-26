@@ -17,6 +17,8 @@ const browser = await chromium.launch({ channel: 'msedge' })
 for (const [ime, viewport] of Object.entries(SIRINE)) {
 	for (const tema of ['light', 'dark']) {
 		const stranica = await browser.newPage({ viewport, colorScheme: tema, deviceScaleFactor: 1 })
+		// Tamna je podrazumijevana, a svijetla je izbor koji se pamti u browseru
+		await stranica.addInitScript((t) => localStorage.setItem('slotbook-tema', t), tema === 'light' ? 'svijetla' : 'tamna')
 		await stranica.goto('http://localhost:5173/')
 		await stranica.getByRole('heading', { level: 1 }).waitFor()
 		await stranica.waitForTimeout(1200)

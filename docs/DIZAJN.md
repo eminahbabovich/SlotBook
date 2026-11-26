@@ -12,7 +12,7 @@ Kazandžiluk, ulica kazandžija na Baščaršiji: mjed koja se kuje čekićem i 
 
 ## Boje
 
-Dvije teme, svaka napravljena posebno: dan je topli kamen, noć je grafit. Do 26.11.2026 dan je bio hladan porculan (`#E7EAF1`), a noć zasićena teget tinta (`#121735`). Uz mjed i emajl je to bilo previše plave, mjed na sivo-plavoj je izgledala kao senf, a teget noć kao dashboard od prije pet godina. Pogledao sam šta danas rade proizvodi tog tipa: skoro bijela topla podloga, neutralna skoro crna noć, jedna jaka akcent boja i tanka ivica oko ploča umjesto teških sjena. Mjed je zato svjetlija i čistija, a noć nema boje, pa su mjed i emajl jedine boje na ekranu. Tema prati sistem, a u zaglavlju se može izabrati ručno. Kontrast je po WCAG formuli za relativnu luminansu (AA: 4,5 za tekst, 3 za ivice i oblike).
+Dvije teme, svaka napravljena posebno: dan je topli kamen, noć je grafit. Do 26.11.2026 dan je bio hladan porculan (`#E7EAF1`), a noć zasićena teget tinta (`#121735`). Uz mjed i emajl je to bilo previše plave, mjed na sivo-plavoj je izgledala kao senf, a teget noć kao dashboard od prije pet godina. Pogledao sam šta danas rade proizvodi tog tipa: skoro bijela topla podloga, neutralna skoro crna noć, jedna jaka akcent boja i tanka ivica oko ploča umjesto teških sjena. Mjed je zato svjetlija i čistija, a noć nema boje, pa su mjed i emajl jedine boje na ekranu. Od 26.11.2026 tamna tema je podrazumijevana za svakoga, bez obzira na sistem, jer je na grafitu mjed najljepša. Svijetla je izbor u zaglavlju i browser je pamti. Kontrast je po WCAG formuli za relativnu luminansu (AA: 4,5 za tekst, 3 za ivice i oblike).
 
 | Varijabla | Hex | Uloga | Kontrast |
 |---|---|---|---|
@@ -46,7 +46,7 @@ Senke su od boje teksta (`--sjena-boja`, u noći `--sjena-noc`), mekše nego pri
 
 **Hanken Grotesk** (`@fontsource-variable/hanken-grotesk`, težina 100 do 900) je jedini font za naslove, tekst, cifre i dugmad (Redizajn 3, 25.11.2026). Naslovi su 700, normalne širine, s razmakom slova -0,02em (`--tezina-naslov`, `--razmak-slova-naslov`) i proredom 1,15. Cifre vremena su `tabular-nums`, pa se 08:00 i 11:00 poravnaju. Anybody s osom širine i slova koja se šire prema kursoru su izbačeni: upadali su u oči, ali nisu djelovali ozbiljno. Latin-ext (č, ć, š, đ, ž) Hanken ima u posebnom podskupu koji browser skine samo kad treba. **IBM Plex Mono** je samo na karti (`--font-karta`), kao otisak.
 
-Latin-ext (č, ć, š, đ, ž) imaju sva tri, provjereno 25.11.2026 po fajlovima `*-latin-ext-*.woff2` u paketima.
+Fontova su tačno dva: Hanken Grotesk za sve i IBM Plex Mono za kartu i demo lozinke. Archivo je bio ostao u `package.json` iz prvog redizajna, iako se nigdje nije učitavao, pa je izbačen 26.11.2026. Latin-ext (č, ć, š, đ, ž) imaju oba, provjereno 25.11.2026 po fajlovima `*-latin-ext-*.woff2` u paketima.
 
 Veličine teksta. Osnova je 16 px, ispod 14 px se ne ide:
 
@@ -141,16 +141,16 @@ Fokus je okvir od 3 px u boji `--tekst`, odmaknut 3 px od elementa (`--fokus`, `
 
 Termin je žeton u mreži na ploči (`.termini`, `auto-fill` od 148 px: dva u redu na telefonu, četiri na desktopu), a ne red u listi. Svako stanje se razlikuje i bez boje: po debljini, šrafuri, okviru, ikoni i tekstu. `--emajl` je boja resursa (`resursi/emajl.js`, iz ID-ja resursa), ista na pločici uz naslov, na izabranom danu i na rubu slobodnih žetona.
 
-- **slobodno:** žeton stoji (`--dubina-2`), s emajl rubom od 3 px odozdo, prazan krug od 14 px u gornjem desnom uglu i riječ "slobodno". Hover ga digne 2 px, pritisak spusti 1 px;
+- **slobodno:** žeton stoji (`--dubina-2`), s mjedenim rubom od 3 px odozdo (do 26.11.2026 je rub bio u emajl boji resursa, ali zeleni rub nije pripadao ostatku stranice), prazan krug od 14 px u gornjem desnom uglu i riječ "slobodno". Hover ga digne 2 px, pritisak spusti 1 px;
 - **izabran:** žeton odleti u kartu (View Transition, ime `zeton-leti`, `--trajanje-karta`), a na ploči ostaje obris od 2 px s punim krugom. U kuponu karte je isti žeton s riječi "biraš";
-- **zauzeto:** udubljen (`--utisnuto`) i šrafiran, bez debljine, precrtano vrijeme i riječ "zauzeto";
+- **zauzeto:** udubljen (`--utisnuto`) u boji podloge, s tankom šrafurom (linija 1 px na 7 px), bez debljine, katanac od 14 px u gornjem desnom uglu i riječ "zauzeto". Vrijeme nije precrtano, nego u sporednoj boji i težini 600, jer se precrtano vrijeme teško čitalo;
 - **tvoje:** mjeden žeton (`--metal`), ikona karte u uglu, tekst u `--tekst-na-moje` i riječ "tvoje";
 - **tvoje na čekanju:** žeton s isprekidanim okvirom od 2 px u `--tekst-mjed` i riječ "čeka potvrdu" u istoj boji;
 - **ponuđen tebi s liste čekanja** (Faza 10): kao slobodan, uz mjedenu traku lijevo (`--razmak-4`) i oznaku "ponuđen tebi danas do 17:30". Termin je tvoj samo do roka, pa nije cijeli od mjedi;
 - **tvoje, čeka uplatu** (Faza 11): isto kao na čekanju, samo oznaka kaže "čeka uplatu";
 - **zauzeto, a na listi sam:** isto kao zauzeto, uz tekst "zauzeto, na listi si".
 
-Dani su udubljena traka, a izabran dan se digne iz nje kao žeton s emajl rubom. Dan s mojim terminom ima mjedenu tačku ispod broja. Strelice idu kroz slobodne žetone redom: lijevo i gore na prethodni, desno i dolje na sljedeći.
+Dani su udubljena traka, a izabran dan se digne iz nje kao žeton s mjedenim rubom. Emajl boja resursa ostaje na pločici uz naslov resursa i na listi resursa. Dan s mojim terminom ima mjedenu tačku ispod broja. Strelice idu kroz slobodne žetone redom: lijevo i gore na prethodni, desno i dolje na sljedeći.
 
 Karta u nastajanju (potvrda) nema foliju. Folija dođe tek kad server kaže da je rezervacija napravljena: karta se odštampa, folija jednom prođe svjetlom, i od tada se naginje prema kursoru ili prstu. Ispod je "Sačuvaj kartu kao sliku" (PNG, dvostruka gustina, `html-to-image` se učitava tek na klik). Dugme "Rezerviši" u karti je mjedeno, jer je to glavna akcija ekrana.
 
@@ -227,7 +227,7 @@ Pristupačnost je dio poštovanja, ne dodatak: kontrast AA, sve radi tastaturom,
 
 ## Landing (Redizajn 3)
 
-Landing ima osam dijelova, svaki odgovara na jedno pitanje posjetioca. Hero: naslov "Termini za čitaonice, teretane i konsultacije", jedna rečenica, dugmad "Probaj demo" (mjed) i "Napravi organizaciju" (sporedno, obris), a desno pravi mini kalendar u okviru prozora aplikacije. Ispod je traka pilula "za koga" s emajl tačkama, pa prije i poslije (lijevo udubljena ploča s crticama, desno izdignuta s mjedenim kvačicama, pa se razlikuju i bez boje), pa "Kako radi" u tri koraka, jedina tamna traka preko cijele širine, u obje teme (grafit `--noc-povrsina` s blagim mjedenim sjajem na vrhu), da stranica ima kontrast u sredini. Slijedi šest mogućnosti s ikonama crtanim rukom (`landing/Ikona.jsx`, linija 1,75 px na mreži 24), tri kartice "Na ovo se možeš osloniti" (sudar, pomjeranje sata, odvojene organizacije, bez statusnih kodova i imena testova), česta pitanja kao `<details>`, ulaz u demo, završni poziv i mala sekcija "Kako je napravljeno". Pokret: hero tekst i prozor se pojave jednom (500 i 600 ms), let žetona u demou i animacija sudara na klik. Lenis ostaje. Bez cjenovnika, citata, brojki korisnika i logotipa.
+Landing ima osam dijelova, svaki odgovara na jedno pitanje posjetioca. Hero: naslov "Termini za čitaonice, teretane i konsultacije", jedna rečenica, dugmad "Probaj demo" (mjed) i "Napravi organizaciju" (sporedno, obris), a desno pravi mini kalendar u okviru prozora aplikacije. Ispod je traka pilula "za koga" s emajl tačkama, pa prije i poslije (lijevo udubljena ploča s crticama, desno izdignuta s mjedenim kvačicama, pa se razlikuju i bez boje), pa "Kako radi" u tri koraka, jedina tamna traka preko cijele širine, u obje teme (grafit `--noc-povrsina` s blagim mjedenim sjajem na vrhu), da stranica ima kontrast u sredini. Slijedi šest mogućnosti s ikonama crtanim rukom (`landing/Ikona.jsx`, linija 1,75 px na mreži 24, mjed na pločici od 14 % mjedi s tankim mjedenim rubom; lista čekanja je red sa strelicom kod prvog), tri kartice "Na ovo se možeš osloniti" (sudar, pomjeranje sata, odvojene organizacije, bez statusnih kodova i imena testova), česta pitanja kao `<details>`, ulaz u demo, završni poziv i mala sekcija "Kako je napravljeno", poslije koje nema praznog prostora (`main` na landingu nema donji razmak), sa sporednim dugmetom od 40 px i sitnim slovima. Pokret: hero tekst i prozor se pojave jednom (500 i 600 ms), let žetona u demou i animacija sudara na klik. Lenis ostaje. Bez cjenovnika, citata, brojki korisnika i logotipa.
 
 Naslovi sekcija su centrirani i najviše 24ch široki. Mreže kartica uvijek imaju pune redove (šest mogućnosti u 1, 2 ili 3 kolone), a u karticama oslonca su ilustracija, naslov i tekst na srednjoj osi, s ilustracijama iste visine. U opisu kartice smije biti jedna fraza u boldu, bez druge boje.
 

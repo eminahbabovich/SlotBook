@@ -18,7 +18,7 @@
 	line-height: var(--prored-naslov);
 }
 
-/* Pločica emajla uz naslov: ista boja kao rub slobodnih žetona ispod */
+/* Pločica emajla uz naslov: boja resursa, ista kao na listi resursa */
 .resurs-plocica {
 	flex: none;
 	width: 0.7em;
@@ -102,12 +102,12 @@
 	background: color-mix(in srgb, var(--izdignuto) 60%, transparent);
 }
 
-/* Izabran dan: izdignut, s emajl rubom odozdo i podebljanim tekstom, ne samo druga boja */
+/* Izabran dan: izdignut, s mjedenim rubom odozdo i podebljanim tekstom, ne samo druga boja */
 .dan[aria-pressed='true'] {
 	font-weight: 700;
 	color: var(--tekst);
 	background: var(--izdignuto);
-	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--moje);
 }
 
 /* Mjedena tačka na danu s mojim terminom, s prstenom od tinte da se vidi i na svijetloj podlozi.
@@ -255,24 +255,24 @@
 	font-variant-numeric: tabular-nums;
 }
 
-/* Slobodan i ponuđen: žeton stoji iznad ploče, s emajl rubom odozdo. Hover ga digne, pritisak spusti. */
+/* Slobodan i ponuđen: žeton stoji iznad ploče, s mjedenim rubom odozdo. Hover ga digne, pritisak spusti. */
 .termin-slobodno .termin-red,
 .termin-ponudjen .termin-red {
 	cursor: pointer;
-	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--moje);
 	transition: transform var(--trajanje-brzo) var(--kriva-izlaz), box-shadow var(--trajanje-brzo) var(--kriva-izlaz);
 }
 
 .termin-slobodno .termin-red:hover,
 .termin-ponudjen .termin-red:hover {
 	transform: translateY(-2px);
-	box-shadow: var(--dubina-3), inset 0 -3px 0 var(--emajl);
+	box-shadow: var(--dubina-3), inset 0 -3px 0 var(--moje);
 }
 
 .termin-slobodno .termin-red:active,
 .termin-ponudjen .termin-red:active {
 	transform: translateY(1px);
-	box-shadow: var(--dubina-1), inset 0 -2px 0 var(--emajl);
+	box-shadow: var(--dubina-1), inset 0 -2px 0 var(--moje);
 }
 
 /* Krug u uglu: prazan je slobodan, pun je izabran. Razlika je u obliku, ne u boji. */
@@ -301,10 +301,11 @@
 	background: var(--tekst);
 }
 
-/* Zauzet: udubljen u ploču i šrafiran, bez debljine. Otvara listu čekanja, pa hover podvlači oznaku. */
+/* Zauzet: udubljen u ploču, tanka šrafura i katanac (materijal.css). Otvara listu čekanja, pa hover
+   podvlači oznaku. */
 .termin-zauzeto .termin-red {
 	color: var(--tekst-sporedni);
-	background: repeating-linear-gradient(-45deg, var(--sraf) 0 6px, transparent 6px 12px), var(--povrsina);
+	background: repeating-linear-gradient(-45deg, var(--sraf) 0 1px, transparent 1px 7px), var(--podloga);
 	box-shadow: var(--utisnuto);
 }
 
@@ -317,13 +318,12 @@
 }
 
 .termin-zauzeto time {
-	text-decoration: line-through;
-	text-decoration-thickness: 2px;
+	font-weight: 600;
 }
 
 /* Ponuđen s liste čekanja: tvoj je samo do roka, pa mjed samo kao traka lijevo */
 .termin-ponudjen .termin-red {
-	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl), inset var(--razmak-4) 0 0 var(--moje);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--moje), inset var(--razmak-4) 0 0 var(--moje);
 }
 
 /* Tvoje: mjeden žeton s ikonom karte u uglu */
@@ -416,7 +416,7 @@
 	line-height: 1;
 	background: var(--izdignuto);
 	border-radius: var(--zaobljenje-zeton);
-	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--emajl);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--moje);
 }
 
 .kupon-zeton-oznaka {

@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { postaviTemu, sacuvanaTema, sistemJeTaman } from './tema.js'
+import { postaviTemu, sacuvanaTema } from './tema.js'
 import './tema.css'
 
-// Prekidač (role="switch"): uključen znači tamna tema. Prvi klik uvijek izabere suprotno od onoga
-// što se sad vidi, pa i kad tema dolazi od sistema.
+// Prekidač (role="switch"): uključen znači tamna tema, koja je i podrazumijevana.
 export function PrekidacTeme() {
-	const [tamna, setTamna] = useState(() => (sacuvanaTema() ?? (sistemJeTaman() ? 'tamna' : 'svijetla')) === 'tamna')
+	const [tamna, setTamna] = useState(() => sacuvanaTema() !== 'svijetla')
 
 	function prebaci() {
 		const nova = !tamna

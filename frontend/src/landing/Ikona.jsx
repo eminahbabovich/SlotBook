@@ -8,9 +8,13 @@ const PUTANJE = {
 			<circle cx="17.5" cy="17" r="3.2" fill="currentColor" stroke="none" />
 		</>
 	),
+	// Red ljudi na listi: prvi je označen strelicom, jer se termin nudi njemu
 	cekanje: (
 		<>
-			<path d="M7 4h10M7 20h10M8 4c0 4 8 4 8 8s-8 4-8 8M16 4c0 4-8 4-8 8s8 4 8 8" />
+			<path d="M4 4.5l3.2 2.2L4 8.9" />
+			<path d="M10.5 6.7h9.5M10.5 12h9.5M10.5 17.3h6" />
+			<circle cx="5.4" cy="12" r="1.3" fill="currentColor" stroke="none" />
+			<circle cx="5.4" cy="17.3" r="1.3" fill="currentColor" stroke="none" />
 		</>
 	),
 	qr: (

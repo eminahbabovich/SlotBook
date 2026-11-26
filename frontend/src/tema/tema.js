@@ -1,4 +1,4 @@
-// Tema prati sistem dok korisnik ne izabere ručno. Izbor se pamti u browseru (samo udobnost,
+// Tamna tema je podrazumijevana, a svijetla je izbor. Izbor se pamti u browseru (samo udobnost,
 // ništa ne zavisi od njega), a index.html ga postavi prije prvog crtanja, da ekran ne bljesne.
 const KLJUC = 'slotbook-tema'
 
@@ -9,10 +9,6 @@ export function sacuvanaTema() {
 	} catch {
 		return null
 	}
-}
-
-export function sistemJeTaman() {
-	return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
 export function postaviTemu(tema) {

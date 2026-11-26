@@ -122,26 +122,9 @@
 	color-scheme: light;
 }
 
-/* Noć prati sistem, osim kad je korisnik izabrao dan u zaglavlju */
-@media (prefers-color-scheme: dark) {
-	:root:not([data-tema='svijetla']) {
-		--podloga: var(--noc-podloga);
-		--povrsina: var(--noc-povrsina);
-		--izdignuto: var(--noc-izdignuto);
-		--tekst: var(--noc-tekst);
-		--tekst-sporedni: var(--noc-sporedni);
-		--tekst-mjed: var(--mjed-noc);
-		--moje: var(--mjed-noc);
-		--greska: var(--noc-greska);
-		--odsjaj: var(--odsjaj-noc);
-		--sjena: var(--sjena-noc);
-		--sjena-jaka: var(--sjena-noc-jaka);
-		--folija-jacina: 0.28;
-		color-scheme: dark;
-	}
-}
-
-:root[data-tema='tamna'] {
+/* Tamna tema je podrazumijevana za sve, bez obzira na sistem. Svijetla je izbor u zaglavlju
+   (data-tema='svijetla'), a index.html ga postavi prije prvog crtanja. */
+:root:not([data-tema='svijetla']) {
 	--podloga: var(--noc-podloga);
 	--povrsina: var(--noc-povrsina);
 	--izdignuto: var(--noc-izdignuto);
