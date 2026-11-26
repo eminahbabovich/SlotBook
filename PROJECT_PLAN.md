@@ -3,12 +3,12 @@
 Cilj: 2 live projekta + portfolio sajt.
 Backend: Spring Boot (učim). Frontend: React (znam).
 
-Rad je podijeljen na **faze**, ne na sedmice. Faze se rade redom, ali tempo je
+Rad je podijeljen na faze, ne na sedmice. Faze se rade redom, ali tempo je
 neujednačen: nekad se uradi veliki komad, nekad ništa. Faza je gotova kad je zadovoljen
 njen kriterij "gotovo", a ne kad prođe neko vrijeme. Status svake faze vodi se u tabeli
 ispod i u `README.md`.
 
-**Projekat 1: RoomSplit** je gotov i live (frontend https://roomsplit-seven.vercel.app,
+Projekat 1, RoomSplit, je gotov i live (frontend https://roomsplit-seven.vercel.app,
 kod https://github.com/eminahbabovich/roomsplit). Njegov plan je ostao u tom repou.
 Ovdje je samo ono što dolazi dalje.
 
@@ -16,17 +16,17 @@ Ovdje je samo ono što dolazi dalje.
 
 # PROJEKAT 2: SlotBook (faze 1-14)
 
-**Problem:** zajednički resursi (učionice za učenje, prostor za sastanke, termini
+Problem: zajednički resursi (učionice za učenje, prostor za sastanke, termini
 konsultacija, teretana) rezerviraju se preko poruka i tabela, uz preklapanja i zabune.
 Aplikacija omogućava rezervaciju termina bez preklapanja, s ulogama, potvrdom i
 obavijestima.
 
-**Zašto je različit od P1:** vrijeme i konflikti (preklapanje termina), konkurentnost
+Po čemu se razlikuje od P1: vrijeme i konflikti (preklapanje termina), konkurentnost
 (dva korisnika rezerviraju isti termin), uloge po organizaciji, zakazani poslovi, pouzdano
 slanje emaila, upload slika, plaćanje, live ažuriranje, sigurnost i observability.
 RoomSplit ništa od toga ne pokriva.
 
-**Ambicija:** ne samo portfolio nego nešto što bi neko mogao stvarno koristiti. Zato plan
+Cilj je aplikacija koju bi neko mogao stvarno koristiti, a ne samo pokazati. Zato plan
 pored funkcionalnosti uključuje i ono što razlikuje demo od produkcije: rate limiting,
 reset lozinke, GDPR, monitoring, backup, sigurnosne provjere i load test.
 
@@ -174,25 +174,25 @@ svaki endpoint opisan u Swaggeru.
 
 | Faza | Naziv | Fokus | Šta ja učim | Status |
 |---|---|---|---|---|
-| 1 | Temelji i infrastruktura | Spring Boot projekat, Docker Compose (Postgres + Mailpit), Flyway, **Testcontainers**, **GitHub Actions** (build + test), springdoc, globalni `@RestControllerAdvice` s Problem Details, profil `prod` (`demo` stiže u Fazi 12, a lokalni razvoj je podrazumijevani profil jer je `application-local.*` u `.gitignore`), `.env.example`, `Dockerfile` (multi-stage), JaCoCo, Dependabot, prvi endpoint + test, **provjera `btree_gist` na Neon-u**, hodajući kostur na live adresi | Testcontainers, CI pipeline, Compose, profili, zašto testovi ne smiju ovisiti o mojoj lokalnoj bazi | gotovo |
-| 2 | Auth i organizacije | Korisnici, BCrypt, JWT + **refresh tokeni** (rotacija + detekcija ponovne upotrebe preko `family_id`), organizacije, uloge po organizaciji, pozivnice, `@PreAuthorize` s vlastitim provjerama članstva | Method security, `PermissionEvaluator` / bean u SpEL, refresh token tok, autorizacija koja ovisi o resursu | gotovo |
-| 3 | Resursi i dostupnost | CRUD resursa, sedmična pravila, `time_off`, **algoritam za slobodne termine**, upload slike kroz `StorageService` (lokalno + S3-kompatibilno), paginacija | `java.time` (`Instant`, `ZonedDateTime`, DST), `TIMESTAMPTZ`, interface + dvije implementacije, `MultipartFile` | gotovo |
-| 4 | Rezervacije i konkurentnost | Kreiranje rezervacije, **`EXCLUDE` constraint**, stanja i prelazi, `booking_events`, `Idempotency-Key`, pravilo otkazivanja, `@Version`, **test sa 20 niti** | PostgreSQL range tipovi, transakcije i izolacija, optimistično vs pesimistično zaključavanje, `409 Conflict`, state machine, idempotentnost | gotovo |
+| 1 | Temelji i infrastruktura | Spring Boot projekat, Docker Compose (Postgres + Mailpit), Flyway, Testcontainers, GitHub Actions (build + test), springdoc, globalni `@RestControllerAdvice` s Problem Details, profil `prod` (`demo` stiže u Fazi 12, a lokalni razvoj je podrazumijevani profil jer je `application-local.*` u `.gitignore`), `.env.example`, `Dockerfile` (multi-stage), JaCoCo, Dependabot, prvi endpoint + test, provjera `btree_gist` na Neon-u, hodajući kostur na live adresi | Testcontainers, CI pipeline, Compose, profili, zašto testovi ne smiju ovisiti o mojoj lokalnoj bazi | gotovo |
+| 2 | Auth i organizacije | Korisnici, BCrypt, JWT + refresh tokeni (rotacija + detekcija ponovne upotrebe preko `family_id`), organizacije, uloge po organizaciji, pozivnice, `@PreAuthorize` s vlastitim provjerama članstva | Method security, `PermissionEvaluator` / bean u SpEL, refresh token tok, autorizacija koja ovisi o resursu | gotovo |
+| 3 | Resursi i dostupnost | CRUD resursa, sedmična pravila, `time_off`, algoritam za slobodne termine, upload slike kroz `StorageService` (lokalno + S3-kompatibilno), paginacija | `java.time` (`Instant`, `ZonedDateTime`, DST), `TIMESTAMPTZ`, interface + dvije implementacije, `MultipartFile` | gotovo |
+| 4 | Rezervacije i konkurentnost | Kreiranje rezervacije, `EXCLUDE` constraint, stanja i prelazi, `booking_events`, `Idempotency-Key`, pravilo otkazivanja, `@Version`, test sa 20 niti | PostgreSQL range tipovi, transakcije i izolacija, optimistično vs pesimistično zaključavanje, `409 Conflict`, state machine, idempotentnost | gotovo |
 | 5 | Pozadinski poslovi i obavijesti | `@Scheduled` istek `PENDING` i zatvaranje završenih, podsjetnici, `notifications` tabela (outbox), slanje emaila, `@TransactionalEventListener`, ponovni pokušaj s backoffom, verifikacija emaila, reset lozinke, slanje pozivnica, `.ics` prilog u potvrdi | Scheduling, zašto se email ne šalje unutar iste transakcije, `AFTER_COMMIT`, idempotentnost, ShedLock, sigurni tokeni za reset | gotovo |
 | 6 | Statistika | Agregatni upiti (`GROUP BY`, popunjenost, otkazivanja i no-show po periodu, najtraženiji termini dan x sat), endpointi za providera i admina, CSV izvoz | JPQL/native upiti, projekcije u DTO, indeksi i `EXPLAIN` | gotovo |
-| 7 | Frontend (jezgro) | **Prvo biramo vizuelni smjer i fontove** (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | gotovo |
-| 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, **test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije** | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | gotovo |
-| 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, **k6 load test** s stvarnim brojkama, `RUNBOOK.md` s **provjerenim** backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | gotovo |
+| 7 | Frontend (jezgro) | Prvo biramo vizuelni smjer i fontove (vidi CLAUDE.md). Prijava, izbor organizacije, kalendar slobodnih termina, tok rezervacije, moje rezervacije, kalendar providera, admin (članovi, resursi, radno vrijeme), dashboard sa grafovima, vrijeme u zoni organizacije, pristupačnost, mobilni prikaz, Vitest + Playwright za glavni tok | React kalendar biblioteka, zaštićene rute po ulozi, obrada `409`, refresh token u klijentu (jedan refresh za više paralelnih zahtjeva), e2e testiranje | gotovo |
+| 8 | Sigurnost i GDPR | Rate limiting (Bucket4j), zaključavanje naloga, sigurnosna zaglavlja, CORS, `audit_log`, izvoz i brisanje naloga, zaštita od enumeracije emailova, OWASP Top 10 prolaz, CodeQL + skeniranje zavisnosti + gitleaks u CI-ju, `docs/SIGURNOST.md`, test koji prođe kroz sve endpointe s tokenom iz tuđe organizacije | Napadi koji se stvarno dešavaju (IDOR, brute force, enumeracija), rate limiting algoritmi, anonimizacija, šta je tajna a šta nije | gotovo |
+| 9 | Observability i performanse | Actuator (health, readiness), Micrometer metrike (rezervacije, konflikti, neuspjeli mailovi), JSON logovi s ID-jem zahtjeva (MDC), praćenje grešaka (Sentry free), indeksi + `EXPLAIN`, traženje N+1 upita, k6 load test s stvarnim brojkama, `RUNBOOK.md` s provjerenim backup/restore postupkom | Metrike vs logovi, kako se nađe spor upit, connection pool, šta load test zaista pokazuje | gotovo |
 | 10 | Napredne funkcije | Redom po vrijednosti: lista čekanja, iCal pretplata, SSE, ponavljajuće rezervacije, QR check-in, resursi s kapacitetom > 1. Svaka s vlastitim testom i UI-jem | SSE i `SseEmitter`, pravila ponavljanja, delimični konflikti u seriji, drugačiji mehanizam zaštite kad `EXCLUDE` ne vrijedi | gotovo |
-| 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, **idempotentna obrada webhooka**, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | gotovo |
+| 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, idempotentna obrada webhooka, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | gotovo |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | gotovo (26.11.2026; R2 i poddomen nisu urađeni, vidi korak 4) |
-| 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i **lista dodataka koje smo usput zapisali**: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | gotovo (26.11.2026, u tri koraka, engleski UI prebačen u Dodatke) |
-| 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s **tool calling**, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
+| 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i lista dodataka koje smo usput zapisali: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | gotovo (26.11.2026, u tri koraka, engleski UI prebačen u Dodatke) |
+| 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s tool calling, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
 
 Pravilo iz P1 ostaje: ne čekati kraj s deployem. Zato u Fazi 1 uradimo "hodajući kostur"
 (prazan endpoint na live adresi), a u Fazi 12 samo punimo ono što već radi.
 
-**Ako vrijeme stisne:** faze 1-9 i 12 su jezgro. Ako treba birati, Faza 12 se radi prije
+Ako vrijeme stisne, faze 1-9 i 12 su jezgro. Ako treba birati, Faza 12 se radi prije
 faza 10 i 11, jer je live projekat s čvrstim jezgrom vrijedniji od nedovršenih dodataka.
 Unutar faze 10 redoslijed je već po vrijednosti, pa se ono s kraja liste može izostaviti.
 Faza 14 je dodatak izvan jezgra i ne smije ga mijenjati: ako je nema, aplikacija je ista.
@@ -385,28 +385,28 @@ Kriterij "gotovo" je gore (tačka 10): svaka napredna funkcija ima test i radi u
 test konkurentnosti. Redoslijed je po vrijednosti, pa se s kraja može odustati ako vrijeme stisne
 (tada ide u Dodatke, a Faza 12 ide prije).
 
-1. ✅ **Lista čekanja, backend** (22.11.2026). Klijent se upiše na zauzet termin (`POST /api/resources/{id}/waitlist`) i
+1. **Lista čekanja, backend**, gotovo 22.11.2026. Klijent se upiše na zauzet termin (`POST /api/resources/{id}/waitlist`) i
    ispiše (`DELETE /api/waitlist/{id}`). Kad se termin oslobodi (otkazivanje, odbijanje, istek), posao ponudi termin prvom
    na listi: mail i 30 minuta prednosti, a za to vrijeme drugi ne mogu rezervisati (`409`). Ako ga ne
    uzme, ponuda istekne i ide sljedeći. Preklapanje i dalje čuva `EXCLUDE`, a prednost Java pod
    lockom resursa.
-2. ✅ **Lista čekanja, UI** (22.11.2026). Na zauzetom terminu dugme "Javi mi ako se oslobodi", moje liste čekanja,
+2. **Lista čekanja, UI**, gotovo 22.11.2026. Na zauzetom terminu dugme "Javi mi ako se oslobodi", moje liste čekanja,
    ponuđen termin istaknut u kalendaru. Za to backend još treba: `GET` mojih upisa i u `/slots`
    oznaku da je termin ponuđen meni ili nekom drugom (sad ga kalendar prikaže kao slobodan, a
    rezervacija vrati `409`). Uz to lista čekanja ide u izvoz podataka (`/api/me/export`).
-3. ✅ **iCal pretplata** (22.11.2026). Tajni link po korisniku (`.ics` bez prijave, token se može promijeniti), moje
+3. **iCal pretplata**, gotovo 22.11.2026. Tajni link po korisniku (`.ics` bez prijave, token se može promijeniti), moje
    rezervacije u Google/Apple kalendaru. Dugme za kopiranje linka u UI-ju.
-4. ✅ **Live kalendar (SSE)** (22.11.2026). Kad neko rezerviše ili otkaže, otvoreni kalendari istog resursa se
+4. **Live kalendar (SSE)**, gotovo 22.11.2026. Kad neko rezerviše ili otkaže, otvoreni kalendari istog resursa se
    osvježe bez reloada. Događaj ide poslije commita, a tok vidi samo član organizacije.
-5. ✅ **Ponavljajuće rezervacije** (22.11.2026). Isti termin svake sedmice, N puta (najviše 12). Sve ili ništa u jednoj
+5. **Ponavljajuće rezervacije**, gotovo 22.11.2026. Isti termin svake sedmice, N puta (najviše 12). Sve ili ništa u jednoj
    transakciji, a `409` kaže koji datumi su zauzeti. UI: izbor broja sedmica pri rezervaciji.
-6. ✅ **QR check-in** (22.11.2026). Rezervacija ima QR kod s potpisanim tokenom. Provider ga skenira ili otvori link i
+6. **QR check-in**, gotovo 22.11.2026. Rezervacija ima QR kod s potpisanim tokenom. Provider ga skenira ili otvori link i
    rezervacija prelazi u `COMPLETED`. Bez tokena ili za tuđi resurs nema prelaza.
-7. ✅ **Kapacitet veći od 1** (22.11.2026). Grupni trening s N mjesta. Plan je bio lock resursa i brojanje,
+7. **Kapacitet veći od 1**, gotovo 22.11.2026. Grupni trening s N mjesta. Plan je bio lock resursa i brojanje,
    a urađeno je drugačije: svaka rezervacija dobija broj mjesta i `EXCLUDE` važi po mjestu (`docs/ODLUKE.md`).
    Dokaz je test sa 20 niti na 5 mjesta (prođe tačno 5). Urađeno u četiri dijela: 7a baza i rezervacija,
    7b kalendar, lista čekanja i serije, 7c UI, 7d e2e i pregled ekrana.
-8. ✅ **Kraj faze** (22.11.2026). README, status, ODLUKE. Sve iz plana je stiglo, a ono što je ostalo otvoreno je u Dodacima.
+8. **Kraj faze**, gotovo 22.11.2026. README, status, ODLUKE. Sve iz plana je stiglo, a ono što je ostalo otvoreno je u Dodacima.
 
 ## Faza 11 po koracima
 
@@ -414,18 +414,18 @@ Kriterij "gotovo" je gore (tačka 11): plaćanje u test modu radi do kraja, isti
 duplira uplatu, neispravan potpis se odbija. Pravi novac ne ide kroz projekat. Stripe je u testovima
 lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ručno sa Stripe CLI.
 
-1. ✅ **Cijena na resursu** (22.11.2026). Kolona u feninzima, 0 je besplatno, API i polje u formi resursa. Besplatan
+1. **Cijena na resursu**, gotovo 22.11.2026. Kolona u feninzima, 0 je besplatno, API i polje u formi resursa. Besplatan
    resurs radi kao do sada.
-2. ✅ **Rezervacija čeka uplatu, Stripe Checkout** (24.11.2026). Rezervacija plaćenog resursa je `PENDING`
+2. **Rezervacija čeka uplatu, Stripe Checkout**, gotovo 24.11.2026. Rezervacija plaćenog resursa je `PENDING`
    30 minuta (Stripe sesija ne može kraće), `POST /api/bookings/{id}/pay` vraća adresu Stripe Checkout
    stranice, uplata ima svoju tabelu. Pravi sandbox je otvorio sesiju za 15 KM u `bam`.
-3. ✅ **Webhook** (24.11.2026). Provjera potpisa, idempotentna obrada (isti događaj dvaput ne radi ništa
+3. **Webhook**, gotovo 24.11.2026. Provjera potpisa, idempotentna obrada (isti događaj dvaput ne radi ništa
    drugi put, ni kad stignu istovremeno), uplata potvrđuje rezervaciju. Uplata koja stigne za već isteklu
    rezervaciju se vraća. Pravi webhook sa Stripe CLI je provjeren u koraku 5.
-4. ✅ **Povrat i istek** (24.11.2026). Otkazana plaćena rezervacija vraća cijeli iznos (otkazivanje, i
+4. **Povrat i istek**, gotovo 24.11.2026. Otkazana plaćena rezervacija vraća cijeli iznos (otkazivanje, i
    brisanje naloga), a otkazana, odbijena ili istekla neplaćena zatvara Checkout sesiju kod Stripea.
    Ako Stripe ne vrati novac, otkazivanje ne prolazi.
-5. ✅ **UI i kraj faze** (25.11.2026). Dugme za plaćanje, povratak sa Checkouta, ručna provjera sa
+5. **UI i kraj faze**, gotovo 25.11.2026. Dugme za plaćanje, povratak sa Checkouta, ručna provjera sa
    Stripe CLI, README, ODLUKE. UI (24.11.2026): dugme "Plati" u kalendaru i u Mojim rezervacijama,
    poruka i ponovno čitanje poslije povratka, napomena o povratu pri otkazivanju, raspored bez
    "Potvrdi" za neplaćenu. Ručna provjera (25.11.2026): uplata 15 KM karticom 4242 potvrdila je
@@ -434,22 +434,22 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
 
 ## Faza 12 po koracima
 
-1. **Redizajn frontenda** ✅ (25.11.2026). Prije deploya, da screenshotovi i GIF pokazuju konačan
+1. **Redizajn frontenda**, gotovo 25.11.2026. Prije deploya, da screenshotovi i GIF pokazuju konačan
    izgled. Pravila su u `REDESIGN.md`: inventar i screenshotovi "prije", 2-3 smjera, moj izbor, pa
    tokeni, tok rezervacije, početna i ostali ekrani. Backend i API se ne diraju. Novi smjer se upisuje
    u `docs/DIZAJN.md`. Stanje poslije, brojke i šta nije urađeno su u `docs/redizajn/poslije.md`.
-2. **Demo profil** ✅ (25.11.2026). Tri računa s prijavom jednim klikom, čitaonica i teretana s
+2. **Demo profil**, gotovo 25.11.2026. Tri računa s prijavom jednim klikom, čitaonica i teretana s
    četiri sedmice rezervacija, vraćanje na početak kad je demo stariji od 24 sata. Testovi u
    `DemoApiTest`, odluka u `docs/ODLUKE.md`.
-3. **Priprema za Vercel** ✅ (25.11.2026). `frontend/vercel.json` (rewrite `/api` na Render i
+3. **Priprema za Vercel**, gotovo 25.11.2026. `frontend/vercel.json` (rewrite `/api` na Render i
    `index.html` za rute), koraci za deploy, demo i varijable u `docs/RUNBOOK.md`.
-4. **Deploy (radim ja ručno):** ✅ 26.11.2026. Vercel, `APP_URL` i demo 25.11. (`https://slot-book-delta.vercel.app`). Stripe varijable i webhook 26.11., provjereno test uplatom i povratom na produkciji. VAPID ključevi 26.11. UptimeRobot na liveness svakih 5 minuta 26.11. R2 nije uključen, jer Cloudflare i za besplatni plan traži karticu: slike ostaju na disku Rendera (`docs/ODLUKE.md`). Poddomen čeka vlastiti domen iz portfolio faze. Prvobitno: Vercel projekat, `APP_URL` i `SPRING_PROFILES_ACTIVE=prod,demo` na
+4. **Deploy (radim ja ručno).** Gotovo 26.11.2026. Vercel, `APP_URL` i demo 25.11. (`https://slot-book-delta.vercel.app`). Stripe varijable i webhook 26.11., provjereno test uplatom i povratom na produkciji. VAPID ključevi 26.11. UptimeRobot na liveness svakih 5 minuta 26.11. R2 nije uključen, jer Cloudflare i za besplatni plan traži karticu: slike ostaju na disku Rendera (`docs/ODLUKE.md`). Poddomen čeka vlastiti domen iz portfolio faze. Prvobitno: Vercel projekat, `APP_URL` i `SPRING_PROFILES_ACTIVE=prod,demo` na
    Renderu, Stripe varijable i webhook, R2, uptime monitor. Poslije svakog provjera iz RUNBOOK-a.
-5. **SMTP na Renderu** ✅ (25.11.2026). Brevo, port 2525 sa STARTTLS-om. Mail stiže, ali u spam (`docs/ODLUKE.md`). Besplatan SMTP servis (npr. Brevo ili Gmail s app lozinkom), varijable
+5. **SMTP na Renderu**, gotovo 25.11.2026. Brevo, port 2525 sa STARTTLS-om. Mail stiže, ali u spam (`docs/ODLUKE.md`). Besplatan SMTP servis (npr. Brevo ili Gmail s app lozinkom), varijable
    `MAIL_*` i `SPRING_MAIL_*` na Renderu. Provjera: nov nalog na Vercelu dobije mail za potvrdu,
    link iz maila vodi na Vercel adresu i prijava poslije potvrde prolazi. Dok ovoga nema, nov nalog
    se ne može potvrditi, pa na demu rade samo tri demo računa.
-6. **Redizajn 2: Mjed i emajl** (25.11.2026, svi ekrani ✅). Prvi redizajn mi se ne sviđa, previše je ravan.
+6. **Redizajn 2: Mjed i emajl** (25.11.2026, svi ekrani gotovi). Prvi redizajn mi se ne sviđa, previše je ravan.
    Smjer je u `docs/redizajn/smjer.md`: landing za odjavljene s tri teška problema koja se mogu probati,
    žetoni umjesto redova termina, karta s folijom i nagibom, svijetla i tamna tema. Redom: landing,
    kalendar i rezervacija, dashboard, ostali ekrani, commit po ekranu, svi Vitest i e2e testovi prolaze.
@@ -457,10 +457,10 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    statistika (2e6d752), prijava i organizacije (a55280b), forme, nalog, članovi i stanja (4d8aeba),
    prelaz između ekrana (68a9264). 273 Vitest i 8 e2e prolaze. Novi GIF toka i drugi dio
    `docs/redizajn/poslije.md` su urađeni isto veče, pa pushano na GitHub i Vercel.
-7. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (✅ 25.11.2026, rezultat u
-   `docs/RUNBOOK.md` i `docs/ODLUKE.md`: granica po IP-u kroz Vercel ne radi), live link (✅) i GIF
+7. Poslije deploya: provjera kolačića, SSE i granice pokušaja kroz Vercel (gotovo 25.11.2026, rezultat u
+   `docs/RUNBOOK.md` i `docs/ODLUKE.md`: granica po IP-u kroz Vercel ne radi), live link (gotov) i GIF
    toka u README, status faze.
-8. **Deadlock pri vraćanju dema** ✅ (25.11.2026, pushano 26.11.): CI pao na `DemoApiTest`,
+8. **Deadlock pri vraćanju dema**, gotovo 25.11.2026, pushano 26.11.: CI pao na `DemoApiTest`,
    `TRUNCATE` se sudarao s `@Scheduled` poslovima. Ponovni pokušaj kroz `TransactionTemplate`, test
    koji pravi deadlock namjerno, odluka u `docs/ODLUKE.md`. 506 backend testova prolazi lokalno.
    Ostatak koraka 4, CI badge i zatvaranje faze urađeni 26.11.2026.
@@ -540,7 +540,7 @@ poruku prije slanja.
    brišu pretplatu. Događaji: ponuda s liste čekanja, potvrda i odbijanje, podsjetnik dan prije.
 5. `/nalog`: uključivanje po uređaju, probna obavijest, napomena za iPhone.
 
-**Na kraju:** (gotovo 26.11., spisak neprovjerenog je u README-ju) novi screenshotovi u `docs/`, GIF ekrana na vratima i pozivnog linka za README, i
+**Na kraju.** (gotovo 26.11., spisak neprovjerenog je u README-ju) novi screenshotovi u `docs/`, GIF ekrana na vratima i pozivnog linka za README, i
 spisak onoga što nije urađeno ili nije provjereno na pravom telefonu.
 
 ## Faza 14 po koracima

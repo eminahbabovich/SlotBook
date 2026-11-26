@@ -525,12 +525,22 @@ Claude je u README danas prepisao staru rečenicu da backup Neona nije napravlje
 
 ## Četvrtak, 26. novembar 2026, 20:05
 
-Faza 13 gotova u tri koraka, kako sam i htio.
+Faza 13 gotova, u tri koraka.
 
-Pregled koda od Faze 10 je našao četiri prave greške i nijedna nije bila tamo gdje bih je tražio. Lista čekanja nije mogla ponuditi dva mjesta u grupnom terminu, jer je indeks iz V34 pisan prije nego što su grupni termini postojali (V37). Druga ponuda: `duplicate key value violates unique constraint "waitlist_jedna_ponuda"`. Indeks nisam mogao mijenjati u V34, pa ide V46.
+Pregled koda od Faze 10 je našao četiri prave greške. Lista čekanja nije mogla ponuditi dva mjesta u grupnom terminu, jer je indeks iz V34 pisan prije nego što su grupni termini postojali (V37). Druga ponuda: `duplicate key value violates unique constraint "waitlist_jedna_ponuda"`. Indeks nisam mogao mijenjati u V34, pa ide V46.
 
-Deadlock između posla liste čekanja i rezervacije nisam ni znao kako testirati. Na kraju test drži `select ... for update` nad resursom iz druge konekcije i čeka da posao commita istek ponuda prije nego što stane na lock. Prije popravke: `expected EXPIRED but was OFFERED`. Popravka je bila podijeliti metodu na dvije transakcije, ali ne pozivom druge `@Transactional` metode iste klase, jer to Spring preskoči. `TransactionTemplate` radi.
+Za deadlock između posla liste čekanja i rezervacije je trebao poseban test. On drži `select ... for update` nad resursom iz druge konekcije i čeka da posao commita istek ponuda prije nego što stane na lock. Prije popravke: `expected EXPIRED but was OFFERED`. Popravka je bila podijeliti metodu na dvije transakcije, ali ne pozivom druge `@Transactional` metode iste klase, jer to Spring preskoči. `TransactionTemplate` radi.
 
-Najgora greška je došla sama. Pisao sam test samo za tekst podsjetnika na telefonu (bio je uvijek "Termin je sutra"), a pao je na `notifications_jedan_podsjetnik`. Od push obavijesti podsjetnik pravi dva reda za istu rezervaciju, a indeks iz V25 dozvoljava jedan. Cijeli krug podsjetnika je jedna transakcija, pa jedan korisnik s uključenim pushom obori podsjetnike svima. Taj kod je na produkciji od kad je push uključen. Push testovi su sve provjeravali na ponudi s liste čekanja, a podsjetnik niko nije probao.
+Najgoru grešku je otkrio test koji je provjeravao nešto drugo. Pisali smo test samo za tekst podsjetnika na telefonu (bio je uvijek "Termin je sutra"), a pao je na `notifications_jedan_podsjetnik`. Od push obavijesti podsjetnik pravi dva reda za istu rezervaciju, a indeks iz V25 dozvoljava jedan. Cijeli krug podsjetnika je jedna transakcija, pa jedan korisnik s uključenim pushom obori podsjetnike svima. Taj kod je na produkciji od kad je push uključen. Push testovi su sve provjeravali na ponudi s liste čekanja, a podsjetnik niko nije probao.
 
-Dvaput je pao moj test, a ne kod. Prvi put sam rezervisao 12:00 na stolu koji radi do 12, pa je stiglo 400 `Ovaj termin se ne nudi`. Drugi put baza nije dala obavijest o rezervaciji bez prave rezervacije (`notifications_rezervacija`).
+Claudeov test je dvaput pao zbog samog testa, ne zbog koda. Prvi put je rezervisao 12:00, a taj termin se na tom stolu ne nudi, pa je stiglo 400 `Ovaj termin se ne nudi`. Drugi put baza nije dala obavijest o rezervaciji bez prave rezervacije (`notifications_rezervacija`).
+
+## Četvrtak, 26. novembar 2026, 20:38
+
+Večeras nije bilo novog koda, nego prolaz kroz sav tekst u repou: README, docs, komentari, poruke u aplikaciji. README je sad kratak, a historija po fazama je otišla u `docs/HISTORIJA.md`.
+
+SQL migracije nisam dirao, ni komentare u njima. Flyway pamti checksum svakog izvršenog fajla, pa bi i promijenjen komentar na Renderu dao `Migration checksum mismatch` i aplikacija ne bi startala.
+
+U README-ju i HISTORIJA je riječ "probа" imala ćirilično "а" na kraju. Na oko se ne razlikuje od latiničnog.
+
+Claude je jedan commit potpisao s prefiksom `docs:`, iako u CLAUDE.md piše da prefiksa nema. Ostao je takav, jer historiju ne prepravljamo. Vitest je jednom pao s jednim testom dok su backend testovi radili u pozadini, a tri pokretanja poslije prošla su sva 337. Koji je test pao nismo zapisali.
