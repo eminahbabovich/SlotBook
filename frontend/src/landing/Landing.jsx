@@ -1,10 +1,11 @@
 import { MotionConfig, motion } from 'motion/react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
 import { Znak } from '../tema/Znak.jsx'
 import { HeroDemo } from './HeroDemo.jsx'
 import { Ikona } from './Ikona.jsx'
 import { NocPomjeranja } from './NocPomjeranja.jsx'
+import { useReflektor } from './reflektor.js'
 import { Sudar } from './Sudar.jsx'
 import { TudjaVrata } from './TudjaVrata.jsx'
 import { UlazUDemo } from './UlazUDemo.jsx'
@@ -68,11 +69,14 @@ const DIO = {
 // Prvi ekran za odjavljene. Učitava se posebno (lazy u App.jsx), pa motion i lenis ne idu u
 // bundle aplikacije za prijavljene dok ih ona sama ne zatreba.
 export default function Landing() {
+	const stranica = useRef(null)
 	useGlatkiSkrol()
+	useReflektor(stranica)
 
 	return (
 		<MotionConfig reducedMotion="user">
-			<div className="landing">
+			<div className="landing" ref={stranica}>
+				<div className="napredak" aria-hidden="true" />
 				<section className="hero" aria-labelledby="hero-naslov">
 					<motion.div className="hero-tekst" variants={NIZ} initial="skriven" animate="vidljiv">
 						<motion.h1 id="hero-naslov" className="hero-naslov" variants={DIO}>

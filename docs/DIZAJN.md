@@ -71,6 +71,8 @@ Razmaci su na mreži od 4 px (4, 8, 12, 16, 24, 32, 48, 64, 96). Žeton je visok
 
 Odgovor na akciju traje 160 do 260 ms (`--trajanje-brzo`, `--trajanje-srednje`), karta 420 ms (`--trajanje-karta`), kriva `--kriva-izlaz`. Animira se samo `transform` i `opacity`. Tri spektakularna momenta (hero, uzimanje termina, prelazi između ekrana) su opisana u `redizajn/smjer.md`, a sve ostalo je mirno. `prefers-reduced-motion` gasi letove, nagib i prelaze, a stanja ostaju.
 
+Na landingu (26.11.2026) ima još pet malih pokreta, svi ugašeni uz `prefers-reduced-motion`. Kartica ima reflektor: ispod miša je blaga mjedena svjetlost (18 % mjedi, krug od 340 px), ispod teksta, pa ne kvari kontrast. Položaj daje `landing/reflektor.js`, jedan slušač na cijeloj stranici, a prst ga ne pali. Naslovi sekcija, kartice, pitanja, demo i završni poziv izrone (32 px odozdo, `scale` 0,97 do 1) kad uđu u ekran. Prozor s demom se udalji (do `scale` 0,92 i 35 % vidljivosti) dok hero izlazi s ekrana. Na vrhu je mjedena linija od 3 px koja raste sa skrolom. Ova tri su CSS `animation-timeline` (`view()` i `scroll()`), bez JavaScripta. Gdje ga browser ne zna (Firefox za sada), sve je samo vidljivo, a linije napretka nema. Animira se `translate`, `scale` i `opacity`, ne `transform`, jer `transform` već koristi hover kartice, pa bi se svađali. Peto: preko mjedenog dugmeta na hover jednom pređe traka svjetla (`--trajanje-odsjaj`, 700 ms), ispod teksta. Vraća se bez animacije, da ne ide unazad.
+
 Prelaz između ekrana ide preko `tema/PrelazLink.jsx`: link koji navigaciju pokrene kroz `uzPrelaz` s `data-prelaz="ekran"`. Stari ekran se malo digne i izblijedi, novi dođe odozdo, a naziv organizacije ili resursa preleti s pločice u naslov sljedećeg ekrana (ime prelaza `org-<id>` i `resurs-<id>`). Nazivi ostalih pločica, koji na novom ekranu nemaju par, odu za `--trajanje-brzo`, da ne vise preko novog ekrana. Koriste ga pločice organizacija i resursa, veza nazad iz kalendara i linkovi u zaglavlju. React Router ima `viewTransition` na linku samo uz data router, a mi imamo `BrowserRouter`, pa je ovo petnaest linija umjesto prelaska na drugi router. Ctrl, Shift i srednji klik ostaju browseru, a bez podrške u browseru je to običan link. Dugme nazad u browseru nema prelaz.
 
 ## U kodu
@@ -171,7 +173,7 @@ Najlakše je napraviti ekran koji izgleda kao hiljadu drugih: bijela kartica sa 
 Svaki element mora nešto značiti. Linija dijeli dane, žuta znači "moje", šrafura znači "zauzeto". Ako ne znam reći šta neka boja, linija ili ikona govori korisniku, ona ne ide na ekran.
 
 Ne koristimo:
-- gradijente, sjaj, staklo (glassmorphism) i mutnu pozadinu;
+- gradijente, sjaj, staklo (glassmorphism) i mutnu pozadinu. Izuzeci su nabrojani gore: metal na mjedi, dva sjaja na landingu, reflektor na kartici i odsjaj preko mjedenog dugmeta. Svaki prati pokret ili materijal, nijedan nije pozadina;
 - ilustracije s ljudima i blobovima, 3D ikone i slike laptopa;
 - ikonicu uz svaki naslov i iskre koje znače "pametno";
 - jednako zaobljene kartice sa sjenom za svaki sadržaj;

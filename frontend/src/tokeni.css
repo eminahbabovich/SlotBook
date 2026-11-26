@@ -110,6 +110,7 @@
 	--trajanje-srednje: 260ms;
 	--trajanje-karta: 420ms;
 	--trajanje-disanje: 1200ms;
+	--trajanje-odsjaj: 700ms;
 	--kriva-izlaz: cubic-bezier(0.2, 0.8, 0.2, 1);
 	--red-min-visina: 48px;
 	--sirina-forme: 420px;

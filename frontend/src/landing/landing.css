@@ -1042,3 +1042,97 @@ body:has(.landing) {
 		transform: none !important;
 	}
 }
+
+/* Reflektor: dok miš prelazi preko kartice, ispod njega je blaga mjedena svjetlost. Položaj daje
+   useReflektor (--mis-x, --mis-y). Svjetlost je ispod teksta (z-index -1 u izolovanoj kartici),
+   pa ne smanjuje kontrast. Na dodir je nema, jer nema ni hovera. */
+.kartica {
+	isolation: isolate;
+}
+
+.kartica::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	background: radial-gradient(
+		340px circle at var(--mis-x, 50%) var(--mis-y, 0%),
+		color-mix(in srgb, var(--mjed) 18%, transparent),
+		transparent 70%
+	);
+	opacity: 0;
+	transition: opacity var(--trajanje-srednje) var(--kriva-izlaz);
+	pointer-events: none;
+}
+
+@media (hover: hover) {
+	.kartica:hover::before {
+		opacity: 1;
+	}
+}
+
+/* Linija napretka: tanka mjed na vrhu ekrana koja raste dok se skrola. Bez podrške za
+   animation-timeline ili uz smanjen pokret je nema. */
+.napredak {
+	position: fixed;
+	inset: 0 0 auto;
+	z-index: 30;
+	height: 3px;
+	background: var(--moje);
+	transform-origin: 0 50%;
+	scale: 0 1;
+	pointer-events: none;
+}
+
+/* Pokret vezan za skrol, bez JavaScripta. Animira se translate, scale i opacity, a ne transform,
+   da se ne svađa s hoverom kartice koji koristi transform. Gdje browser ne zna animation-timeline,
+   sve je samo vidljivo. */
+@supports (animation-timeline: view()) {
+	@media (prefers-reduced-motion: no-preference) {
+		.napredak {
+			animation: napredak linear both;
+			animation-timeline: scroll(root);
+		}
+
+		/* Naslovi, kartice i pitanja izrone kad uđu u ekran */
+		.sekcija-naslov,
+		.landing .kartica,
+		.pitanja details,
+		.ulaz,
+		.poziv {
+			animation: izroni linear both;
+			animation-timeline: view();
+			animation-range: entry 5% cover 28%;
+		}
+
+		/* Prozor s demom se udalji kad hero izlazi s ekrana, pa stranica dobije dubinu */
+		.prozor-scena {
+			animation: udalji linear both;
+			animation-timeline: view();
+			animation-range: exit 0% exit 100%;
+		}
+	}
+}
+
+@keyframes napredak {
+	to {
+		scale: 1 1;
+	}
+}
+
+@keyframes izroni {
+	from {
+		opacity: 0;
+		translate: 0 32px;
+		scale: 0.97;
+	}
+}
+
+@keyframes udalji {
+	to {
+		opacity: 0.35;
+		translate: 0 -32px;
+		scale: 0.92;
+	}
+}
