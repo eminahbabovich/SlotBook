@@ -86,10 +86,6 @@ public class Payment {
 		return id;
 	}
 
-	public Booking getBooking() {
-		return booking;
-	}
-
 	public String getStripeSessionId() {
 		return stripeSessionId;
 	}

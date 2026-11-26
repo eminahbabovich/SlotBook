@@ -27,17 +27,6 @@ export function backend(odgovori) {
 	return fetch
 }
 
-// SSE odgovor: šalje date poruke, pa ostane otvoren dok signal ne prekine vezu, kao pravi server
-export function tok(poruke, signal) {
-	const tijelo = new ReadableStream({
-		start(kontroler) {
-			for (const poruka of poruke) kontroler.enqueue(new TextEncoder().encode(poruka))
-			signal?.addEventListener('abort', () => kontroler.error(new DOMException('Prekinuto', 'AbortError')))
-		},
-	})
-	return new Response(tijelo, { status: 200, headers: { 'Content-Type': 'text/event-stream' } })
-}
-
 export const PRIJAVLJENA = {
 	'/api/auth/refresh': TOKEN,
 	'/api/me': () => json(HANA),

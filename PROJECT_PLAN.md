@@ -465,6 +465,18 @@ lažan, pa CI ne zavisi od njihovog servera, a pravi test mode se provjerava ru�
    koji pravi deadlock namjerno, odluka u `docs/ODLUKE.md`. 506 backend testova prolazi lokalno.
    Ostatak koraka 4, CI badge i zatvaranje faze urađeni 26.11.2026.
 
+## Faza 13 po koracima
+
+Dogovoreno 26.11.2026: što manje koraka. Engleski prijevod UI-ja ide u Dodatke, jer je to nova
+funkcija (svaki tekst, datumi, poruke grešaka), a ne pregled.
+
+1. **Mrtvi kod i upozorenja.** (gotovo 26.11.: obrisani api/status.js, tok() u lažnom backendu i Payment.getBooking, zastarjeli isUnprocessableEntity u jednom testu, ref u Kalendar.jsx se piše u efektu, pa je lint bez upozorenja; javac -Xlint za glavni kod čist) Frontend: neiskorišteni fajlovi i exporti. Backend: `javac -Xlint` i
+   metode koje niko ne zove. Lint upozorenje u `Kalendar.jsx`. Svi testovi prolaze poslije čišćenja.
+2. **Pregled koda** od Faze 10 nadalje (najmanje pregledan dio). Svaka stvarna greška dobija test koji
+   je prvo pokaže, pa popravku.
+3. **Docs i kraj.** Svaka tvrdnja u README-ju i `docs/` uporedi se sa stanjem (brojke, linkovi, model
+   podataka u `ARHITEKTURA.md` do V45), odluka o Dodacima, status, dnevnik, commit.
+
 ## Dodaci prije Faze 13
 
 Pet funkcija i pravilo za lozinke, dogovoreno 26.11.2026. Sve je gotovo istog dana. Radim ih jednu po jednu, a poslije
@@ -673,6 +685,7 @@ Detaljne korake radimo zajedno kad dođemo do tog dijela.
 Ovdje zapisujemo sve što nam padne na pamet tokom rada. U Fazi 13 odlučujemo šta ulazi.
 
 - Web push obavijesti / PWA (instalacija na telefon): prešlo u "Dodaci prije Faze 13", korak 5
+- Engleski prijevod UI-ja (bio u planu Faze 13, odvojen 26.11.2026)
 - Trajno skladište slika bez kartice: Backblaze B2 (10 GB besplatno, S3 API). Naš `S3StorageService` s njim nije proban, a B2 se zna buniti na nove checksum opcije AWS SDK-a
 - Sinhronizacija s Google Calendarom (dvosmjerna, za razliku od iCal pretplate)
 - Ocjene i komentari nakon termina

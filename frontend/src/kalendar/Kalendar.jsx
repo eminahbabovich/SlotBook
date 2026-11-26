@@ -137,7 +137,9 @@ export function Kalendar({ resursId, naziv, zona, cijenaFeninga = 0, pravila = n
 
 	// Escape zatvara otvorenu potvrdu, isto kao Odustani
 	const odustaniRef = useRef(odustani)
-	odustaniRef.current = odustani
+	useEffect(() => {
+		odustaniRef.current = odustani
+	})
 	const otvorena = Boolean(izabran)
 	useEffect(() => {
 		if (!otvorena) return undefined

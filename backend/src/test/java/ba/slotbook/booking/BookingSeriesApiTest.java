@@ -135,7 +135,7 @@ class BookingSeriesApiTest {
 		assertThat(JsonPath.<String>read(drugi, "$.seriesId")).isEqualTo(JsonPath.read(prvi, "$.seriesId"));
 		assertThat(broj("select count(*) from bookings where client_id = ?", lejla)).isEqualTo(2);
 		// Isti ključ za drugi broj sedmica je drugi zahtjev
-		serija(PRVI_PONEDJELJAK, 3, kljuc).andExpect(status().isUnprocessableEntity());
+		serija(PRVI_PONEDJELJAK, 3, kljuc).andExpect(status().isUnprocessableContent());
 	}
 
 	@Test
