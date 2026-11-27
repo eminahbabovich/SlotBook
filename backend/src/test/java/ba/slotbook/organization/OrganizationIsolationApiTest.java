@@ -60,7 +60,8 @@ class OrganizationIsolationApiTest {
 		// u testu kaže u kojem je stanju, a u aplikaciji je {bookingId}.
 		String ruta() {
 			return metoda.name() + " " + putanja.split("\\?")[0].replaceFirst("/api/bookings/\\{[^}]+}",
-					"/api/bookings/{bookingId}").replaceFirst("/members/\\{[^}]+}", "/members/{userId}");
+					"/api/bookings/{bookingId}").replaceFirst("/members/\\{[^}]+}", "/members/{userId}")
+					.replaceFirst("/api/chat/proposals/\\{[^}]+}", "/api/chat/proposals/{proposalId}");
 		}
 
 	}
@@ -81,6 +82,9 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/chat/sessions", null),
 			// Razgovor je Almin, pa ga ni klijent ni provider iste organizacije ne čitaju
 			new Zahtjev(HttpMethod.GET, "/api/chat/sessions/{sessionId}/messages", null),
+			// Almini prijedlozi iz chata: potvrda otkazuje njenu rezervaciju, a odbijanje gasi prijedlog termina
+			new Zahtjev(HttpMethod.POST, "/api/chat/proposals/{prijedlogZaPotvrdu}/confirm", null),
+			new Zahtjev(HttpMethod.POST, "/api/chat/proposals/{prijedlogZaOdbijanje}/dismiss", null),
 			// Lejli se daje uloga koju već ima: admin dobije 200, a ništa se ne promijeni
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/members/{lejlaId}/role", """
 					{"role": "CLIENT"}
@@ -248,6 +252,7 @@ class OrganizationIsolationApiTest {
 	private UUID pozivniLink;
 	private UUID ekran;
 	private UUID razgovor;
+	private Map<String, UUID> prijedlozi;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
 	// Lejla je klijent čitaonice, a Damir u čitaonici vodi drugi sto.
@@ -273,6 +278,7 @@ class OrganizationIsolationApiTest {
 		pozivniLink = pozivniLink();
 		ekran = ekranNaVratima();
 		razgovor = alminRazgovor();
+		prijedlozi = alminiPrijedlozi();
 	}
 
 	// Almino povlačenje ih ukloni, pa se prave nove prije svakog testa
@@ -309,6 +315,21 @@ class OrganizationIsolationApiTest {
 				+ "values (?, ?, ?, now(), now())", id, citaonica,
 				users.findByEmail("alma.izolacija@example.com").orElseThrow().getId());
 		return id;
+	}
+
+	// Rezervacije sa stola se brišu prije svakog testa, a s njima (ON DELETE CASCADE) i prijedlozi
+	private Map<String, UUID> alminiPrijedlozi() {
+		UUID zaOtkazati = rezervacija(users.findByEmail("alma.izolacija@example.com").orElseThrow().getId(),
+				"2036-01-07 13:00+01", "CONFIRMED");
+		UUID zaPotvrdu = UUID.randomUUID();
+		jdbc.update("insert into chat_proposals (id, session_id, action, booking_id, idempotency_key, created_at, "
+				+ "expires_at) values (?, ?, 'CANCEL', ?, ?, now(), now() + interval '10 minutes')", zaPotvrdu, razgovor,
+				zaOtkazati, "chat-" + zaPotvrdu);
+		UUID zaOdbijanje = UUID.randomUUID();
+		jdbc.update("insert into chat_proposals (id, session_id, action, resource_id, start_time, idempotency_key, "
+				+ "created_at, expires_at) values (?, ?, 'BOOK', ?, '2036-01-14 08:00+01', ?, now(), "
+				+ "now() + interval '10 minutes')", zaOdbijanje, razgovor, stoCitaonice, "chat-" + zaOdbijanje);
+		return Map.of("prijedlogZaPotvrdu", zaPotvrdu, "prijedlogZaOdbijanje", zaOdbijanje);
 	}
 
 	// Ukupno i povučenih: tuđi POST bi dodao link, a tuđi DELETE bi ga povukao
@@ -492,6 +513,7 @@ class OrganizationIsolationApiTest {
 	private int posalji(Zahtjev zahtjev, String token) throws Exception {
 		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
 		Map<String, Object> varijable = new HashMap<>(rezervacije);
+		varijable.putAll(prijedlozi);
 		varijable.putAll(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola, "waitlistId",
 				alminUpis, "inviteId", otvorenaPozivnica, "linkId", pozivniLink, "screenId", ekran, "sessionId", razgovor, "lejlaId",
 				users.findByEmail("lejla.izolacija@example.com").orElseThrow().getId(), "kenanId",

@@ -560,3 +560,7 @@ Za historiju razgovora sam bez `for update` na sesiji pustio deset niti da istov
 Kasnije istog dana: pravi poziv na Groq radi. Iz PowerShella u rootu projekta, ključ pročitan iz `.env`, odgovor je bio pozdrav na bosanskom.
 
 Kod alata za čitanje me iznenadilo da `ResourceAccess.canView` nije dovoljan. Pušta resurs iz bilo koje organizacije u kojoj sam član, a chat sesija je vezana za jednu. U testu je Lejla član i čitaonice i teretane, pa bi samo s `canView` iz čitaonice dobila termine Sale 3 u teretani. Test s njom u obje organizacije to hvata. Za DST sam prvo pustio Javu da kaže kad je pomjeranje sata 2035. godine (`Gap at 2035-03-25T02:00+01:00`), umjesto da računam nedjelje u martu napamet.
+
+Prijedlog i potvrda. Claude je u testu napisao `'2035-03-26 10:00+01'`, a 26. mart 2035. je već ljetno vrijeme, pa bi to bilo 11:00 po našem satu. Uhvatio je to sam prije pokretanja, ali je to tačno ona greška koju alati trebaju spriječiti kod modela. Usput je jedan Python skript za izmjenu testa pao, jer je obrnuta kosa crta u `replaceFirst("/members/\{...")` pogrešno escapeovana. Zbog toga je izolacioni test prvo pao na dvije nove rute koje nisu bile u njegovoj listi. Čuvar ruta je odradio svoje.
+
+Nisam znao da `LocalDateTime.atZone` sat koji ne postoji ne odbije, nego ga pomjeri. 02:30 na dan pomjeranja sata postane 03:30.

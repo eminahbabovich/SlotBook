@@ -102,6 +102,7 @@ erDiagram
     organization_members ||--o{ chat_sessions : "razgovori člana"
     chat_sessions ||--o{ chat_messages : "poruke po redu"
     users ||--o{ chat_usage : "tokeni po danu"
+    chat_sessions ||--o{ chat_proposals : "prijedlozi čekaju dugme"
 
     users {
         uuid id PK
@@ -298,6 +299,16 @@ erDiagram
         int seq PK "redni broj u sesiji"
         varchar role "user, assistant, tool"
         jsonb content "poruka tačno u formatu API-ja"
+    }
+    chat_proposals {
+        uuid id PK
+        uuid session_id FK
+        varchar action "BOOK ili CANCEL"
+        uuid resource_id FK "BOOK"
+        timestamptz start_time "BOOK"
+        uuid booking_id FK "CANCEL: koja se otkazuje, BOOK: koja je nastala"
+        varchar idempotency_key UK "ide u BookingService.create"
+        timestamptz expires_at
     }
     chat_usage {
         uuid user_id PK, FK

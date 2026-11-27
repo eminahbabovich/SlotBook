@@ -59,6 +59,9 @@ class ChatToolsTest {
 	@Autowired
 	AvailabilityService availabilityService;
 
+	@Autowired
+	ChatSessionService sesije;
+
 	private final String sufiks = UUID.randomUUID().toString().substring(0, 6);
 	private UUID amila;
 	private UUID lejla;
@@ -86,13 +89,14 @@ class ChatToolsTest {
 		resourceService.deactivate(citaonica, amila, stariSto);
 		sala3 = otvorenSvakiDan(resourceService.create(teretana, bojan, "Sala 3", null, 60, true, 0, 1, 0).id());
 
-		lejlaUCitaonici = new Kontekst(citaonica, lejla, token(lejla));
+		lejlaUCitaonici = new Kontekst(citaonica, lejla, sesije.open(citaonica, lejla).id(), token(lejla));
 	}
 
 	@Test
-	void definicijeImajuCetiriAlataSaJsonShemom() {
+	void definicijeImajuSestAlataSaJsonShemom() {
 		assertThat(alati.definicije()).extracting(alat -> alat.function().name())
-				.containsExactly("list_resources", "find_free_slots", "check_availability", "get_my_bookings");
+				.containsExactly("list_resources", "find_free_slots", "check_availability", "get_my_bookings",
+						"create_booking", "cancel_booking");
 		assertThat(alati.definicije()).allSatisfy(alat -> assertThat(alat.function().parameters())
 				.containsEntry("type", "object"));
 	}
@@ -178,6 +182,100 @@ class ChatToolsTest {
 		assertThat(JsonPath.<String>read(json, "$.bookings[0].date")).isEqualTo("2035-03-26");
 		assertThat(JsonPath.<String>read(json, "$.bookings[0].start")).isEqualTo("10:00");
 		assertThat(JsonPath.<String>read(json, "$.bookings[0].end")).isEqualTo("11:00");
+	}
+
+	// Model samo predlaže. Rezervacija nastaje tek kad Lejla pritisne Potvrdi (ChatProposalApiTest).
+	@Test
+	void createBookingUpisujePrijedlogARezervacijuNe() {
+		String json = uspjeh(pozovi("create_booking",
+				"{\"resource_id\": \"" + sto4 + "\", \"date\": \"2035-03-26\", \"time\": \"10:00\"}"));
+
+		assertThat(JsonPath.<String>read(json, "$.proposal_id")).isNotBlank();
+		assertThat(JsonPath.<String>read(json, "$.start")).isEqualTo("10:00");
+		assertThat(JsonPath.<String>read(json, "$.end")).isEqualTo("11:00");
+		assertThat(jdbc.queryForObject("select count(*) from bookings where resource_id = ?", Long.class, sto4)).isZero();
+		assertThat(jdbc.queryForObject("select action from chat_proposals where id = ?::uuid", String.class,
+				(Object) JsonPath.read(json, "$.proposal_id"))).isEqualTo("BOOK");
+	}
+
+	// Model piše lokalni sat, a u bazu ide Instant izračunat u Javi. 08:00 na dan pomjeranja sata je 06:00 UTC.
+	@Test
+	void createBookingNaDanPomjeranjaSataCuvaPraviTrenutak() {
+		String json = uspjeh(pozovi("create_booking",
+				"{\"resource_id\": \"" + sto4 + "\", \"date\": \"2035-03-25\", \"time\": \"08:00\"}"));
+
+		assertThat(jdbc.queryForObject("select start_time from chat_proposals where id = ?::uuid", Timestamp.class,
+				(Object) JsonPath.read(json, "$.proposal_id")).toInstant()).hasToString("2035-03-25T06:00:00Z");
+	}
+
+	@Test
+	void satKojiNePostojiZbogPomjeranjaSataJeGreska() {
+		RezultatAlata rezultat = pozovi("create_booking",
+				"{\"resource_id\": \"" + sto4 + "\", \"date\": \"2035-03-25\", \"time\": \"02:30\"}");
+
+		assertThat(rezultat.greska()).isTrue();
+		assertThat(rezultat.sadrzaj()).contains("pomjeranja sata");
+	}
+
+	@Test
+	void zauzetTerminNePraviPrijedlog() {
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at) "
+				+ "values (?, ?, ?, '2035-03-26 10:00+02', '2035-03-26 11:00+02', 'CONFIRMED', now())",
+				UUID.randomUUID(), sto4, amila);
+
+		RezultatAlata rezultat = pozovi("create_booking",
+				"{\"resource_id\": \"" + sto4 + "\", \"date\": \"2035-03-26\", \"time\": \"10:00\"}");
+
+		assertThat(rezultat.greska()).isTrue();
+		assertThat(rezultat.sadrzaj()).contains("nije slobodan");
+		assertThat(jdbc.queryForObject("select count(*) from chat_proposals where session_id = ?", Long.class,
+				lejlaUCitaonici.sessionId())).isZero();
+	}
+
+	// Plaćanje ide kroz Stripe u kalendaru, gdje je tok već testiran. Chat daje link.
+	@Test
+	void placeniResursDajeLinkNaKalendarUmjestoPrijedloga() {
+		UUID sala = UUID.fromString(JsonPath.<String>read(uspjeh(pozovi("list_resources", "{}")), "$.resources[0].id"));
+
+		RezultatAlata rezultat = pozovi("create_booking",
+				"{\"resource_id\": \"" + sala + "\", \"date\": \"2035-03-26\", \"time\": \"10:00\"}");
+
+		assertThat(rezultat.greska()).isTrue();
+		assertThat(rezultat.sadrzaj()).contains("5,00 KM", "/o/citaonica-alati-" + sufiks + "/r/" + sala);
+	}
+
+	@Test
+	void cancelBookingSamoZaSvojuBuducuRezervaciju() {
+		UUID moja = rezervacija(sto4, "2035-03-26", 10, "CONFIRMED");
+		UUID prosla = rezervacija(sto4, "2020-03-26", 10, "CONFIRMED");
+		UUID amilina = UUID.randomUUID();
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at) "
+				+ "values (?, ?, ?, '2035-03-26 12:00+02', '2035-03-26 13:00+02', 'CONFIRMED', now())", amilina,
+				sto4, amila);
+
+		String json = uspjeh(pozovi("cancel_booking", "{\"booking_id\": \"" + moja + "\"}"));
+		assertThat(JsonPath.<String>read(json, "$.start")).isEqualTo("10:00");
+		assertThat(pozovi("cancel_booking", "{\"booking_id\": \"" + prosla + "\"}").greska()).isTrue();
+		assertThat(pozovi("cancel_booking", "{\"booking_id\": \"" + amilina + "\"}").greska()).isTrue();
+		assertThat(jdbc.queryForList("select status from bookings where id in (?, ?)", String.class, moja, amilina))
+				.containsOnly("CONFIRMED");
+	}
+
+	// Sala s rokom od 48 sati, a termin je za dva sata: klijent ga više ne može sam otkazati
+	@Test
+	void cancelBookingPoslijeRokaJeGreskaSRokom() {
+		UUID sala = otvorenSvakiDan(resourceService.create(citaonica, amila, "Sala sa rokom", null, 60, true, 48, 1, 0)
+				.id());
+		UUID id = UUID.randomUUID();
+		var pocetak = java.time.Instant.now().plusSeconds(7200);
+		jdbc.update("insert into bookings (id, resource_id, client_id, start_time, end_time, status, created_at) "
+				+ "values (?, ?, ?, ?, ?, 'CONFIRMED', now())", id, sala, lejla, Timestamp.from(pocetak),
+				Timestamp.from(pocetak.plusSeconds(3600)));
+
+		RezultatAlata rezultat = pozovi("cancel_booking", "{\"booking_id\": \"" + id + "\"}");
+
+		assertThat(rezultat.greska()).isTrue();
+		assertThat(rezultat.sadrzaj()).contains("Rok za otkazivanje");
 	}
 
 	// Model zna napisati bilo šta. Alat tada vraća grešku kao rezultat, a ne baca izuzetak koji bi

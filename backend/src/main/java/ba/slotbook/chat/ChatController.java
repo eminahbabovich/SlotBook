@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,9 +18,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChatController {
 
 	private final ChatSessionService sessions;
+	private final ChatProposalService proposals;
 
-	public ChatController(ChatSessionService sessions) {
+	public ChatController(ChatSessionService sessions, ChatProposalService proposals) {
 		this.sessions = sessions;
+		this.proposals = proposals;
+	}
+
+	// Jedini put kojim chat mijenja rezervacije: dugme u widgetu, a ne tekst koji je napisao model
+	@PostMapping("/api/chat/proposals/{proposalId}/confirm")
+	@PreAuthorize("@chatSessionAccess.isProposalOwner(#proposalId, authentication)")
+	public ChatProposalResponse confirm(@PathVariable UUID proposalId, Authentication authentication) {
+		return proposals.confirm(proposalId, authentication);
+	}
+
+	@PostMapping("/api/chat/proposals/{proposalId}/dismiss")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@PreAuthorize("@chatSessionAccess.isProposalOwner(#proposalId, authentication)")
+	public void dismiss(@PathVariable UUID proposalId) {
+		proposals.dismiss(proposalId);
 	}
 
 	// Svaki član može pitati asistenta, a alati poslije vide samo ono što njegova uloga smije

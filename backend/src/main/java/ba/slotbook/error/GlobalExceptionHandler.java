@@ -28,6 +28,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import ba.slotbook.account.AccountDeletionBlockedException;
 import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
+import ba.slotbook.chat.ChatProposalNotUsableException;
 import ba.slotbook.booking.AlreadyInSlotException;
 import ba.slotbook.booking.AwaitingPaymentException;
 import ba.slotbook.booking.BookingStatus;
@@ -365,6 +366,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		};
 		problem.setTitle("Pozivni link ne važi");
 		problem.setProperty("razlog", ex.getReason().name());
+		return problem;
+	}
+
+	@ExceptionHandler(ChatProposalNotUsableException.class)
+	ProblemDetail prijedlogNeVazi(ChatProposalNotUsableException ex) {
+		String detalj = switch (ex.razlog()) {
+			case ISTEKAO -> "Prijedlog je istekao. Pitaj asistenta ponovo za ovaj termin.";
+			case ODBIJEN -> "Ovaj prijedlog je odbijen. Ako ipak želiš termin, pitaj asistenta ponovo.";
+			case POTVRDJEN -> "Prijedlog je već potvrđen. Rezervaciju možeš otkazati u Mojim rezervacijama.";
+			case RESURS_NEDOSTUPAN -> "Ovaj resurs više nije dostupan za rezervaciju.";
+			case PLACA_SE -> "Ovaj termin se sada plaća. Rezerviši ga u kalendaru resursa, gdje ide i plaćanje.";
+		};
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, detalj);
+		problem.setTitle("Prijedlog iz chata ne važi");
+		problem.setProperty("razlog", ex.razlog().name());
 		return problem;
 	}
 

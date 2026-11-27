@@ -1,14 +1,20 @@
 package ba.slotbook.chat;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -23,6 +29,7 @@ import ba.slotbook.booking.OrganizationFreeSlotsResponse;
 import ba.slotbook.booking.SlotCalendarResponse;
 import ba.slotbook.chat.ChatModel.Alat;
 import ba.slotbook.chat.ChatModel.PozivAlata;
+import ba.slotbook.organization.OrganizationService;
 import ba.slotbook.resource.ResourceAccess;
 import ba.slotbook.resource.ResourceNotFoundException;
 import ba.slotbook.resource.ResourceResponse;
@@ -45,6 +52,10 @@ class ChatTools {
 	private static final int NAJVISE_REZERVACIJA = 20;
 	private static final int NAJDUZI_OPIS = 300;
 	private static final String NEMA_RESURSA = "Resurs nije pronađen u ovoj organizaciji. Pozovi list_resources za ispravne id-jeve.";
+	private static final String NEMA_REZERVACIJE = "Rezervacija nije pronađena među tvojim budućim rezervacijama u "
+			+ "ovoj organizaciji. Pozovi get_my_bookings za ispravne id-jeve.";
+	private static final String CEKA_DUGME = "Nothing is booked or cancelled yet. Tell the user to press Potvrdi "
+			+ "under this message, or Odustani.";
 
 	// Opisi su na engleskom, jer ih čita samo model. Korisniku odgovara na bosanskom, to kaže system prompt.
 	private static final List<Alat> DEFINICIJE = List.of(
@@ -66,23 +77,44 @@ class ChatTools {
 							"date", "string", "Local date YYYY-MM-DD")),
 			Alat.funkcija("get_my_bookings", "The user's upcoming bookings in this organization that still hold a "
 					+ "slot (pending or confirmed), with local date and time.",
-					objekat(List.of())));
+					objekat(List.of())),
+			Alat.funkcija("create_booking", "Proposes booking one free slot. Nothing is booked until the user "
+					+ "presses the Potvrdi button under your message, so never say the slot is booked. Paid "
+					+ "resources cannot be booked in chat, the result gives a calendar link instead.",
+					objekat(List.of("resource_id", "date", "time"),
+							"resource_id", "string", "Resource id from list_resources",
+							"date", "string", "Local date YYYY-MM-DD",
+							"time", "string", "Local start time HH:mm, must be the start of a free slot")),
+			Alat.funkcija("cancel_booking", "Proposes cancelling one of the user's upcoming bookings. Nothing is "
+					+ "cancelled until the user presses the Potvrdi button.",
+					objekat(List.of("booking_id"),
+							"booking_id", "string", "Booking id from get_my_bookings")));
 
 	private final ResourceService resources;
 	private final ResourceAccess resourceAccess;
 	private final FreeSlotService freeSlots;
 	private final BookingService bookings;
+	private final ChatProposalService prijedlozi;
+	private final OrganizationService organizations;
+	private final Clock clock;
+	private final String appUrl;
 
 	ChatTools(ResourceService resources, ResourceAccess resourceAccess, FreeSlotService freeSlots,
-			BookingService bookings) {
+			BookingService bookings, ChatProposalService prijedlozi, OrganizationService organizations, Clock clock,
+			@Value("${slotbook.app-url}") String appUrl) {
 		this.resources = resources;
 		this.resourceAccess = resourceAccess;
 		this.freeSlots = freeSlots;
 		this.bookings = bookings;
+		this.prijedlozi = prijedlozi;
+		this.organizations = organizations;
+		this.clock = clock;
+		this.appUrl = appUrl;
 	}
 
-	// authentication treba za ResourceAccess, istu provjeru kao na /api/resources/{id}
-	record Kontekst(UUID organizationId, UUID userId, Authentication authentication) {
+	// authentication treba za ResourceAccess, istu provjeru kao na /api/resources/{id}.
+	// sessionId je razgovor u koji se upisuje prijedlog.
+	record Kontekst(UUID organizationId, UUID userId, UUID sessionId, Authentication authentication) {
 	}
 
 	record RezultatAlata(String sadrzaj, boolean greska) {
@@ -110,6 +142,8 @@ class ChatTools {
 				case "find_free_slots" -> findFreeSlots(argumenti, kontekst);
 				case "check_availability" -> checkAvailability(argumenti, kontekst);
 				case "get_my_bookings" -> getMyBookings(kontekst);
+				case "create_booking" -> createBooking(argumenti, kontekst);
+				case "cancel_booking" -> cancelBooking(argumenti, kontekst);
 				default -> RezultatAlata.greska("Alat " + poziv.function().name() + " ne postoji.");
 			};
 		} catch (LosArgument e) {
@@ -146,19 +180,9 @@ class ChatTools {
 	}
 
 	private RezultatAlata checkAvailability(JsonNode argumenti, Kontekst kontekst) {
-		UUID resursId = uuid(argumenti, "resource_id");
+		UUID resursId = uuid(argumenti, "resource_id", NEMA_RESURSA);
 		LocalDate dan = datum(argumenti, "date");
-		ResourceResponse resurs;
-		try {
-			resurs = resources.get(resursId);
-		} catch (ResourceNotFoundException e) {
-			return RezultatAlata.greska(NEMA_RESURSA);
-		}
-		// canView sam pušta resurs bilo koje organizacije u kojoj je korisnik član, a sesija je u jednoj
-		if (!resurs.organizationId().equals(kontekst.organizationId())
-				|| !resourceAccess.canView(resursId, kontekst.authentication())) {
-			return RezultatAlata.greska(NEMA_RESURSA);
-		}
+		ResourceResponse resurs = vidljivResurs(resursId, kontekst);
 		SlotCalendarResponse kalendar = freeSlots.calendar(resursId, dan, dan.plusDays(1), kontekst.userId());
 		ZoneId zona = ZoneId.of(kalendar.timezone());
 		var slobodni = kalendar.slots().stream()
@@ -175,6 +199,80 @@ class ChatTools {
 		var moje = bookings.upcomingInOrganization(kontekst.userId(), kontekst.organizationId()).stream()
 				.limit(NAJVISE_REZERVACIJA).map(MojaRezervacija::od).toList();
 		return RezultatAlata.uspjeh(Map.of("bookings", moje));
+	}
+
+	private RezultatAlata createBooking(JsonNode argumenti, Kontekst kontekst) {
+		UUID resursId = uuid(argumenti, "resource_id", NEMA_RESURSA);
+		LocalDate dan = datum(argumenti, "date");
+		LocalTime vrijeme = vrijeme(argumenti, "time");
+		ResourceResponse resurs = vidljivResurs(resursId, kontekst);
+		if (resurs.priceCents() > 0) {
+			return RezultatAlata.greska("Ovaj resurs se plaća (" + km(resurs.priceCents()) + "). Chat ne pravi "
+					+ "plaćene rezervacije. Rezerviši u kalendaru, gdje ide i plaćanje: " + kalendar(kontekst, resursId));
+		}
+		SlotCalendarResponse kalendar = freeSlots.calendar(resursId, dan, dan.plusDays(1), kontekst.userId());
+		ZoneId zona = ZoneId.of(kalendar.timezone());
+		LocalDateTime trazeno = LocalDateTime.of(dan, vrijeme);
+		ZonedDateTime pocetak = trazeno.atZone(zona);
+		// atZone tiho pomjeri sat koji ne postoji (02:30 kad sat skoči s 02:00 na 03:00), pa se to vidi ovako
+		if (!pocetak.toLocalDateTime().equals(trazeno)) {
+			return RezultatAlata.greska("U " + SAT.format(vrijeme) + " tog dana sat ne postoji zbog pomjeranja sata. "
+					+ "Izaberi drugi termin.");
+		}
+		Instant trenutak = pocetak.toInstant();
+		var slobodan = kalendar.slots().stream().filter(t -> t.start().equals(trenutak)).findFirst();
+		if (slobodan.isEmpty()) {
+			boolean moj = kalendar.taken().stream().anyMatch(t -> t.start().equals(trenutak) && t.myStatus() != null);
+			return RezultatAlata.greska(moj ? "Već imaš rezervaciju u tom terminu."
+					: "Termin u " + SAT.format(vrijeme) + " tog dana nije slobodan ili se ne nudi. Pozovi "
+							+ "check_availability za slobodne termine.");
+		}
+		UUID prijedlog = prijedlozi.predloziRezervaciju(kontekst.sessionId(), resursId, trenutak);
+		return RezultatAlata.uspjeh(new Prijedlog(prijedlog.toString(), "book", resurs.name(), dan.toString(),
+				SAT.format(vrijeme), sat(slobodan.get().end(), zona), resurs.autoConfirm() ? null : true,
+				prijedlozi.minutaDoIsteka(), CEKA_DUGME));
+	}
+
+	private RezultatAlata cancelBooking(JsonNode argumenti, Kontekst kontekst) {
+		UUID id = uuid(argumenti, "booking_id", NEMA_REZERVACIJE);
+		MyBookingResponse rezervacija = bookings.upcomingInOrganization(kontekst.userId(), kontekst.organizationId())
+				.stream().filter(b -> b.id().equals(id)).findFirst()
+				.orElseThrow(() -> new LosArgument(NEMA_REZERVACIJE));
+		ZoneId zona = ZoneId.of(rezervacija.timezone());
+		if (rezervacija.cancelDeadline() != null && !clock.instant().isBefore(rezervacija.cancelDeadline())) {
+			return RezultatAlata.greska("Rok za otkazivanje je prošao (bio je do "
+					+ datum(rezervacija.cancelDeadline(), zona) + " u " + sat(rezervacija.cancelDeadline(), zona)
+					+ "). Za otkazivanje se javi organizaciji.");
+		}
+		UUID prijedlog = prijedlozi.predloziOtkazivanje(kontekst.sessionId(), id);
+		return RezultatAlata.uspjeh(new Prijedlog(prijedlog.toString(), "cancel", rezervacija.resourceName(),
+				datum(rezervacija.startTime(), zona), sat(rezervacija.startTime(), zona),
+				sat(rezervacija.endTime(), zona), null, prijedlozi.minutaDoIsteka(), CEKA_DUGME));
+	}
+
+	// canView sam pušta resurs bilo koje organizacije u kojoj je korisnik član, a sesija je u jednoj
+	private ResourceResponse vidljivResurs(UUID resursId, Kontekst kontekst) {
+		ResourceResponse resurs;
+		try {
+			resurs = resources.get(resursId);
+		} catch (ResourceNotFoundException e) {
+			throw new LosArgument(NEMA_RESURSA);
+		}
+		if (!resurs.organizationId().equals(kontekst.organizationId())
+				|| !resourceAccess.canView(resursId, kontekst.authentication())) {
+			throw new LosArgument(NEMA_RESURSA);
+		}
+		return resurs;
+	}
+
+	private String kalendar(Kontekst kontekst, UUID resursId) {
+		String slug = organizations.listForUser(kontekst.userId()).stream()
+				.filter(o -> o.id().equals(kontekst.organizationId())).findFirst().orElseThrow().slug();
+		return appUrl + "/o/" + slug + "/r/" + resursId;
+	}
+
+	private static String km(int feninga) {
+		return String.format(Locale.ROOT, "%.2f KM", feninga / 100.0).replace('.', ',');
 	}
 
 	private static JsonNode argumenti(String tekst) {
@@ -201,12 +299,21 @@ class ChatTools {
 		}
 	}
 
-	private static UUID uuid(JsonNode argumenti, String polje) {
+	private static LocalTime vrijeme(JsonNode argumenti, String polje) {
+		JsonNode vrijednost = argumenti.get(polje);
+		try {
+			return LocalTime.parse(vrijednost.stringValue());
+		} catch (RuntimeException e) {
+			throw new LosArgument("Polje " + polje + " mora biti sat u obliku 16:00.");
+		}
+	}
+
+	private static UUID uuid(JsonNode argumenti, String polje, String akoNeValja) {
 		JsonNode vrijednost = argumenti.get(polje);
 		try {
 			return UUID.fromString(vrijednost.stringValue());
 		} catch (RuntimeException e) {
-			throw new LosArgument(NEMA_RESURSA);
+			throw new LosArgument(akoNeValja);
 		}
 	}
 
@@ -270,6 +377,12 @@ class ChatTools {
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	record Termin(String start, String end, @JsonProperty("seats_left") Integer seatsLeft, String status) {
+	}
+
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	record Prijedlog(@JsonProperty("proposal_id") String proposalId, String action, String resource, String date,
+			String start, String end, @JsonProperty("needs_provider_confirmation") Boolean needsProviderConfirmation,
+			@JsonProperty("expires_in_minutes") long expiresInMinutes, String note) {
 	}
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)

@@ -1,5 +1,6 @@
 package ba.slotbook.chat;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
@@ -13,17 +14,28 @@ import org.springframework.stereotype.Component;
 public class ChatSessionAccess {
 
 	private final ChatRepository chat;
+	private final ChatProposalRepository prijedlozi;
 
-	ChatSessionAccess(ChatRepository chat) {
+	ChatSessionAccess(ChatRepository chat, ChatProposalRepository prijedlozi) {
 		this.chat = chat;
+		this.prijedlozi = prijedlozi;
 	}
 
 	public boolean isOwner(UUID sessionId, Authentication authentication) {
+		return korisnik(authentication).map(k -> chat.vlasnik(sessionId).map(k::equals).orElse(false)).orElse(false);
+	}
+
+	// Prijedlog potvrđuje samo vlasnik razgovora u kojem je nastao, ni admin organizacije
+	public boolean isProposalOwner(UUID proposalId, Authentication authentication) {
+		return korisnik(authentication).map(k -> prijedlozi.vlasnik(proposalId).map(k::equals).orElse(false))
+				.orElse(false);
+	}
+
+	private static Optional<UUID> korisnik(Authentication authentication) {
 		if (!(authentication instanceof JwtAuthenticationToken jwt)) {
-			return false;
+			return Optional.empty();
 		}
-		UUID korisnik = UUID.fromString(jwt.getToken().getSubject());
-		return chat.vlasnik(sessionId).map(korisnik::equals).orElse(false);
+		return Optional.of(UUID.fromString(jwt.getToken().getSubject()));
 	}
 
 }

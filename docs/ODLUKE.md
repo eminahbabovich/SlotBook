@@ -1296,3 +1296,16 @@ Vrijeme ide modelu samo kao lokalni datum i sat (`"date": "2035-03-25", "start":
 
 Model zna napisati pogrešan JSON, datum "sutra" ili alat koji ne postoji. To nije izuzetak koji obara zahtjev, nego rezultat s porukom na bosanskom, pa model može ispraviti poziv ili pitati korisnika. Rezultati su skraćeni: najviše 40 termina, 50 resursa i 20 rezervacija, opis resursa do 300 znakova. Rezultat ide nazad uz cijelu historiju, a Groq na besplatnom nivou prima oko 8000 tokena u minuti. Opise alata sam napisao na engleskom, jer ih čita samo model. Opis resursa piše admin, pa u opisu `list_resources` piše da je to podatak, a ne uputa. Da li to stvarno zaustavlja ubačene upute, provjeriće test u koraku 5.
 
+
+## Rezervacija iz chata ide samo preko dugmeta (27.11.2026)
+
+`create_booking` i `cancel_booking` ne mijenjaju nijednu rezervaciju. Upišu prijedlog u `chat_proposals`, a rezervacija nastaje tek kad korisnik pritisne Potvrdi (`POST /api/chat/proposals/{id}/confirm`). Ne nastaje kad korisnik u chatu napiše "da". Model se može zabuniti, a opis resursa ili tekst korisnika ga može nagovoriti da pozove alat. Dugme ne može pritisnuti niko osim korisnika. Prijedlog potvrđuje samo vlasnik razgovora, ni admin organizacije.
+
+Potvrda zove isti `BookingService.create` i `cancel` kao kalendar, pa chat dobija isti 409 za zauzet termin, ista pravila korištenja (422) i iste mailove. Svaki prijedlog ima svoj `Idempotency-Key`, koji ide u `create`. Dvije istovremene potvrde istog prijedloga zato daju jednu rezervaciju, i obje dobiju njen id. Kad sam za mutaciju pravio nov ključ na svakoj potvrdi, druga je pala. Potvrda drži lock na redu prijedloga, a `create` i `cancel` se pridruže toj transakciji. Tako se rezervacija i oznaka "potvrđeno" upišu zajedno ili nijedno, a druga potvrda otkazivanja vidi da je prva prošla i ne otkazuje dvaput. Za rezervaciju bi dupli klik čuvao i sam ključ. Za otkazivanje nema testa s dvije istovremene niti, nego samo s dvije potvrde jedna za drugom.
+
+Prijedlog važi 10 minuta. Istekao ili odbijen prijedlog daje 409 s porukom šta da korisnik uradi. Na potvrdi se ponovo provjerava resurs, jer ga je admin u međuvremenu mogao ugasiti ili mu staviti cijenu.
+
+Plaćeni resurs chat ne rezerviše. Alat vrati link na kalendar resursa, gdje Stripe tok već radi i ima testove. Isti put iz widgeta bio bi još jedan tok plaćanja za testiranje, a za demo ne donosi ništa novo.
+
+Model piše lokalni datum i sat, a Java ih pretvara u `Instant` u zoni organizacije. `LocalDateTime.atZone` sat koji ne postoji (02:30 na dan kad sat skače s 02:00 na 03:00) tiho pomjeri na 03:30. Zato alat poredi rezultat s traženim satom i vrati grešku umjesto pogrešnog termina. Prijedlog se pravi samo za termin koji je u tom trenutku slobodan. Pravila korištenja (koliko aktivnih rezervacija, koliko dana unaprijed) alat ne provjerava, jer `BookingRules` radi s entitetom resursa koji paket `chat` ne vidi. Ta pravila se provjere na potvrdi i stignu kao 422 u widget, a ne modelu.
+
