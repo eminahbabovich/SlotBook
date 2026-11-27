@@ -133,7 +133,7 @@ Ovdje je ono za šta nemam dokaz na pravom uređaju ili na produkciji, i ono št
 - `npm audit` javlja 4 umjerene ranjivosti u alatu za build PWA (`workbox-build`). U produkcijskim paketima ih nema, a popravka koju nudi npm vraća plugin na verziju bez podrške za Vite 8.
 - Slike resursa su na disku Rendera i nestanu sa svakim deployem. Cloudflare R2 traži karticu i za besplatni plan, pa ga nisam uključio ([docs/ODLUKE.md](docs/ODLUKE.md)). Demo podaci nemaju slika, pa se to vidi tek kad neko postavi svoju.
 - Stripe na produkciji sam probao jednom uplatom i jednim povratom, skriptom. Istek neplaćene rezervacije (`checkout.session.expired`) na produkciji nisam čekao, provjeren je samo lokalno.
-- AI asistent na produkciji javlja da nije dostupan, jer na Renderu još nije upisan `AI_API_KEY`. S pravim modelom sam ga vodio kroz deset razgovora lokalno. Jedan razgovor potroši od 800 do 8 000 tokena, pa uz granicu od 20 000 tokena dnevno jedan korisnik ima dva do tri razgovora. Poslije osvježavanja stranice razgovor počinje ispočetka. Šta još nije provjereno, piše u [docs/AI_ASISTENT.md](docs/AI_ASISTENT.md).
+- AI asistent na produkciji radi od 27.11.2026, ali sam ga tamo probao jednom porukom (odgovor za 7,5 s, s tačnim prijedlogom). Kroz deset razgovora sam ga vodio lokalno. Jedan razgovor potroši od 800 do 8 000 tokena, pa uz granicu od 20 000 tokena dnevno jedan korisnik ima dva do tri razgovora. Poslije osvježavanja stranice razgovor počinje ispočetka. Šta još nije provjereno, piše u [docs/AI_ASISTENT.md](docs/AI_ASISTENT.md).
 
 ## Struktura i dokumentacija
 

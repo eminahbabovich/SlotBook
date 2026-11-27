@@ -66,7 +66,7 @@ Ostaje `openai/gpt-oss-120b`. U ovom mjerenju je trošio manje tokena (33 856 pr
 
 - Mjerenje je deset razgovora po modelu, svaki jednom. Isti razgovor ponovljen daje drugačiji odgovor, pa brojke ovdje nisu prosjek nego jedan uzorak.
 - Pokušaj nagovaranja preko opisa resursa sam probao jednom rečenicom. Pametniji tekst bi možda nagovorio model da predloži nešto, ali rezervaciju i dalje pravi samo dugme.
-- Na Renderu `AI_API_KEY` još nije upisan, pa asistent na produkciji javlja da nije dostupan. Vrijeme odgovora s Rendera prema Groqu nisam mjerio.
+- Na produkciji sam asistenta probao jednom porukom, 27.11.2026, kao demo klijent u Čitaonici PMF: "Ima li slobodan sto sutra ujutro?". Odgovor je stigao za 7,5 s, s prijedlogom za Sto 4 u subotu 28. novembra u 09:00 (`08:00Z`, tačno po Sarajevu). Prijedlog nisam potvrdio. Jedna poruka nije mjerenje brzine, a lokalno je medijan bio oko 1,7 s.
 - Granice besplatnog plana nisam pročitao iz konzole, samo iz dokumentacije koja kaže da je tabela za Developer plan.
 - Poslije osvježavanja stranice razgovor počinje ispočetka. Historija je u bazi, ali widget je ne učitava, a `GET .../messages` ne vraća karte prijedloga.
 - Link na kalendar za plaćeni resurs stoji u tekstu kao običan tekst, nije klikabilan.

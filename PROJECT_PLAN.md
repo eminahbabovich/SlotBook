@@ -619,7 +619,7 @@ spisak onoga što nije urađeno ili nije provjereno na pravom telefonu.
 - [x] k6 rezultati i vraćen backup zapisani s datumom i opisom
 - [x] Nema tajni u repozitoriju (provjereno alatom, ne samo okom)
 
-Provjereno 27.11.2026. Na produkciji frontend, `/api/status` i Swagger UI vraćaju 200, demo klijent se prijavi i dobije svoje rezervacije i organizacije. Lokalno prolazi 658 backend i 352 frontend testa, a Playwright ima 9 tokova u `frontend/e2e/glavni-tok.e2e.js`. Zavisnosti skeniraju Dependabot, `dependency-review-action` na pull requestu i CodeQL, a tajne gitleaks u CI-ju. Isti gitleaks je lokalno prošao 231 commit bez nalaza. k6 i vraćanje backupa su od 22.11.2026, u `docs/PERFORMANSE.md` i `docs/RUNBOOK.md`. AI asistent nije dio jezgra. Na produkciji radi tek kad je na Renderu upisan `AI_API_KEY`.
+Provjereno 27.11.2026. Na produkciji frontend, `/api/status` i Swagger UI vraćaju 200, demo klijent se prijavi i dobije svoje rezervacije i organizacije. Lokalno prolazi 658 backend i 352 frontend testa, a Playwright ima 9 tokova u `frontend/e2e/glavni-tok.e2e.js`. Zavisnosti skeniraju Dependabot, `dependency-review-action` na pull requestu i CodeQL, a tajne gitleaks u CI-ju. Isti gitleaks je lokalno prošao 231 commit bez nalaza. k6 i vraćanje backupa su od 22.11.2026, u `docs/PERFORMANSE.md` i `docs/RUNBOOK.md`. AI asistent nije dio jezgra. Na produkciji je s ključem na Renderu odgovorio na jednu probnu poruku tačnim prijedlogom.
 - [ ] Mogu bez gledanja objasniti: `EXCLUDE` constraint, zašto outbox, refresh token
   rotaciju i detekciju ponovne upotrebe, kako se računaju slobodni termini i DST, šta se
   desi pri istovremenoj rezervaciji, `Idempotency-Key`, zašto webhook mora biti
