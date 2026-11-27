@@ -564,3 +564,11 @@ Kod alata za čitanje me iznenadilo da `ResourceAccess.canView` nije dovoljan. P
 Prijedlog i potvrda. Claude je u testu napisao `'2035-03-26 10:00+01'`, a 26. mart 2035. je već ljetno vrijeme, pa bi to bilo 11:00 po našem satu. Uhvatio je to sam prije pokretanja, ali je to tačno ona greška koju alati trebaju spriječiti kod modela. Usput je jedan Python skript za izmjenu testa pao, jer je obrnuta kosa crta u `replaceFirst("/members/\{...")` pogrešno escapeovana. Zbog toga je izolacioni test prvo pao na dvije nove rute koje nisu bile u njegovoj listi. Čuvar ruta je odradio svoje.
 
 Nisam znao da `LocalDateTime.atZone` sat koji ne postoji ne odbije, nego ga pomjeri. 02:30 na dan pomjeranja sata postane 03:30.
+
+## Petak, 27. novembar 2026, 16:21
+
+Petlja. Izolacioni test je pao s `500` na `POST /api/chat/sessions/{sessionId}/messages`, i to u testu gdje vlasnik razgovora treba proći. Lažni model nije imao zadan odgovor, pa je bacio `IllegalStateException`. Ruta je znači stvarno došla do modela, a tuđi tokeni nisu, jer su njihovi testovi prošli. Popravak je da izolacioni test zada modelu "U redu." prije svakog testa.
+
+Nisam znao da poziv alata bez rezultata u historiji pokvari sljedeću poruku kod provajdera. Zato odsječen odgovor (`length`) ne izvršava alate, nego se čuva samo tekst. Kad sam za mutaciju izbacio tu provjeru, alat je dobio pola JSON-a, vratio grešku modelu, a lažni model u drugom krugu nije imao šta reći.
+
+Heredoc u bashu je dvaput pao s `unexpected EOF while looking for matching`, oba puta prije nego što je ijedan fajl upisan. Claude je fajlove onda pisao jedan po jedan.

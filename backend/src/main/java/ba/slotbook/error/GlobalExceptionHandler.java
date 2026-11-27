@@ -28,7 +28,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import ba.slotbook.account.AccountDeletionBlockedException;
 import ba.slotbook.auth.InvalidRefreshTokenException;
 import ba.slotbook.availability.TimeOffNotFoundException;
+import ba.slotbook.chat.ChatDailyLimitException;
+import ba.slotbook.chat.ChatModel;
 import ba.slotbook.chat.ChatProposalNotUsableException;
+import ba.slotbook.chat.ChatSessionFullException;
 import ba.slotbook.booking.AlreadyInSlotException;
 import ba.slotbook.booking.AwaitingPaymentException;
 import ba.slotbook.booking.BookingStatus;
@@ -134,11 +137,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			case NALOG -> "Za ovaj email je bilo previše pogrešnih lozinki, pa je prijava zaključana na 15 minuta. "
 					+ "Pokušaj ponovo kasnije.";
 			case POZIVNICA -> "Na ovaj email su u zadnjih sat vremena poslane tri pozivnice. Pokušaj ponovo kasnije.";
+			case PORUKE -> "Asistentu je u zadnjoj minuti poslano previše poruka. Sačekaj par sekundi pa pošalji ponovo.";
 		});
 		problem.setTitle(switch (ex.getRazlog()) {
 			case ADRESA -> "Previše pokušaja";
 			case NALOG -> "Prijava privremeno zaključana";
 			case POZIVNICA -> "Previše mailova";
+			case PORUKE -> "Previše poruka";
 		});
 		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
 				.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.sekundiDoSljedeceg()))
@@ -366,6 +371,51 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		};
 		problem.setTitle("Pozivni link ne važi");
 		problem.setProperty("razlog", ex.getReason().name());
+		return problem;
+	}
+
+	// Retry-After je do ponoći po UTC-u, kad se dnevni brojač tokena vraća na nulu
+	@ExceptionHandler(ChatDailyLimitException.class)
+	ResponseEntity<ProblemDetail> chatDnevnaGranica(ChatDailyLimitException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS,
+				ex.zaCijeluAplikaciju()
+						? "Asistent je danas potrošio sve besplatne poruke za cijelu aplikaciju. Termine i dalje "
+								+ "možeš rezervisati u kalendaru, a asistent opet radi sutra."
+						: "Tvoja dnevna granica poruka asistentu je potrošena. Termine i dalje možeš rezervisati "
+								+ "u kalendaru, a asistent opet radi sutra.");
+		problem.setTitle("Asistent je za danas potrošen");
+		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+				.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.sekundiDoPonoci()))
+				.body(problem);
+	}
+
+	@ExceptionHandler(ChatSessionFullException.class)
+	ProblemDetail chatSesijaPuna(ChatSessionFullException ex) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Ovaj razgovor je dostigao najveći broj poruka. Otvori novi razgovor i pitaj ponovo.");
+		problem.setTitle("Razgovor je pun");
+		return problem;
+	}
+
+	// Besplatna kvota provajdera je potrošena za ovu minutu ili dan. Nije greška korisnika, pa 503, a ne 429.
+	@ExceptionHandler(ChatModel.ZauzetException.class)
+	ResponseEntity<ProblemDetail> asistentZauzet(ChatModel.ZauzetException ex) {
+		log.warn("AI provajder je vratio 429, Retry-After {} s", ex.sekundi());
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+				"Asistent je trenutno zauzet. Pokušaj ponovo malo kasnije, a termin možeš rezervisati i u kalendaru.");
+		problem.setTitle("Asistent je zauzet");
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.sekundi()))
+				.body(problem);
+	}
+
+	// Provajder ne odgovara, vratio je grešku ili ključ nije podešen
+	@ExceptionHandler(ChatModel.NedostupanException.class)
+	ProblemDetail asistentNedostupan(ChatModel.NedostupanException ex) {
+		log.error("AI asistent nije odgovorio", ex);
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+				"Asistent trenutno ne radi. Termine i dalje možeš rezervisati u kalendaru.");
+		problem.setTitle("Asistent nije dostupan");
 		return problem;
 	}
 

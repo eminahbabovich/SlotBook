@@ -8,6 +8,7 @@ import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import ba.slotbook.chat.LazniChatModel;
 import ba.slotbook.payment.LazniStripeCheckout;
 
 @TestConfiguration(proxyBeanMethods = false)
@@ -24,6 +25,13 @@ public class TestcontainersConfiguration {
 	@Primary
 	LazniStripeCheckout lazniStripe() {
 		return new LazniStripeCheckout();
+	}
+
+	// Ni Groq se ne zove iz testova. Pravi ChatCompletionsClient testira ChatCompletionsClientTest.
+	@Bean
+	@Primary
+	LazniChatModel lazniChatModel() {
+		return new LazniChatModel();
 	}
 
 	@Bean

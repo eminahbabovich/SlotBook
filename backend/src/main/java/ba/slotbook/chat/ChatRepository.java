@@ -38,6 +38,11 @@ class ChatRepository {
 		return jdbc.sql("select user_id from chat_sessions where id = ?").param(sesija).query(UUID.class).optional();
 	}
 
+	Optional<UUID> organizacija(UUID sesija) {
+		return jdbc.sql("select organization_id from chat_sessions where id = ?").param(sesija).query(UUID.class)
+				.optional();
+	}
+
 	// Red sesije ostaje zaključan do kraja transakcije, pa druga poruka u istoj sesiji čeka i vidi novi broj
 	int zakljucajIBroj(UUID sesija) {
 		return jdbc.sql("select message_count from chat_sessions where id = ? for update").param(sesija)

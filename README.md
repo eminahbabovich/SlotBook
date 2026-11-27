@@ -133,7 +133,7 @@ Ovdje je ono za šta nemam dokaz na pravom uređaju ili na produkciji, i ono št
 - `npm audit` javlja 4 umjerene ranjivosti u alatu za build PWA (`workbox-build`). U produkcijskim paketima ih nema, a popravka koju nudi npm vraća plugin na verziju bez podrške za Vite 8.
 - Slike resursa su na disku Rendera i nestanu sa svakim deployem. Cloudflare R2 traži karticu i za besplatni plan, pa ga nisam uključio ([docs/ODLUKE.md](docs/ODLUKE.md)). Demo podaci nemaju slika, pa se to vidi tek kad neko postavi svoju.
 - Stripe na produkciji sam probao jednom uplatom i jednim povratom, skriptom. Istek neplaćene rezervacije (`checkout.session.expired`) na produkciji nisam čekao, provjeren je samo lokalno.
-- Faza 14 (AI asistent) nije počela.
+- AI asistent (Faza 14) za sada postoji samo na backendu. Alati, prijedlozi s dugmetom Potvrdi i petlja su provjereni testovima, ali s lažnim modelom koji radi ono što mu test zada. Pravi Groq model je odgovorio samo na jedan pozdrav, kroz razgovor o rezervaciji ga još nisam vodio. Widget ne postoji.
 
 ## Struktura i dokumentacija
 

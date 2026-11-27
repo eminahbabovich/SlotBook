@@ -1309,3 +1309,20 @@ Plaćeni resurs chat ne rezerviše. Alat vrati link na kalendar resursa, gdje St
 
 Model piše lokalni datum i sat, a Java ih pretvara u `Instant` u zoni organizacije. `LocalDateTime.atZone` sat koji ne postoji (02:30 na dan kad sat skače s 02:00 na 03:00) tiho pomjeri na 03:30. Zato alat poredi rezultat s traženim satom i vrati grešku umjesto pogrešnog termina. Prijedlog se pravi samo za termin koji je u tom trenutku slobodan. Pravila korištenja (koliko aktivnih rezervacija, koliko dana unaprijed) alat ne provjerava, jer `BookingRules` radi s entitetom resursa koji paket `chat` ne vidi. Ta pravila se provjere na potvrdi i stignu kao 422 u widget, a ne modelu.
 
+## Petlja alata u chatu (27.11.2026)
+
+`POST /api/chat/sessions/{id}/messages` pošalje modelu uputstvo, historiju i pitanje. Dok model traži alate, `ChatService` ih izvršava i vraća mu rezultate, najviše pet krugova. gpt-oss ne zove alate paralelno, pa je krug obično jedan alat. "Nađi resurs, provjeri dan, predloži" su tri kruga, a pet ostavlja malo zraka. Model koji se zavrti u krug zaustavi se na petom i korisnik dobije poruku da pita uže.
+
+Petlja nije u transakciji. Jedan krug čeka provajdera i do 20 sekundi, a transakcija bi sve to vrijeme držala konekciju iz poola. Alati imaju svoje transakcije, a nove poruke (pitanje, pozivi alata, rezultati, odgovor) se upišu zajedno na kraju, pod lock-om sesije. Kad provajder padne usred petlje, u historiji nema ništa od te poruke. Tokeni potrošeni u prvim krugovima se ipak broje, jer ih je provajder naplatio od kvote. Prijedlog napravljen u krugu prije pada ostaje u bazi bez karte na ekranu i istekne za 10 minuta.
+
+Kad provajder stane na granici tokena (`finish_reason: length`), pozivi alata iz tog odgovora se ne izvršavaju. Argumenti su odsječen JSON, a poziv alata bez rezultata provajder odbije u sljedećoj poruci. U historiju ide samo tekst s napomenom da je odgovor odsječen.
+
+Greške imaju svoje statuse. Potrošena dnevna granica je `429` s `Retry-After` do ponoći po UTC-u. Puna sesija je `409`, jer korisnik treba otvoriti novi razgovor. Kad provajder vrati 429 ili ne odgovara, mi vraćamo `503`. To nije greška korisnika, a `429` bi rekao da je on poslao previše. Kod 429 provajdera `Retry-After` prenosimo dalje. Sve provjere su prije prvog poziva modela, da odbijena poruka ne potroši token.
+
+Uz dnevnu granicu tokena postoji i granica od 6 poruka u minuti po korisniku (Bucket4j, kao za prijavu, ali po korisniku, a ne po adresi). Groq besplatno daje oko 30 zahtjeva u minuti za cijelu aplikaciju, a jedna poruka s alatima je dva do pet zahtjeva. Taj broj je iz Groqove tabele, a nije izmjeren. Bucketi su u memoriji, kao i za prijavu, što radi dok je jedna instanca.
+
+Uputstvo modelu ima trenutni dan i sat u zoni organizacije. U 00:30 po Sarajevu je u UTC-u još jučer, pa bi s UTC datumom "sutra" bio pogrešan dan. Test s 23:30 UTC to provjerava.
+
+Testovi petlje idu na lažni `ChatModel` koji vraća ono što mu test zada. Oni dokazuju šta server radi kad model pozove alat, laže da je rezervisao ili posluša uputstvo iz opisa resursa: rezervacije nema bez dugmeta. Ne dokazuju kako se ponaša pravi model, npr. da li iz "sutra u 8" sam izračuna pravi datum. To je za mjerenje u koraku 6.
+
+`GET .../messages` vraća samo tekst, bez karata prijedloga. Ako korisnik osvježi stranicu, karta nestane, a prijedlog i dalje važi do isteka. Da li karta treba preživjeti osvježavanje, odlučiću kad bude widget.

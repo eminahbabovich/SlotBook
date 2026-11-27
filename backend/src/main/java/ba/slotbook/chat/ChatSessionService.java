@@ -49,6 +49,14 @@ public class ChatSessionService {
 		return chat.poruke(sessionId).stream().map(SacuvanaPoruka::poruka).toList();
 	}
 
+	// Prije modela, da puna sesija ne potroši tokene. Najmanje dvije nove poruke: pitanje i odgovor.
+	// dopisi poslije svejedno provjeri stvaran broj, jer krug s alatima doda više.
+	void provjeriMjesto(int postojecih) {
+		if (postojecih + 2 > maxPoruka) {
+			throw new ChatSessionFullException();
+		}
+	}
+
 	// Sve ili ništa. Lock na redu sesije drži dvije istovremene poruke u istoj sesiji u redu.
 	@Transactional
 	void dopisi(UUID sessionId, List<Poruka> nove) {

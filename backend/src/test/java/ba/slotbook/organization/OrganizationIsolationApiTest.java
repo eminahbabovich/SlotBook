@@ -38,6 +38,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.jayway.jsonpath.JsonPath;
 
 import ba.slotbook.TestcontainersConfiguration;
+import ba.slotbook.chat.LazniChatModel;
 import ba.slotbook.user.UserRepository;
 
 // Kriterij "gotovo" Faze 2: korisnik iz organizacije A ne može dotaknuti podatke organizacije B
@@ -82,6 +83,9 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/chat/sessions", null),
 			// Razgovor je Almin, pa ga ni klijent ni provider iste organizacije ne čitaju
 			new Zahtjev(HttpMethod.GET, "/api/chat/sessions/{sessionId}/messages", null),
+			new Zahtjev(HttpMethod.POST, "/api/chat/sessions/{sessionId}/messages", """
+					{"text": "Pokaži mi rezervacije"}
+					"""),
 			// Almini prijedlozi iz chata: potvrda otkazuje njenu rezervaciju, a odbijanje gasi prijedlog termina
 			new Zahtjev(HttpMethod.POST, "/api/chat/proposals/{prijedlogZaPotvrdu}/confirm", null),
 			new Zahtjev(HttpMethod.POST, "/api/chat/proposals/{prijedlogZaOdbijanje}/dismiss", null),
@@ -222,6 +226,10 @@ class OrganizationIsolationApiTest {
 
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 13 };
 
+	// Vlasnik razgovora dobije odgovor, a tuđi tokeni ne smiju ni doći do modela
+	@Autowired
+	LazniChatModel model;
+
 	@Autowired
 	MockMvc mockMvc;
 
@@ -278,6 +286,8 @@ class OrganizationIsolationApiTest {
 		pozivniLink = pozivniLink();
 		ekran = ekranNaVratima();
 		razgovor = alminRazgovor();
+		model.ocisti();
+		model.kaze("U redu.");
 		prijedlozi = alminiPrijedlozi();
 	}
 

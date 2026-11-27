@@ -117,14 +117,19 @@ class ChatTools {
 	record Kontekst(UUID organizationId, UUID userId, UUID sessionId, Authentication authentication) {
 	}
 
-	record RezultatAlata(String sadrzaj, boolean greska) {
+	// prijedlog je karta za widget, kad je alat napravio prijedlog. Model dobija samo sadrzaj.
+	record RezultatAlata(String sadrzaj, boolean greska, ChatProposalView prijedlog) {
 
 		static RezultatAlata uspjeh(Object podaci) {
-			return new RezultatAlata(JSON.writeValueAsString(podaci), false);
+			return new RezultatAlata(JSON.writeValueAsString(podaci), false, null);
+		}
+
+		static RezultatAlata prijedlog(Object podaci, ChatProposalView karta) {
+			return new RezultatAlata(JSON.writeValueAsString(podaci), false, karta);
 		}
 
 		static RezultatAlata greska(String poruka) {
-			return new RezultatAlata(JSON.writeValueAsString(Map.of("error", poruka)), true);
+			return new RezultatAlata(JSON.writeValueAsString(Map.of("error", poruka)), true, null);
 		}
 
 	}
@@ -228,9 +233,12 @@ class ChatTools {
 							+ "check_availability za slobodne termine.");
 		}
 		UUID prijedlog = prijedlozi.predloziRezervaciju(kontekst.sessionId(), resursId, trenutak);
-		return RezultatAlata.uspjeh(new Prijedlog(prijedlog.toString(), "book", resurs.name(), dan.toString(),
-				SAT.format(vrijeme), sat(slobodan.get().end(), zona), resurs.autoConfirm() ? null : true,
-				prijedlozi.minutaDoIsteka(), CEKA_DUGME));
+		Instant kraj = slobodan.get().end();
+		return RezultatAlata.prijedlog(new Prijedlog(prijedlog.toString(), "book", resurs.name(), dan.toString(),
+				SAT.format(vrijeme), sat(kraj, zona), resurs.autoConfirm() ? null : true,
+				prijedlozi.minutaDoIsteka(), CEKA_DUGME),
+				new ChatProposalView(prijedlog, "BOOK", resursId, resurs.name(), trenutak, kraj, !resurs.autoConfirm(),
+						null));
 	}
 
 	private RezultatAlata cancelBooking(JsonNode argumenti, Kontekst kontekst) {
@@ -245,9 +253,11 @@ class ChatTools {
 					+ "). Za otkazivanje se javi organizaciji.");
 		}
 		UUID prijedlog = prijedlozi.predloziOtkazivanje(kontekst.sessionId(), id);
-		return RezultatAlata.uspjeh(new Prijedlog(prijedlog.toString(), "cancel", rezervacija.resourceName(),
+		return RezultatAlata.prijedlog(new Prijedlog(prijedlog.toString(), "cancel", rezervacija.resourceName(),
 				datum(rezervacija.startTime(), zona), sat(rezervacija.startTime(), zona),
-				sat(rezervacija.endTime(), zona), null, prijedlozi.minutaDoIsteka(), CEKA_DUGME));
+				sat(rezervacija.endTime(), zona), null, prijedlozi.minutaDoIsteka(), CEKA_DUGME),
+				new ChatProposalView(prijedlog, "CANCEL", rezervacija.resourceId(), rezervacija.resourceName(),
+						rezervacija.startTime(), rezervacija.endTime(), false, id));
 	}
 
 	// canView sam pušta resurs bilo koje organizacije u kojoj je korisnik član, a sesija je u jednoj
