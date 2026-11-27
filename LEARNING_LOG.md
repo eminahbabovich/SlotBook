@@ -556,3 +556,7 @@ Prvi pokušaj cijelog backenda dao je 448 grešaka od 599 testova. Docker nije b
 Iznenadilo me da Jackson 3 sam preskače polja koja ne poznaje. Stavio sam `@JsonIgnoreProperties` na sve zapise odgovora, izbrisao ga za mutaciju, a test s `reasoning` i `x_groq` je i dalje prolazio. Anotacija je izbačena.
 
 Za historiju razgovora sam bez `for update` na sesiji pustio deset niti da istovremeno dopisuju poruke. Pale su na primarnom ključu `(session_id, seq)`, jer su dvije pročitale isti broj poruka. S lock-om dobiju redne brojeve 1 do 10 bez rupa. Brojač tokena je upsert u bazi. Kad sam sabiranje promijenio u običan upis, test s dvadeset niti je pao, a s njim i test granice po korisniku, jer je od 600 + 400 ostalo samo 400.
+
+Kasnije istog dana: pravi poziv na Groq radi. Iz PowerShella u rootu projekta, ključ pročitan iz `.env`, odgovor je bio pozdrav na bosanskom.
+
+Kod alata za čitanje me iznenadilo da `ResourceAccess.canView` nije dovoljan. Pušta resurs iz bilo koje organizacije u kojoj sam član, a chat sesija je vezana za jednu. U testu je Lejla član i čitaonice i teretane, pa bi samo s `canView` iz čitaonice dobila termine Sale 3 u teretani. Test s njom u obje organizacije to hvata. Za DST sam prvo pustio Javu da kaže kad je pomjeranje sata 2035. godine (`Gap at 2035-03-25T02:00+01:00`), umjesto da računam nedjelje u martu napamet.

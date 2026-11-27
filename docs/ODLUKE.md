@@ -1285,3 +1285,14 @@ Sesija ima najviše 30 poruka i poslije se otvara nova. Rezanje starih poruka bi
 
 Dnevna granica broji tokene iz `usage`, po korisniku i ukupno, po UTC danu. Ne znam u koliko sati Groq resetuje dnevnu kvotu. UTC je pretpostavka, nisam je provjerio. Brojač je `insert ... on conflict do update set tokens = tokens + excluded.tokens`, pa ga baza sabira atomarno. Test s dvadeset niti dobije tačno 2000. Provjera je prije poruke, a koliko je poruka potrošila zna se tek poslije, pa zadnja poruka dana smije malo prebaciti granicu. Granice su 20 000 tokena po korisniku i 150 000 ukupno, ispod Groqovih 200 000 za `gpt-oss-120b`. Koliko je to razgovora, znaću tek kad izmjerim u koraku 6.
 
+
+## Alati za čitanje u chatu (27.11.2026)
+
+Asistent ima četiri alata za čitanje: `list_resources`, `find_free_slots`, `check_availability` i `get_my_bookings`. Svaki zove servis koji već koristi kontroler (`ResourceService.list`, `FreeSlotService.inOrganization` i `calendar`), pa chat i ekran računaju slobodne termine istom logikom. Jedino je dodata `BookingService.upcomingInOrganization`, nad upitom koji već postoji za uklanjanje člana. `/api/bookings/mine` vraća rezervacije iz svih organizacija, s prošlim terminima i po stranicama, a modelu trebaju samo buduće iz organizacije u kojoj pita.
+
+Korisnik i organizacija dolaze iz sesije, ne iz argumenata koje je napisao model. Za resurs po id-ju ne bi bio dovoljan ni `ResourceAccess.canView`. On pusti resurs svake organizacije u kojoj je korisnik član. Ako je Lejla član čitaonice i teretane, a pita u čitaonici, model bi mogao dobiti termine teretane. Zato alat provjerava i da je resurs iz organizacije sesije, i to dokazuje test.
+
+Vrijeme ide modelu samo kao lokalni datum i sat (`"date": "2035-03-25", "start": "08:00"`), nikad kao UTC. Test ide preko 25.3.2035, kad se u Sarajevu pomjera sat. Termin u 08:00 je dan prije 07:00 UTC, a od tog dana 06:00 UTC, i alat oba puta kaže 08:00. Kad sam za mutaciju formatirao u UTC-u, test je pao.
+
+Model zna napisati pogrešan JSON, datum "sutra" ili alat koji ne postoji. To nije izuzetak koji obara zahtjev, nego rezultat s porukom na bosanskom, pa model može ispraviti poziv ili pitati korisnika. Rezultati su skraćeni: najviše 40 termina, 50 resursa i 20 rezervacija, opis resursa do 300 znakova. Rezultat ide nazad uz cijelu historiju, a Groq na besplatnom nivou prima oko 8000 tokena u minuti. Opise alata sam napisao na engleskom, jer ih čita samo model. Opis resursa piše admin, pa u opisu `list_resources` piše da je to podatak, a ne uputa. Da li to stvarno zaustavlja ubačene upute, provjeriće test u koraku 5.
+

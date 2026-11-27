@@ -326,6 +326,15 @@ public class BookingService {
 		return zaPodsjetnik.size();
 	}
 
+	// Za AI asistenta: buduće rezervacije koje drže termin, samo u organizaciji iz koje se pita
+	@Transactional(readOnly = true)
+	public List<MyBookingResponse> upcomingInOrganization(UUID clientId, UUID organizationId) {
+		return bookings.findFutureInOrganization(organizationId, clientId, BookingStatus.DRZE_TERMIN, clock.instant())
+				.stream()
+				.map(MyBookingResponse::from)
+				.toList();
+	}
+
 	// Najkasniji termin prvo, pa budući termini idu prije prošlih. Sort bira server, kao kod resursa,
 	// a id razdvaja rezervacije s istim početkom (različiti resursi), da nijedna ne preskoči stranicu.
 	@Transactional(readOnly = true)
