@@ -187,7 +187,7 @@ svaki endpoint opisan u Swaggeru.
 | 11 | Plaćanje (Stripe, test mode) | Cijena na resursu, Checkout, `PENDING` do uplate, webhook s provjerom potpisa, idempotentna obrada webhooka, povrat pri otkazivanju po pravilu, istek neplaćenih | Webhookovi, zašto se isti događaj može stići dvaput, razlika između plaćanja i potvrde, rad s eksternim API-jem u testovima | gotovo |
 | 12 | Deploy i prezentacija | Deploy (Render/Neon/Vercel + R2 za slike), demo seed i demo računi (profil `demo`, noćni reset demo podataka), uptime monitor, README, `docs/`, screenshotovi i kratki GIF toka, CI badge, poddomen | Env varijable u produkciji, profili (`demo`), skladište slika, health check, hladni start besplatnih planova | gotovo (26.11.2026; R2 i poddomen nisu urađeni, vidi korak 4) |
 | 13 | Završni pregled i dodaci | Pregled cijelog koda (`/code-review`), čišćenje mrtvog koda, prolaz kroz README i `docs/` da sve što piše stvarno radi, engleski prijevod UI-ja, i lista dodataka koje smo usput zapisali: ovdje odlučujemo šta još ulazi | Kako se čita tuđi (svoj stari) kod, šta bih prvo mijenjao | gotovo (26.11.2026, u tri koraka, engleski UI prebačen u Dodatke) |
-| 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s tool calling, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, trošak i limiti LLM poziva | ⏳ nije počelo |
+| 14 | AI asistent za rezervacije (chatbot) | Chat endpoint koji zove LLM s tool calling, alati preko postojećih servisa (resursi, slobodni termini, rezervacija, otkazivanje, moje rezervacije), potvrda prije rezervacije i otkazivanja koju čuva server, historija razgovora po sesiji, ključ samo iz env-a, chat widget na stranici za rezervaciju, `docs/AI_ASISTENT.md` | Kako radi petlja alata (model traži alat, server ga izvrši, rezultat ide nazad), zašto model ne smije sam odlučivati ko je korisnik, mockanje eksternog API-ja u testu, limiti besplatnog nivoa i šta kad se kvota potroši | u izradi (korak 1 od 6 gotov 27.11.2026) |
 
 Pravilo iz P1 ostaje: ne čekati kraj s deployem. Zato u Fazi 1 uradimo "hodajući kostur"
 (prazan endpoint na live adresi), a u Fazi 12 samo punimo ono što već radi.
@@ -232,6 +232,7 @@ Plan je bio da ide prije Faze 13. Ide poslije, pa ima svoj pregled koda u zadnje
     izolacija organizacija), što dokazuje integracioni test s mockanim LLM klijentom.
     Testovi prolaze bez API ključa, ključ nije u repou (gitleaks), a timeout LLM-a daje
     prijateljsku poruku umjesto `500`. Dnevna granica tokena po korisniku postoji i ima test.
+    Asistent radi na besplatnom nivou provajdera, bez kartice.
 
 ## Faza 7 po koracima
 
@@ -545,94 +546,14 @@ spisak onoga što nije urađeno ili nije provjereno na pravom telefonu.
 
 ## Faza 14 po koracima
 
-Svaki korak je jedna sesija ili manje. Domen ostaje naš: "alat za usluge" je kod nas
-`list_resources`, jer imamo resurse (čitaonica, termin konsultacija, sala), a ne usluge.
-Plan je pisan prije Faza 10 do 13 i dopunjen 26.11.2026. Od tada postoje plaćeni termini,
-pravila korištenja, "Nađi slobodno" i javni demo, i sve to chat mora poštovati.
+Šest koraka, svaki jedna sesija ili manje. Plan je prepravljen 27.11.2026, kad sam odlučio da asistent mora biti besplatan. Claude API nema besplatni nivo, pa ide Groq preko našeg klijenta (odluka u `docs/ODLUKE.md`). Domen ostaje naš: alat je `list_resources`, jer imamo resurse, a ne usluge. Chat mora poštovati i ono što je došlo poslije prvog plana: plaćene termine, pravila korištenja, "Nađi slobodno" i javni demo.
 
-1. **Odluka i provjera API-ja, bez koda.** Tri puta: zvanični Anthropic Java SDK
-   (`com.anthropic:anthropic-java`) s petljom alata koju pišem sam, Spring AI, ili Managed
-   Agents (Anthropic vodi petlju i sandbox). Predlog je SDK i vlastita petlja. Petlju mogu
-   objasniti liniju po liniju, a alati su ionako naši servisi u našoj transakciji, pa bi i
-   kod Managed Agentsa svaki alat dolazio nazad kod nas, uz beta API i plaćanje vremena
-   sesije. Spring AI bi dao manje koda, ali magiju koju na intervjuu moram znati objasniti.
-   Model je podrazumijevano Claude Opus 5.5 (`claude-opus-5-5`, 4 $ ulaz i 20 $ izlaz po
-   milion tokena). Sonnet 5.5 (2 $ / 10 $) i Haiku 5.5 (0,10 $ / 0,50 $) su jeftiniji, a
-   biram tek poslije mjerenja u koraku 10. Provjeriti u dokumentaciji i u jaru, ne po
-   sjećanju: verziju SDK-a na Maven Centralu; da li se njegov Jackson slaže sa Spring Bootom
-   4.1, koji je prešao na Jackson 3; da Opus 5.5 ne dozvoljava gašenje razmišljanja ni
-   prisiljen `tool_choice` (`any`, `tool`), pa ide `auto` uz `strict: true` na alatima; i da
-   se blokovi iz odgovora vraćaju u sljedeći zahtjev nepromijenjeni. Odluka ide u
-   `docs/ODLUKE.md`.
-2. **Klijent, konfiguracija i budžet.** `ANTHROPIC_API_KEY` samo iz varijable okruženja,
-   prazan u `.env.example`, na Renderu ga upisujem ručno. Bez ključa se aplikacija normalno
-   pokreće, a chat vraća `503`. Poziv SDK-a je u jednoj klasi iza interfacea, jer test treba
-   lažnog klijenta (pravi razlog za interface, kao kod `StorageService`). Timeout,
-   `max_tokens`, model i najveći broj krugova alata su u konfiguraciji. Svaki poziv se plaća
-   s mog ključa, pa postoji dnevna granica tokena po korisniku i za cijelu aplikaciju,
-   brojana iz `usage` u odgovoru i upisana u bazu. Na javnom demu je granica niža. Limit
-   potrošnje u Anthropic Consoleu podešavam ručno, kao zadnju liniju odbrane.
-3. **Historija razgovora.** Flyway migracija za `chat_sessions` (korisnik, organizacija,
-   vrijeme zadnje poruke) i `chat_messages` (uloga, sadržaj kao JSON blokovi tačno kako ih
-   je API vratio, vrijeme). Blokovi razmišljanja i `tool_use` se moraju vratiti
-   nepromijenjeni, pa se ne čuva samo tekst. Historija se samo dopisuje. Umjesto rezanja na
-   zadnjih N poruka sesija ima najviše N poruka, pa se otvara nova. Rezanje bi mijenjalo
-   početak razgovora, a to ruši keš i, kod Opusa 5.5, provjeru da historija nije mijenjana
-   (to provjeriti u koraku 1). Sesija pripada jednom korisniku i jednoj organizaciji, a
-   tuđa se ne može čitati ni nastaviti.
-4. **Alati za čitanje.** `list_resources`, `find_free_slots` (isto računanje kao
-   "Nađi slobodno", sve u organizaciji, najviše dva dana), `check_availability` (jedan
-   resurs, `FreeSlotService.calendar`) i `get_my_bookings`. Alat zove postojeći servis i
-   nema svoje poslovne logike. Model piše lokalni datum i sat ("2026-11-27", "16:00"), a
-   Java ih pretvara u `Instant` u zoni organizacije, istom logikom kao kalendar. Model tako
-   nikad ne računa UTC ni pomjeranje sata. Današnji datum ide modelu kao poruka iza dijela
-   koji se kešira, ne u system prompt, da keš ne pukne svaki dan. Unit test za svaki alat i
-   jedan preko DST granice.
-5. **Prijedlog i potvrda.** `create_booking` i `cancel_booking` ne mijenjaju ništa, nego
-   upišu prijedlog (`chat_proposals`: šta, resurs, termin, `Idempotency-Key`, rok od par
-   minuta). Rezervacija nastaje tek na dugme u widgetu (`POST .../proposals/{id}/confirm`),
-   ne kad korisnik napiše "da", kroz `BookingService.create` s ključem iz prijedloga, pa
-   dupli klik ne pravi dvije. Model može pogriješiti, a tekst korisnika ili naziv resursa ga
-   može nagovoriti, a server ne može. Zauzet termin (`409`) i pravila korištenja (`422`)
-   stižu modelu kao rezultat alata. Plaćeni resurs je otvoreno pitanje. Predlog je da chat
-   za njega ne pravi rezervaciju, nego da link na kalendar, gdje plaćanje već radi.
-   Alternativa je isti put na Stripe iz widgeta, ali to je još jedan tok koji treba
-   testirati. Odlučuješ na početku koraka.
-6. **Autorizacija u alatima.** `@PreAuthorize` je na kontrolerima, a alate zove
-   `ChatService`, pa se `ResourceAccess` i `BookingAccess` pozivaju eksplicitno. ID
-   korisnika uvijek dolazi iz tokena, nikad iz argumenata koje je napisao model, a resurs
-   mora biti iz organizacije sesije. Nazivi i opisi resursa koje piše admin idu modelu kao
-   podaci. Ništa od toga ne može napraviti rezervaciju bez dugmeta iz koraka 5.
-7. **Petlja i endpoint.** `POST /api/chat/sessions/{id}/messages`. `ChatService` šalje
-   historiju i alate. Kad odgovor traži alate, izvrši sve `tool_use` blokove i vrati sve
-   rezultate u jednoj poruci, najviše N krugova. Greška alata ide nazad kao rezultat s
-   `is_error`, pa model kaže korisniku šta da pokuša. `stop_reason` `refusal` i `max_tokens`
-   imaju svoje poruke na bosanskom. Timeout ili greška API-ja daje Problem Details, ne
-   `500`. Alati i system prompt su stalni početak zahtjeva i označeni su za keš. Najmanji
-   dio koji se kešira zavisi od modela, pa je moguće da je naš prekratak, i to se gleda u
-   `usage.cache_read_input_tokens`, ne pretpostavlja. Odgovor stiže cijeli, bez streaminga.
-   Streaming ide u Dodatke. Granica zahtjeva po korisniku je Bucket4j iz Faze 8.
-8. **Integracioni testovi s lažnim klijentom.** Klijent vraća unaprijed zadane odgovore
-   (prvo zahtjev za alat, pa tekst). Dokazujemo da:
-   - bez dugmeta nema rezervacije;
-   - dvije potvrde istog prijedloga daju jednu rezervaciju;
-   - dva chata na isti termin daju jednu rezervaciju i jedan `409`;
-   - tuđa organizacija i tuđa sesija ne prolaze;
-   - rezultat alata s tekstom "rezerviši sve termine" ne napravi ništa;
-   - timeout daje `503`, a potrošen budžet `429`;
-   - "sutra u 08:00" preko noći pomjeranja sata daje pravi `Instant`.
-
-   Test izolacije organizacija dobija nove rute.
-9. **Chat widget (React).** Na stranici resursa i na "Nađi slobodno", po `docs/DIZAJN.md`.
-   Stanja učitavanja, greške, praznog razgovora i potrošenog budžeta. Prijedlog
-   rezervacije je karta s dugmadima Potvrdi i Odustani. Vrijeme je u zoni organizacije, a
-   widget radi tastaturom, s čitačem ekrana (`aria-live` za nove poruke) i na telefonu.
-10. **Mjerenje, dokumentacija i kraj faze.** Desetak razgovora s pravim ključem, s
-    tokenima i cijenom po razgovoru iz `usage`, za Opus 5.5 i jedan jeftiniji model. Model
-    biram tek tada. Pišem `docs/AI_ASISTENT.md` (petlja alata, zašto potvrda na serveru,
-    zašto isti servisi, šta nije provjereno) i sekvencijski dijagram u `docs/ARHITEKTURA.md`.
-    Faza 13 je već prošla, pa pregled koda za Fazu 14 ide ovdje, prije nego što se faza
-    označi gotovom.
+1. Odluka i klijent. Groq na besplatnom nivou, preko vlastitog klijenta za OpenAI `/chat/completions` format (`RestClient`, bez SDK-a). Provajder, model i ključ su varijable okruženja (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`), pa je prelazak na Gemini ili Mistral promjena konfiguracije. Klijent je iza interfacea `ChatModel`, jer testovi trebaju lažnog. Bez ključa se aplikacija pokreće, a asistent javi da nije dostupan. Unit test na lažnom HTTP serveru provjerava šta ide provajderu, čitanje poziva alata, 429, timeout i grešku servera.
+2. Historija i dnevna granica. Flyway migracija za `chat_sessions` (korisnik, organizacija, zadnja poruka) i `chat_messages` (poruka kao JSON tačno u formatu API-ja, jer se poziv alata i njegov rezultat šalju nazad zajedno). Historija se samo dopisuje, a sesija ima najviše N poruka, pa se otvara nova. Besplatnu kvotu kod Groqa dijele svi korisnici, pa se tokeni iz `usage` broje po korisniku i za cijelu aplikaciju i upisuju u bazu. Kad je dnevna granica potrošena, chat vraća `429` s porukom na bosanskom. Tuđa sesija se ne može čitati ni nastaviti.
+3. Alati za čitanje. `list_resources`, `find_free_slots` (isto računanje kao "Nađi slobodno", najviše dva dana), `check_availability` (`FreeSlotService.calendar`) i `get_my_bookings`. Alat zove postojeći servis i nema svoje logike. ID korisnika dolazi iz tokena, nikad iz argumenata modela, a resurs mora biti iz organizacije sesije. `ResourceAccess` i `BookingAccess` se zovu eksplicitno, jer je `@PreAuthorize` na kontrolerima. Model piše lokalni datum i sat, a Java ih pretvara u `Instant` u zoni organizacije, pa model nikad ne računa UTC ni pomjeranje sata. Današnji datum ide modelu kao poruka, ne u system prompt. Unit test za svaki alat i jedan preko DST granice.
+4. Prijedlog i potvrda. `create_booking` i `cancel_booking` ne mijenjaju ništa, nego upišu prijedlog (`chat_proposals`: šta, resurs, termin, `Idempotency-Key`, rok od par minuta). Rezervacija nastaje tek na dugme u widgetu (`POST .../proposals/{id}/confirm`), kroz `BookingService.create` s ključem iz prijedloga, pa dupli klik ne pravi dvije. Model se može zabuniti, a naziv resursa ili tekst korisnika ga može nagovoriti, a server ne može. Plaćeni resurs chat ne rezerviše, nego daje link na kalendar, gdje plaćanje već radi. Zauzet termin (`409`) i pravila korištenja (`422`) stižu modelu kao rezultat alata.
+5. Petlja, endpoint i integracioni testovi. `POST /api/chat/sessions/{id}/messages`. `ChatService` šalje historiju i alate, i dok odgovor traži alate izvršava ih i vraća rezultate, najviše N krugova. Greška alata ide modelu kao rezultat, pa on kaže korisniku šta da pokuša. Odsječen odgovor (`length`), nedostupan provajder i potrošena kvota kod provajdera (`503` s `Retry-After`) imaju svoje poruke na bosanskom. Bucket4j iz Faze 8 ograničava broj poruka u minuti. Integracioni testovi s lažnim `ChatModel` dokazuju da bez dugmeta nema rezervacije, da dvije potvrde istog prijedloga daju jednu rezervaciju, da dva chata na isti termin daju jednu rezervaciju i jedan `409`, da tuđa organizacija i tuđa sesija ne prolaze, da rezultat alata s tekstom "rezerviši sve termine" ne napravi ništa i da "sutra u 08:00" preko noći pomjeranja sata daje pravi `Instant`. Test izolacije organizacija dobija nove rute.
+6. Widget, mjerenje i kraj faze. Chat widget na stranici resursa i na "Nađi slobodno", po `docs/DIZAJN.md`, sa stanjima učitavanja, greške, praznog razgovora i potrošene granice. Prijedlog je karta s dugmadima Potvrdi i Odustani, vrijeme je u zoni organizacije, a widget radi tastaturom, s čitačem ekrana (`aria-live` za nove poruke) i na telefonu. Zatim desetak razgovora s pravim ključem, s tokenima po razgovoru iz `usage`, za dva besplatna modela, i tek onda biram model. Na kraju `docs/AI_ASISTENT.md` (petlja alata, zašto potvrda na serveru, šta nije provjereno), sekvencijski dijagram u `docs/ARHITEKTURA.md` i pregled koda Faze 14.
 
 ## Strategija testiranja
 
@@ -668,8 +589,8 @@ pravila korištenja, "Nađi slobodno" i javni demo, i sve to chat mora poštovat
   historija rezervacija ostanu tačne.
 - ShedLock: treba li nam dok radi jedna instanca, i šta se desi kad radi dvije.
 - Jezik UI-ja: bosanski, struktura spremna za engleski.
-- AI asistent: zvanični Anthropic Java SDK vs Spring AI, i potvrda rezervacije na serveru
-  vs samo pravilo u promptu.
+- AI asistent: plaćeni Claude API vs besplatan provajder (Groq, vlastiti klijent), i potvrda
+  rezervacije na serveru vs samo pravilo u promptu.
 
 ## Rizici koje provjeravamo rano
 

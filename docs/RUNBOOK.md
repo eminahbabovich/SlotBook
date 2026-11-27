@@ -119,6 +119,8 @@ Stripe (test mode): `STRIPE_SECRET_KEY` (`sk_test_...`) i `STRIPE_WEBHOOK_SECRET
 
 Provjereno 26.11.2026: rezervacija Sale 3 u demu, plaćanje karticom `4242 4242 4242 4242` na Checkout stranici, rezervacija je prešla u `CONFIRMED`, a otkazivanje je vratilo `200`. Povrat ide sinhrono, pa bi odbijen povrat poništio otkazivanje. Ako uplata prođe, a rezervacija ostane `PENDING`, prvo pogledati isporuke kod endpointa u Stripeu. `400` znači pogrešan `STRIPE_WEBHOOK_SECRET`.
 
+AI asistent: `AI_API_KEY` (Groq, console.groq.com, API Keys). Ostavi `AI_BASE_URL` i `AI_MODEL` prazne, osim kad se mijenja provajder. Ključ je besplatan, ali kvotu dijele svi korisnici, pa ga ne koristiti za druge projekte. Na Renderu još nije upisan.
+
 Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (iz `npx web-push generate-vapid-keys`) i `VAPID_SUBJECT` = `mailto:adresa` bez razmaka iza dvotačke. Ključevi se ne mijenjaju, jer bi svi uređaji izgubili pretplatu. Provjera: `GET /api/push/public-key` s tokenom vraća `enabled: true` (26.11.2026).
 
 SMTP: Render na besplatnom planu blokira odlazne portove 25, 465 i 587 (render.com/docs/free, od septembra 2025), pa mail ide na port 2525 sa STARTTLS-om, koji je uključen u `application-prod.properties`. Demo računi ionako ne primaju mail, ali bez SMTP-a se ne može napraviti nov nalog, jer potvrda emaila ne stigne.

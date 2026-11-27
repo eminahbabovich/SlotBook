@@ -38,7 +38,7 @@ Cijeli tok po fazama, sa screenshotovima, je u [docs/HISTORIJA.md](docs/HISTORIJ
 
 Ovo je moj drugi projekat, poslije [RoomSplita](https://github.com/eminahbabovich/roomsplit). Backend učim od nule, pa je cilj bio da svaku liniju mogu objasniti. Učio sam uz AI mentora (Claude): on objašnjava i predlaže, a ja pokrećem, provjeravam i pitam dok ne razumijem.
 
-Rad je išao u fazama iz [PROJECT_PLAN.md](PROJECT_PLAN.md). Od 14 faza gotovo je 13, a Faza 14 (AI asistent za rezervacije) nije počela. Odluke i zašto sam ih donio su u [docs/ODLUKE.md](docs/ODLUKE.md). Šta sam naučio i gdje smo griješili, i ja i Claude, piše u [LEARNING_LOG.md](LEARNING_LOG.md).
+Rad je išao u fazama iz [PROJECT_PLAN.md](PROJECT_PLAN.md). Od 14 faza gotovo je 13, a Faza 14 (AI asistent za rezervacije, na besplatnom Groq nivou) je u izradi. Odluke i zašto sam ih donio su u [docs/ODLUKE.md](docs/ODLUKE.md). Šta sam naučio i gdje smo griješili, i ja i Claude, piše u [LEARNING_LOG.md](LEARNING_LOG.md).
 
 ## Tehnologije
 
@@ -65,6 +65,8 @@ $b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create
 ```
 
 Za plaćanje trebaju `STRIPE_SECRET_KEY` (test ključ `sk_test_...` iz Stripe sandboxa, Developers, API keys) i `STRIPE_WEBHOOK_SECRET` (`whsec_...`, lokalno ga ispiše `stripe listen`). Bez njih aplikacija radi, samo plaćanje vraća `503`, a webhook `400`.
+
+Za AI asistenta treba `AI_API_KEY`, besplatan ključ s console.groq.com (bez kartice). `AI_BASE_URL` i `AI_MODEL` imaju podrazumijevane vrijednosti za Groq i mijenjaju se samo za drugog provajdera. Bez ključa aplikacija radi, samo asistent javi da nije dostupan.
 
 ```powershell
 copy .env.example .env
