@@ -58,6 +58,8 @@ graphify-out/
 
 # --- Lokalne bilješke i alati, ostaju samo na računaru ---
 .claude/skills/
+docs/redizajn/redizajn-3.md
+docs/redizajn/pisi-kao-covjek/
 
 # --- Slike iz lokalnog skladišta ---
 uploads/
