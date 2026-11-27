@@ -8,6 +8,7 @@ import { ULOGE, useOrganizacija, useResursi } from './upiti.js'
 import { emajlResursa, inicijali } from '../resursi/emajl.js'
 import { Mrvice } from '../tema/Mrvice.jsx'
 import { NadjiSlobodno } from './NadjiSlobodno.jsx'
+import { Asistent } from '../asistent/Asistent.jsx'
 import { PrelazLink } from '../tema/PrelazLink.jsx'
 
 const PORUKE = {
@@ -98,6 +99,7 @@ function Resursi({ organizacija }) {
 	return (
 		<>
 			{resursi.some((r) => r.aktivan) && <NadjiSlobodno organizacija={organizacija} />}
+			{resursi.some((r) => r.aktivan) && <Asistent organizacija={organizacija} />}
 			<ul className="tabla">
 			{resursi.map((r) => (
 				<li key={r.id} className="tabla-stavka" style={{ '--emajl': emajlResursa(r.id) }}>

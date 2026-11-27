@@ -339,6 +339,39 @@ Pozadinski posao `BookingJob` (`@Scheduled`, svake minute) prebacuje istekle `PE
 
 Obavijesti idu kroz tabelu `notifications` (outbox): `BookingService` je upiše preko `NotificationService` u istoj transakciji kao promjenu rezervacije, a `NotificationJob` ih svakih 30 sekundi šalje kroz `NotificationSender`, jednu po jednu, svaku u svojoj transakciji (`FOR UPDATE SKIP LOCKED`). Tekst emaila (`subject`, `body`) se upiše kad obavijest nastane, pa pošiljalac ne zna ništa o rezervacijama. Paket `booking` zna za `notification`, a obrnuto ne, zato obavijest drži samo `booking_id`. Za ponudu s liste čekanja, potvrdu, odbijanje i podsjetnik uz mail nastaje i po jedan red s kanalom `PUSH` za svaki browser korisnika. Šalje ih isti posao, s istim ponovnim pokušajima.
 
+## Poruka asistentu
+
+`POST /api/chat/sessions/{sessionId}/messages` čeka model i alate, pa traje nekoliko sekundi. Petlja nije u transakciji, da konekcija iz poola ne čeka provajdera.
+
+```mermaid
+sequenceDiagram
+    participant W as Widget
+    participant C as ChatController
+    participant S as ChatService
+    participant M as Groq (ChatModel)
+    participant T as ChatTools
+    participant DB as PostgreSQL
+
+    W->>C: POST {text}
+    C->>C: @PreAuthorize isOwner(sessionId)
+    C->>S: send(sesija, korisnik, tekst)
+    S->>S: granica u minuti (Bucket4j), dnevni tokeni, mjesta u razgovoru
+    S->>DB: historija razgovora
+    loop najviše 5 krugova
+        S->>M: uputstvo + historija + alati
+        M-->>S: tekst ili poziv alata
+        S->>T: izvrsi(poziv) u organizaciji razgovora
+        T->>DB: resursi, termini, moje rezervacije, ili INSERT chat_proposals
+        T-->>S: rezultat (greška je rezultat, ne izuzetak)
+    end
+    S->>DB: nove poruke zajedno, pod lock-om sesije, i tokeni
+    S-->>W: 200 {text, proposals}
+    W->>C: POST /api/chat/proposals/{id}/confirm (dugme na karti)
+    C->>DB: lock prijedloga, BookingService.create s ključem prijedloga
+```
+
+Model ne pravi rezervacije. Alat upiše prijedlog, a rezervaciju pravi dugme, kroz isti `BookingService.create` kao kalendar. Zašto, piše u [AI_ASISTENT.md](AI_ASISTENT.md).
+
 ## Frontend
 
-`frontend/` je React s Viteom, u JavaScriptu. Paketi su opet po funkcionalnosti (`kalendar`, `rezervacije`, `clanovi`, `nalog`...). Backend zovu samo funkcije iz `src/api/`, preko jednog `apiFetch`, koji drži access token u memoriji, na `401` jednom obnovi sesiju (i kad tri zahtjeva padnu u isto vrijeme) i svaku grešku pretvori u `ApiError` s Problem Details tijelom. Stanje sa servera drži TanStack Query, a sesiju `SesijaProvider`. Vrijeme se prikazuje u zoni organizacije, kroz `src/vrijeme/`. Boje, fontovi i razmaci su samo u `src/tokeni.css`, a test pada ako se u kodu pojavi boja ili veličina fonta van tokena. U buildu je i service worker (`src/sw.js`) koji čuva samo statiku i prima push, a `/api` ne dira. Na Vercelu `vercel.json` prosljeđuje `/api` na Render, pa su frontend i backend za browser isti origin.
+`frontend/` je React s Viteom, u JavaScriptu. Paketi su opet po funkcionalnosti (`kalendar`, `rezervacije`, `clanovi`, `nalog`, `asistent`...). Backend zovu samo funkcije iz `src/api/`, preko jednog `apiFetch`, koji drži access token u memoriji, na `401` jednom obnovi sesiju (i kad tri zahtjeva padnu u isto vrijeme) i svaku grešku pretvori u `ApiError` s Problem Details tijelom. Stanje sa servera drži TanStack Query, a sesiju `SesijaProvider`. Vrijeme se prikazuje u zoni organizacije, kroz `src/vrijeme/`. Boje, fontovi i razmaci su samo u `src/tokeni.css`, a test pada ako se u kodu pojavi boja ili veličina fonta van tokena. U buildu je i service worker (`src/sw.js`) koji čuva samo statiku i prima push, a `/api` ne dira. Na Vercelu `vercel.json` prosljeđuje `/api` na Render, pa su frontend i backend za browser isti origin.

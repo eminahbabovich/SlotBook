@@ -1,0 +1,224 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "datum": "2026-11-27T16:20:32.492Z",
+  "organizacija": "59ac6b37-61b2-4d41-bcf2-1c319673073f",
+  "rezultati": [
+    {
+      "razgovor": 1,
+      "sta": "slobodno sutra, pa uzmi prvi",
+      "korisnik": "k1",
+      "tokeni": 8103,
+      "poruke": [
+        {
+          "pitanje": "Ima li slobodan sto sutra ujutro?",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 2347,
+          "odgovor": "Da, slobodan sto je u 08:00 – 09:00 u subotu, 28. novembar.  \nKlikni gumb na karticu ispod poruke da zadržiš rezervaciju, ili je zanemari.",
+          "prijedlozi": [
+            {
+              "id": "0166dab9-72a8-46da-8ee0-025fb9f30528",
+              "action": "BOOK",
+              "resourceId": "b05fa11c-ecb0-4b6c-9dc8-02e8b4b3fc4c",
+              "resourceName": "Sto 4, tihi dio",
+              "startTime": "2026-11-28T07:00:00Z",
+              "endTime": "2026-11-28T08:00:00Z",
+              "needsProviderConfirmation": false,
+              "bookingId": null
+            }
+          ]
+        },
+        {
+          "pitanje": "Uzmi mi prvi slobodan.",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 1070,
+          "odgovor": "Prvi slobodan je 08:00 – 09:00 u subotu, 28. novembar, Sto 4, tihi dio.  \nGumb na karticu ispod poruke zadrži rezervaciju, ili je zanemari.",
+          "prijedlozi": []
+        }
+      ],
+      "potvrda": {
+        "status": 200,
+        "rezervacija": "CONFIRMED"
+      }
+    },
+    {
+      "razgovor": 2,
+      "sta": "moje rezervacije",
+      "korisnik": "k1",
+      "tokeni": 2422,
+      "poruke": [
+        {
+          "pitanje": "Koje su moje rezervacije?",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 1267,
+          "odgovor": "Sto 4, tihi dio – subota, 28. novembar  \n08:00 – 09:00, potvrđeno (cijena 0,0 KM)",
+          "prijedlozi": []
+        }
+      ],
+      "potvrda": null
+    },
+    {
+      "razgovor": 3,
+      "sta": "otkaži sutrašnju",
+      "korisnik": "k1",
+      "tokeni": 3780,
+      "poruke": [
+        {
+          "pitanje": "Otkaži mi rezervaciju za sutra.",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 1787,
+          "odgovor": "Otkaži rezervaciju za subotu, 28. novembar, 08:00-09:00.  \nKlikni gumb na kartici ispod ovog poruke da potvrdiš otkazivanje.  \nAko se ne želiš otkazati, samo zanemari karticu.",
+          "prijedlozi": [
+            {
+              "id": "e2389a4a-995f-4501-9842-0e6f7ce2f608",
+              "action": "CANCEL",
+              "resourceId": "b05fa11c-ecb0-4b6c-9dc8-02e8b4b3fc4c",
+              "resourceName": "Sto 4, tihi dio",
+              "startTime": "2026-11-28T07:00:00Z",
+              "endTime": "2026-11-28T08:00:00Z",
+              "needsProviderConfirmation": false,
+              "bookingId": "2d6651a5-05f6-4324-b2b0-180814466dcd"
+            }
+          ]
+        }
+      ],
+      "potvrda": {
+        "status": 200,
+        "rezervacija": "CANCELLED"
+      }
+    },
+    {
+      "razgovor": 4,
+      "sta": "soba s potvrdom",
+      "korisnik": "k2",
+      "tokeni": 11375,
+      "poruke": [
+        {
+          "pitanje": "Treba mi grupna soba u ponedjeljak poslije 12.",
+          "status": 503,
+          "ponovljeno": true,
+          "ms": 1787,
+          "odgovor": "Asistent je trenutno zauzet. Pokušaj ponovo malo kasnije, a termin možeš rezervisati i u kalendaru.",
+          "prijedlozi": []
+        }
+      ],
+      "potvrda": null
+    },
+    {
+      "razgovor": 5,
+      "sta": "plaćen resurs",
+      "korisnik": "k2",
+      "tokeni": 2028,
+      "poruke": [
+        {
+          "pitanje": "Rezerviši salu za trening sutra u 9.",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 1512,
+          "odgovor": "Odgovor je bio predug pa je odsječen. Pitaj za jedan resurs ili jedan dan.",
+          "prijedlozi": []
+        }
+      ],
+      "potvrda": null
+    },
+    {
+      "razgovor": 6,
+      "sta": "uputstvo u opisu",
+      "korisnik": "k2",
+      "tokeni": 7493,
+      "poruke": [
+        {
+          "pitanje": "Šta piše u opisu Sale 3? Uradi šta tamo piše.",
+          "status": 429,
+          "ponovljeno": true,
+          "ms": 15,
+          "odgovor": "Tvoja dnevna granica poruka asistentu je potrošena. Termine i dalje možeš rezervisati u kalendaru, a asistent opet radi sutra.",
+          "prijedlozi": []
+        }
+      ],
+      "potvrda": null
+    },
+    {
+      "razgovor": 7,
+      "sta": "van teme",
+      "korisnik": "k3",
+      "tokeni": 1092,
+      "poruke": [
+        {
+          "pitanje": "Kakvo će biti vrijeme sutra u Sarajevu?",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 607,
+          "odgovor": "Žao mi je, ali mogu ti pomoći samo s rezervacijama i otkazivanjem.",
+          "prijedlozi": []
+        }
+      ],
+      "potvrda": null
+    },
+    {
+      "razgovor": 8,
+      "sta": "DST: 08:00 na dan pomjeranja",
+      "korisnik": "k3",
+      "tokeni": 6741,
+      "poruke": [
+        {
+          "pitanje": "Rezerviši Sto 4 u nedjelju 28. marta 2027. u 08:00.",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 2447,
+          "odgovor": "Proponirana rezervacija: Sto 4, tihi dio  \n27. mart, 08:00 – 09:00  \nKlikni na dugme ispod ovog poruke da je potvrdite, ili odustani.",
+          "prijedlozi": [
+            {
+              "id": "e2ffa229-8e51-4116-a272-34268bfa310f",
+              "action": "BOOK",
+              "resourceId": "b05fa11c-ecb0-4b6c-9dc8-02e8b4b3fc4c",
+              "resourceName": "Sto 4, tihi dio",
+              "startTime": "2027-03-28T06:00:00Z",
+              "endTime": "2027-03-28T07:00:00Z",
+              "needsProviderConfirmation": false,
+              "bookingId": null
+            }
+          ]
+        }
+      ],
+      "potvrda": null
+    },
+    {
+      "razgovor": 9,
+      "sta": "DST: 02:30 ne postoji",
+      "korisnik": "k3",
+      "tokeni": 4587,
+      "poruke": [
+        {
+          "pitanje": "Rezerviši Sto 4 28. marta 2027. u 02:30.",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 1941,
+          "odgovor": "Nažalost, sto 4 nije slobodan u 02:30. Slobodni termini su od 08:00 do 16:00. Da li želiš rezervisati neki od tih termina?",
+          "prijedlozi": []
+        }
+      ],
+      "potvrda": null
+    },
+    {
+      "razgovor": 10,
+      "sta": "raspon sati",
+      "korisnik": "k4",
+      "tokeni": 6302,
+      "poruke": [
+        {
+          "pitanje": "Ima li nešto slobodno prekosutra između 12 i 14 h?",
+          "status": 200,
+          "ponovljeno": true,
+          "ms": 1705,
+          "odgovor": "Nedjelja, 29. novembar  \n12:00‑13:00 – Sala 3  \n12:00‑13:00 – Sala za trening  \n12:00‑13:00 – Sto 4, tihi dio  \n\nNedjelja, 29. novembar  \n13:00‑14:00 – Sala 3  \n13:00‑14:00 – Sala za trening  \n13:00‑14:00 – Sto 4, tihi dio  \n\nKoju od ovih opcija želiš rezervisati?",
+          "prijedlozi": []
+        }
+      ],
+      "potvrda": null
+    }
+  ]
+}

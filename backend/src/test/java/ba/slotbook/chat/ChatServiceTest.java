@@ -32,6 +32,20 @@ class ChatServiceTest {
 		assertThat(servis("2035-03-26T08:00:00Z").uputstvo(CITAONICA)).contains("Monday, 2035-03-26, 10:00");
 	}
 
+	// U mjerenju je gpt-oss-120b sam izračunao da je 28.11.2026. ponedjeljak (subota je). Zato dobija
+	// spisak dana s nazivima, da ih prepiše, a ne računa.
+	@Test
+	void uputstvoImaNaredneDaneSBosanskimNazivimaOdLokalnogDana() {
+		String uputstvo = servis("2026-11-27T23:30:00Z").uputstvo(CITAONICA);
+
+		// 23:30 UTC u petak je već subota po Sarajevu, pa spisak kreće od subote
+		assertThat(uputstvo).contains("subota 2026-11-28, nedjelja 2026-11-29, ponedjeljak 2026-11-30")
+				.contains("petak 2026-12-11")
+				.doesNotContain("petak 2026-11-27");
+		// Bez ove rečenice je model u drugom mjerenju odbio 28. mart 2027. kao "van 14 dana"
+		assertThat(uputstvo).contains("is not a limit");
+	}
+
 	private static ChatService servis(String sada) {
 		return new ChatService(null, null, null, null, null, null, null,
 				Clock.fixed(Instant.parse(sada), ZoneOffset.UTC));

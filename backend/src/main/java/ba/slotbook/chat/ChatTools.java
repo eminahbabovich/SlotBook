@@ -54,8 +54,8 @@ class ChatTools {
 	private static final String NEMA_RESURSA = "Resurs nije pronađen u ovoj organizaciji. Pozovi list_resources za ispravne id-jeve.";
 	private static final String NEMA_REZERVACIJE = "Rezervacija nije pronađena među tvojim budućim rezervacijama u "
 			+ "ovoj organizaciji. Pozovi get_my_bookings za ispravne id-jeve.";
-	private static final String CEKA_DUGME = "Nothing is booked or cancelled yet. Tell the user to press Potvrdi "
-			+ "under this message, or Odustani.";
+	private static final String CEKA_DUGME = "Nothing is booked or cancelled yet. Tell the user to press the "
+			+ "button on the proposal card under this message, or to dismiss it.";
 
 	// Opisi su na engleskom, jer ih čita samo model. Korisniku odgovara na bosanskom, to kaže system prompt.
 	private static final List<Alat> DEFINICIJE = List.of(
@@ -79,14 +79,14 @@ class ChatTools {
 					+ "slot (pending or confirmed), with local date and time.",
 					objekat(List.of())),
 			Alat.funkcija("create_booking", "Proposes booking one free slot. Nothing is booked until the user "
-					+ "presses the Potvrdi button under your message, so never say the slot is booked. Paid "
+					+ "presses the button on the proposal card under your message, so never say the slot is booked. Paid "
 					+ "resources cannot be booked in chat, the result gives a calendar link instead.",
 					objekat(List.of("resource_id", "date", "time"),
 							"resource_id", "string", "Resource id from list_resources",
 							"date", "string", "Local date YYYY-MM-DD",
 							"time", "string", "Local start time HH:mm, must be the start of a free slot")),
 			Alat.funkcija("cancel_booking", "Proposes cancelling one of the user's upcoming bookings. Nothing is "
-					+ "cancelled until the user presses the Potvrdi button.",
+					+ "cancelled until the user presses the button on the proposal card.",
 					objekat(List.of("booking_id"),
 							"booking_id", "string", "Booking id from get_my_bookings")));
 

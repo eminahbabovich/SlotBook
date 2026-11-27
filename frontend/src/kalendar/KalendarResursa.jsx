@@ -7,6 +7,7 @@ import { useOrganizacija, useResursi } from '../organizacije/upiti.js'
 import { NijeUcitano } from '../stanja/NijeUcitano.jsx'
 import { Ucitava } from '../stanja/Ucitava.jsx'
 import { Kalendar } from './Kalendar.jsx'
+import { Asistent } from '../asistent/Asistent.jsx'
 import { opisiPravila } from './pravila.js'
 import './kalendar.css'
 import { Mrvice } from '../tema/Mrvice.jsx'
@@ -75,6 +76,7 @@ export function KalendarResursa() {
 				pravila={org.organizacija.uloga === 'CLIENT' ? resurs.pravila : null}
 				trazeniTermin={parametri.get('termin')}
 			/>
+			<Asistent organizacija={org.organizacija} />
 		</section>
 	)
 }

@@ -30,7 +30,7 @@ Stripe isti događaj zna poslati više puta, i to u isto vrijeme. `StripeWebhook
 
 ## Šta aplikacija radi
 
-Organizacija upiše resurse (sto, salu, teren, termin konsultacija) i radno vrijeme s izuzecima, pa pozove članove mailom ili pozivnim linkom s QR plakatom. Članovi rezervišu u kalendaru koji se sam osvježi kad neko drugi uzme termin. Na zauzet termin se mogu upisati na listu čekanja, termin mogu ponoviti svake sedmice, platiti karticom (Stripe u test modu) i pratiti u Google ili Apple kalendaru. Dolazak se potvrđuje QR kodom, a potvrde, ponude i podsjetnici stižu mailom i kao push obavijest. Admin vidi popunjenost po mjesecima, postavlja pravila (koliko rezervacija po osobi, blokada poslije nedolazaka) i može na vrata staviti tablet koji pokazuje današnje termine.
+Organizacija upiše resurse (sto, salu, teren, termin konsultacija) i radno vrijeme s izuzecima, pa pozove članove mailom ili pozivnim linkom s QR plakatom. Članovi rezervišu u kalendaru koji se sam osvježi kad neko drugi uzme termin. Na zauzet termin se mogu upisati na listu čekanja, termin mogu ponoviti svake sedmice, platiti karticom (Stripe u test modu) i pratiti u Google ili Apple kalendaru. Dolazak se potvrđuje QR kodom, a potvrde, ponude i podsjetnici stižu mailom i kao push obavijest. Admin vidi popunjenost po mjesecima, postavlja pravila (koliko rezervacija po osobi, blokada poslije nedolazaka) i može na vrata staviti tablet koji pokazuje današnje termine. Termin se može tražiti i u razgovoru s asistentom ("ima li slobodan sto sutra ujutro"), a rezervacija nastaje tek na dugme na karti koju on predloži.
 
 Cijeli tok po fazama, sa screenshotovima, je u [docs/HISTORIJA.md](docs/HISTORIJA.md).
 
@@ -38,7 +38,7 @@ Cijeli tok po fazama, sa screenshotovima, je u [docs/HISTORIJA.md](docs/HISTORIJ
 
 Ovo je moj drugi projekat, poslije [RoomSplita](https://github.com/eminahbabovich/roomsplit). Backend učim od nule, pa je cilj bio da svaku liniju mogu objasniti. Učio sam uz AI mentora (Claude): on objašnjava i predlaže, a ja pokrećem, provjeravam i pitam dok ne razumijem.
 
-Rad je išao u fazama iz [PROJECT_PLAN.md](PROJECT_PLAN.md). Od 14 faza gotovo je 13, a Faza 14 (AI asistent za rezervacije, na besplatnom Groq nivou) je u izradi. Odluke i zašto sam ih donio su u [docs/ODLUKE.md](docs/ODLUKE.md). Šta sam naučio i gdje smo griješili, i ja i Claude, piše u [LEARNING_LOG.md](LEARNING_LOG.md).
+Rad je išao u fazama iz [PROJECT_PLAN.md](PROJECT_PLAN.md). Svih 14 faza je gotovo. Zadnja je AI asistent za rezervacije, na besplatnom Groq nivou ([docs/AI_ASISTENT.md](docs/AI_ASISTENT.md)). Odluke i zašto sam ih donio su u [docs/ODLUKE.md](docs/ODLUKE.md). Šta sam naučio i gdje smo griješili, i ja i Claude, piše u [LEARNING_LOG.md](LEARNING_LOG.md).
 
 ## Tehnologije
 
@@ -133,7 +133,7 @@ Ovdje je ono za šta nemam dokaz na pravom uređaju ili na produkciji, i ono št
 - `npm audit` javlja 4 umjerene ranjivosti u alatu za build PWA (`workbox-build`). U produkcijskim paketima ih nema, a popravka koju nudi npm vraća plugin na verziju bez podrške za Vite 8.
 - Slike resursa su na disku Rendera i nestanu sa svakim deployem. Cloudflare R2 traži karticu i za besplatni plan, pa ga nisam uključio ([docs/ODLUKE.md](docs/ODLUKE.md)). Demo podaci nemaju slika, pa se to vidi tek kad neko postavi svoju.
 - Stripe na produkciji sam probao jednom uplatom i jednim povratom, skriptom. Istek neplaćene rezervacije (`checkout.session.expired`) na produkciji nisam čekao, provjeren je samo lokalno.
-- AI asistent (Faza 14) za sada postoji samo na backendu. Alati, prijedlozi s dugmetom Potvrdi i petlja su provjereni testovima, ali s lažnim modelom koji radi ono što mu test zada. Pravi Groq model je odgovorio samo na jedan pozdrav, kroz razgovor o rezervaciji ga još nisam vodio. Widget ne postoji.
+- AI asistent na produkciji javlja da nije dostupan, jer na Renderu još nije upisan `AI_API_KEY`. S pravim modelom sam ga vodio kroz deset razgovora lokalno. Jedan razgovor potroši od 800 do 8 000 tokena, pa uz granicu od 20 000 tokena dnevno jedan korisnik ima dva do tri razgovora. Poslije osvježavanja stranice razgovor počinje ispočetka. Šta još nije provjereno, piše u [docs/AI_ASISTENT.md](docs/AI_ASISTENT.md).
 
 ## Struktura i dokumentacija
 
@@ -148,6 +148,7 @@ U `docs/` su:
 - [ARHITEKTURA.md](docs/ARHITEKTURA.md): slojevi, tok zahtjeva i model podataka
 - [PERFORMANSE.md](docs/PERFORMANSE.md): `EXPLAIN`, broj upita i k6, a skripte za to su u `docs/mjerenja/`
 - [SIGURNOST.md](docs/SIGURNOST.md): OWASP Top 10, šta nas štiti, kojim testom i šta nije pokriveno
+- [AI_ASISTENT.md](docs/AI_ASISTENT.md): petlja alata, zašto rezervaciju pravi dugme a ne model, mjerenje dva modela s tokenima po razgovoru
 - [RUNBOOK.md](docs/RUNBOOK.md): kvarovi, deploy, backup i vraćanje
 - [DIZAJN.md](docs/DIZAJN.md): paleta, fontovi i stanja termina
 

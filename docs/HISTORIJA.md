@@ -19,7 +19,7 @@ Tekst opisuje stanje na kraju svake faze. Kad se nešto kasnije promijenilo, to 
 | 11 | Plaćanje (Stripe, test mode) | gotovo |
 | 12 | Deploy i prezentacija | gotovo |
 | 13 | Završni pregled i dodaci | gotovo |
-| 14 | AI asistent za rezervacije | nije počelo |
+| 14 | AI asistent za rezervacije | gotovo |
 
 ## Faza 1: temelji
 
@@ -188,3 +188,15 @@ SlotBook je postao PWA (manifest, ikone, service worker samo za statiku, stranic
 ## Faza 13: završni pregled
 
 Tri koraka, 26.11.2026. Prvi je čišćenje: mrtvi kod i upozorenja kompajlera i linta. Drugi je pregled koda od Faze 10 nadalje. Našao je četiri greške, a peta se pokazala u testu za jednu sitnicu: podsjetnik je padao čim neko ima uključen push. Svaka je dobila test koji je prvo pao, a popravke su migracije V46 i V47 ([ODLUKE.md](ODLUKE.md)). Treći korak je bio prolaz kroz README i `docs/`. Engleski prijevod UI-ja je iz plana ove faze prebačen u Dodatke.
+
+## Faza 14: AI asistent
+
+Šest koraka, sve 27.11.2026. Asistent je na besplatnom Groq nivou, preko vlastitog klijenta za OpenAI format. Model ima šest alata, a alati zovu iste servise kao kalendar. `create_booking` i `cancel_booking` samo upišu prijedlog, a rezervaciju pravi korisnik dugmetom na karti. Widget je na stranici organizacije ispod "Nađi slobodno" i na stranici resursa ispod kalendara.
+
+Na kraju sam ga vodio kroz deset razgovora s dva modela. Prvo mjerenje je pokazalo da model sam računa dan u sedmici i griješi, pa sad dobija spisak dana. Brojke, popravke i šta nije provjereno su u [AI_ASISTENT.md](AI_ASISTENT.md).
+
+| Karta prijedloga na telefonu | Potrošena granica na desktopu |
+|---|---|
+| ![Widget asistenta s porukom korisnika, odgovorom i kartom s dugmetom Rezerviši 10:00](dodaci/asistent-karta-tamna-375.png) | ![Widget asistenta s porukom da je dnevna granica za cijelu aplikaciju potrošena](dodaci/asistent-granica-tamna-1280.png) |
+
+Na lijevom snimku je odgovor backenda zamijenjen u Playwrightu, jer je dnevna granica tog dana već bila potrošena na mjerenje. Komponenta i CSS su pravi. Desni snimak je pravi odgovor backenda poslije mjerenja.

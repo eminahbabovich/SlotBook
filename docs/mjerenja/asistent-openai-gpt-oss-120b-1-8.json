@@ -1,0 +1,85 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "datum": "2026-11-27T16:26:11.618Z",
+  "organizacija": "83921485-78ca-46bb-99a2-65f418fa0424",
+  "rezultati": [
+    {
+      "razgovor": 1,
+      "sta": "slobodno sutra, pa uzmi prvi",
+      "korisnik": "k1",
+      "tokeni": 12509,
+      "poruke": [
+        {
+          "pitanje": "Ima li slobodan sto sutra ujutro?",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 3747,
+          "odgovor": "Sutra ujutro je slobodan **Sto 4, tihi dio** u 08:00. Ako ti odgovara, pritisni dugme ispod da rezervišeš taj termin.",
+          "prijedlozi": [
+            {
+              "id": "6e5496a7-4aa4-4271-a98c-959bcf152266",
+              "action": "BOOK",
+              "resourceId": "d4962746-cad0-4a42-a5bb-9241787b3681",
+              "resourceName": "Sto 4, tihi dio",
+              "startTime": "2026-11-28T07:00:00Z",
+              "endTime": "2026-11-28T08:00:00Z",
+              "needsProviderConfirmation": false,
+              "bookingId": null
+            }
+          ]
+        },
+        {
+          "pitanje": "Uzmi mi prvi slobodan.",
+          "status": 200,
+          "ponovljeno": false,
+          "ms": 2017,
+          "odgovor": "Prijedlog za prvi slobodan termin je **Sala 3** u 08:00‑09:00 sutra. Pritisni dugme ispod da ga rezervišeš.",
+          "prijedlozi": [
+            {
+              "id": "56688c1c-2af8-408a-864f-7e7f76a3a496",
+              "action": "BOOK",
+              "resourceId": "34d95a91-a2a8-4a02-a80b-24d2fd252e54",
+              "resourceName": "Sala 3",
+              "startTime": "2026-11-28T07:00:00Z",
+              "endTime": "2026-11-28T08:00:00Z",
+              "needsProviderConfirmation": false,
+              "bookingId": null
+            }
+          ]
+        }
+      ],
+      "potvrda": {
+        "status": 200,
+        "rezervacija": "CONFIRMED"
+      }
+    },
+    {
+      "razgovor": 8,
+      "sta": "DST: 08:00 na dan pomjeranja",
+      "korisnik": "k3",
+      "tokeni": 11958,
+      "poruke": [
+        {
+          "pitanje": "Rezerviši Sto 4 u nedjelju 28. marta 2027. u 08:00.",
+          "status": 200,
+          "ponovljeno": true,
+          "ms": 2635,
+          "odgovor": "Rezervacija za **Sto 4, tihi dio** u nedjelju, 28. mart 2027. u 08:00 je predložena. Pritisni dugme ispod poruke da potvrdiš rezervaciju.",
+          "prijedlozi": [
+            {
+              "id": "5072e79f-8b33-4774-b9e8-45e6bc5b506c",
+              "action": "BOOK",
+              "resourceId": "d4962746-cad0-4a42-a5bb-9241787b3681",
+              "resourceName": "Sto 4, tihi dio",
+              "startTime": "2027-03-28T06:00:00Z",
+              "endTime": "2027-03-28T07:00:00Z",
+              "needsProviderConfirmation": false,
+              "bookingId": null
+            }
+          ]
+        }
+      ],
+      "potvrda": null
+    }
+  ]
+}

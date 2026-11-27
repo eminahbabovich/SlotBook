@@ -572,3 +572,15 @@ Petlja. Izolacioni test je pao s `500` na `POST /api/chat/sessions/{sessionId}/m
 Nisam znao da poziv alata bez rezultata u historiji pokvari sljedeću poruku kod provajdera. Zato odsječen odgovor (`length`) ne izvršava alate, nego se čuva samo tekst. Kad sam za mutaciju izbacio tu provjeru, alat je dobio pola JSON-a, vratio grešku modelu, a lažni model u drugom krugu nije imao šta reći.
 
 Heredoc u bashu je dvaput pao s `unexpected EOF while looking for matching`, oba puta prije nego što je ijedan fajl upisan. Claude je fajlove onda pisao jedan po jedan.
+
+## Petak, 27. novembar 2026, 17:29
+
+Widget i prvi pravi razgovori. Testovi s lažnim modelom su svi prolazili, a pravi gpt-oss-120b mi je u prvoj poruci rekao da je subota 28. novembra ponedjeljak. Dan u sedmici je sam računao. Claude mu je u uputstvo dodao spisak narednih 14 dana s nazivima, i onda je model u drugom mjerenju odbio 28. mart 2027 jer je "van 14 dana". Claude je jednom rečenicom u promptu popravio jednu grešku i napravio drugu, jer nije napisao da spisak nije granica. Sad test provjerava i tu rečenicu.
+
+Svaku izmjenu uputstva backend dobije tek poslije restarta, a model se bira varijablom u IntelliJ-u, pa sam za tri mjerenja tri puta restartovao. API ne kaže koji model je odgovorio, pa se u izvještaju oslanjam na to šta sam postavio.
+
+Groq je vraćao 429 kad bi dvije poruke s alatima pale u istu minutu. Jedna takva poruka zna biti 8 000 tokena, koliko i minutna granica u njihovoj tabeli. Kod nas je to `503` "asistent je zauzet", kako je i zamišljeno. Klijent k2 je u mjerenju s 20b potrošio 20 896 tokena u tri razgovora i treći je dobio `429` za dnevnu granicu. Granica radi, ali jedan korisnik ima dva-tri razgovora dnevno, i to nisam znao dok nisam izmjerio. Na kraju je i cijela aplikacija prešla 150 000 za danas, pa sam snimak karte morao praviti sa zamijenjenim odgovorom.
+
+Dugmad s primjerima ("Šta je slobodno sutra ujutro?") su na snimku imala sistemski font i bijelu ivicu. Klasa `.veza-pilula` je pravljena za link, a `<button>` ne nasljeđuje font. "Nađi slobodno" je to već rješavao s `font: inherit`, ja sam to zaboravio.
+
+gpt-oss-20b piše "gumb" i "Proponirana rezervacija". Ostajem na 120b.

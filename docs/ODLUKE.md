@@ -1326,3 +1326,15 @@ Uputstvo modelu ima trenutni dan i sat u zoni organizacije. U 00:30 po Sarajevu 
 Testovi petlje idu na lažni `ChatModel` koji vraća ono što mu test zada. Oni dokazuju šta server radi kad model pozove alat, laže da je rezervisao ili posluša uputstvo iz opisa resursa: rezervacije nema bez dugmeta. Ne dokazuju kako se ponaša pravi model, npr. da li iz "sutra u 8" sam izračuna pravi datum. To je za mjerenje u koraku 6.
 
 `GET .../messages` vraća samo tekst, bez karata prijedloga. Ako korisnik osvježi stranicu, karta nestane, a prijedlog i dalje važi do isteka. Da li karta treba preživjeti osvježavanje, odlučiću kad bude widget.
+
+## Widget i model asistenta (27.11.2026)
+
+Widget je na stranici organizacije ispod "Nađi slobodno" i na stranici resursa ispod kalendara, a ne kao plutajući balončić u uglu. Balončić bi na telefonu pokrivao kalendar, a ovako je asistent još jedan način da se nađe termin, pored onih koji već postoje. Razgovor se otvara tek uz prvu poruku, pa stranica koju niko ne pita ne pravi prazne sesije u bazi.
+
+Karta prijedloga ima dugme koje kaže šta radi ("Rezerviši 08:00"), a vrijeme je u zoni organizacije. Na ovom računaru je zona Zagreb, koja ima isto pomjeranje kao Sarajevo, pa test sa Sarajevom ne bi pao ni kad bi widget koristio zonu browsera. Zato postoji i test s organizacijom u New Yorku, i on pada s tom greškom. Poslije osvježavanja razgovor počinje ispočetka. Da bi karta preživjela osvježavanje, `GET .../messages` bi morao vraćati i prijedloge, a to sam ostavio za kasnije.
+
+Model ostaje `openai/gpt-oss-120b`. Probao sam i `openai/gpt-oss-20b`, s istim uputstvom i istih deset razgovora. Manji je potrošio 53 923 tokena prema 33 856, pisao je "gumb" i "Proponirana rezervacija", a u jednom razgovoru je u tekstu napisao 27. mart dok je karta tačno imala 28. Groq za oba daje iste granice, pa manji model ne donosi više razgovora. Llama modele nisam probao. Groqova stranica s granicama ih nema u tabeli, a gpt-oss par se mogao porediti bez ikakve druge promjene.
+
+Mjerenje je promijenilo uputstvo. Model je subotu 28.11. nazvao ponedjeljkom, jer je dan u sedmici računao sam. Sad dobija spisak narednih 14 dana s bosanskim nazivima. Prva verzija tog spiska je napravila novu grešku: model ga je shvatio kao granicu i odbio datum u martu. Uputstvo sad kaže da je spisak samo za nazive dana, a `ChatServiceTest` provjerava obje rečenice. Model i dalje podebljava s `**` iako uputstvo kaže običan tekst, pa ih widget skida. Markdown ne prikazujem, jer bi to bila biblioteka za par podebljanih riječi.
+
+Granica od 20 000 tokena po korisniku dnevno je u mjerenju dala dva do tri razgovora. Ostavio sam je tako. Besplatnu kvotu dijele svi, a demo je za pokazivanje, ne za svakodnevnu upotrebu.

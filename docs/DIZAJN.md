@@ -273,3 +273,13 @@ Iznad dana u kalendaru je raspon sedmice ("26. nov – 2. dec") između dvije ok
 Radnje na karti u Mojim rezervacijama su u jednom redu: "QR kod za dolazak" je puno dugme, slika karte je okruglo dugme s ikonom (naziv u `title` i `aria-label`), a "Otkaži" je zadnje, kao pilula s obrisom u `--greska` i blagom podlogom iste boje (`.dugme-otkazi`). Puno crveno je ostalo samo za brisanje naloga, jer otkazivanje još traži potvrdu. QR kod i pitanje za otkazivanje se otvore ispod dugmadi. Na slici karte se red radnji ne vidi.
 
 U heru landinga je prazan okvir za kartu nizak (120 px), a poslije 2,5 s se sama odštampa karta za 10:00 ako posjetilac ništa nije kliknuo. Čitač ekrana najavljuje samo kartu koju je posjetilac sam uzeo. Ispod 480 px su dva dugmeta hera jedno ispod drugog, preko cijele širine. Dok se kod landinga učitava, stoji kostur u obliku hera (tri reda naslova, rečenica, dugmad, prozor), a ne tekst "Učitava se". Stranica koja ne postoji ima upitnik u otisku praznog stanja.
+
+## Asistent (Faza 14, 27.11.2026)
+
+Asistent je ploča u toku stranice, ispod "Nađi slobodno" i ispod kalendara resursa. Nije lebdeći balon u uglu, jer tako izgleda svaki chat na internetu, a i pokrivao bi žetone na telefonu. Ne uvodi nove boje, fontove ni razmake.
+
+Moje pitanje je udubljeno (`--utisnuto` na `--podloga`) i stoji desno, kao tekst upisan u polje. Odgovor stoji na izdignutoj ploči lijevo (`--dubina-1`). Iznad svakog je sitno "Ti" ili "Asistent", pa se razlikuju i bez rasporeda. Prijedlog je slobodan žeton: `--povrsina`, `--dubina-2`, mjedeni rub od 3 px odozdo, resurs podebljan, a vrijeme u `--velicina-vrijeme` s `tabular-nums`. Prijedlog otkazivanja ima isprekidan obris umjesto mjedenog ruba, jer se termin vraća, a ne uzima. Dugme kaže šta radi: "Rezerviši 08:00" ili "Otkaži rezervaciju u 08:00" (`.dugme`, ne mjedeno, jer je mjedena akcija ekrana i dalje "Rezerviši" u karti kalendara). "Ne treba" je tekst-dugme, bez posramljivanja. Poslije potvrde dugmad nestanu, a podebljana rečenica kaže šta se desilo.
+
+Prazan razgovor je isprekidan obris kao svako prazno stanje, s rečenicom šta se može pitati i dvije pilule s primjerima, koje odmah pošalju pitanje. Dok asistent radi, moje pitanje stoji blijedo (60 %), ispod piše "Asistent traži termine..." sitno, a dugme "Šaljem..." je zaključano. Greška je ista ploča kao greška forme, s porukom backenda. Kod granice piše i sat kad asistent opet radi, a kod punog razgovora je ispod dugme "Počni novi razgovor". Pitanje se poslije greške vrati u polje.
+
+Razgovor je lista s `role="log"`, pa čitač ekrana sam pročita novu poruku. Polje ima oznaku iznad ("Poruka asistentu"). Enter šalje, a Shift+Enter je novi red. Na užem od 480 px poruke idu preko cijele širine, a dugme "Pošalji" je ispod polja.

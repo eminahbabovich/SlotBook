@@ -1,0 +1,184 @@
+/* Asistent kao šalter: ploča s razgovorom, a prijedlog je žeton koji se može uzeti. Bez balona i
+   bez lebdećeg dugmeta u uglu, jer to je izgled svakog chata. Sve vrijednosti su iz tokeni.css. */
+
+.asistent {
+	display: grid;
+	gap: var(--razmak-16);
+	max-width: 720px;
+	margin: var(--razmak-32) 0;
+	padding: var(--razmak-24);
+}
+
+.asistent > h2 {
+	margin: 0;
+}
+
+.asistent-uvod {
+	margin: 0;
+	color: var(--tekst-sporedni);
+}
+
+.asistent-prazno {
+	margin: 0;
+}
+
+.asistent-primjeri {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--razmak-8);
+}
+
+/* .veza-pilula je pravljena za link. Dugme bez ovoga dobije sistemski font i ivicu browsera. */
+.asistent-primjeri button {
+	font: inherit;
+	font-weight: 600;
+	border: 0;
+	cursor: pointer;
+}
+
+.asistent-razgovor {
+	display: grid;
+	gap: var(--razmak-12);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.asistent-razgovor:empty {
+	display: none;
+}
+
+.asistent-poruka {
+	display: grid;
+	gap: var(--razmak-4);
+	max-width: 85%;
+	padding: var(--razmak-12) var(--razmak-16);
+	border-radius: var(--zaobljenje-zeton);
+}
+
+.asistent-poruka > p {
+	margin: 0;
+	white-space: pre-line;
+}
+
+/* Moje pitanje je udubljeno, kao polje u koje je upisano. Odgovor stoji na ploči. */
+.asistent-poruka-ti {
+	justify-self: end;
+	background: var(--podloga);
+	box-shadow: var(--utisnuto);
+}
+
+.asistent-poruka-asistent {
+	justify-self: start;
+	background: var(--izdignuto);
+	box-shadow: var(--dubina-1);
+}
+
+.asistent-ko {
+	font-size: var(--velicina-sitno);
+	font-weight: 600;
+	color: var(--tekst-sporedni);
+}
+
+.asistent-ceka {
+	opacity: 0.6;
+}
+
+.asistent-trazi {
+	margin: 0;
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+/* Prijedlog je slobodan žeton: stoji, s mjedenim rubom odozdo. Otkazivanje ima isprekidan obris,
+   jer je to termin koji se vraća, a ne uzima. */
+.asistent-prijedlog {
+	display: grid;
+	gap: var(--razmak-4);
+	margin-top: var(--razmak-8);
+	padding: var(--razmak-12) var(--razmak-16);
+	background: var(--povrsina);
+	border-radius: var(--zaobljenje-zeton);
+	box-shadow: var(--dubina-2), inset 0 -3px 0 var(--moje);
+}
+
+.asistent-prijedlog-otkazivanje {
+	box-shadow: var(--dubina-2);
+	outline: 2px dashed var(--tekst-sporedni);
+	outline-offset: -2px;
+}
+
+.asistent-prijedlog p {
+	margin: 0;
+}
+
+.asistent-prijedlog-sta,
+.asistent-prijedlog-napomena {
+	font-size: var(--velicina-sitno);
+	color: var(--tekst-sporedni);
+}
+
+.asistent-prijedlog-resurs {
+	font-weight: 600;
+}
+
+.asistent-prijedlog-vrijeme {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.asistent-prijedlog-vrijeme time {
+	font-size: var(--velicina-vrijeme);
+	font-weight: 700;
+}
+
+.asistent-prijedlog-radnje {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--razmak-16);
+	margin-top: var(--razmak-8);
+}
+
+.asistent-prijedlog-ishod {
+	font-weight: 600;
+}
+
+.asistent-prijedlog-ishod:empty {
+	display: none;
+}
+
+.asistent-greska {
+	display: grid;
+	justify-items: start;
+	gap: var(--razmak-12);
+}
+
+.asistent-forma {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: end;
+	gap: var(--razmak-12);
+}
+
+.asistent-forma .polje {
+	margin: 0;
+}
+
+@media (max-width: 480px) {
+	.asistent {
+		padding: var(--razmak-16);
+	}
+
+	.asistent-poruka {
+		max-width: 100%;
+	}
+
+	.asistent-forma {
+		grid-template-columns: 1fr;
+	}
+
+	.asistent-prijedlog-vrijeme {
+		white-space: normal;
+	}
+}
