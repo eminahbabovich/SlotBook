@@ -84,7 +84,11 @@ Razgovor vidi i šalje samo vlasnik, a izolacioni test prolazi i chat rute. Kvot
 
 ## CodeQL
 
-Od 22.11.2026 CodeQL (`security-extended`) analizira Javu i JavaScript na svaki push, na pull request i jednom sedmično. Nalazi su u Security > Code scanning na GitHubu. Broj nalaza iz prve analize: _(upisati poslije pregleda u GitHubu)_.
+Od 22.11.2026 CodeQL (`security-extended`) analizira Javu i JavaScript na svaki push, na pull request i jednom sedmično. Nalazi su u Security > Code scanning na GitHubu. Stanje 27.11.2026: dva otvorena nalaza, nijedan zatvoren. Oba su namjerna.
+
+"Disabled Spring CSRF protection" (High) je `csrf.disable()` u `SecurityConfig`. Access token ide u `Authorization` zaglavlje, koje browser ne šalje sam, a jedini kolačić je refresh token sa `SameSite=Strict`, samo na `/api/auth`. Obrazloženje je u [ODLUKE.md](ODLUKE.md), pod "Bez sesija i bez CSRF zaštite". CodeQL vidi isključenu zaštitu, ali ne zna da sesije i kolačića za ostale zahtjeve nema.
+
+"Network data written to file" (Medium) je mjerna skripta `docs/mjerenja/asistent-razgovori.mjs`, kojoj je posao da odgovore API-ja upiše u JSON. Pokreće se samo lokalno i nije dio aplikacije.
 
 ## Na produkciji
 
