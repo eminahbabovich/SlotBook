@@ -610,14 +610,16 @@ spisak onoga što nije urađeno ili nije provjereno na pravom telefonu.
 
 ## Definicija "gotovo" za Projekat 2
 
-- [ ] Sve funkcionalnosti iz jezgra rade u produkciji (live URL + demo računi)
-- [ ] Barem 80 backend testova, uključujući test konkurentnosti, test prelaska na ljetno
+- [x] Sve funkcionalnosti iz jezgra rade u produkciji (live URL + demo računi)
+- [x] Barem 80 backend testova, uključujući test konkurentnosti, test prelaska na ljetno
   vrijeme i test izolacije organizacija, plus frontend testovi i bar 3 Playwright toka
-- [ ] CI badge u README-u, Swagger UI dostupan, CI skenira zavisnosti i tajne
-- [ ] README, `docs/ARHITEKTURA.md` (Mermaid), `docs/ODLUKE.md`, `docs/SIGURNOST.md`,
+- [x] CI badge u README-u, Swagger UI dostupan, CI skenira zavisnosti i tajne
+- [x] README, `docs/ARHITEKTURA.md` (Mermaid), `docs/ODLUKE.md`, `docs/SIGURNOST.md`,
   `docs/RUNBOOK.md`, screenshotovi
-- [ ] k6 rezultati i vraćen backup zapisani s datumom i opisom
-- [ ] Nema tajni u repozitoriju (provjereno alatom, ne samo okom)
+- [x] k6 rezultati i vraćen backup zapisani s datumom i opisom
+- [x] Nema tajni u repozitoriju (provjereno alatom, ne samo okom)
+
+Provjereno 27.11.2026. Na produkciji frontend, `/api/status` i Swagger UI vraćaju 200, demo klijent se prijavi i dobije svoje rezervacije i organizacije. Lokalno prolazi 658 backend i 352 frontend testa, a Playwright ima 9 tokova u `frontend/e2e/glavni-tok.e2e.js`. Zavisnosti skeniraju Dependabot, `dependency-review-action` na pull requestu i CodeQL, a tajne gitleaks u CI-ju. Isti gitleaks je lokalno prošao 231 commit bez nalaza. k6 i vraćanje backupa su od 22.11.2026, u `docs/PERFORMANSE.md` i `docs/RUNBOOK.md`. AI asistent nije dio jezgra. Na produkciji radi tek kad je na Renderu upisan `AI_API_KEY`.
 - [ ] Mogu bez gledanja objasniti: `EXCLUDE` constraint, zašto outbox, refresh token
   rotaciju i detekciju ponovne upotrebe, kako se računaju slobodni termini i DST, šta se
   desi pri istovremenoj rezervaciji, `Idempotency-Key`, zašto webhook mora biti
