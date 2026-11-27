@@ -78,6 +78,9 @@ class OrganizationIsolationApiTest {
 			new Zahtjev(HttpMethod.GET, "/api/organizations/{id}/screens", null),
 			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/screens", "{}"),
 			new Zahtjev(HttpMethod.DELETE, "/api/organizations/{id}/screens/{screenId}", null),
+			new Zahtjev(HttpMethod.POST, "/api/organizations/{id}/chat/sessions", null),
+			// Razgovor je Almin, pa ga ni klijent ni provider iste organizacije ne čitaju
+			new Zahtjev(HttpMethod.GET, "/api/chat/sessions/{sessionId}/messages", null),
 			// Lejli se daje uloga koju već ima: admin dobije 200, a ništa se ne promijeni
 			new Zahtjev(HttpMethod.PUT, "/api/organizations/{id}/members/{lejlaId}/role", """
 					{"role": "CLIENT"}
@@ -150,6 +153,7 @@ class OrganizationIsolationApiTest {
 	// Rezervacije u testu su Almine, pa njihovu historiju i otkazivanje ne smije. Sve ostalo je 403.
 	private static final Set<String> KLIJENT_SMIJE = Set.of(
 			"GET /api/organizations/{id}/resources",
+			"POST /api/organizations/{id}/chat/sessions",
 			"GET /api/organizations/{id}/free-slots",
 			"GET /api/resources/{resourceId}",
 			"GET /api/resources/{resourceId}/availability",
@@ -164,6 +168,7 @@ class OrganizationIsolationApiTest {
 	// StatsApiTest). Tuđi sto ne uređuje i tuđe rezervacije ne vodi, iako je u istoj organizaciji.
 	private static final Set<String> PROVIDER_DRUGOG_SMIJE = Set.of(
 			"GET /api/organizations/{id}/resources",
+			"POST /api/organizations/{id}/chat/sessions",
 			"GET /api/organizations/{id}/free-slots",
 			"GET /api/resources/{resourceId}",
 			"GET /api/resources/{resourceId}/availability",
@@ -242,6 +247,7 @@ class OrganizationIsolationApiTest {
 	private UUID otvorenaPozivnica;
 	private UUID pozivniLink;
 	private UUID ekran;
+	private UUID razgovor;
 
 	// Bojan je admin, ali svoje teretane. Provjera "admin bilo gdje" bi ga pustila, običan član ne bi to otkrio.
 	// Lejla je klijent čitaonice, a Damir u čitaonici vodi drugi sto.
@@ -266,6 +272,7 @@ class OrganizationIsolationApiTest {
 		otvorenaPozivnica = otvorenaPozivnica();
 		pozivniLink = pozivniLink();
 		ekran = ekranNaVratima();
+		razgovor = alminRazgovor();
 	}
 
 	// Almino povlačenje ih ukloni, pa se prave nove prije svakog testa
@@ -293,6 +300,14 @@ class OrganizationIsolationApiTest {
 				citaonica);
 		jdbc.update("insert into door_screens (id, organization_id, token_hash, created_at) values (?, ?, ?, now())",
 				id, citaonica, UUID.randomUUID().toString().replace("-", ""));
+		return id;
+	}
+
+	private UUID alminRazgovor() {
+		UUID id = UUID.randomUUID();
+		jdbc.update("insert into chat_sessions (id, organization_id, user_id, created_at, last_message_at) "
+				+ "values (?, ?, ?, now(), now())", id, citaonica,
+				users.findByEmail("alma.izolacija@example.com").orElseThrow().getId());
 		return id;
 	}
 
@@ -478,7 +493,7 @@ class OrganizationIsolationApiTest {
 		// Varijable po imenu, ne po redu: /api/resources/{resourceId} nema {id} organizacije na prvom mjestu
 		Map<String, Object> varijable = new HashMap<>(rezervacije);
 		varijable.putAll(Map.of("id", citaonica, "resourceId", stoCitaonice, "timeOffId", odmorStola, "waitlistId",
-				alminUpis, "inviteId", otvorenaPozivnica, "linkId", pozivniLink, "screenId", ekran, "lejlaId",
+				alminUpis, "inviteId", otvorenaPozivnica, "linkId", pozivniLink, "screenId", ekran, "sessionId", razgovor, "lejlaId",
 				users.findByEmail("lejla.izolacija@example.com").orElseThrow().getId(), "kenanId",
 				users.findByEmail("kenan.izolacija@example.com").orElseThrow().getId()));
 		URI adresa = UriComponentsBuilder.fromUriString(zahtjev.putanja()).buildAndExpand(varijable).toUri();

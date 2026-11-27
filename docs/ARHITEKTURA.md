@@ -4,7 +4,7 @@ Opis backenda i frontenda kakvi su 26.11.2026, sa šemom do migracije V47. V46 i
 
 ## Paketi i slojevi
 
-Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, `stats`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike), `observability` (ID zahtjeva u logu) i `status`. Kasnije su došli `audit` (dnevnik osjetljivih radnji), `ratelimit` (granica pokušaja prijave), `export` i `account` (izvoz i brisanje naloga), `payment` (Stripe), `screen` (ekran na vratima) i `demo` (podaci za demo profil). Lista čekanja, serije i iCal pretplata su u `booking`, pozivni linkovi u `organization`, a push pretplate u `notification`, jer su push i mail dva kanala istog outboxa.
+Backend je jedna Spring Boot aplikacija. Paketi su po funkcionalnosti, ne po sloju: `auth`, `user`, `organization`, `resource`, `availability`, `booking`, `notification`, `stats`, a uz njih `error` (Problem Details), `config` (security, sat, JWT, Swagger), `paging` (oblik stranice), `storage` (gdje se čuvaju slike), `observability` (ID zahtjeva u logu) i `status`. Kasnije su došli `audit` (dnevnik osjetljivih radnji), `ratelimit` (granica pokušaja prijave), `export` i `account` (izvoz i brisanje naloga), `payment` (Stripe), `screen` (ekran na vratima), `demo` (podaci za demo profil) i `chat` (AI asistent). Lista čekanja, serije i iCal pretplata su u `booking`, pozivni linkovi u `organization`, a push pretplate u `notification`, jer su push i mail dva kanala istog outboxa.
 
 Unutar paketa je uvijek isti red: kontroler prima zahtjev i provjerava pristup, servis drži pravila i transakciju, repozitorij priča s bazom. Kontroler vraća samo DTO (`record`), nikad entitet. Repozitorij organizacija je vidljiv samo u paketu `organization`, pa paket `resource` do organizacije dolazi preko `OrganizationService`. Isto važi za rezervacije: `BookingRepository` vidi samo paket `booking`.
 
@@ -99,6 +99,9 @@ erDiagram
     resources |o--o{ door_screens : "jedan resurs ili cijela organizacija"
     users ||--o{ push_subscriptions : "browseri"
     push_subscriptions ||--o{ notifications : "push kanal"
+    organization_members ||--o{ chat_sessions : "razgovori člana"
+    chat_sessions ||--o{ chat_messages : "poruke po redu"
+    users ||--o{ chat_usage : "tokeni po danu"
 
     users {
         uuid id PK
@@ -282,6 +285,24 @@ erDiagram
         varchar p256dh
         varchar auth
         varchar device
+    }
+    chat_sessions {
+        uuid id PK
+        uuid organization_id FK "(organization_id, user_id): članstvo, ON DELETE CASCADE"
+        uuid user_id FK
+        int message_count
+        timestamptz last_message_at
+    }
+    chat_messages {
+        uuid session_id PK, FK
+        int seq PK "redni broj u sesiji"
+        varchar role "user, assistant, tool"
+        jsonb content "poruka tačno u formatu API-ja"
+    }
+    chat_usage {
+        uuid user_id PK, FK
+        date day PK "UTC"
+        bigint tokens
     }
     booking_events {
         uuid id PK

@@ -544,3 +544,15 @@ SQL migracije nisam dirao, ni komentare u njima. Flyway pamti checksum svakog iz
 U README-ju i HISTORIJA je riječ "probа" imala ćirilično "а" na kraju. Na oko se ne razlikuje od latiničnog.
 
 Claude je jedan commit potpisao s prefiksom `docs:`, iako je dogovor da prefiksa nema. Ostao je takav, jer historiju ne prepravljamo. Vitest je jednom pao s jednim testom dok su backend testovi radili u pozadini, a tri pokretanja poslije prošla su sva 337. Koji je test pao nismo zapisali.
+
+## Petak, 27. novembar 2026, 15:12
+
+Faza 14 je trebala ići na Claude, ali taj API nema besplatni nivo. Uzeo sam Groq i napisao svoj klijent za `/chat/completions`. Ispalo je kraće nego što sam mislio: jedan POST, tri `record`-a za zahtjev i odgovor, i hvatanje `RestClientResponseException` za 429.
+
+Groqova konzola mi prvo nije dala ni da se prijavim, samo "Something went wrong. Try again later". Krivac su vjerovatno bili Brave Shields. Ključ je sad u `.env`, ali pravi poziv prema Groqu još nismo napravili, testovi idu na lažni server.
+
+Prvi pokušaj cijelog backenda dao je 448 grešaka od 599 testova. Docker nije bio upaljen, pa Testcontainers nije imao gdje podići Postgres. Kad se Docker digao, prošlo je 602.
+
+Iznenadilo me da Jackson 3 sam preskače polja koja ne poznaje. Stavio sam `@JsonIgnoreProperties` na sve zapise odgovora, izbrisao ga za mutaciju, a test s `reasoning` i `x_groq` je i dalje prolazio. Anotacija je izbačena.
+
+Za historiju razgovora sam bez `for update` na sesiji pustio deset niti da istovremeno dopisuju poruke. Pale su na primarnom ključu `(session_id, seq)`, jer su dvije pročitale isti broj poruka. S lock-om dobiju redne brojeve 1 do 10 bez rupa. Brojač tokena je upsert u bazi. Kad sam sabiranje promijenio u običan upis, test s dvadeset niti je pao, a s njim i test granice po korisniku, jer je od 600 + 400 ostalo samo 400.
