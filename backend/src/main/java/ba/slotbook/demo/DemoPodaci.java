@@ -38,9 +38,9 @@ public class DemoPodaci {
 	public static final String LOZINKA = "sebilj-na-bascarsiji";
 
 	public static final List<DemoRacun> RACUNI = List.of(
-			new DemoRacun("klijent@slotbook.test", "Hana Šehić", "rezerviše sto, konsultacije i trening"),
-			new DemoRacun("provider@slotbook.test", "Mirza Begić", "vodi termine i potvrđuje konsultacije"),
-			new DemoRacun("admin@slotbook.test", "Amila Kovačević", "uređuje resurse i članove, vidi statistiku"));
+			new DemoRacun("klijent@slotbook.test", "Emin", "rezerviše sto, konsultacije i trening"),
+			new DemoRacun("provider@slotbook.test", "Kan", "vodi termine i potvrđuje konsultacije"),
+			new DemoRacun("admin@slotbook.test", "Sanita", "uređuje resurse i članove, vidi statistiku"));
 
 	// Ostali klijenti pune kalendar. Lozinku im ne zna niko, pa se ne može ući u njihov nalog.
 	private static final List<String> OSTALI = List.of("Amar Delić", "Lejla Hadžić", "Tarik Čolić", "Ena Đozo",
@@ -90,10 +90,12 @@ public class DemoPodaci {
 	}
 
 	private boolean osvjeziUTransakciji() {
+		// Ime je u provjeri da se demo vrati na početak i kad se imena računa promijene u kodu
 		Integer ispravnih = jdbc.queryForObject("""
 				select count(*) from users
-				where email in (?, ?, ?) and created_at > ?
-				""", Integer.class, RACUNI.get(0).email(), RACUNI.get(1).email(), RACUNI.get(2).email(),
+				where (email, display_name) in ((?, ?), (?, ?), (?, ?)) and created_at > ?
+				""", Integer.class, RACUNI.get(0).email(), RACUNI.get(0).ime(), RACUNI.get(1).email(),
+				RACUNI.get(1).ime(), RACUNI.get(2).email(), RACUNI.get(2).ime(),
 				utc(clock.instant().minus(TRAJANJE_DEMA)));
 		if (ispravnih == RACUNI.size()) {
 			return false;
@@ -119,9 +121,9 @@ public class DemoPodaci {
 		Instant sada = clock.instant();
 		LocalDate danas = LocalDate.ofInstant(sada, ZONA);
 
-		UUID hana = korisnik(RACUNI.get(0), LOZINKA, sada);
-		UUID mirza = korisnik(RACUNI.get(1), LOZINKA, sada);
-		UUID amila = korisnik(RACUNI.get(2), LOZINKA, sada);
+		UUID emin = korisnik(RACUNI.get(0), LOZINKA, sada);
+		UUID kan = korisnik(RACUNI.get(1), LOZINKA, sada);
+		UUID sanita = korisnik(RACUNI.get(2), LOZINKA, sada);
 		List<UUID> ostali = OSTALI.stream()
 				.map(ime -> korisnik(new DemoRacun(email(ime), ime, ""), UUID.randomUUID().toString(), sada))
 				.toList();
@@ -129,45 +131,45 @@ public class DemoPodaci {
 		UUID citaonica = organizacija("Čitaonica PMF", "citaonica-pmf", sada);
 		UUID teretana = organizacija("Teretana Ilidža", "teretana-ilidza", sada);
 		for (UUID org : List.of(citaonica, teretana)) {
-			clan(org, amila, "ADMIN", sada);
-			clan(org, mirza, "PROVIDER", sada);
-			clan(org, hana, "CLIENT", sada);
+			clan(org, sanita, "ADMIN", sada);
+			clan(org, kan, "PROVIDER", sada);
+			clan(org, emin, "CLIENT", sada);
 			ostali.forEach(klijent -> clan(org, klijent, "CLIENT", sada));
 		}
 
-		Resurs sto = resurs(citaonica, mirza, "Sto 4, tihi dio", "Četvrti sprat, bez razgovora.", 60, 1, 0, true,
+		Resurs sto = resurs(citaonica, kan, "Sto 4, tihi dio", "Četvrti sprat, bez razgovora.", 60, 1, 0, true,
 				0, sada);
 		radnoVrijeme(sto, RADNI_DANI, "08:00", "20:00");
 		radnoVrijeme(sto, Set.of(DayOfWeek.SATURDAY), "09:00", "14:00");
 
-		Resurs soba = resurs(citaonica, mirza, "Grupna soba 2",
+		Resurs soba = resurs(citaonica, kan, "Grupna soba 2",
 				"Za učenje u grupi do četiri osobe. Tabla i flomasteri su u sobi.", 60, 4, 0, true, 0, sada);
 		radnoVrijeme(soba, RADNI_DANI, "10:00", "18:00");
 
-		Resurs konsultacije = resurs(citaonica, mirza, "Termin konsultacija",
+		Resurs konsultacije = resurs(citaonica, kan, "Termin konsultacija",
 				"Kabinet 112. Termin potvrđuje profesor, a otkazati se može do dva sata prije.", 30, 1, 0, false, 2,
 				sada);
 		radnoVrijeme(konsultacije, Set.of(DayOfWeek.TUESDAY, DayOfWeek.THURSDAY), "10:00", "12:00");
 
-		Resurs sala = resurs(teretana, mirza, "Sala 3", "Sala s ogledalima, za samostalni trening.", 60, 1, 1500, true,
+		Resurs sala = resurs(teretana, kan, "Sala 3", "Sala s ogledalima, za samostalni trening.", 60, 1, 1500, true,
 				0, sada);
 		radnoVrijeme(sala, EnumSet.complementOf(EnumSet.of(DayOfWeek.SUNDAY)), "07:00", "21:00");
 
-		Resurs trening = resurs(teretana, mirza, "Grupni trening", "Kružni trening, do osam osoba. Dođi pet minuta ranije.",
+		Resurs trening = resurs(teretana, kan, "Grupni trening", "Kružni trening, do osam osoba. Dođi pet minuta ranije.",
 				60, 8, 0, true, 0, sada);
 		radnoVrijeme(trening, Set.of(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY), "18:00", "20:00");
 
-		prosleSedmice(danas, sada, mirza, ostali, sto, soba, konsultacije);
-		narednaSedmica(danas, sada, hana, ostali, sto, soba, konsultacije, trening);
-		hanineProsle(danas, sada, hana, sto);
-		pozivi(citaonica, amila, sada);
-		ekran(citaonica, amila, sada);
+		prosleSedmice(danas, sada, kan, ostali, sto, soba, konsultacije);
+		narednaSedmica(danas, sada, emin, ostali, sto, soba, konsultacije, trening);
+		emineProsle(danas, sada, emin, sto);
+		pozivi(citaonica, sanita, sada);
+		ekran(citaonica, sanita, sada);
 		pravila(citaonica, sto, konsultacije);
 	}
 
 	// Pravila koja se vide u demu: sto se drži najviše dvaput unaprijed i dvije sedmice naprijed, a
 	// konsultacije se zakazuju najkasnije dva sata ranije. Tri nedolaska u mjesec dana blokiraju sedmicu.
-	// Hana nema nedolazaka, pa nije blokirana.
+	// Emin nema nedolazaka, pa nije blokiran.
 	private void pravila(UUID citaonica, Resurs sto, Resurs konsultacije) {
 		jdbc.update("update resources set max_active_per_member = 2, max_days_ahead = 14 where id = ?", sto.id());
 		jdbc.update("update resources set min_notice_minutes = 120 where id = ?", konsultacije.id());
@@ -200,7 +202,7 @@ public class DemoPodaci {
 	}
 
 	// Četiri sedmice unazad, da statistika ima šta pokazati. Raspored je izmišljen, ali stalan:
-	// isti dan daje iste termine. Sat 15 ostaje slobodan za Hanine rezervacije, a jučerašnje su još
+	// isti dan daje iste termine. Sat 15 ostaje slobodan za Eminove rezervacije, a jučerašnje su još
 	// CONFIRMED (posao ih zatvori dan poslije kraja), pa se ne smiju preklopiti.
 	private void prosleSedmice(LocalDate danas, Instant sada, UUID provider, List<UUID> ostali, Resurs sto,
 			Resurs soba, Resurs konsultacije) {
@@ -230,7 +232,7 @@ public class DemoPodaci {
 		}
 	}
 
-	private void narednaSedmica(LocalDate danas, Instant sada, UUID hana, List<UUID> ostali, Resurs sto, Resurs soba,
+	private void narednaSedmica(LocalDate danas, Instant sada, UUID emin, List<UUID> ostali, Resurs sto, Resurs soba,
 			Resurs konsultacije, Resurs trening) {
 		Instant nastala = sada.minus(Duration.ofHours(2));
 		int redni = 0;
@@ -243,7 +245,7 @@ public class DemoPodaci {
 		}
 
 		LocalDate prviRadni = sljedeci(danas, RADNI_DANI);
-		nova(sto, hana, u(prviRadni, 10, 0), 1, "CONFIRMED", nastala);
+		nova(sto, emin, u(prviRadni, 10, 0), 1, "CONFIRMED", nastala);
 		// Tri od četiri mjesta zauzeta, pa kalendar kaže "ostalo jedno mjesto"
 		for (int mjesto = 1; mjesto <= 3; mjesto++) {
 			nova(soba, ostali.get(mjesto - 1), u(prviRadni, 14, 0), mjesto, "CONFIRMED", nastala);
@@ -253,9 +255,9 @@ public class DemoPodaci {
 			nova(soba, ostali.get(mjesto + 1), u(drugiRadni, 11, 0), mjesto, "CONFIRMED", nastala);
 		}
 
-		// Hanina i Lejlina čekaju potvrdu, pa provider u rasporedu ima šta potvrditi
+		// Eminova i Lejlina čekaju potvrdu, pa provider u rasporedu ima šta potvrditi
 		LocalDate konsultacijeDan = sljedeci(danas, Set.of(DayOfWeek.TUESDAY, DayOfWeek.THURSDAY));
-		nova(konsultacije, hana, u(konsultacijeDan, 10, 0), 1, "PENDING", nastala);
+		nova(konsultacije, emin, u(konsultacijeDan, 10, 0), 1, "PENDING", nastala);
 		nova(konsultacije, ostali.get(0), u(konsultacijeDan, 10, 30), 1, "CONFIRMED", nastala);
 		nova(konsultacije, ostali.get(1), u(konsultacijeDan, 11, 0), 1, "PENDING", nastala);
 
@@ -263,24 +265,24 @@ public class DemoPodaci {
 		for (int mjesto = 1; mjesto <= 5; mjesto++) {
 			nova(trening, ostali.get(mjesto - 1), u(treningDan, 18, 0), mjesto, "CONFIRMED", nastala);
 		}
-		nova(trening, hana, u(treningDan, 18, 0), 6, "CONFIRMED", nastala);
+		nova(trening, emin, u(treningDan, 18, 0), 6, "CONFIRMED", nastala);
 		for (int mjesto = 1; mjesto <= 6; mjesto++) {
 			nova(trening, ostali.get(mjesto - 1), u(treningDan, 19, 0), mjesto, "CONFIRMED", nastala);
 		}
 	}
 
 	// Jedna završena i jedna otkazana, da Moje rezervacije pokažu i karte iz prošlosti
-	private void hanineProsle(LocalDate danas, Instant sada, UUID hana, Resurs sto) {
+	private void emineProsle(LocalDate danas, Instant sada, UUID emin, Resurs sto) {
 		LocalDate dan = danas.minusDays(2);
 		while (!RADNI_DANI.contains(dan.getDayOfWeek())) {
 			dan = dan.minusDays(1);
 		}
-		prosla(sto, hana, u(dan, 15, 0), 1, 0, null, sada);
+		prosla(sto, emin, u(dan, 15, 0), 1, 0, null, sada);
 		LocalDate ranije = dan.minusDays(1);
 		while (!RADNI_DANI.contains(ranije.getDayOfWeek())) {
 			ranije = ranije.minusDays(1);
 		}
-		prosla(sto, hana, u(ranije, 15, 0), 1, 7, null, sada);
+		prosla(sto, emin, u(ranije, 15, 0), 1, 7, null, sada);
 	}
 
 	private static LocalDate sljedeci(LocalDate poslije, Set<DayOfWeek> dani) {
